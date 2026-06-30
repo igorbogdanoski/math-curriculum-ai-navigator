@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { examService } from '../services/firestoreService.exam';
@@ -48,6 +49,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
   const [loading, setLoading] = useState(true);
   const [gradingId, setGradingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -94,7 +96,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     }
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: 'Испит_Резултати' });
 
   if (loading) {
     return (
@@ -114,7 +116,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div ref={printRef} className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">

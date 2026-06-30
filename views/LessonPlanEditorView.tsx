@@ -165,6 +165,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             setPlan({ ...initialPlanState, ...draft.parsed });
             setShowUploadBanner(true);
           }
+          // Notify about remaining queued scenarios
+          if (draft.remaining > 0) {
+            addNotification(`📥 Уште ${draft.remaining} сценарио(а) во редица — ќе се отворат по ред по зачувување.`, 'info');
+          }
         } catch { /* silently ignore — non-critical */ }
       })();
     }

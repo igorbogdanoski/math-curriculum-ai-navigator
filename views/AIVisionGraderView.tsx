@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { Camera, Upload, X, CheckCircle, Loader2, RefreshCw, Sparkles, Printer, AlertTriangle, FileText } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -199,10 +200,11 @@ export const AIVisionGraderView: React.FC = () => {
         if (cameraInputRef.current) cameraInputRef.current.value = '';
     };
 
-    const handlePrint = () => window.print();
+    const printRef = useRef<HTMLDivElement>(null);
+    const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: 'AI_Grader_Резултат' });
 
     return (
-        <div className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div ref={printRef} className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <Camera className="w-7 h-7 text-indigo-600" />

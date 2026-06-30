@@ -1,5 +1,6 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -42,6 +43,8 @@ export const SchoolAdminView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   const [stats, setStats] = useState<SchoolStatsData | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: 'Директорски_Портал' });
   const [school, setSchool] = useState<SchoolType | null>(null);
   const [joinCodeLoading, setJoinCodeLoading] = useState(false);
   const [removingUid, setRemovingUid] = useState<string | null>(null);
@@ -173,7 +176,7 @@ export const SchoolAdminView: React.FC = () => {
 
   return (
     <>
-    <div className="max-w-7xl mx-auto space-y-6 printable-root" id="printable-area">
+    <div ref={printRef} className="max-w-7xl mx-auto space-y-6 printable-root" id="printable-area">
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4 print:hidden">
@@ -195,7 +198,7 @@ export const SchoolAdminView: React.FC = () => {
             <BookOpen className="w-4 h-4" />
             Уреди Курикулум
           </button>
-          <button type="button" onClick={() => window.print()}
+          <button type="button" onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm">
             <Printer className="w-4 h-4" />
             PDF Извештај

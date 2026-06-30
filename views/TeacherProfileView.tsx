@@ -5,7 +5,8 @@
  * Serves as evidence of Continuing Professional Development (CPD)
  * for МОН inspectors, school principals, and career advancement.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import {
   GraduationCap, Star, Trophy, Brain, Zap, Award, CheckCircle2,
   BarChart3, BookOpen, Share2, Printer, Copy, Check, Flame,
@@ -76,6 +77,8 @@ export const TeacherProfileView: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: 'CPD_Портфолио' });
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [publishedCount, setPublishedCount] = useState<number | null>(null);
@@ -183,7 +186,7 @@ export const TeacherProfileView: React.FC = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 print:p-2 print:space-y-4">
+    <div ref={printRef} className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 print:p-2 print:space-y-4">
 
       {/* Print header (only visible when printing) */}
       <div className="hidden print:block text-center mb-6">
@@ -242,7 +245,7 @@ export const TeacherProfileView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-bold transition-all">
               <Share2 className="w-4 h-4" /> QR Код
             </button>
-            <button type="button" onClick={() => window.print()}
+            <button type="button" onClick={handlePrint}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-bold transition-all">
               <Printer className="w-4 h-4" /> Печати PDF
             </button>

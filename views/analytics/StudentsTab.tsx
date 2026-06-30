@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { Trophy, QrCode, Search, ClipboardList } from 'lucide-react';
 
 const PAGE_SIZE = 25;
@@ -18,6 +19,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAss
     const [qrStudent, setQrStudent] = useState<string | null>(null);
     const [search, setSearch]       = useState('');
     const [page, setPage]           = useState(1);
+    const qrPrintRef = useRef<HTMLDivElement>(null);
+    const handlePrintQR = useReactToPrint({ contentRef: qrPrintRef, documentTitle: 'QR_Родители' });
 
     const qrUrl = qrStudent
         ? `${window.location.origin}/#/my-progress?name=${encodeURIComponent(qrStudent)}`
@@ -164,6 +167,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAss
                     onClick={() => setQrStudent(null)}
                 >
                     <div
+                        ref={qrPrintRef}
                         className="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-4 max-w-sm w-full"
                         onClick={e => e.stopPropagation()}
                     >
@@ -189,7 +193,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAss
                         <div className="flex gap-2 w-full">
                             <button
                                 type="button"
-                                onClick={() => window.print()}
+                                onClick={handlePrintQR}
                                 className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition"
                             >
                                 Печати QR

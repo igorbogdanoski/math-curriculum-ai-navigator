@@ -10,7 +10,7 @@ import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
 import { UploadScenarioModal } from '../components/scenario-bank/UploadScenarioModal';
 import { ScenarioSelectionModal } from '../components/scenario-bank/ScenarioSelectionModal';
 import { BatchImportModal } from '../components/scenario-bank/BatchImportModal';
-import { saveUploadDraft } from '../services/uploadDraftService';
+import { saveUploadDraft, saveUploadDraftBatch } from '../services/uploadDraftService';
 import { splitScenarios } from '../services/scenarioSplitter';
 import type { ScenarioSegment } from '../services/scenarioSplitter';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
@@ -148,31 +148,44 @@ export const ScenarioBankView: React.FC = () => {
     }));
   };
 
+  /** Build a Partial<LessonPlan> from a ScenarioBankEntry (used when fullPlan is absent) */
+  const entryToDraft = (entry: ScenarioBankEntry) => ({
+    title: entry.title,
+    grade: entry.grade,
+    theme: entry.topicTitle,
+    objectives: entry.objectives.map(text => ({ text, bloomsLevel: 'Understanding' as const })),
+    scenario: {
+      introductory: { text: entry.scenarioIntro, duration: '' },
+      main: entry.scenarioMain.map(text => ({ text, bloomsLevel: 'Understanding' as const })),
+      concluding: { text: entry.scenarioConcluding, duration: '' },
+    },
+  });
+
   const handleFork = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'warning'); return; }
     try {
-      const newId = await forkScenario(entry, firebaseUser.uid, user.name ?? 'Наставник', user.schoolName);
-      addNotification('✅ Ремиксот е создаден и додаден во Банката!', 'success');
+      await forkScenario(entry, firebaseUser.uid, user.name ?? 'Наставник', user.schoolName);
+      addNotification('✅ Ремиксот е создаден — отвора во Уредувач за уредување.', 'success');
       setEntries(prev => prev.map(e =>
         (e.id === (entry.originalId ?? entry.id)) ? { ...e, forkCount: e.forkCount + 1 } : e
       ));
-      // Open the remix in lesson editor via URL state
-      navigate(`/planner?fromBank=${newId}`);
+      // Save draft so the editor picks it up
+      const draft = entry.fullPlan ?? entryToDraft(entry);
+      await saveUploadDraft(firebaseUser.uid, draft, `Ремикс: ${entry.title}`);
+      navigate('/planner/lesson/new');
     } catch {
       addNotification('Грешка при ремиксирање.', 'error');
     }
   };
 
   const handleUse = async (entry: ScenarioBankEntry) => {
+    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
     await recordUsage(entry.id).catch(() => {});
     setEntries(prev => prev.map(e => e.id !== entry.id ? e : { ...e, usageCount: e.usageCount + 1 }));
-    if (entry.fullPlan?.id) {
-      navigate(`/planner?fromBank=${entry.id}`);
-    } else {
-      // No linked fullPlan — open the Lesson Plan Editor so the teacher can adapt it manually
-      navigate('/planner/lesson/new');
-      addNotification('📝 Сценариото е учитано — прегледај го и уреди пред да го зачуваш.', 'info');
-    }
+    // Save the full plan (or reconstructed plan) as a draft → editor picks it up automatically
+    const draft = entry.fullPlan ?? entryToDraft(entry);
+    await saveUploadDraft(firebaseUser.uid, draft, entry.title);
+    navigate('/planner/lesson/new');
   };
 
   const handleMakePublic = async (entryId: string, makePublic: boolean) => {
@@ -258,7 +271,7 @@ export const ScenarioBankView: React.FC = () => {
       if (selected.length === 1) {
         await parseSingleAndNavigate(selected[0].text, fileName);
       } else {
-        // Multiple: parse all concurrently, save first to Firestore, notify about the rest
+        // Multiple: parse all concurrently, save all to queue
         const { plansAPI } = await import('../services/gemini/plans');
         const results = await Promise.allSettled(
           selected.map(s => plansAPI.parseScenarioFromText(s.text, user ?? undefined))
@@ -268,9 +281,11 @@ export const ScenarioBankView: React.FC = () => {
           addNotification('AI не успеа да структурира ниту едно сценарио.', 'error');
           return;
         }
-        // Save first one as active draft
-        await saveUploadDraft(firebaseUser.uid, succeeded[0], `${fileName} (1/${succeeded.length})`);
-        addNotification(`✅ Увезени ${succeeded.length} сценарија — Сценарио 1 е отворено. Останатите зачувај ги рачно.`, 'success');
+        await saveUploadDraftBatch(
+          firebaseUser.uid,
+          succeeded.map((p, i) => ({ parsed: p, fileName: `${fileName} — Сценарио ${i + 1}` }))
+        );
+        addNotification(`✅ ${succeeded.length} сценарија во редица — секое ќе се отвори по ред.`, 'success');
         navigate('/planner/lesson/new');
       }
     } catch {
@@ -294,8 +309,12 @@ export const ScenarioBankView: React.FC = () => {
         addNotification('AI не успеа да структурира ниту еден фајл.', 'error');
         return;
       }
-      await saveUploadDraft(firebaseUser.uid, succeeded[0], succeeded[0]._fileName);
-      addNotification(`✅ Анализирани ${succeeded.length}/${files.length} датотеки — Прва е отворена за уредување.`, 'success');
+      await saveUploadDraftBatch(
+        firebaseUser.uid,
+        succeeded.map(p => ({ parsed: p, fileName: p._fileName }))
+      );
+      const queueMsg = succeeded.length > 1 ? ` — сите ${succeeded.length} во редица` : '';
+      addNotification(`✅ ${succeeded.length}/${files.length} датотеки анализирани${queueMsg}. Прва е отворена.`, 'success');
       setShowBatchModal(false);
       navigate('/planner/lesson/new');
     } catch {

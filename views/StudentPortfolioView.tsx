@@ -15,7 +15,8 @@
  * Педагошка основа: Portfolio Assessment (Paulson 1991), Metacognitive reflection
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import {
   Award, BookOpen, BarChart2, Star, Printer,
   TrendingUp, MessageSquare, Loader2, Sparkles, AlertCircle,
@@ -181,7 +182,8 @@ export const StudentPortfolioView: React.FC = () => {
     });
   }, [studentName, results.length, masteredConcepts.length]);
 
-  const handlePrint = () => window.print();
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: `Портфолио_${studentName}` });
 
   // ── No name → name entry screen ───────────────────────────────────────────
   if (!studentName) {
@@ -241,7 +243,7 @@ export const StudentPortfolioView: React.FC = () => {
 
   // ── Full portfolio ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-4 md:p-8 print:bg-white print:p-0">
+    <div ref={printRef} className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-4 md:p-8 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
