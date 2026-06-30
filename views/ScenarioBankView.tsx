@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2 } from 'lucide-react';
+import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2, ShieldCheck, Lock, Globe } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,11 +16,12 @@ import type { ScenarioSegment } from '../services/scenarioSplitter';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchMyScenarios, rateScenario,
-  forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic,
+  forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic, fetchAllAdmin,
 } from '../services/firestoreService.scenarioBank';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import type { ScenarioSearchResult } from '../services/ragService';
 
-type TabMode = 'all' | 'mine' | 'saved' | 'bro';
+type TabMode = 'all' | 'mine' | 'saved' | 'bro' | 'admin';
 type SortBy = 'date' | 'rating' | 'forks' | 'usage';
 
 const GRADES = [1,2,3,4,5,6,7,8,9];
@@ -348,11 +349,41 @@ export const ScenarioBankView: React.FC = () => {
     }));
   };
 
+  // ── Admin: all-entries view with pagination ──────────────────────────────
+  const isAdmin = user?.role === 'admin';
+  const [adminEntries, setAdminEntries] = useState<ScenarioBankEntry[]>([]);
+  const [adminCursor, setAdminCursor] = useState<DocumentSnapshot | null>(null);
+  const [adminHasMore, setAdminHasMore] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const loadAdmin = useCallback(async (cursor?: DocumentSnapshot) => {
+    setAdminLoading(true);
+    try {
+      const res = await fetchAllAdmin(30, cursor);
+      setAdminEntries(prev => cursor ? [...prev, ...res.entries] : res.entries);
+      setAdminCursor(res.lastDoc);
+      setAdminHasMore(res.hasMore);
+    } catch {
+      addNotification('Грешка при вчитување (admin).', 'error');
+    } finally {
+      setAdminLoading(false);
+    }
+  }, [addNotification]);
+
+  useEffect(() => {
+    if (tab === 'admin' && isAdmin) {
+      setAdminEntries([]);
+      setAdminCursor(null);
+      loadAdmin();
+    }
+  }, [tab, isAdmin, loadAdmin]);
+
   const TABS: { key: TabMode; label: string; icon: React.ReactNode }[] = [
     { key: 'all',   label: 'Сите сценарија',   icon: <Search className="w-3.5 h-3.5" /> },
     { key: 'bro',   label: 'БРО Верификувани', icon: <BadgeCheck className="w-3.5 h-3.5" /> },
     { key: 'saved', label: 'Зачувани',          icon: <BookMarked className="w-3.5 h-3.5" /> },
     { key: 'mine',  label: 'Мои сценарија',     icon: <Shuffle className="w-3.5 h-3.5" /> },
+    ...(isAdmin ? [{ key: 'admin' as TabMode, label: 'Администратор', icon: <ShieldCheck className="w-3.5 h-3.5" /> }] : []),
   ];
 
   return (
@@ -669,8 +700,139 @@ export const ScenarioBankView: React.FC = () => {
         );
       })()}
 
+      {/* ── Admin: all-entries panel ── */}
+      {tab === 'admin' && isAdmin && (
+        <div className="space-y-4">
+          {/* Stats header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-rose-600" />
+              <h2 className="text-base font-black text-gray-800">
+                Администраторски преглед — сите сценарија
+              </h2>
+              <span className="text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
+                {adminEntries.length}{adminHasMore ? '+' : ''} вкупно
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setAdminEntries([]); setAdminCursor(null); loadAdmin(); }}
+              className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              disabled={adminLoading}
+            >
+              {adminLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '↻'} Освежи
+            </button>
+          </div>
+
+          {/* Column breakdown */}
+          {adminEntries.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-xl border bg-white p-3">
+                <p className="text-xl font-black text-emerald-600">
+                  {adminEntries.filter(e => e.isPublic).length}
+                </p>
+                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
+                  <Globe className="w-3 h-3" /> Јавни
+                </p>
+              </div>
+              <div className="rounded-xl border bg-white p-3">
+                <p className="text-xl font-black text-amber-600">
+                  {adminEntries.filter(e => !e.isPublic).length}
+                </p>
+                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
+                  <Lock className="w-3 h-3" /> Приватни нацрти
+                </p>
+              </div>
+              <div className="rounded-xl border bg-white p-3">
+                <p className="text-xl font-black text-indigo-600">
+                  {adminEntries.filter(e => e.verifiedByBRO).length}
+                </p>
+                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
+                  <BadgeCheck className="w-3 h-3" /> БРО Верифиц.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {adminLoading && adminEntries.length === 0 && (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+            </div>
+          )}
+
+          {/* Admin table */}
+          {adminEntries.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Наслов</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Автор</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Одд.</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Тема</th>
+                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Статус</th>
+                    <th className="text-right px-3 py-2.5 font-bold text-gray-600">Употреби</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminEntries.map((entry, i) => (
+                    <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/40'}`}>
+                      <td className="px-3 py-2 max-w-[220px]">
+                        <p className="font-semibold text-gray-800 truncate">{entry.title}</p>
+                        {entry.forkDepth > 0 && (
+                          <span className="text-[10px] text-indigo-500">↳ Ремикс (ниво {entry.forkDepth})</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <p className="font-medium text-gray-700 truncate max-w-[140px]">{entry.authorName}</p>
+                        {entry.schoolName && <p className="text-gray-400 truncate max-w-[140px]">{entry.schoolName}</p>}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full">
+                          {entry.grade}. одд.
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 max-w-[160px]">
+                        <span className="truncate text-gray-600 block">{entry.topicTitle}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1">
+                          {entry.isPublic
+                            ? <span className="flex items-center gap-0.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold"><Globe className="w-2.5 h-2.5" /> Јавно</span>
+                            : <span className="flex items-center gap-0.5 text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold"><Lock className="w-2.5 h-2.5" /> Нацрт</span>
+                          }
+                          {entry.verifiedByBRO && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold">БРО</span>}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-gray-500">
+                        {entry.usageCount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Load more */}
+          {adminHasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => adminCursor && loadAdmin(adminCursor)}
+                disabled={adminLoading}
+                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+              >
+                {adminLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Вчитај уште 30 →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Footer hint */}
-      {sorted.length > 0 && (
+      {tab !== 'admin' && sorted.length > 0 && (
         <p className="text-center text-xs text-gray-400 pb-4">
           🎓 Секое сценарио може да се ремиксира — создај своја верзија и автоматски влегува во Банката
         </p>

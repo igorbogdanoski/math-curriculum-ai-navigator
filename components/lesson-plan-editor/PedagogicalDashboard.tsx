@@ -17,7 +17,7 @@ export const PedagogicalDashboard: React.FC<PedagogicalDashboardProps> = ({ acti
   };
 
   return (
-    <Card className="sticky top-4">
+    <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <ICONS.sparkles className="w-5 h-5 text-brand-primary" />

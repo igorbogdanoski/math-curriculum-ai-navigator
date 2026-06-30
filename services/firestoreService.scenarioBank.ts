@@ -11,8 +11,8 @@
 
 import {
   collection, doc, addDoc, updateDoc, getDoc, getDocs,
-  query, where, orderBy, limit, increment,
-  serverTimestamp, type Timestamp,
+  query, where, orderBy, limit, increment, startAfter,
+  serverTimestamp, type Timestamp, type DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { LessonPlan, BloomsLevel } from '../types';
@@ -134,6 +134,28 @@ export const fetchScenarioById = async (id: string): Promise<ScenarioBankEntry |
   const snap = await getDoc(doc(db, 'scenario_bank', id));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as ScenarioBankEntry;
+};
+
+/** Admin-only: fetch ALL entries (public + private) with cursor-based pagination */
+export const fetchAllAdmin = async (
+  pageSize = 30,
+  cursor?: DocumentSnapshot,
+): Promise<{ entries: ScenarioBankEntry[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> => {
+  const constraints: Parameters<typeof query>[1][] = [
+    where('deleted', '==', false),
+    orderBy('publishedAt', 'desc'),
+    limit(pageSize + 1),
+  ];
+  if (cursor) constraints.push(startAfter(cursor));
+
+  const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
+  const hasMore = snap.docs.length > pageSize;
+  const sliced = snap.docs.slice(0, pageSize);
+  return {
+    entries: sliced.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry)),
+    lastDoc: hasMore ? sliced[sliced.length - 1] : null,
+    hasMore,
+  };
 };
 
 export const fetchMyScenarios = async (uid: string): Promise<ScenarioBankEntry[]> => {
