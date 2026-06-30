@@ -292,18 +292,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── Национална Библиотека (national_library) ──
-    match /national_library/{doc} {
-      allow read:   if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.publishedByUid == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.publishedByUid == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['importCount']) ||
-        isAdmin()
-      );
-      allow delete: if (isAuthenticated() && resource.data.publishedByUid == request.auth.uid) || isAdmin();
-    }
-
     // ── Студентски акаунт (student_accounts) — С1 ──
     // Document ID = Google UID. Cross-device student profile.
     match /student_accounts/{uid} {

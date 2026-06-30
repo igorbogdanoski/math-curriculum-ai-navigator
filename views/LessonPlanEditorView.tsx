@@ -859,7 +859,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       {/* ── Publish to Scenario Bank Dialog ─────────────────────────────── */}
       {showPublishDialog && (
         <PublishScenarioDialog
-          plan={plan}
+          item={plan}
           isPro={user?.role === 'admin'}
           onPublish={handleConfirmPublish}
           onCancel={() => setShowPublishDialog(false)}

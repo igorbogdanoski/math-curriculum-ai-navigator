@@ -30,6 +30,7 @@ import {
 import { callImagenProxy } from '../services/gemini/core';
 import { saveToLibrary, saveQuestion } from '../services/firestoreService.materials';
 import { saveExtractedToBank } from '../services/firestoreService.scenarioBank';
+import { PublishScenarioDialog, type PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -342,7 +343,8 @@ async function buildAuthHeaders(): Promise<HeadersInit> {
 // ─── Main view ────────────────────────────────────────────────────────────────
 
 export const ExtractionHubView: React.FC = () => {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, user } = useAuth();
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
   const { addNotification } = useNotification();
   const { navigate } = useNavigation();
 
@@ -824,9 +826,12 @@ export const ExtractionHubView: React.FC = () => {
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
-  const saveAll = async () => {
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  const confirmSaveAll = async (opts: PublishScenarioOptions) => {
     if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
     setIsSaving(true);
+    setIsSavingToBank(true);
     try {
       const tasks = getActiveTasks();
       const label = sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60);
@@ -838,25 +843,15 @@ export const ExtractionHubView: React.FC = () => {
         gradeLevel: saveGrade !== '' ? saveGrade : undefined,
         topicId: saveTopicId.trim() || undefined,
       });
-      // Mirror to scenario_bank (private) for discovery
-      saveExtractedToBank({
+      await saveExtractedToBank({
         title: `Екстракција: ${label}`,
         grade: saveGrade,
         topicId: saveTopicId.trim() || undefined,
         authorUid: firebaseUser.uid,
         authorName: firebaseUser.displayName ?? 'Наставник',
         libraryDocId: libDocId ?? '',
-      }).catch(() => { /* non-critical */ });
-      addNotification(`Зачувани ${tasks.length} задачи во библиотека! ✓`, 'success');
-    } catch { addNotification('Зачувувањето не успеа.', 'error'); }
-    finally { setIsSaving(false); }
-  };
-
-  const saveAllToBank = async () => {
-    if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
-    setIsSavingToBank(true);
-    try {
-      const tasks = getActiveTasks();
+        isPublic: opts.isPublic,
+      });
       await Promise.all(tasks.map(task =>
         saveQuestion({
           question: task.latexStatement || task.statement,
@@ -869,9 +864,10 @@ export const ExtractionHubView: React.FC = () => {
           isPublic: false,
         })
       ));
-      addNotification(`${tasks.length} задачи зачувани во банка! ✓`, 'success');
+      addNotification(`Зачувани ${tasks.length} задачи во Националната Банка! ✓`, 'success');
+      setShowSaveDialog(false);
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
-    finally { setIsSavingToBank(false); }
+    finally { setIsSaving(false); setIsSavingToBank(false); }
   };
 
   const sendToGenerator = (materialType: QuickGenType = genMaterialType) => {
@@ -1581,23 +1577,13 @@ export const ExtractionHubView: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={saveAll}
-                    disabled={isSaving}
-                    title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани задачи` : 'Зачувај сите задачи во библиотека'}
+                    onClick={() => setShowSaveDialog(true)}
+                    disabled={isSaving || isSavingToBank}
+                    title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани задачи` : 'Зачувај сите задачи во Националната Банка'}
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
                   >
-                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Библиотека{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveAllToBank}
-                    disabled={isSavingToBank}
-                    title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани во банка` : 'Зачувај сите задачи во банка'}
-                    className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition"
-                  >
-                    {isSavingToBank ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                    Банка{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
+                    {(isSaving || isSavingToBank) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Зачувај{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
                   </button>
                   {/* Quick-generate split button */}
                   <div ref={genDropdownRef} className="relative">
@@ -1769,6 +1755,17 @@ export const ExtractionHubView: React.FC = () => {
             </>
           )}
         </div>
+      )}
+
+      {showSaveDialog && result && (
+        <PublishScenarioDialog
+          item={{ title: `Екстракција: ${sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60)}` }}
+          isPro={!!isPro}
+          showTeachingModel={false}
+          isLoading={isSaving || isSavingToBank}
+          onPublish={confirmSaveAll}
+          onCancel={() => setShowSaveDialog(false)}
+        />
       )}
     </div>
   );

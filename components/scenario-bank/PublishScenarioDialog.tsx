@@ -3,7 +3,6 @@ import { X, Globe, Lock, BookOpen, Star, Users } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import type { Language } from '../../i18n';
 import type { TeachingModel } from '../../services/firestoreService.scenarioBank';
-import type { LessonPlan } from '../../types';
 
 export interface PublishScenarioOptions {
   isPublic: boolean;
@@ -12,12 +11,19 @@ export interface PublishScenarioOptions {
   authorNotes: string;
 }
 
+/** Minimal shape needed to render the dialog — any lesson plan or generated material satisfies this */
+interface PublishableItem {
+  title?: string;
+}
+
 interface Props {
-  plan: Partial<LessonPlan>;
+  item: PublishableItem;
   isPro: boolean;
   onPublish: (opts: PublishScenarioOptions) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  /** Hide the teaching-model picker for non-lesson-plan materials (worksheets/quizzes/tests). Default: true */
+  showTeachingModel?: boolean;
 }
 
 const MODELS: TeachingModel[] = ['5E', 'PBL', 'ZPD', 'Cooperative', 'Traditional'];
@@ -93,7 +99,7 @@ const I18N: Record<string, Record<string, string>> = {
 };
 
 export const PublishScenarioDialog: React.FC<Props> = ({
-  plan, isPro, onPublish, onCancel, isLoading = false,
+  item, isPro, onPublish, onCancel, isLoading = false, showTeachingModel = true,
 }) => {
   const { language } = useLanguage();
   const lang = (language as string) in I18N ? (language as string) : 'mk';
@@ -116,8 +122,8 @@ export const PublishScenarioDialog: React.FC<Props> = ({
           <div>
             <h2 className="text-lg font-black text-gray-900">{s.title}</h2>
             <p className="text-sm text-gray-500 mt-0.5">{s.subtitle}</p>
-            {plan.title && (
-              <p className="mt-1 text-sm font-bold text-indigo-700 truncate">「{plan.title}」</p>
+            {item.title && (
+              <p className="mt-1 text-sm font-bold text-indigo-700 truncate">「{item.title}」</p>
             )}
           </div>
           <button type="button" onClick={onCancel} title={s.cancel} aria-label={s.cancel} className="p-1.5 hover:bg-gray-100 rounded-lg">
@@ -163,6 +169,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
           </div>
 
           {/* Teaching model */}
+          {showTeachingModel && (
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{s.model}</p>
             <div className="flex flex-wrap gap-1.5">
@@ -186,6 +193,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
               <p className="text-[11px] text-gray-500 italic">{MODEL_DESC[teachingModel]}</p>
             )}
           </div>
+          )}
 
           {/* DoK level */}
           <div className="space-y-2">

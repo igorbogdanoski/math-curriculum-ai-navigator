@@ -570,7 +570,8 @@ export const ScenarioBankView: React.FC = () => {
                   { key: null,                  label: 'Сите',       icon: null },
                   { key: 'lesson_plan' as EntryType, label: 'Час',  icon: <FileText className="w-3 h-3" /> },
                   { key: 'kahoot' as EntryType,     label: 'Kahoot', icon: <Gamepad2 className="w-3 h-3" /> },
-                  { key: 'extracted_material' as EntryType, label: 'Материјали', icon: <Search className="w-3 h-3" /> },
+                  { key: 'extracted_material' as EntryType, label: 'Извлечени', icon: <Search className="w-3 h-3" /> },
+                  { key: 'generated_material' as EntryType, label: 'AI Генерирани', icon: <Sparkles className="w-3 h-3" /> },
                 ] as const).map(opt => (
                   <button
                     key={String(opt.key)}

@@ -126,7 +126,6 @@ export const SECONDARY_NAV_GROUPS: NavGroupConfig[] = [
   {
     sectionI18nKey: 'sidebar.sec.resources',
     items: [
-      { i18nKey: 'nav.nationalLibrary', path: '/national-library', iconKey: 'bookOpen' },
       { i18nKey: 'nav.olympiad',        path: '/olympiad',         iconKey: 'star' },
       { i18nKey: 'nav.gallery',         path: '/gallery',          iconKey: 'gallery' },
       { i18nKey: 'nav.favorites',       path: '/favorites',        iconKey: 'bookmark' },

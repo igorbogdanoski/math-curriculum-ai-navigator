@@ -8,6 +8,7 @@ import { useState } from 'react';
 import type { User } from 'firebase/auth';
 import { geminiService } from '../../services/geminiService';
 import { firestoreService } from '../../services/firestoreService';
+import { publishMaterialFromGenerator } from '../../services/firestoreService.scenarioBank';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import { trackFirstTimeEvent, trackEvent } from '../../services/telemetryService';
 import type {
@@ -80,7 +81,6 @@ export function useGeneratorSave({
     if (!material) return;
     if (savedToLibrary.has(keyHint)) return;
     try {
-      const conceptId = state.selectedConcepts[0] ?? null;
       const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
       const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
         QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
@@ -93,19 +93,21 @@ export function useGeneratorSave({
         title = await geminiService.generateSmartQuizTitle(material as unknown as Record<string, unknown>).catch(() => '');
       }
       if (!title) title = 'Генериран материјал';
-      await firestoreService.saveToLibrary(material as unknown as Record<string, unknown>, {
+      await publishMaterialFromGenerator({
         title,
-        type: libType,
-        teacherUid: firebaseUser.uid,
-        conceptId,
-        topicId: state.selectedTopic,
-        gradeLevel,
+        materialType: libType,
+        content: material as unknown as Record<string, unknown>,
+        grade: gradeLevel,
+        topicTitle: state.selectedTopic,
+        authorUid: firebaseUser.uid,
+        authorName: user?.name ?? 'Наставник',
+        schoolName: user?.schoolName,
         isPublic: isPro ? saveIsPublic : true, // FREE always public; PRO chooses
       });
       setSavedToLibrary(prev => new Set(prev).add(keyHint));
       const newAchievements = trackMaterialSaved(libType);
       const achievementMsg = newAchievements.length ? ` Ново достигнување: ${newAchievements.join(', ')}` : '';
-      addNotification(`Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚${achievementMsg}`, 'success');
+      addNotification(`Зачувано во Националната Банка! 📚${achievementMsg}`, 'success');
       // S39-F2: telemetry
       trackEvent('feature_open_save_to_library', { libType, materialType: state.materialType });
       if (libType === 'ideas' || libType === 'assessment' || libType === 'quiz') {
@@ -191,22 +193,23 @@ export function useGeneratorSave({
     if (savedToLibrary.has('package')) return;
     try {
       const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
-      const conceptId  = state.selectedConcepts[0];
       const topicTitle = (bulkResults.scenario as { title?: string })?.title
         ?? (bulkResults.quiz as { title?: string })?.title
         ?? 'Пакет материјали';
       const title = `📦 ${topicTitle}`;
-      await firestoreService.saveToLibrary(bulkResults as unknown as Record<string, unknown>, {
+      await publishMaterialFromGenerator({
         title,
-        type: 'package',
-        teacherUid: firebaseUser.uid,
-        conceptId,
-        topicId: state.selectedTopic,
-        gradeLevel,
+        materialType: 'package',
+        content: bulkResults as unknown as Record<string, unknown>,
+        grade: gradeLevel,
+        topicTitle: state.selectedTopic,
+        authorUid: firebaseUser.uid,
+        authorName: user?.name ?? 'Наставник',
+        schoolName: user?.schoolName,
         isPublic: isPro ? saveIsPublic : true,
       });
       setSavedToLibrary(prev => new Set(prev).add('package'));
-      addNotification('Пакетот е зачуван во библиотеката! 📦', 'success');
+      addNotification('Пакетот е зачуван во Националната Банка! 📦', 'success');
     } catch {
       addNotification('Грешка при зачувување на пакетот.', 'error');
     }

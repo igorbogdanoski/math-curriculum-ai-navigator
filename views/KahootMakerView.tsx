@@ -401,7 +401,7 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
         type: 'quiz',
         teacherUid: firebaseUser.uid,
       });
-      // Mirror to scenario_bank (private) so teacher can later publish it
+      // Mirror to scenario_bank (national bank, public by default)
       saveKahootToBank({
         title: quizContent.title,
         grade: Number(promptGrade?.level ?? 0),
@@ -410,6 +410,7 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
         authorUid: firebaseUser.uid,
         authorName: firebaseUser.displayName ?? 'Наставник',
         libraryDocId: quizId,
+        isPublic: true,
       }).catch(() => { /* non-critical */ });
       const autoLaunch = { quizId, quizTitle: quizContent.title, timerPerQuestion: timerSeconds };
       try { sessionStorage.setItem(AUTO_LAUNCH_KEY, JSON.stringify(autoLaunch)); } catch { /* quota */ }
