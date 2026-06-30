@@ -8,6 +8,7 @@ import { SilentErrorBoundary } from '../common/SilentErrorBoundary';
 import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
+import { AI_COSTS } from '../../services/gemini/core';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
@@ -519,7 +520,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   };
 
   const handleGenerateImage = async (idx: number, prompt: string) => {
-    const cost = 5; // AI_COSTS.ILLUSTRATION
+    const cost = AI_COSTS.ILLUSTRATION;
     
     // Credit check
     if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {

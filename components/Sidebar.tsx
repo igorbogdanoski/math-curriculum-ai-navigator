@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Gift } from 'lucide-react';
 import { trackEvent } from '../services/telemetryService';
 import { APP_NAME, ICONS } from '../constants';
+import { LOW_CREDITS_THRESHOLD, CREDITS_WARN_EARLY } from '../hooks/useSubscriptionStatus';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
@@ -161,9 +162,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     if (user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin') return;
     const balance = user?.aiCreditsBalance;
     if (typeof balance !== 'number') return;
-    if (balance > 10 || balance < 0) return;
+    if (balance > CREDITS_WARN_EARLY || balance < 0) return;
     quotaWarningEmittedRef.current = true;
-    trackEvent('quota_warning_seen', { balance, source: 'sidebar_meter', threshold: 10 });
+    trackEvent('quota_warning_seen', { balance, source: 'sidebar_meter', threshold: CREDITS_WARN_EARLY });
   }, [user?.aiCreditsBalance, user?.isPremium, user?.hasUnlimitedCredits, user?.role]);
 
   // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
@@ -175,6 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     '/exam', '/dugga',
     '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
     '/national-library', '/olympiad', '/gallery', '/favorites', '/reports/coverage',
+    // Note: /scenario-bank is PRIMARY nav — intentionally excluded here so secondary doesn't auto-expand
   ];
   const isSecondaryPath = (p: string) => SECONDARY_PATHS.some(sp => p === sp || p.startsWith(sp));
 
@@ -233,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/matura-assignments" currentPath={currentPath} icon={ICONS.education} label={t('nav.maturaAssignments')} onClick={onClose} badge="new" />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t('nav.mylessons')} onClick={onClose} />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t('nav.analytics')} onClick={onClose} />
-          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t('nav.library')} onClick={onClose} />
+          <NavItem path="/scenario-bank" currentPath={currentPath} icon={ICONS.bookOpen} label={t('nav.scenarioBank')} onClick={onClose} badge="hub" />
           <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label={t('nav.forum')} onClick={onClose} badge="cop" unreadCount={forumUnread} />
           {(user?.role === 'school_admin' || user?.role === 'admin') && (
             <>
@@ -355,18 +357,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           ) : (
             <div
               className={`w-full flex items-center justify-between bg-white text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border transition-colors cursor-pointer ${
-                (user?.aiCreditsBalance ?? 0) <= 5
+                (user?.aiCreditsBalance ?? 0) <= LOW_CREDITS_THRESHOLD
                   ? 'border-amber-300 bg-amber-50 hover:border-amber-400'
                   : 'border-gray-200 hover:border-brand-primary hover:bg-gray-50'
               }`}
-              onClick={() => { navigate((user?.aiCreditsBalance ?? 0) <= 5 ? '/pricing' : '/usage'); onClose(); }}
+              onClick={() => { navigate((user?.aiCreditsBalance ?? 0) <= LOW_CREDITS_THRESHOLD ? '/pricing' : '/usage'); onClose(); }}
             >
               <span className="flex items-center gap-1.5">
                 <ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> Кредити
               </span>
-              <span className={`flex items-center gap-1 ${(user?.aiCreditsBalance ?? 0) > 10 ? 'text-emerald-600' : 'text-red-500'}`}>
+              <span className={`flex items-center gap-1 ${(user?.aiCreditsBalance ?? 0) > CREDITS_WARN_EARLY ? 'text-emerald-600' : 'text-red-500'}`}>
                 {user?.aiCreditsBalance || 0}
-                {(user?.aiCreditsBalance ?? 0) <= 5 && <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1 rounded">→ Pro</span>}
+                {(user?.aiCreditsBalance ?? 0) <= LOW_CREDITS_THRESHOLD && <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1 rounded">→ Pro</span>}
               </span>
             </div>
           )}

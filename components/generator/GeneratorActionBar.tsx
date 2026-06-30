@@ -1,7 +1,14 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Coins } from 'lucide-react';
 import { ICONS } from '../../constants';
 import type { MaterialType } from '../../types';
+import { useSubscriptionStatus } from '../../hooks/useSubscriptionStatus';
+
+const CreditChip: React.FC<{ cost: number }> = ({ cost }) => (
+  <span className="flex items-center gap-0.5 text-[10px] font-black opacity-70 ml-1 bg-white/20 px-1.5 py-0.5 rounded-full">
+    <Coins className="w-2.5 h-2.5" />{cost}
+  </span>
+);
 
 interface GeneratorActionBarProps {
   currentStep: number;
@@ -17,6 +24,8 @@ interface GeneratorActionBarProps {
   onGenerateVariants: () => void;
   onBulkGenerate: () => void;
   onGenerateFromBank: () => void;
+  /** Credit cost for the main "Генерирај AI" action — shown as a chip if user is on free tier. */
+  mainCost?: number;
 }
 
 export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
@@ -33,7 +42,10 @@ export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
   onGenerateVariants,
   onBulkGenerate,
   onGenerateFromBank,
+  mainCost,
 }) => {
+  const { isUnlimited } = useSubscriptionStatus();
+  const showCreditChips = !isUnlimited;
   const showVariantsButton =
     materialType !== null &&
     (['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as MaterialType[]).includes(materialType);
@@ -73,7 +85,7 @@ export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
               {isGeneratingVariants ? (
                 <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...</>
               ) : (
-                <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span></>
+                <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span>{showCreditChips && <CreditChip cost={3} />}</>
               )}
             </button>
           )}
@@ -87,7 +99,7 @@ export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
             {isGeneratingBulk ? (
               <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...</>
             ) : (
-              <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span></>
+              <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span>{showCreditChips && <CreditChip cost={5} />}</>
             )}
           </button>
           {verifiedCount > 0 && (
@@ -112,7 +124,7 @@ export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
             {isGenerating ? (
               <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...</>
             ) : (
-              <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI</>
+              <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI{showCreditChips && mainCost != null && <CreditChip cost={mainCost} />}</>
             )}
           </button>
         </div>

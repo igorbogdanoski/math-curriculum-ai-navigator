@@ -169,7 +169,9 @@ export const ScenarioBankView: React.FC = () => {
     if (entry.fullPlan?.id) {
       navigate(`/planner?fromBank=${entry.id}`);
     } else {
-      addNotification('Сценариото е прикачено. Отвори Уредувач за да го примениш.', 'info');
+      // No linked fullPlan — open the Lesson Plan Editor so the teacher can adapt it manually
+      navigate('/planner/lesson/new');
+      addNotification('📝 Сценариото е учитано — прегледај го и уреди пред да го зачуваш.', 'info');
     }
   };
 

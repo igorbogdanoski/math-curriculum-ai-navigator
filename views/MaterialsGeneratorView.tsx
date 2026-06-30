@@ -36,6 +36,7 @@ import {
 } from '../components/generator/MaterialTypeStep';
 import { WizardAdvancedFields } from '../components/generator/WizardAdvancedFields';
 import { GeneratorActionBar } from '../components/generator/GeneratorActionBar';
+import { AI_COSTS } from '../services/gemini/core';
 import { GeneratorResultPanel } from '../components/generator/GeneratorResultPanel';
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
@@ -377,6 +378,14 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         onGenerateVariants={handleGenerateVariants}
                         onBulkGenerate={handleBulkGenerate}
                         onGenerateFromBank={handleGenerateFromBank}
+                        mainCost={(() => {
+                          let c = AI_COSTS.TEXT_BASIC;
+                          if (state.materialType === 'ILLUSTRATION') c = AI_COSTS.ILLUSTRATION;
+                          else if (state.materialType === 'PRESENTATION') c = AI_COSTS.PRESENTATION;
+                          else if (state.materialType === 'LEARNING_PATH') c = AI_COSTS.LEARNING_PATH;
+                          if (state.includeIllustration && state.materialType !== 'ILLUSTRATION') c += AI_COSTS.ILLUSTRATION;
+                          return c;
+                        })()}
                     />
                 </form>
             </Card>

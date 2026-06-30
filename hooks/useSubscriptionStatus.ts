@@ -3,7 +3,10 @@ import type { TeachingProfile } from '../types';
 
 export type SubscriptionTier = 'Free' | 'Pro' | 'School' | 'Unlimited';
 
-export const LOW_CREDITS_THRESHOLD = 3;
+/** Amber "low credits" UI trigger — consistent across Sidebar, UpgradeNudge, and generator guard. */
+export const LOW_CREDITS_THRESHOLD = 5;
+/** Early warning threshold — emit analytics event when approaching this level. */
+export const CREDITS_WARN_EARLY = 10;
 
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
