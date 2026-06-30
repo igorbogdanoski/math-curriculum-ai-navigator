@@ -13,7 +13,10 @@ import { CACHE_COLLECTION } from './core';
 
 /** Returns the math standards relevant to a topic + cross-curricular bridges, for grades 6-9 */
 function buildTopicStandardsHint(gradeLevel: number, topicTitle: string, conceptTitles: string[]): string {
-  if (gradeLevel < 6 || gradeLevel > 9) return '';
+  if (gradeLevel < 6) return '';
+  if (gradeLevel > 9) {
+    return `\n### СРЕДНО ОБРАЗОВАНИЕ (одд. ${gradeLevel}) — МОН наставна програма\nassessmentStandards: наведи ги исходите на учење и компетенциите за оваа единица (не користи БРО кодови III-А — тие важат само за основно образование).\n`;
+  }
 
   const topicWords = [...conceptTitles, topicTitle]
     .flatMap(t => t.toLowerCase().replace(/[^\p{L}\d\s]/giu, '').split(/\s+/))
@@ -123,7 +126,9 @@ async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: num
 
     const conceptList = concepts.map(c => c.title).join(', ');
     const topicTitle = topic?.title || "Општа математичка тема";
-    
+    const { lessonMinutes } = getGradeHoursInfo(gradeLevel);
+    const isSecondaryGrade = gradeLevel > 9;
+
     // Advanced Prompt Engineering: Chain-of-Thought + Tree of Thoughts + Persona
     // @prompt-start: lesson_ideas
     let prompt = `
@@ -146,9 +151,11 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
 - Биди екстремно креативен. Избегнувај генерички задачи.
 - Вметни реални македонски контексти (денри, локални имиња, градови).
-- ВКУПНО ВРЕМЕ: Планирај за наставен час од 40 минути.
+- ВКУПНО ВРЕМЕ: Планирај за наставен час од ${lessonMinutes} минути.
 - Секоја активност МОРА да биде детално објаснета "чекор-по-чекор".
-- СТАНДАРДИ: Користи ги официјалните национални стандарди од контекстот.
+${isSecondaryGrade
+  ? '- assessmentStandards: За средно образование — наведи исходи на учење и компетенции по МОН програма (НЕ БРО кодови III-А).'
+  : '- СТАНДАРДИ: Користи ги официјалните национални стандарди (БРО) од контекстот.'}
 
 ### ФОРМАТ
 Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
@@ -194,6 +201,11 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingProfile, image?: { base64: string, mimeType: string }): Promise<Partial<LessonPlan>> {
       const topicTitle = context.topic?.title || "Општа тема";
       const gradeLevel = context.grade?.level || 6;
+      const { lessonMinutes } = getGradeHoursInfo(gradeLevel);
+      const isSecondaryGrade = gradeLevel > 9;
+      const introMin = isSecondaryGrade ? 10 : 8;
+      const mainMin = isSecondaryGrade ? 28 : 25;
+      const endMin = lessonMinutes - introMin - mainMin;
 
       // @prompt-start: lesson_plan
       const prompt = `
@@ -211,20 +223,25 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 3. СТРУКТУРА: Осигурај се дека воведот ги мотивира учениците, главниот дел е прогресивен, а заклучокот го проверува наученото.
 
 ### ОФИЦИЈАЛНА СТРУКТУРА НА ЧАСОТ (Наставна програма МОН 2025)
-Следи ја оваа структура ТОЧНО (вкупно 40 минути):
-• Воведна активност (~8 мин): Активирање на претходно знаење, мотивирање, поставување цели.
-• Главни активности (~27 мин): Активна обработка преку групна работа / истражување / проблемска ситуација.
-• Завршна активност (~5 мин): Систематизација, задача за следниот час.
-• Рефлексија (~5 мин): Математички семафор / Излезна картичка 3-2-1 / Скала 1-5.
-
+Следи ја оваа структура ТОЧНО (вкупно ${lessonMinutes} минути):
+• Воведна активност (~${introMin} мин): Активирање на претходно знаење, мотивирање, поставување цели.
+• Главни активности (~${mainMin} мин): Активна обработка преку групна работа / истражување / проблемска ситуација.
+• Завршна активност (~${endMin} мин): Систематизација, рефлексија (семафор / 3-2-1 / скала), задача за следниот час.
+${!isSecondaryGrade ? `
 ### БЛУМОВА ТАКСОНОМИЈА — задолжително во Главни активности:
 • Ниво 4 Анализирај: „Кои информации ги имаш, а кои недостасуваат?" | „Нацртај скица/дијаграм."
 • Ниво 5 Евалуирај: „Дали резултатот има смисла?" | „Провери пред да продолжиш."
 • Ниво 6 Креирај: „Запиши го општото правило." | „Смисли слична задача во нов контекст."
 ВАЖНО: Кога ученикот „заглавил", наставникот поставува прашање — НЕ го дава следниот чекор директно.
-
+` : `
+### СРЕДНО ОБРАЗОВАНИЕ — Аналитички пристап:
+• Воведна: реален проблем / мотивациско прашање — студентот треба да почувствува потреба за концептот.
+• Главни: дедуктивно/индуктивно истражување, докази, врски меѓу концепти (апстрактно мислење).
+• Завршна: формулирање на генерализацii, самооценување, предлог за понатамошно истражување.
+assessmentStandards: наведи исходи на учење по МОН програма за одд. ${gradeLevel} — НЕ користи БРО кодови.
+`}
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
-- ВКУПНО ВРЕМЕ: Часот трае ТОЧНО 40 минути.
+- ВКУПНО ВРЕМЕ: Часот трае ТОЧНО ${lessonMinutes} минути.
 - Вклучи специфични македонски примери (денари, градови, реални контексти).
 - СТАНДАРДИ И СОДРЖИНИ: Задолжително превземи ги колоните "Стандарди за оценување" и "Содржини (и поими)" директно од RAG контекст. НЕ СМЕАТ да бидат празни.
 - СРЕДСТВА: Конкретни наставни средства (табла, креда, дигитален уред, работен лист, GeoGebra).
@@ -696,6 +713,7 @@ export async function* streamLessonPlan(
   const conceptId = concepts?.[0]?.id || 'no_concept';
 
   const isSPECTRA = options?.learningDesign === 'SPECTRA';
+  const { lessonMinutes: streamLessonMin } = getGradeHoursInfo(gradeLevel);
   const gradeBand = gradeLevel <= 5 ? 'primary' : gradeLevel <= 9 ? 'lower_secondary' : 'upper_secondary';
   const gradeBandLabel = gradeBand === 'primary'
     ? 'основно (1–5 одд.) — поедноставени, визуелни активности'
@@ -763,9 +781,11 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
 - Биди екстремно креативен. Избегнувај генерички задачи.
 - Вметни реални македонски контексти (денри, локални имиња, градови).
-- ВКУПНО ВРЕМЕ: Планирај за наставен час од 40 минути.
+- ВКУПНО ВРЕМЕ: Планирај за наставен час од ${streamLessonMin} минути.
 - Секоја активност МОРА да биде детално објаснета "чекор-по-чекор".
-- СТАНДАРДИ: Користи ги официјалните национални стандарди од контекстот.
+${gradeLevel > 9
+  ? '- assessmentStandards: За средно образование — наведи исходи на учење и компетенции по МОН програма (НЕ БРО кодови III-А).'
+  : '- СТАНДАРДИ: Користи ги официјалните национални стандарди (БРО) од контекстот.'}
 
 ### ФОРМАТ
 Врати САМО валиден JSON без никаков дополнителен текст, објаснување или markdown.

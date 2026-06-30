@@ -180,7 +180,7 @@ export const publishScenario = async (p: PublishScenarioPayload): Promise<string
     bloomLevels,
     dokLevel: p.dokLevel ?? null,
     teachingModel: p.teachingModel ?? null,
-    duration: 40,
+    duration: p.plan.grade && p.plan.grade > 9 ? 45 : 40,
     authorUid: p.authorUid,
     authorName: p.authorName,
     schoolName: p.schoolName ?? '',
