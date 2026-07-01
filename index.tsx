@@ -33,7 +33,13 @@ const updateSW = registerSW({
   },
 });
 
-// Service Worker is now automatically registered by vite-plugin-pwa. 
+// Reload when a lazy chunk 404s after a new deploy (stale HTML references old hash).
+// vite:preloadError fires whenever a dynamic import fails to load.
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload();
+});
+
+// Service Worker is now automatically registered by vite-plugin-pwa.
 // No need for window.addEventListener('load', registerServiceWorker);
 
 const rootElement = document.getElementById('root');
