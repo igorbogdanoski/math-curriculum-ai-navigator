@@ -3,6 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { shouldRunVertexShadow, runVertexShadow } from './vertexShadow';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 import { PermissionError, AIServiceError, AppError, ErrorCode } from '../../utils/errors';
+import { retryWithBackoff, circuitBreakerCall } from '../../utils/retryWithBackoff';
 import {
     DEFAULT_MODEL, PRO_MODEL, ULTIMATE_MODEL, IMAGEN_MODEL, EMBEDDING_MODEL,
     GENERATION_TIMEOUT_MS, Part, Content, ImagenProxyResponse, StreamChunk,
@@ -60,6 +61,72 @@ function anySignalAborted(signals: AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
+async function callGeminiOnce(params: {
+  model: string;
+  contents: any;
+  generationConfig?: any;
+  systemInstruction?: string;
+  safetySettings?: any;
+  userTier?: string;
+  skipTierOverride?: boolean;
+  tools?: unknown[];
+}, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
+  const effectiveSignal = signal ? anySignalAborted([signal, timeoutController.signal]) : timeoutController.signal;
+  try {
+    const token = await getAuthToken();
+    let modelToUse = params.model;
+    if (params.skipTierOverride) {
+      modelToUse = params.model;
+    } else if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
+      modelToUse = ULTIMATE_MODEL;
+    } else if (params.userTier === 'Standard') {
+      modelToUse = PRO_MODEL;
+    } else {
+      modelToUse = DEFAULT_MODEL;
+    }
+    const geminiCallStart = performance.now();
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        model: modelToUse,
+        contents: normalizeContents(params.contents),
+        config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig },
+        ...(params.tools && params.tools.length > 0 ? { tools: params.tools } : {}),
+      }),
+      signal: effectiveSignal
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        const quotaType: string = errorData.quotaType ?? 'daily';
+        if (quotaType === 'rate_limit') throw new RateLimitError('AI привремено е преоптоварен. Обидете се повторно за 60 секунди.');
+        markDailyQuotaExhausted();
+        throw new RateLimitError('Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.');
+      }
+      if (response.status === 401 || response.status === 403) throw new AuthError(errorData.error || 'Проблем со автентикација.');
+      if (response.status >= 500) throw new ServerError(errorData.error || `Серверска грешка (${response.status}).`);
+      throw new ApiError(errorData.error || `Грешка: ${response.status}`);
+    }
+    const geminiLatencyMs = Math.round(performance.now() - geminiCallStart);
+    const result = await response.json();
+    if (shouldRunVertexShadow()) {
+      runVertexShadow(modelToUse, normalizeContents(params.contents), geminiLatencyMs, token)
+        .catch(() => {});
+    }
+    return result;
+  } catch (err: any) {
+    if (err.name === 'AbortError') throw err;
+    if (err instanceof ApiError) throw err;
+    logger.error("Gemini Proxy Error:", err.message || err);
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function callGeminiProxy(params: {
   model: string;
   contents: any;
@@ -70,62 +137,21 @@ export async function callGeminiProxy(params: {
   skipTierOverride?: boolean;
   tools?: unknown[];
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
-  return queueRequest(async () => {
-    const timeoutController = new AbortController();
-    const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
-    const effectiveSignal = signal ? anySignalAborted([signal, timeoutController.signal]) : timeoutController.signal;
-    try {
-      const token = await getAuthToken();
-      let modelToUse = params.model;
-      if (params.skipTierOverride) {
-        modelToUse = params.model;
-      } else if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
-        modelToUse = ULTIMATE_MODEL;
-      } else if (params.userTier === 'Standard') {
-        modelToUse = PRO_MODEL;
-      } else {
-        modelToUse = DEFAULT_MODEL;
-      }
-      const geminiCallStart = performance.now();
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          model: modelToUse,
-          contents: normalizeContents(params.contents),
-          config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig },
-          ...(params.tools && params.tools.length > 0 ? { tools: params.tools } : {}),
-        }),
-        signal: effectiveSignal
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 429) {
-          const quotaType: string = errorData.quotaType ?? 'daily';
-          if (quotaType === 'rate_limit') throw new RateLimitError('AI привремено е преоптоварен. Обидете се повторно за 60 секунди.');
-          markDailyQuotaExhausted();
-          throw new RateLimitError('Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.');
-        }
-        if (response.status === 401 || response.status === 403) throw new AuthError(errorData.error || 'Проблем со автентикација.');
-        if (response.status >= 500) throw new ServerError(errorData.error || `Серверска грешка (${response.status}).`);
-        throw new ApiError(errorData.error || `Грешка: ${response.status}`);
-      }
-      const geminiLatencyMs = Math.round(performance.now() - geminiCallStart);
-      const result = await response.json();
-      if (shouldRunVertexShadow()) {
-        runVertexShadow(modelToUse, normalizeContents(params.contents), geminiLatencyMs, token)
-          .catch(() => {});
-      }
-      return result;
-    } catch (err: any) {
-      if (err.name === 'AbortError') throw err;
-      if (err instanceof ApiError) throw err;
-      logger.error("Gemini Proxy Error:", err.message || err);
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  });
+  return queueRequest(() =>
+    circuitBreakerCall('gemini', () =>
+      retryWithBackoff(
+        () => callGeminiOnce(params, signal),
+        {
+          maxRetries: 2,
+          baseDelayMs: 2000,
+          maxDelayMs: 12_000,
+          onRetry: (attempt, delayMs) => {
+            logger.warn(`[GeminiProxy] Retry attempt ${attempt} after ${delayMs}ms`);
+          },
+        },
+      ),
+    ),
+  );
 }
 
 export async function callImagenProxy(params: { model?: string; prompt: string }, signal?: AbortSignal): Promise<ImagenProxyResponse> {

@@ -1,4 +1,4 @@
-﻿import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
+﻿import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, writeBatch, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { logger } from '../utils/logger';
 import { type CurriculumModule } from '../data/curriculum';
@@ -119,6 +119,34 @@ export const quizService = {
     }
   },
 
+  /**
+   * Batch-save multiple quiz results in a single Firestore write.
+   * Use when saving class-wide results (e.g., live quiz end) to avoid N writes.
+   */
+  saveQuizResultBatch: async (results: QuizResult[]): Promise<string[]> => {
+    if (results.length === 0) return [];
+    const batch = writeBatch(db);
+    const refs = results.map(() => doc(collection(db, 'quiz_results')));
+    results.forEach((r, i) => batch.set(refs[i], { ...r, playedAt: serverTimestamp() }));
+    await batch.commit();
+    const ids = refs.map(r => r.id);
+
+    // Batched adaptive difficulty updates — one import, one pass
+    const needsDifficulty = results.filter(r => r.teacherUid && r.studentName && r.conceptId);
+    if (needsDifficulty.length > 0) {
+      import('./firestoreService.adaptiveDifficulty')
+        .then(({ adaptiveDifficultyService }) =>
+          Promise.allSettled(
+            needsDifficulty.map(r =>
+              adaptiveDifficultyService.updateAfterQuiz(r.teacherUid!, r.studentName!, r.conceptId!, r.percentage)
+            )
+          )
+        )
+        .catch(err => logger.warn('[AdaptiveDifficulty] batch update failed:', err));
+    }
+    return ids;
+  },
+
   syncOfflineQuizzes: async (): Promise<number> => {
     try {
       const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -126,15 +154,23 @@ export const quizService = {
       const { getPendingQuizzes, clearPendingQuiz } = await import('./indexedDBService');
       const pending = await getPendingQuizzes();
       if (pending.length === 0) return 0;
+
+      // Batch-write all pending in one Firestore round-trip (max 500 per batch)
+      const CHUNK = 500;
       let synced = 0;
-      for (const item of pending) {
+      for (let i = 0; i < pending.length; i += CHUNK) {
+        const chunk = pending.slice(i, i + CHUNK);
         try {
-          const docRef = doc(collection(db, 'quiz_results'));
-          await setDoc(docRef, { ...item.quizResult, playedAt: new Date(item.timestamp) });
-          await clearPendingQuiz(item.id);
-          synced++;
+          const batch = writeBatch(db);
+          chunk.forEach(item => {
+            const ref = doc(collection(db, 'quiz_results'));
+            batch.set(ref, { ...item.quizResult, playedAt: new Date(item.timestamp) });
+          });
+          await batch.commit();
+          await Promise.allSettled(chunk.map(item => clearPendingQuiz(item.id)));
+          synced += chunk.length;
         } catch (err) {
-          logger.error('Failed to sync offline quiz:', err);
+          logger.error(`Failed to sync offline quiz chunk [${i}–${i + chunk.length}]:`, err);
         }
       }
       return synced;
