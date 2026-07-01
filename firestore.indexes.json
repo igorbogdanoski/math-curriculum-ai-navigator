@@ -301,66 +301,6 @@
                                    ]
                     },
                     {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "gradeLevel",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "type",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "conceptId",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "gradeLevel",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "type",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
                         "collectionGroup":  "announcements",
                         "queryScope":  "COLLECTION",
                         "fields":  [
@@ -583,42 +523,6 @@
                                    ]
                     },
                     {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "gradeLevel",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "conceptId",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "type",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "conceptId",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
                         "collectionGroup":  "forum_threads",
                         "queryScope":  "COLLECTION",
                         "fields":  [
@@ -778,28 +682,6 @@
                                        },
                                        {
                                            "fieldPath":  "upvotes",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
-                        "collectionGroup":  "national_library",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "gradeLevel",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "type",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "conceptId",
-                                           "order":  "ASCENDING"
-                                       },
-                                       {
-                                           "fieldPath":  "publishedAt",
                                            "order":  "DESCENDING"
                                        }
                                    ]

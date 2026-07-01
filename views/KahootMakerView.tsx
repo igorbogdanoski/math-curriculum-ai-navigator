@@ -409,7 +409,6 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
         questionCount: valid.length,
         authorUid: firebaseUser.uid,
         authorName: firebaseUser.displayName ?? 'Наставник',
-        libraryDocId: quizId,
         isPublic: true,
       }).catch(() => { /* non-critical */ });
       const autoLaunch = { quizId, quizTitle: quizContent.title, timerPerQuestion: timerSeconds };

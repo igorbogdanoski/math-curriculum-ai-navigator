@@ -234,8 +234,6 @@ export interface SaveKahootPayload {
   authorUid: string;
   authorName: string;
   schoolName?: string;
-  /** national_library doc ID for launch link */
-  libraryDocId: string;
   /** Visibility — defaults to true (public, matches the unified save dialog default) */
   isPublic?: boolean;
 }
@@ -272,7 +270,7 @@ export const saveKahootToBank = async (p: SaveKahootPayload): Promise<string> =>
     isFeatured: false,
     deleted: false,
     isPublic: p.isPublic ?? true,
-    authorNotes: `Kahoot квиз — ${p.questionCount} прашања. libraryId: ${p.libraryDocId}`,
+    authorNotes: `Kahoot квиз — ${p.questionCount} прашања`,
   });
   return ref.id;
 };
@@ -284,7 +282,6 @@ export interface SaveExtractedMaterialPayload {
   authorUid: string;
   authorName: string;
   schoolName?: string;
-  libraryDocId: string;
   /** Visibility — defaults to true (public, matches the unified save dialog default) */
   isPublic?: boolean;
 }
@@ -322,7 +319,7 @@ export const saveExtractedToBank = async (p: SaveExtractedMaterialPayload): Prom
     isFeatured: false,
     deleted: false,
     isPublic: p.isPublic ?? true,
-    authorNotes: `Извлечен материјал. libraryId: ${p.libraryDocId}`,
+    authorNotes: 'Извлечен материјал',
   });
   return ref.id;
 };

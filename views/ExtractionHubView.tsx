@@ -28,7 +28,7 @@ import {
   generateTaskDifferentiation,
 } from '../services/gemini/visionContracts';
 import { callImagenProxy } from '../services/gemini/core';
-import { saveToLibrary, saveQuestion } from '../services/firestoreService.materials';
+import { saveQuestion } from '../services/firestoreService.materials';
 import { saveExtractedToBank } from '../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { useAuth } from '../contexts/AuthContext';
@@ -406,7 +406,6 @@ export const ExtractionHubView: React.FC = () => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [isCopiedAll, setIsCopiedAll] = useState(false);
   // S96.3 — curriculum tagging before save
   const [saveGrade, setSaveGrade] = useState<number | ''>('');
@@ -831,25 +830,15 @@ export const ExtractionHubView: React.FC = () => {
   const confirmSaveAll = async (opts: PublishScenarioOptions) => {
     if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
     setIsSaving(true);
-    setIsSavingToBank(true);
     try {
       const tasks = getActiveTasks();
       const label = sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60);
-      const saveResult = { ...result, tasks };
-      const libDocId = await saveToLibrary(saveResult, {
-        title: `Екстракција: ${label}`,
-        type: 'problems',
-        teacherUid: firebaseUser.uid,
-        gradeLevel: saveGrade !== '' ? saveGrade : undefined,
-        topicId: saveTopicId.trim() || undefined,
-      });
       await saveExtractedToBank({
         title: `Екстракција: ${label}`,
         grade: saveGrade,
         topicId: saveTopicId.trim() || undefined,
         authorUid: firebaseUser.uid,
         authorName: firebaseUser.displayName ?? 'Наставник',
-        libraryDocId: libDocId ?? '',
         isPublic: opts.isPublic,
       });
       await Promise.all(tasks.map(task =>
@@ -867,7 +856,7 @@ export const ExtractionHubView: React.FC = () => {
       addNotification(`Зачувани ${tasks.length} задачи во Националната Банка! ✓`, 'success');
       setShowSaveDialog(false);
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
-    finally { setIsSaving(false); setIsSavingToBank(false); }
+    finally { setIsSaving(false); }
   };
 
   const sendToGenerator = (materialType: QuickGenType = genMaterialType) => {
@@ -1578,11 +1567,11 @@ export const ExtractionHubView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowSaveDialog(true)}
-                    disabled={isSaving || isSavingToBank}
+                    disabled={isSaving}
                     title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани задачи` : 'Зачувај сите задачи во Националната Банка'}
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
                   >
-                    {(isSaving || isSavingToBank) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    {(isSaving) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     Зачувај{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
                   </button>
                   {/* Quick-generate split button */}
@@ -1762,7 +1751,7 @@ export const ExtractionHubView: React.FC = () => {
           item={{ title: `Екстракција: ${sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60)}` }}
           isPro={!!isPro}
           showTeachingModel={false}
-          isLoading={isSaving || isSavingToBank}
+          isLoading={isSaving}
           onPublish={confirmSaveAll}
           onCancel={() => setShowSaveDialog(false)}
         />
