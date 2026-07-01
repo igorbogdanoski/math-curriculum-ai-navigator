@@ -470,7 +470,7 @@ function AIGenerateModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [temperature, setTemperature] = useState(1.0);
+  const [temperature, setTemperature] = useState(0.7);
   const [depth, setDepth] = useState<'brief' | 'standard' | 'deep'>('standard');
 
   const handleGenerate = async () => {
@@ -485,7 +485,7 @@ function AIGenerateModal({
         temperature, depth,
       });
       const parsed = parseGeneratedQuestionsJson(raw);
-      if (!parsed.length) throw new Error('empty response');
+      if (!parsed.length) throw new Error('json_empty');
 
       const questions: DuggaQuestion[] = parsed.map(p => {
         const q = makeBlankQuestion((p.type as DuggaQuestionType) ?? 'multiple_choice');
@@ -514,8 +514,15 @@ function AIGenerateModal({
 
       onGenerated(questions);
       onClose();
-    } catch {
-      setError('Неуспешно генерирање. Провери ја JSON структурата и обиди се повторно.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'json_empty') {
+        setError('AI не врати валидни прашања. Обиди се со пониска температура (0.7) или промени ги темите.');
+      } else if (msg.includes('quota') || msg.includes('429')) {
+        setError('AI квотата е исцрпена. Обиди се по малку.');
+      } else {
+        setError('Неуспешно генерирање — можен проблем со мрежата или AI сервисот. Обиди се повторно.');
+      }
     } finally {
       setLoading(false);
     }
@@ -603,9 +610,12 @@ function AIGenerateModal({
                 />
                 <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
                   <span>0.0 — точно/строго</span>
-                  <span>1.0 — балансирано</span>
+                  <span>0.7 — балансирано</span>
                   <span>2.0 — креативно</span>
                 </div>
+                {temperature > 1.2 && (
+                  <p className="text-[10px] text-amber-600 mt-1">⚠ Висока температура може да предизвика невалиден JSON. Препорачано: 0.5–1.0</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Длабочина на прашањата</label>

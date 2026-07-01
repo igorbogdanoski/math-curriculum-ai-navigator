@@ -337,23 +337,40 @@ interface RawGeneratedQuestion {
   hint?: unknown;
 }
 
+/** Fix unescaped LaTeX backslashes inside JSON strings so JSON.parse succeeds.
+ *  e.g. "\frac" → "\\frac", "\sqrt" → "\\sqrt"
+ *  Valid JSON escape sequences (left unchanged): \\ \" \/ \b \f \n \r \t \uXXXX */
+function fixLatexBackslashes(s: string): string {
+  return s.replace(/\\([^"\\/bfnrtu0-9])/g, '\\\\$1');
+}
+
 export function parseGeneratedQuestionsJson(raw: string): RawGeneratedQuestion[] {
   if (!raw) return [];
   let cleaned = raw.trim();
   // strip surrounding ```json fences if the model added them anyway
   cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
-  // try direct parse, else extract first array
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
-  } catch { /* fallthrough */ }
+
+  const tryParse = (s: string): RawGeneratedQuestion[] | null => {
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
+    } catch { /* fallthrough */ }
+    // Retry with LaTeX backslash fix (Gemini sometimes omits double-escaping)
+    try {
+      const parsed = JSON.parse(fixLatexBackslashes(s));
+      if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
+    } catch { /* fallthrough */ }
+    return null;
+  };
+
+  const direct = tryParse(cleaned);
+  if (direct) return direct;
+
   const start = cleaned.indexOf('[');
   const end = cleaned.lastIndexOf(']');
   if (start >= 0 && end > start) {
-    try {
-      const parsed = JSON.parse(cleaned.slice(start, end + 1));
-      if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
-    } catch { /* fallthrough */ }
+    const slice = tryParse(cleaned.slice(start, end + 1));
+    if (slice) return slice;
   }
   return [];
 }
