@@ -147,7 +147,7 @@ export async function generateAndParseJSON<T>(
       const delay = match ? (parseFloat(match[1]) + 1) * 1000 : 2000 * Math.pow(2, MAX_RETRIES - retries);
       logger.warn(`[AI] Retry in ${delay}ms, ${retries} attempt(s) left.`);
       await new Promise(r => setTimeout(r, delay));
-      return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
+      return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking, customSystemInstruction, userTier, generationOverrides);
     }
     handleGeminiError(error);
   } finally {
