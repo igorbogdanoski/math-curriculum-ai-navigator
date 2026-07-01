@@ -153,4 +153,4 @@ export const SUBJECTS = [
   { id: 'geometry', label: 'Геометрија', icon: ICONS.geometry }
 ];
 
-export const APP_NAME = "Math Curriculum AI Navigator";
+export const APP_NAME = "MisMath AI";

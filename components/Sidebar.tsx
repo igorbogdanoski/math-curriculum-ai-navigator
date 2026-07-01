@@ -216,8 +216,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
 
   return (
     <aside className={`w-64 bg-white text-gray-800 flex flex-col h-screen fixed shadow-2xl z-30 no-print transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 border-r border-gray-100`}>
-      <div className="px-6 py-4 border-b flex justify-between items-center">
-        <h1 className="text-xl font-bold text-brand-primary truncate" title={APP_NAME}>{APP_NAME}</h1>
+      <div className="px-5 py-4 border-b flex justify-between items-center">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+            <span className="text-white font-black text-sm leading-none select-none" aria-hidden="true">M</span>
+          </div>
+          <h1 className="font-black text-base leading-tight min-w-0" title={APP_NAME}>
+            <span className="text-brand-primary">Mis</span><span className="text-brand-secondary">Math</span>
+            <span className="ml-1.5 text-[10px] font-bold text-white bg-brand-secondary px-1.5 py-0.5 rounded align-middle">AI</span>
+          </h1>
+        </div>
         <button type="button"
           onClick={onClose}
           className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
