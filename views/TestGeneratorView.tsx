@@ -268,9 +268,13 @@ export const TestGeneratorView: React.FC = () => {
               })
             )}
           </div>
-          {selectedTopics.length > 0 && (
+          {selectedTopics.length > 0 ? (
             <p className="text-xs text-brand-primary font-bold mt-2">
-              {selectedTopics.length} {selectedTopics.length === 1 ? 'тема избрана' : 'теми избрани'}
+              ✓ {selectedTopics.length} {selectedTopics.length === 1 ? 'тема избрана' : 'теми избрани'}
+            </p>
+          ) : topicsForGrade.length > 0 && (
+            <p className="text-xs text-amber-600 font-semibold mt-2">
+              ⚠ Избери барем една тема за да се активира копчето „Генерирај писмена"
             </p>
           )}
         </div>
@@ -385,7 +389,8 @@ export const TestGeneratorView: React.FC = () => {
               type="button"
               onClick={handleGenerate}
               disabled={!canGenerate || isGenerating}
-              className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-2xl font-black text-base shadow-xl hover:shadow-brand-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 xl:self-end whitespace-nowrap"
+              title={!canGenerate ? 'Прво избери барем една тема' : undefined}
+              className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-2xl font-black text-base shadow-xl hover:shadow-brand-primary/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 xl:self-end whitespace-nowrap"
             >
               {isGenerating
                 ? <><Loader2 className="w-5 h-5 animate-spin" /> Генерирам…</>
