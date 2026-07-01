@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger';
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
-import { X, Download, Loader2, FileImage, FileCode } from 'lucide-react';
+import { X, Loader2, FileImage, FileCode } from 'lucide-react';
 import type { InfographicLayout } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -27,7 +27,6 @@ const InfographicCard: React.FC<{ layout: InfographicLayout; cardRef?: React.Ref
         fontFamily: 'Segoe UI, Arial, sans-serif',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
         border: `3px solid ${pal.bg}`,
         borderRadius: 16,
       }}
@@ -52,7 +51,6 @@ const InfographicCard: React.FC<{ layout: InfographicLayout; cardRef?: React.Ref
 
         {/* Left column: Objectives + Vocabulary */}
         <div style={{ width: 260, minWidth: 260, background: pal.badge, padding: '20px 20px 20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Objectives */}
           <div>
             <h2 style={{ fontSize: 13, fontWeight: 800, color: pal.bg, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>
               🎯 Цели
@@ -67,7 +65,6 @@ const InfographicCard: React.FC<{ layout: InfographicLayout; cardRef?: React.Ref
             ))}
           </div>
 
-          {/* Vocabulary */}
           {layout.vocabulary.length > 0 && (
             <div>
               <h2 style={{ fontSize: 13, fontWeight: 800, color: pal.bg, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>
@@ -120,22 +117,21 @@ const InfographicCard: React.FC<{ layout: InfographicLayout; cardRef?: React.Ref
   );
 };
 
-// ─── SVG export helper ────────────────────────────────────────────────────────
+// ─── SVG export — dynamic height calculation ──────────────────────────────────
 function buildSVG(layout: InfographicLayout): string {
   const pal = PALETTES[layout.palette] || PALETTES.blue;
   const W = 800;
+  const SIDEBAR_W = 260;
+  const RIGHT_X = SIDEBAR_W + 16;
+  const RIGHT_W = W - RIGHT_X - 16;
+  const HEADER_H = 100;
+  const FOOTER_H = 60;
+  const LINE_H = 15;
 
-  // Header height
-  const headerH = 90;
-  // Estimate body height based on content
-  const bodyH = Math.max(700, layout.sections.length * 140 + 80);
-  const footerH = 56;
-  const totalH = headerH + bodyH + footerH;
-
-  const escXml = (s: string) =>
+  const esc = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-  const wrapText = (text: string, maxChars: number): string[] => {
+  const wrap = (text: string, maxChars: number): string[] => {
     const words = text.split(' ');
     const lines: string[] = [];
     let line = '';
@@ -144,65 +140,106 @@ function buildSVG(layout: InfographicLayout): string {
       else { line += word + ' '; }
     }
     if (line.trim()) lines.push(line.trim());
-    return lines;
+    return lines.length ? lines : [''];
   };
 
-  let objY = headerH + 30;
-  const objectivesSVG = layout.objectives.map((obj, i) => {
-    const lines = wrapText(obj, 22);
-    const block = `
-      <circle cx="${44}" cy="${objY + 8}" r="10" fill="${pal.bg}"/>
-      <text x="${44}" y="${objY + 12}" text-anchor="middle" fill="white" font-size="10" font-weight="700">${i + 1}</text>
-      ${lines.map((l, li) => `<text x="60" y="${objY + 8 + li * 16}" fill="${pal.text}" font-size="12" font-family="Arial">${escXml(l)}</text>`).join('')}
-    `;
-    objY += lines.length * 16 + 18;
-    return block;
-  }).join('');
+  // ── Build LEFT COLUMN elements, tracking y as we go ──────────────────────
+  const leftEls: string[] = [];
+  let leftY = HEADER_H + 28;
 
-  let secY = headerH + 20;
-  const sectionsSVG = layout.sections.map((sec) => {
-    const secH = sec.points.length * 22 + 44;
-    const block = `
-      <rect x="276" y="${secY}" width="${W - 276 - 20}" height="${secH}" rx="10" fill="white" stroke="${pal.badge}" stroke-width="1.5"/>
-      <text x="310" y="${secY + 24}" fill="${pal.text}" font-size="13" font-weight="800" font-family="Arial">${escXml(sec.icon + ' ' + sec.heading)}</text>
-      ${sec.points.map((pt, j) => {
-        const lines = wrapText(pt, 42);
-        return lines.map((l, li) => `<text x="300" y="${secY + 42 + j * 22 + li * 15}" fill="#334155" font-size="12" font-family="Arial">${escXml('› ' + (li === 0 ? l : '  ' + l))}</text>`).join('');
-      }).join('')}
-    `;
-    secY += secH + 12;
-    return block;
-  }).join('');
+  // Objectives heading
+  leftEls.push(`<text x="24" y="${leftY}" fill="${pal.bg}" font-size="11" font-weight="800" font-family="Arial">🎯 ЦЕЛИ</text>`);
+  leftY += 20;
+
+  layout.objectives.forEach((obj, i) => {
+    const lines = wrap(obj, 23);
+    leftEls.push(`<circle cx="36" cy="${leftY + 7}" r="9" fill="${pal.bg}"/>`);
+    leftEls.push(`<text x="36" y="${leftY + 11}" text-anchor="middle" fill="white" font-size="10" font-weight="700" font-family="Arial">${i + 1}</text>`);
+    lines.forEach((l, li) => {
+      leftEls.push(`<text x="52" y="${leftY + 7 + li * LINE_H}" fill="${pal.text}" font-size="12" font-family="Arial">${esc(l)}</text>`);
+    });
+    leftY += lines.length * LINE_H + 16;
+  });
+
+  if (layout.vocabulary.length > 0) {
+    leftY += 14;
+    leftEls.push(`<text x="24" y="${leftY}" fill="${pal.bg}" font-size="11" font-weight="800" font-family="Arial">📖 ПОИМИ</text>`);
+    leftY += 18;
+    layout.vocabulary.forEach(v => {
+      const termLines = wrap(v.term, 26);
+      termLines.forEach((l, li) => {
+        leftEls.push(`<text x="24" y="${leftY + li * LINE_H}" fill="${pal.text}" font-size="12" font-weight="700" font-family="Arial">${esc(l)}</text>`);
+      });
+      leftY += termLines.length * LINE_H + 2;
+      const defLines = wrap(v.definition, 28);
+      defLines.forEach((l, li) => {
+        leftEls.push(`<text x="24" y="${leftY + li * 14}" fill="#475569" font-size="11" font-family="Arial">${esc(l)}</text>`);
+      });
+      leftY += defLines.length * 14 + 10;
+    });
+  }
+  const leftColH = leftY - HEADER_H + 20;
+
+  // ── Build RIGHT COLUMN elements, tracking y as we go ─────────────────────
+  const rightEls: string[] = [];
+  let rightY = HEADER_H + 18;
+
+  layout.sections.forEach(sec => {
+    // First pass: measure content height
+    let ptY = rightY + 44;
+    const ptEls: string[] = [];
+    sec.points.forEach(pt => {
+      const lines = wrap(pt, 44);
+      lines.forEach((l, li) => {
+        ptEls.push(`<text x="${RIGHT_X + 18}" y="${ptY + li * LINE_H}" fill="#334155" font-size="12" font-family="Arial">${esc((li === 0 ? '› ' : '  ') + l)}</text>`);
+      });
+      ptY += lines.length * LINE_H + 6;
+    });
+
+    const secH = ptY - rightY + 10;
+    rightEls.push(`<rect x="${RIGHT_X}" y="${rightY}" width="${RIGHT_W}" height="${secH}" rx="10" fill="white" stroke="${pal.badge}" stroke-width="1.5"/>`);
+    rightEls.push(`<text x="${RIGHT_X + 14}" y="${rightY + 24}" fill="${pal.text}" font-size="13" font-weight="800" font-family="Arial">${esc(sec.icon + ' ' + sec.heading)}</text>`);
+    rightEls.push(...ptEls);
+    rightY += secH + 12;
+  });
+  const rightColH = rightY - HEADER_H + 16;
+
+  // ── Final dimensions ──────────────────────────────────────────────────────
+  const BODY_H = Math.max(leftColH, rightColH, 600);
+  const TOTAL_H = HEADER_H + BODY_H + FOOTER_H;
+
+  // ── Title wrap ────────────────────────────────────────────────────────────
+  const titleLines = wrap(layout.title, 50);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}">
-  <defs>
-    <style>text { font-family: Arial, sans-serif; }</style>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${TOTAL_H}" viewBox="0 0 ${W} ${TOTAL_H}">
+  <defs><style>text { font-family: Arial, sans-serif; }</style></defs>
 
   <!-- Background -->
-  <rect width="${W}" height="${totalH}" fill="${pal.light}" rx="16"/>
+  <rect width="${W}" height="${TOTAL_H}" fill="${pal.light}" rx="16"/>
 
   <!-- Header -->
-  <rect width="${W}" height="${headerH}" fill="${pal.bg}" rx="16"/>
-  <rect y="${headerH - 16}" width="${W}" height="16" fill="${pal.bg}"/>
-  <rect x="20" y="14" width="80" height="20" rx="10" fill="${pal.accent}"/>
-  <text x="60" y="28" text-anchor="middle" fill="white" font-size="11" font-weight="700">${escXml(layout.grade)}</text>
-  <rect x="110" y="14" width="90" height="20" rx="10" fill="rgba(255,255,255,0.2)"/>
-  <text x="155" y="28" text-anchor="middle" fill="white" font-size="11" font-weight="600">${escXml(layout.subject)}</text>
-  ${wrapText(layout.title, 48).map((l, i) => `<text x="20" y="${52 + i * 26}" fill="white" font-size="20" font-weight="800">${escXml(l)}</text>`).join('')}
+  <rect width="${W}" height="${HEADER_H}" fill="${pal.bg}" rx="16"/>
+  <rect y="${HEADER_H - 16}" width="${W}" height="16" fill="${pal.bg}"/>
+  <rect x="20" y="14" width="82" height="22" rx="11" fill="${pal.accent}"/>
+  <text x="61" y="29" text-anchor="middle" fill="white" font-size="11" font-weight="700">${esc(layout.grade)}</text>
+  <rect x="112" y="14" width="94" height="22" rx="11" fill="rgba(255,255,255,0.22)"/>
+  <text x="159" y="29" text-anchor="middle" fill="white" font-size="11" font-weight="600">${esc(layout.subject)}</text>
+  ${titleLines.map((l, i) => `<text x="20" y="${54 + i * 28}" fill="white" font-size="22" font-weight="800">${esc(l)}</text>`).join('\n  ')}
 
-  <!-- Left sidebar -->
-  <rect x="0" y="${headerH}" width="260" height="${bodyH}" fill="${pal.badge}"/>
-  <text x="24" y="${headerH + 20}" fill="${pal.bg}" font-size="11" font-weight="800">🎯 ЦЕЛИ</text>
-  ${objectivesSVG}
+  <!-- Left sidebar background -->
+  <rect x="0" y="${HEADER_H}" width="${SIDEBAR_W}" height="${BODY_H}" fill="${pal.badge}"/>
+
+  <!-- Left column content -->
+  ${leftEls.join('\n  ')}
 
   <!-- Right sections -->
-  ${sectionsSVG}
+  ${rightEls.join('\n  ')}
 
   <!-- Footer -->
-  <rect y="${headerH + bodyH}" width="${W}" height="${footerH}" fill="${pal.bg}"/>
-  <text x="44" y="${headerH + bodyH + 34}" fill="white" font-size="14" font-weight="600">💡 ${escXml(layout.keyMessage)}</text>
+  <rect y="${HEADER_H + BODY_H}" width="${W}" height="${FOOTER_H}" fill="${pal.bg}"/>
+  <rect y="${HEADER_H + BODY_H}" width="${W}" height="8" fill="${pal.bg}"/>
+  ${wrap('💡 ' + layout.keyMessage, 70).map((l, i) => `<text x="32" y="${HEADER_H + BODY_H + 32 + i * 18}" fill="white" font-size="13" font-weight="600">${esc(l)}</text>`).join('\n  ')}
 </svg>`;
 }
 
@@ -213,7 +250,6 @@ interface Props {
 }
 
 export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) => {
-  // captureRef is on a HIDDEN off-screen card — no parent transforms affecting it
   const captureRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const { addNotification } = useNotification();
@@ -227,9 +263,8 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
-        // Capture at full size without any transform influence
         windowWidth: 900,
-        windowHeight: 1200,
+        windowHeight: 1400,
       });
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
@@ -265,7 +300,11 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
 
   return (
     <>
-      {/* ── Hidden off-screen card for html2canvas capture ── */}
+      {/*
+       * Hidden off-screen card for html2canvas capture.
+       * IMPORTANT: must NOT use visibility:hidden — html2canvas skips hidden elements
+       * and returns a blank canvas. Off-screen position (left:-9999px) is sufficient.
+       */}
       <div
         style={{
           position: 'fixed',
@@ -273,7 +312,7 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
           top: 0,
           width: 800,
           pointerEvents: 'none',
-          visibility: 'hidden',
+          zIndex: -1,
         }}
         aria-hidden="true"
       >
@@ -323,7 +362,7 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
             </div>
           </div>
 
-          {/* Scrollable preview — CSS scale only for display, NOT for capture */}
+          {/* Scrollable preview — CSS scale for display only, NOT for capture */}
           <div className="flex-1 overflow-auto p-6 bg-gray-100 flex justify-center">
             <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center', width: 800 }}>
               <InfographicCard layout={layout} />
