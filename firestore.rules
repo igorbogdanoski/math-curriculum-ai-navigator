@@ -89,10 +89,12 @@ service cloud.firestore {
     }
 
     // ── Кеширани AI материјали (cached_ai_materials) ──
-    // read: public — students (anonymous auth) must be able to play assigned quizzes
+    // read: public by default — students (anonymous auth) must be able to play quizzes.
+    //   isPrivate=true materials require authentication (teacher set them private).
+    //   Anonymous students are Firebase anonymous-auth users, so isAuthenticated() passes them.
     // И3: any authenticated teacher may update ratingsByUid (dot-notation field)
     match /cached_ai_materials/{doc} {
-      allow read:   if true;
+      allow read:   if !resource.data.get('isPrivate', false) || isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()
