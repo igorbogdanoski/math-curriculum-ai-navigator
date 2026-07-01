@@ -74,6 +74,14 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId]);
 
+  // Sync selectedGradeId from loaded plan title (edit mode)
+  useEffect(() => {
+    if (!planId || !plan || !curriculum) return;
+    const match = curriculum.grades.find(g => g.title === plan.grade);
+    if (match) setSelectedGradeId(match.id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId, plan?.grade, curriculum]);
+
   const handleSave = async () => {
     if (!user || !plan || !firebaseUser?.uid) return;
     setIsSaving(true);
