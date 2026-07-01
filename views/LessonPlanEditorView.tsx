@@ -32,6 +32,7 @@ import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonP
 import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
 import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
 import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
+import { BROLessonScenarioForm } from '../components/planner/BROLessonScenarioForm';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { CoachBubble } from '../components/common/CoachBubble';
@@ -82,6 +83,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [autoShareToBank, setAutoShareToBank] = useState(false);
   const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
   const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [officialLessonTemplate, setOfficialLessonTemplate] = useState<'mon' | 'bro'>('mon');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
   const [showUploadBanner, setShowUploadBanner] = useState(false);
@@ -144,13 +146,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const handleLessonOfficialPrint = useReactToPrint({
     contentRef: lessonOfficialFormRef,
     documentTitle: `Сценарио_на_час_${id ?? 'novo'}`,
-    pageStyle: `
-      @page { size: A4 portrait; margin: 10mm; }
-      @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        thead { display: table-header-group; }
-      }
-    `,
+    pageStyle: officialLessonTemplate === 'bro'
+      ? `@page { size: A4 landscape; margin: 10mm 12mm; } * { box-sizing: border-box; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; } table { border-collapse: collapse !important; width: 100% !important; } thead { display: table-header-group !important; } tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }`
+      : `@page { size: A4 ${officialLessonOrientation}; margin: 10mm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } thead { display: table-header-group; }`,
   });
 
   useEffect(() => {
@@ -879,35 +877,59 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           aria-label="Официјален образец за Подготовка за час"
         >
           <div
-            className={`bg-white rounded-lg shadow-xl w-full overflow-hidden flex flex-col max-h-[95vh] ${officialLessonOrientation === 'landscape' ? 'max-w-5xl' : 'max-w-4xl'}`}
+            className={`bg-white rounded-lg shadow-xl w-full overflow-hidden flex flex-col max-h-[95vh] ${officialLessonTemplate === 'bro' || officialLessonOrientation === 'landscape' ? 'max-w-6xl' : 'max-w-4xl'}`}
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
+            <div className="p-3 border-b flex-shrink-0 flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-brand-primary flex items-center gap-2">
                 <ICONS.printer className="w-5 h-5" />
                 Подготовка за наставен час — МОН образец
               </h2>
-              <div className="flex items-center gap-2">
-                {/* Orientation toggle */}
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
+              <div className="flex items-center gap-2 flex-wrap">
+
+                {/* Template switcher */}
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-bold">
                   <button
                     type="button"
-                    onClick={() => setOfficialLessonOrientation('portrait')}
-                    title="A4 Portrait (вертикален)"
-                    className={`px-2.5 py-1.5 transition-colors ${officialLessonOrientation === 'portrait' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    onClick={() => setOfficialLessonTemplate('mon')}
+                    title="МОН Цели (когнитивни, психомоторни, афективни)"
+                    className={`px-3 py-1.5 transition-colors ${officialLessonTemplate === 'mon' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                   >
-                    ▯ Portrait
+                    📋 МОН Образец
                   </button>
                   <button
                     type="button"
-                    onClick={() => setOfficialLessonOrientation('landscape')}
-                    title="A4 Landscape (хоризонтален) — препорачано"
-                    className={`px-2.5 py-1.5 border-l border-gray-200 transition-colors ${officialLessonOrientation === 'landscape' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    onClick={() => setOfficialLessonTemplate('bro')}
+                    title="БРО табела — Содржина / Стандарди / Сценарио / Средства / Следење"
+                    className={`px-3 py-1.5 border-l border-gray-300 transition-colors ${officialLessonTemplate === 'bro' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                   >
-                    ▭ Landscape
+                    📊 БРО Табела
                   </button>
                 </div>
+
+                {/* Orientation toggle — hidden for BRO (always landscape) */}
+                {officialLessonTemplate === 'mon' && (
+                  <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setOfficialLessonOrientation('portrait')}
+                      title="A4 Portrait (вертикален)"
+                      className={`px-2.5 py-1.5 transition-colors ${officialLessonOrientation === 'portrait' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    >
+                      ▯ Portrait
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOfficialLessonOrientation('landscape')}
+                      title="A4 Landscape (хоризонтален) — препорачано"
+                      className={`px-2.5 py-1.5 border-l border-gray-200 transition-colors ${officialLessonOrientation === 'landscape' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    >
+                      ▭ Landscape
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setOfficialLessonEditing(v => !v)}
@@ -948,12 +970,26 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
             {/* Scrollable form */}
             <div className="overflow-auto flex-1 p-4 bg-gray-100">
-              <div ref={lessonOfficialFormRef} className={`bg-white shadow-sm mx-auto ${officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'}`}>
-                <LessonPlanOfficialForm
-                  plan={plan}
-                  orientation={officialLessonOrientation}
-                  isEditable={officialLessonEditing}
-                />
+              <div
+                ref={lessonOfficialFormRef}
+                className={`bg-white shadow-sm mx-auto ${
+                  officialLessonTemplate === 'bro'
+                    ? 'max-w-5xl p-6'
+                    : officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'
+                }`}
+              >
+                {officialLessonTemplate === 'mon' ? (
+                  <LessonPlanOfficialForm
+                    plan={plan}
+                    orientation={officialLessonOrientation}
+                    isEditable={officialLessonEditing}
+                  />
+                ) : (
+                  <BROLessonScenarioForm
+                    plan={plan}
+                    isEditable={officialLessonEditing}
+                  />
+                )}
               </div>
             </div>
           </div>
