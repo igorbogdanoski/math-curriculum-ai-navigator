@@ -25,6 +25,7 @@ vi.mock('firebase/firestore', () => ({
   query: vi.fn((coll, ..._constraints) => ({ __type: 'query', coll })),
   where: vi.fn((field, op, val) => ({ __type: 'where', field, op, val })),
   orderBy: vi.fn((field) => ({ __type: 'orderBy', field })),
+  limit: vi.fn((n) => ({ __type: 'limit', n })),
   serverTimestamp: () => mockServerTimestamp(),
 }));
 
