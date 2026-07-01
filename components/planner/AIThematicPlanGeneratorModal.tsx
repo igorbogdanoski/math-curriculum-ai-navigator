@@ -677,14 +677,14 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     return (
         <>
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-6 overflow-y-auto animate-fade-in"
             onClick={hideModal}
             role="dialog"
             aria-modal="true"
             aria-labelledby="ai-thematic-plan-title"
         >
             <div
-                className="bg-white rounded-lg shadow-xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[95vh]"
+                className="bg-white rounded-lg shadow-xl max-w-5xl w-full overflow-hidden flex flex-col my-0 min-h-0 max-h-[calc(100vh-3rem)]"
                 onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
                 {/* Header */}
