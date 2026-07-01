@@ -176,7 +176,7 @@ export const schoolService = {
 
   fetchAllUsers: async (): Promise<Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>> => {
     try {
-      const snap = await getDocs(collection(db, 'users'));
+      const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(2000)));
       return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>;
     } catch (error) {
       logger.error('Error fetching all users:', error);
@@ -257,7 +257,7 @@ export const schoolService = {
     try {
       const [schoolsSnap, usersSnap, quizSnap] = await Promise.all([
         getDocs(collection(db, 'schools')),
-        getDocs(query(collection(db, 'users'), where('role', '==', 'teacher'))),
+        getDocs(query(collection(db, 'users'), where('role', '==', 'teacher'), limit(2000))),
         getDocs(query(collection(db, 'quiz_results'), orderBy('playedAt', 'desc'), limit(2000))),
       ]);
 
@@ -367,7 +367,7 @@ export const schoolService = {
         const materialCounts: Record<string, number> = {};
         for (let i = 0; i < teacherUids.length; i += BATCH) {
           const batch = teacherUids.slice(i, i + BATCH);
-          const matSnap = await getDocs(query(collection(db, 'cached_ai_materials'), where('teacherUid', 'in', batch)));
+          const matSnap = await getDocs(query(collection(db, 'cached_ai_materials'), where('teacherUid', 'in', batch), limit(1000)));
           matSnap.forEach(d => {
             const uid = d.data().teacherUid as string;
             materialCounts[uid] = (materialCounts[uid] ?? 0) + 1;

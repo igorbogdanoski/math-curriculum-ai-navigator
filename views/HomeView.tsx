@@ -1,4 +1,5 @@
 import { useTour } from '../hooks/useTour';
+import { isUnlimitedProfile } from '../hooks/useSubscriptionStatus';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap, X, Rocket, Users, FileText } from 'lucide-react';
@@ -200,59 +201,48 @@ const ChartTabs: React.FC<{
 };
 
 // ── AI Credits Usage Widget ───────────────────────────────────────────────────
-const AICreditsWidget: React.FC<{ user: import('../types').TeachingProfile | null }> = ({ user }) => {
-  const [resetIn, setResetIn] = useState('');
-  const isPro = !!(user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin');
+const INITIAL_CREDITS = 50;
 
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      const next = new Date(now);
-      next.setHours(9, 0, 0, 0); // 09:00 МК = Pacific midnight
-      if (now.getHours() >= 9) next.setDate(next.getDate() + 1);
-      const diff = next.getTime() - now.getTime();
-      const h = Math.floor(diff / 3_600_000);
-      const m = Math.floor((diff % 3_600_000) / 60_000);
-      setResetIn(`${h}ч ${m}мин`);
-    };
-    tick();
-    const id = setInterval(tick, 60_000);
-    return () => clearInterval(id);
-  }, []);
+const AICreditsWidget: React.FC<{ user: import('../types').TeachingProfile | null }> = ({ user }) => {
+  const isPro = isUnlimitedProfile(user);
 
   if (isPro) {
     return (
-      <div className="flex items-center gap-2.5 bg-violet-50 border border-violet-200 rounded-xl px-4 py-2.5">
-        <span className="text-violet-600 font-black text-lg leading-none">∞</span>
+      <div className="flex items-center gap-2.5 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl px-4 py-2.5">
+        <span className="text-violet-600 font-black text-xl leading-none">∞</span>
         <div>
           <p className="text-xs font-bold text-violet-700">Pro — Неограничени AI генерации</p>
-          <p className="text-[11px] text-violet-500">Нема дневен лимит</p>
+          <p className="text-[11px] text-violet-500">Генерирај без ограничување</p>
         </div>
       </div>
     );
   }
 
-  const credits = user?.aiCreditsBalance ?? 5;
-  const maxCredits = 5;
-  const pct = Math.min(100, Math.round((credits / maxCredits) * 100));
-  const barColor = credits === 0 ? 'bg-red-400' : credits <= 2 ? 'bg-amber-400' : 'bg-emerald-400';
-  const textColor = credits === 0 ? 'text-red-600' : credits <= 2 ? 'text-amber-600' : 'text-emerald-600';
+  const credits = user?.aiCreditsBalance ?? INITIAL_CREDITS;
+  const pct = Math.min(100, Math.round((credits / INITIAL_CREDITS) * 100));
+  const isLow = credits <= 10;
+  const isEmpty = credits === 0;
+  const barColor = isEmpty ? 'bg-red-400' : isLow ? 'bg-amber-400' : 'bg-emerald-400';
+  const textColor = isEmpty ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-emerald-600';
+  const bgColor = isEmpty ? 'border-red-200 bg-red-50/50' : isLow ? 'border-amber-200 bg-amber-50/50' : 'border-slate-200 bg-white';
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-4 shadow-sm">
+    <div className={`${bgColor} border rounded-xl px-4 py-3 flex items-center gap-4 shadow-sm transition-colors`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            AI Кредити денес
+            AI Кредити
           </span>
-          <span className="text-[11px] text-slate-400">Обнова за {resetIn}</span>
+          <span className="text-[11px] text-slate-400">{credits} преостанати</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           {/* eslint-disable-next-line react/forbid-component-props */}
           <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-[11px] text-slate-500 mt-1">{credits} / {maxCredits} генерации преостанати</p>
+        <p className="text-[11px] text-slate-500 mt-1">
+          {isEmpty ? 'Нема кредити — надополни или надгради на Pro' : `${credits} / ${INITIAL_CREDITS} генерации`}
+        </p>
       </div>
       <div className={`text-2xl font-black tabular-nums ${textColor}`}>{credits}</div>
     </div>
@@ -373,33 +363,35 @@ export const HomeView: React.FC = () => {
       {/* ── HERO HEADER ──────────────────────────────────────────── */}
       <div
         data-tour="dashboard-header"
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-primary via-blue-700 to-indigo-700 px-6 py-6 shadow-lg text-white"
+        className="home-hero-card relative overflow-hidden rounded-2xl px-6 py-6 shadow-lg text-white"
       >
-        {/* dot-grid texture overlay */}
+        {/* dot-grid texture + glow blobs */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle,white_1.5px,transparent_0)] [background-size:22px_22px]" />
+        <div className="pointer-events-none absolute -top-12 -right-12 w-56 h-56 rounded-full home-hero-glow-tr" />
+        <div className="pointer-events-none absolute -bottom-8 -left-8 w-40 h-40 rounded-full home-hero-glow-bl" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Date + greeting + today's lesson */}
           <div>
-            <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-              <ICONS.planner className="w-3.5 h-3.5" />
+            <p className="text-white/55 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <ICONS.planner className="w-3 h-3" />
               {todayFormatted}
             </p>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
-              Здраво, {firstName}
+            <h1 className="text-2xl md:text-[28px] font-black tracking-tight leading-tight">
+              Здраво, <span className="text-white">{firstName}</span> 👋
             </h1>
             {todaysLesson ? (
-              <p className="mt-1.5 text-white/80 text-sm flex items-center gap-1.5">
-                <ICONS.bookOpen className="w-4 h-4 flex-shrink-0" />
+              <p className="mt-2 text-white/80 text-sm flex items-center gap-1.5 max-w-sm">
+                <ICONS.bookOpen className="w-4 h-4 flex-shrink-0 text-cyan-300" />
                 <span>Денес: <span className="text-white font-semibold">{todaysLesson.title}</span></span>
               </p>
             ) : (
-              <p className="mt-1.5 text-white/60 text-sm">
+              <p className="mt-2 text-white/55 text-sm">
                 Нема закажани лекции денес —{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/planner')}
-                  className="underline hover:text-white transition-colors"
+                  className="underline underline-offset-2 hover:text-white transition-colors"
                 >
                   додај во планерот
                 </button>
@@ -412,7 +404,7 @@ export const HomeView: React.FC = () => {
             <button
               type="button"
               onClick={() => openGeneratorPanel({})}
-              className="flex items-center gap-2 bg-white text-brand-primary text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-white/90 transition shadow-md active:scale-95 whitespace-nowrap"
+              className="flex items-center gap-2 bg-white text-brand-primary text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-blue-50 transition-all shadow-md active:scale-95 whitespace-nowrap"
             >
               <ICONS.sparkles className="w-4 h-4" />
               AI Генератор
@@ -420,7 +412,7 @@ export const HomeView: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/planner/lesson/new')}
-              className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-white/20 whitespace-nowrap"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all border border-white/20 active:scale-95 whitespace-nowrap"
             >
               <ICONS.plus className="w-4 h-4" />
               Нова подготовка
@@ -430,27 +422,27 @@ export const HomeView: React.FC = () => {
 
         {/* ── Quick Stats pills ── */}
         {!isStatsLoading && (
-          <div className="relative mt-3 flex flex-wrap gap-2">
+          <div className="relative mt-4 flex flex-wrap gap-2">
             {overallStats.totalPlans > 0 && (
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-3 py-1 text-xs font-semibold text-white/90">
+              <span className="inline-flex items-center gap-1.5 bg-white/12 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white/90 border border-white/10">
                 <BookOpen className="w-3 h-3" />
                 {overallStats.totalPlans} планови
               </span>
             )}
             {overallStats.standardsCoverage > 0 && (
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-3 py-1 text-xs font-semibold text-white/90">
+              <span className="inline-flex items-center gap-1.5 bg-white/12 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white/90 border border-white/10">
                 <BarChart2 className="w-3 h-3" />
                 {overallStats.standardsCoverage}% стандарди
               </span>
             )}
             {overallStats.reflectionRate > 0 && (
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-3 py-1 text-xs font-semibold text-white/90">
+              <span className="inline-flex items-center gap-1.5 bg-white/12 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white/90 border border-white/10">
                 <Sparkles className="w-3 h-3" />
                 {overallStats.reflectionRate}% рефлексии
               </span>
             )}
             {(spacedRepDue?.length ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 bg-amber-400/40 border border-amber-300/40 rounded-full px-3 py-1 text-xs font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 bg-amber-400/30 border border-amber-300/30 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-amber-200">
                 <Zap className="w-3 h-3" />
                 {spacedRepDue!.length} SRS за повторување
               </span>

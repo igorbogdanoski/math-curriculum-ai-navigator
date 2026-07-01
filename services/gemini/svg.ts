@@ -8,7 +8,7 @@
  * Key constraint: NO <text> elements — avoids Macedonian font issues.
  */
 
-import { callGeminiProxy, DEFAULT_MODEL } from './core';
+import { callGeminiProxy, DEFAULT_MODEL, sanitizePromptInput } from './core';
 import { AIServiceError } from '../../utils/errors';
 
 // @prompt-start: SVG_SYSTEM_PROMPT
@@ -36,7 +36,8 @@ Strict rules:
  * Throws on failure — caller should catch and show fallback.
  */
 export async function generateMathSVG(visualPrompt: string): Promise<string> {
-  const prompt = `Draw an SVG math diagram for this context: "${visualPrompt}"
+  const safePrompt = sanitizePromptInput(visualPrompt, 300);
+  const prompt = `Draw an SVG math diagram for this context: "${safePrompt}"
 Rules: no text labels, dark-mode friendly (light strokes on transparent), viewBox="0 0 400 300".
 Return ONLY the SVG code.`;
 

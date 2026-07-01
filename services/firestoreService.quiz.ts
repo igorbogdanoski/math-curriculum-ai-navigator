@@ -65,7 +65,8 @@ export const quizService = {
 
   loadUserCurriculumEdits: async (userId: string): Promise<Record<string, { assessmentStandards?: string[]; activities?: string[] }>> => {
     try {
-      const snap = await getDocs(collection(db, 'users', userId, 'curriculumEdits'));
+      const q = query(collection(db, 'users', userId, 'curriculumEdits'), orderBy('updatedAt', 'desc'), limit(300));
+      const snap = await getDocs(q);
       const edits: Record<string, { assessmentStandards?: string[]; activities?: string[] }> = {};
       snap.forEach(d => { edits[d.id] = d.data() as { assessmentStandards?: string[]; activities?: string[] }; });
       return edits;

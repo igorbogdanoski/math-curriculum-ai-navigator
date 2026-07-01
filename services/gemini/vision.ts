@@ -1,6 +1,7 @@
 import {
     DEFAULT_MODEL, SAFETY_SETTINGS, callGeminiProxy,
     checkDailyQuotaGuard, getResolvedTextSystemInstruction, getAILanguageRule,
+    sanitizePromptInput,
 } from './core';
 
 export const visionAPI = {
@@ -12,7 +13,8 @@ async analyzeHandwriting(
     options?: { detailMode?: 'standard' | 'detailed' }
   ): Promise<string> {
     checkDailyQuotaGuard();
-    const contextLine = conceptContext ? `Контекст: ученикот работи на концептот „${conceptContext}".` : '';
+    const safeContext = sanitizePromptInput(conceptContext, 200);
+    const contextLine = safeContext ? `Контекст: ученикот работи на концептот „${safeContext}".` : '';
     const detailMode = options?.detailMode ?? 'standard';
     const detailInstruction = detailMode === 'detailed'
       ? `\n5. **Педагошка дијагноза** — за секоја грешка наведи тип на заблуда (пр. процедурна/концептуална), зошто се јавува и како наставник да интервенира во 1-2 чекори.\n6. **Следни микро-чекори** — дај 2 кратки вежби (со насока, без целосно решение) за да се поправи истата грешка.`
@@ -44,7 +46,8 @@ async analyzeDocumentText(
     options?: { detailMode?: 'standard' | 'detailed' }
   ): Promise<string> {
     checkDailyQuotaGuard();
-    const contextLine = conceptContext ? `Контекст: ученикот работи на концептот „${conceptContext}".` : '';
+    const safeContext2 = sanitizePromptInput(conceptContext, 200);
+    const contextLine = safeContext2 ? `Контекст: ученикот работи на концептот „${safeContext2}".` : '';
     const detailMode = options?.detailMode ?? 'standard';
     const detailInstruction = detailMode === 'detailed'
       ? `\n5. **Педагошка дијагноза** — за секоја грешка наведи тип на заблуда (процедурна/концептуална), зошто се јавува и предлог за интервенција.\n6. **Следни микро-чекори** — дај 2 кратки вежби (со насока, без целосно решение) за поправка на грешката.`

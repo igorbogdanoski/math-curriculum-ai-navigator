@@ -127,8 +127,8 @@ export const adaptiveDifficultyService = {
     teacherUid: string,
   ): Promise<Record<string, StudentDifficultyDoc>> => {
     try {
-      const { collection, getDocs } = await import('firebase/firestore');
-      const col = collection(db, 'adaptive_difficulty', teacherUid, 'students');
+      const { collection, getDocs, query, limit } = await import('firebase/firestore');
+      const col = query(collection(db, 'adaptive_difficulty', teacherUid, 'students'), limit(150));
       const snaps = await getDocs(col);
       const result: Record<string, StudentDifficultyDoc> = {};
       snaps.forEach(s => {

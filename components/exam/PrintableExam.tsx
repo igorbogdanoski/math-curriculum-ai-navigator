@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { parseInlineSelection } from '../../utils/printExam';
 
 // ─── Print question type definitions ─────────────────────────────────────────
@@ -282,7 +283,7 @@ const QuestionBlock: React.FC<{ q: PrintQuestion; showAnswers: boolean }> = ({ q
         return (
           <div className="mt-2 ml-4">
             {q.svgDiagram ? (
-              <div dangerouslySetInnerHTML={{ __html: q.svgDiagram }} className="mb-2" />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.svgDiagram, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['script','style'] }) }} className="mb-2" />
             ) : null}
             <GridArea rows={q.gridRows ?? 10} cols={q.gridCols ?? 14} />
             {show && q.answer && <AnswerKey answer={q.answer} />}
@@ -293,7 +294,7 @@ const QuestionBlock: React.FC<{ q: PrintQuestion; showAnswers: boolean }> = ({ q
         return (
           <div className="mt-2 ml-4">
             {q.svgDiagram ? (
-              <div dangerouslySetInnerHTML={{ __html: q.svgDiagram }} className="mb-2" />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.svgDiagram, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['script','style'] }) }} className="mb-2" />
             ) : (
               <div className="border border-dashed border-gray-300 h-32 rounded flex items-center justify-center text-gray-300 text-xs">
                 [Дијаграм]

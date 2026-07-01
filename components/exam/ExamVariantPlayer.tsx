@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { Sigma } from 'lucide-react';
 import type { ExamQuestion } from '../../services/firestoreService.types';
 import { MathInput } from '../common/MathInput';
@@ -89,7 +90,7 @@ export const ExamVariantPlayer: React.FC<ExamVariantPlayerProps> = ({
               {q.svgDiagram && (
                 <div
                   className="mt-3 p-2 bg-gray-50 rounded-lg overflow-auto"
-                  dangerouslySetInnerHTML={{ __html: q.svgDiagram }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.svgDiagram, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['script','style'] }) }}
                 />
               )}
             </div>

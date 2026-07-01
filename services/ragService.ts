@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { Topic, Concept } from '../types';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 // Dynamic import of callEmbeddingProxy breaks circular dep:
@@ -158,7 +158,7 @@ class RagService {
     const cached = this.getCache();
     if (cached) return cached;
 
-    const snap = await getDocs(collection(db, 'concept_embeddings'));
+    const snap = await getDocs(query(collection(db, 'concept_embeddings'), limit(500)));
     const data = snap.docs.map(d => {
       const doc = d.data() as ConceptEmbeddingDoc;
       return { id: d.id, vector: doc.vector, text: doc.text };

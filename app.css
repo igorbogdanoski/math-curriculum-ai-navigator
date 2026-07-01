@@ -64,6 +64,17 @@
   backdrop-filter: blur(8px);
 }
 
+/* HomeView hero card */
+.home-hero-card {
+  background: linear-gradient(135deg, #0D47A1 0%, #1565C0 40%, #283593 100%);
+}
+.home-hero-glow-tr {
+  background: radial-gradient(circle, rgba(100,160,255,0.18) 0%, transparent 70%);
+}
+.home-hero-glow-bl {
+  background: radial-gradient(circle, rgba(49,27,146,0.25) 0%, transparent 70%);
+}
+
 .scratchpad-bg-grid {
   background-image: linear-gradient(to right, #ccc 1px, transparent 1px),
                     linear-gradient(to bottom, #ccc 1px, transparent 1px);

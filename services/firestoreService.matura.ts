@@ -23,6 +23,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -312,7 +313,7 @@ export const maturaService = {
   async listExams(): Promise<MaturaExamMeta[]> {
     if (_examCache) return _examCache;
     try {
-      const snap = await getDocs(collection(db, 'matura_exams'));
+      const snap = await getDocs(query(collection(db, 'matura_exams'), limit(200)));
       const firestoreExams = snap.docs
         .map(d => ({ id: d.id, ...d.data() } as MaturaExamMeta))
       if (firestoreExams.length > 0) {
