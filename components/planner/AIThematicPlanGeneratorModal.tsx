@@ -13,6 +13,7 @@ import { getGradeHoursInfo } from '../../services/gemini/plans';
 import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
 import { CoachBubble } from '../common/CoachBubble';
 import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
+import { resolveGradeByLabel } from '../../utils/gradeMatch';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -112,8 +113,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         if (!curriculum || !isPrefilled) return null;
         return (
             curriculum.grades.find(g => g.id === prefillGradeId) ??
-            curriculum.grades.find(g => g.title === prefillGradeTitle) ??
-            curriculum.grades.find(g => prefillGradeTitle?.includes(String(g.level))) ??
+            resolveGradeByLabel(curriculum.grades, prefillGradeTitle) ??
             curriculum.grades[0]
         );
     }, [curriculum, isPrefilled, prefillGradeId, prefillGradeTitle]);
@@ -677,7 +677,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     return (
         <>
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-6 overflow-y-auto animate-fade-in"
+            className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-6 overflow-y-auto animate-fade-in"
             onClick={hideModal}
             role="dialog"
             aria-modal="true"

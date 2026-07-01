@@ -48,6 +48,7 @@ import { UploadedScenarioBanner } from '../components/lesson-plan-editor/Uploade
 import { CulturalResponsivenessPanel } from '../components/lesson-plan-editor/CulturalResponsivenessPanel';
 import { DraftMergeDialog } from '../components/lesson-plan-editor/DraftMergeDialog';
 import { loadAndClearUploadDraft } from '../services/uploadDraftService';
+import { resolveGradeByLabel } from '../utils/gradeMatch';
 
 
 interface LessonPlanEditorViewProps {
@@ -203,10 +204,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       setPlan((currentPlan: Partial<LessonPlan>) => {
         if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
           if (prefillTopic) {
-            const gradeNum = prefillGrade ? parseInt(prefillGrade, 10) || 6 : 6;
-            const gradeData = curriculum.grades.find(g => g.level === gradeNum)
-              ?? curriculum.grades.find(g => prefillGrade?.includes(String(g.level)))
-              ?? curriculum.grades[0];
+            const gradeData = resolveGradeByLabel(curriculum.grades, prefillGrade) ?? curriculum.grades[0];
             const matchedTopic = gradeData?.topics.find(t =>
               t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
               prefillTopic.toLowerCase().includes(t.title.toLowerCase())
@@ -214,7 +212,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             const unitTitle = prefillLessonUnit ?? prefillTopic;
             return {
               ...initialPlanState,
-              grade: gradeData?.level || gradeNum,
+              grade: gradeData?.level ?? 6,
               topicId: matchedTopic?.id || '',
               theme: prefillTopic,
               subject: prefillSubject || 'Математика',
@@ -874,7 +872,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       {/* ── Official MoN Lesson Plan Form Modal ──────────────────────────── */}
       {showOfficialLessonForm && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in no-print"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in no-print"
           onClick={() => setShowOfficialLessonForm(false)}
           role="dialog"
           aria-modal="true"

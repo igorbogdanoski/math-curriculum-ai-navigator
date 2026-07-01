@@ -28,7 +28,7 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal}>
             <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="sticky top-0 bg-white p-6 border-b z-10">
                     <div className="flex justify-between items-center">

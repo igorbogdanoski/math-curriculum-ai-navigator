@@ -411,7 +411,7 @@ const AppContent: React.FC = () => {
                 </SilentErrorBoundary>
                  {isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+                        className="fixed inset-0 bg-black/50 z-20 md:hidden"
                         onClick={closeSidebar}
                         aria-hidden="true"
                     />

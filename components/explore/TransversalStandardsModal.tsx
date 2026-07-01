@@ -33,7 +33,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={hideModal}>
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="bg-white p-6 border-b flex-shrink-0">
                     <div className="flex justify-between items-center">

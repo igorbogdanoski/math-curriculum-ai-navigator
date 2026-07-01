@@ -1042,7 +1042,7 @@ export const gymnasiumGrade12: Grade = {
 export const gymnasiumGrade13: Grade = {
   id: 'gym-grade-13',
   level: 13,
-  title: 'IV (четврта) — Гимназиско',
+  title: 'XIII (тринаесетто) — Гимназиско',
   secondaryTrack: 'gymnasium',
   weeklyHours: 4,
   levelDescription: 'Четврта година гимназија — Математика (МОН, официјална програма, 90 часа)',

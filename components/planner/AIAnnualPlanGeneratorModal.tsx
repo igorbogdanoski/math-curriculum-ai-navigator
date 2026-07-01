@@ -77,7 +77,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
     // Guard clause to prevent rendering with incomplete data, which could happen if curriculum is null
     if (!curriculum) {
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
                 <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                     <p className="text-center text-gray-600">Вчитување на податоците за наставната програма...</p>
                 </div>
@@ -86,7 +86,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b">

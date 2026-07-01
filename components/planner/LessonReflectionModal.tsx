@@ -130,7 +130,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
 
   return (
     <div 
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
         onClick={hideModal}
         role="dialog"
         aria-modal="true"

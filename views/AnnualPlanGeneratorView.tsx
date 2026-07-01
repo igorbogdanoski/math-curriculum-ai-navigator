@@ -16,6 +16,7 @@ import { ICONS } from '../constants';
 import type { AIGeneratedAnnualPlanTopic } from '../types';
 import { geminiService } from '../services/geminiService';
 import { generatePlanICS, downloadICS } from '../utils/icalExport';
+import { resolveGradeByLabel } from '../utils/gradeMatch';
 import { PlanGanttChart } from '../components/planner/PlanGanttChart';
 import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
@@ -794,7 +795,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                                         className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-bold shrink-0"
                                                                         onClick={() => {
                                                                             if (!plan || !curriculum) return;
-                                                                            const gradeMatch = curriculum.grades.find(g => plan.grade.includes(String(g.level)) || g.title === plan.grade) ?? curriculum.grades[0];
+                                                                            const gradeMatch = resolveGradeByLabel(curriculum.grades, plan.grade) ?? curriculum.grades[0];
                                                                             const topicMatch = gradeMatch?.topics.find(t =>
                                                                                 t.title.toLowerCase().includes(f.topic.toLowerCase().slice(0, 5)) ||
                                                                                 f.topic.toLowerCase().includes(t.title.toLowerCase().slice(0, 5))
@@ -942,7 +943,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
             {/* ── Official MoN Annual Plan Form Modal ──────────────────────────── */}
             {showOfficialForm && plan && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
                     onClick={() => setShowOfficialForm(false)}
                     role="dialog"
                     aria-modal="true"

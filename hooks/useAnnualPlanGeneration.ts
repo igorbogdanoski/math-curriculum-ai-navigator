@@ -9,6 +9,7 @@ import { useCollabPlan } from './useCollabPlan';
 import { buildOfficialCurriculumContext } from '../data/official/grade8Official';
 import { geminiService } from '../services/geminiService';
 import { trackCreditConsumed } from '../services/telemetryService';
+import { resolveGradeByLabel } from '../utils/gradeMatch';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 
 interface ParallelProgress {
@@ -77,7 +78,7 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
   // Sync selectedGradeId from loaded plan title (edit mode)
   useEffect(() => {
     if (!planId || !plan || !curriculum) return;
-    const match = curriculum.grades.find(g => g.title === plan.grade);
+    const match = resolveGradeByLabel(curriculum.grades, plan.grade);
     if (match) setSelectedGradeId(match.id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId, plan?.grade, curriculum]);
@@ -142,10 +143,7 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
 
   const handleGenerateAllThematic = async () => {
     if (!plan || !curriculum) return;
-    const gradeMatch =
-      curriculum.grades.find(g =>
-        plan.grade.includes(String(g.level)) || g.title === plan.grade,
-      ) ?? curriculum.grades[0];
+    const gradeMatch = resolveGradeByLabel(curriculum.grades, plan.grade) ?? curriculum.grades[0];
     if (!gradeMatch) {
       addNotification('Не е пронајдено одделение во curriculum.', 'error');
       return;
