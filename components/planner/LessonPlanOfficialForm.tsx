@@ -21,6 +21,79 @@ function getStepText(step: { text?: string } | string | null | undefined): strin
   return step.text ?? '';
 }
 
+/**
+ * Derive psychomotor goals from the lesson plan content.
+ * Looks for physical/motor action cues in activities and materials.
+ */
+function derivePsychomotorGoals(plan: Partial<LessonPlan>): string {
+  const mainText = (plan.scenario?.main ?? [])
+    .map(s => (typeof s === 'string' ? s : s?.text ?? ''))
+    .join(' ')
+    .toLowerCase();
+  const mats = (plan.materials ?? []).join(' ').toLowerCase();
+  const combined = mainText + ' ' + mats;
+
+  const lines: string[] = [];
+
+  // Geometry / drawing tools
+  if (/шестар|линијар|триаголник|геометр|нацрта|скица|дијаграм|графикон/.test(combined)) {
+    lines.push('Прецизно цртање геометриски фигури со употреба на геометриски прибор (линијар, шестар, триаголник).');
+  }
+  // Writing / calculation on paper
+  lines.push('Уредно и читко запишување математички изрази, равенки и решенија.');
+  // Tables / graphs
+  if (/табела|графикон|дијаграм|податоц/.test(combined)) {
+    lines.push('Пополнување и читање табели и графикони со математички податоци.');
+  }
+  // Physical measurement
+  if (/мерење|мери|cm|mm|должина|тежина|волумен|периметар|плоштина/.test(combined)) {
+    lines.push('Практично мерење и примена на мерни единици во реални ситуации.');
+  }
+  // Manipulatives / group activities
+  if (/група|пар|тим|соработ/.test(combined)) {
+    lines.push('Манипулирање со наставни материјали при групна и парна работа.');
+  }
+
+  // Fallback: always include at least 2 lines
+  if (lines.length < 2) {
+    lines.push('Практична примена на математички операции при решавање задачи.');
+  }
+
+  return lines.slice(0, 3).join('\n');
+}
+
+/**
+ * Derive affective (values / attitudes) goals from the lesson plan.
+ */
+function deriveAffectiveGoals(plan: Partial<LessonPlan>): string {
+  const combined = [
+    plan.title ?? '',
+    plan.theme ?? '',
+    (plan.scenario?.main ?? []).map(s => (typeof s === 'string' ? s : s?.text ?? '')).join(' '),
+  ].join(' ').toLowerCase();
+
+  const lines: string[] = [];
+
+  // Cooperation
+  if (/група|пар|тим|соработ/.test(combined)) {
+    lines.push('Развивање дух на соработка и меѓусебно почитување при тимска работа.');
+  } else {
+    lines.push('Покажување самодисциплина и одговорност при самостојна работа.');
+  }
+
+  // Real-life connection → positive attitude
+  if (/реал|живот|пример|контекст|цена|пари|мерење|должина/.test(combined)) {
+    lines.push('Свесност за примена на математиката во секојдневниот живот и нејзината практична вредност.');
+  } else {
+    lines.push('Развивање позитивен став и интерес кон математиката.');
+  }
+
+  // Perseverance
+  lines.push('Истрајност и самодоверба при решавање математички проблеми.');
+
+  return lines.slice(0, 3).join('\n');
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export const LessonPlanOfficialForm: React.FC<LessonPlanOfficialFormProps> = ({
@@ -55,6 +128,8 @@ export const LessonPlanOfficialForm: React.FC<LessonPlanOfficialFormProps> = ({
   const homeworkText = plan.reflectionPrompt ?? plan.selfAssessmentPrompt ?? '';
   const materialsText = (plan.materials ?? []).join('\n');
   const objectivesText = (plan.objectives ?? []).map(o => o.text).join('\n');
+  const psychomotorText = derivePsychomotorGoals(plan);
+  const affectiveText = deriveAffectiveGoals(plan);
   const standardsText = (plan.assessmentStandards ?? []).join('\n');
   const progressText = (plan.progressMonitoring ?? []).join('\n');
   const diffText = plan.differentiation ?? (plan.differentiationTabs
@@ -178,9 +253,24 @@ export const LessonPlanOfficialForm: React.FC<LessonPlanOfficialFormProps> = ({
             </th>
           </tr>
           <tr className="text-center font-bold bg-gray-50 print:bg-gray-100">
-            <th className="border border-black px-2 py-1 w-1/3">Когнитивни цели</th>
-            <th className="border border-black px-2 py-1 w-1/3">Психомоторни цели</th>
-            <th className="border border-black px-2 py-1 w-1/3">Афективни цели</th>
+            <th className="border border-black px-2 py-1 w-1/3">
+              <span className="print:hidden" title={'Когнитивни цели: Знаења, разбирање, примена, анализа, синтеза и евалуација — опишуваат ШТО ученикот знае и разбира. Пример: Пресметува периметар на правоаголник со примена на формулата P = 2(a+b).'}>
+                Когнитивни цели <span className="text-blue-500 text-[10px] font-normal cursor-help">ℹ</span>
+              </span>
+              <span className="hidden print:inline">Когнитивни цели</span>
+            </th>
+            <th className="border border-black px-2 py-1 w-1/3">
+              <span className="print:hidden" title={'Психомоторни цели: Практични вештини и физички дејствија — опишуваат ШТО ученикот прави со раце/тело. Пример: Прецизно мери и црта геометриски фигури со употреба на линијар и шестар.'}>
+                Психомоторни цели <span className="text-blue-500 text-[10px] font-normal cursor-help">ℹ</span>
+              </span>
+              <span className="hidden print:inline">Психомоторни цели</span>
+            </th>
+            <th className="border border-black px-2 py-1 w-1/3">
+              <span className="print:hidden" title={'Афективни цели: Ставови, вредности и емоции — опишуваат КАКВИ вредности и ставови развива ученикот. Пример: Покажува позитивен став кон математиката и истрајност при решавање сложени задачи.'}>
+                Афективни цели <span className="text-blue-500 text-[10px] font-normal cursor-help">ℹ</span>
+              </span>
+              <span className="hidden print:inline">Афективни цели</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -189,10 +279,10 @@ export const LessonPlanOfficialForm: React.FC<LessonPlanOfficialFormProps> = ({
               <TextareaCell id="objectives" fallback={objectivesText} minH={60} />
             </td>
             <td className="border border-black px-2 py-2 align-top">
-              <TextareaCell id="psychomotorGoals" fallback={getVal('psychomotorGoals', '')} minH={60} />
+              <TextareaCell id="psychomotorGoals" fallback={getVal('psychomotorGoals', psychomotorText)} minH={60} />
             </td>
             <td className="border border-black px-2 py-2 align-top">
-              <TextareaCell id="affectiveGoals" fallback={getVal('affectiveGoals', '')} minH={60} />
+              <TextareaCell id="affectiveGoals" fallback={getVal('affectiveGoals', affectiveText)} minH={60} />
             </td>
           </tr>
         </tbody>
