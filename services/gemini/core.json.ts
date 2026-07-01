@@ -8,7 +8,7 @@ import { OfflineError, AIServiceError, AppError, ErrorCode } from '../../utils/e
 import { SafetySetting, Part, DEFAULT_MODEL, ULTIMATE_MODEL, MAX_RETRIES, GENERATION_TIMEOUT_MS, CACHE_COLLECTION } from './core.constants';
 import { markDailyQuotaExhausted } from './core.quota';
 import { callGeminiProxy } from './core.proxy';
-import { cleanJsonString, handleGeminiError } from './core.utils';
+import { handleGeminiError } from './core.utils';
 import { JSON_SYSTEM_INSTRUCTION } from './core.instructions';
 
 export const SAFETY_SETTINGS: SafetySetting[] = [
@@ -62,10 +62,9 @@ export async function generateAndParseJSON<T>(
         topP: generationOverrides?.topP ?? 0.95,
         maxOutputTokens: generationOverrides?.maxOutputTokens ?? 32768,
       };
+      generationConfig.responseMimeType = 'application/json';
       if (useThinking) {
         generationConfig.thinkingConfig = { thinkingBudget: 16000 };
-      } else {
-        generationConfig.responseMimeType = 'application/json';
       }
       const schemaHint = "\n\nFollow this JSON schema exactly: " + JSON.stringify(schema);
       const enrichedContents = [...contents];
@@ -84,7 +83,7 @@ export async function generateAndParseJSON<T>(
       }, _controller.signal);
 
       const rawText = response.text || "";
-      const jsonString = useThinking ? cleanJsonString(rawText) : rawText.trim();
+      const jsonString = rawText.trim();
       if (!jsonString) throw new AIServiceError("AI returned empty response");
 
       let parsedJson: unknown;
