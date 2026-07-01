@@ -428,18 +428,34 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const handlePrint = useReactToPrint({
         contentRef: printRef,
         documentTitle: `Годишна_Програма_${plan?.subject}_${plan?.grade}`,
+        pageStyle: `
+          @page { size: A4 landscape; margin: 10mm 12mm; }
+          * { box-sizing: border-box; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; }
+          body > div { max-width: 100% !important; width: 100% !important; box-shadow: none !important; margin: 0 !important; }
+          thead { display: table-header-group !important; }
+          tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+        `,
     });
 
     const handleOfficialPrint = useReactToPrint({
         contentRef: officialFormRef,
         documentTitle: `Годишна_Глобална_Програма_${plan?.subject}_${plan?.grade}`,
         pageStyle: `
-          @page { size: A4 landscape; margin: 10mm; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            thead { display: table-header-group; }
-            tbody { display: table-row-group; }
+          @page { size: A4 landscape; margin: 10mm 12mm; }
+          * { box-sizing: border-box; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; }
+          body > div { max-width: 100% !important; width: 100% !important; box-shadow: none !important; margin: 0 !important; }
+          table { border-collapse: collapse !important; width: 100% !important; }
+          thead { display: table-header-group !important; }
+          tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+          textarea, input[type="text"], input[type="number"] {
+            border: none !important; outline: none !important; resize: none !important;
+            background: transparent !important; -webkit-appearance: none;
+            font-family: inherit !important; font-size: inherit !important;
+            padding: 0 !important; margin: 0 !important; width: 100% !important; overflow: hidden !important;
           }
+          select { border: none !important; background: transparent !important; -webkit-appearance: none; appearance: none; padding: 0 !important; font-family: inherit !important; font-size: inherit !important; }
         `,
     });
 

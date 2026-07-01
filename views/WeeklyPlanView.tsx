@@ -260,7 +260,16 @@ export const WeeklyPlanView: React.FC = () => {
   const handlePrint = useReactToPrint({
     contentRef: weeklyPrintRef,
     documentTitle: `Неделен_план_Нед${weekNumber}_${selectedPlan?.grade ?? ''}`,
-    pageStyle: '@page { size: A4 landscape; margin: 1cm 1.2cm; }',
+    pageStyle: `
+      @page { size: A4 landscape; margin: 1cm 1.2cm; }
+      * { box-sizing: border-box; }
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; }
+      body > div { max-width: 100% !important; width: 100% !important; box-shadow: none !important; margin: 0 !important; }
+      table { border-collapse: collapse !important; width: 100% !important; }
+      thead { display: table-header-group !important; }
+      tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+      .print-header-bg, th { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    `,
   });
 
   const handleSave = async () => {

@@ -338,62 +338,6 @@ export const AnnualPlanOfficialForm: React.FC<AnnualPlanOfficialFormProps> = ({
         </tbody>
       </table>
 
-      {/* ── PRINT CSS ─────────────────────────────────────────────────────── */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          body * { visibility: hidden; }
-          .annual-plan-official-form,
-          .annual-plan-official-form * { visibility: visible; }
-          .annual-plan-official-form {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%;
-            font-size: 10px;
-            font-family: 'Times New Roman', serif;
-          }
-          .annual-plan-official-form table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-          }
-          .annual-plan-official-form th,
-          .annual-plan-official-form td {
-            border: 1px solid black !important;
-            padding: 3px 5px !important;
-            vertical-align: top;
-          }
-          .annual-plan-official-form thead th {
-            background-color: #f0f0f0 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .annual-plan-official-form textarea,
-          .annual-plan-official-form input[type="text"],
-          .annual-plan-official-form input[type="number"] {
-            border: none !important;
-            outline: none !important;
-            resize: none !important;
-            background: transparent !important;
-            font-family: inherit !important;
-            font-size: inherit !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            overflow: hidden !important;
-          }
-          .annual-plan-official-form select {
-            border: none !important;
-            background: transparent !important;
-            font-family: inherit !important;
-            font-size: inherit !important;
-            -webkit-appearance: none;
-            appearance: none;
-            padding: 0 !important;
-          }
-          thead { display: table-header-group; }
-          tr { page-break-inside: avoid; }
-          @page { size: A4 landscape; margin: 1.5cm 1cm; }
-        }
-      `}} />
     </div>
   );
 };

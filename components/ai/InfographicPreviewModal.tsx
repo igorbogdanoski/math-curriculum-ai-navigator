@@ -124,7 +124,6 @@ function buildSVG(layout: InfographicLayout): string {
   const SIDEBAR_W = 260;
   const RIGHT_X = SIDEBAR_W + 16;
   const RIGHT_W = W - RIGHT_X - 16;
-  const HEADER_H = 100;
   const FOOTER_H = 60;
   const LINE_H = 15;
 
@@ -142,6 +141,10 @@ function buildSVG(layout: InfographicLayout): string {
     if (line.trim()) lines.push(line.trim());
     return lines.length ? lines : [''];
   };
+
+  // Compute header height dynamically from title line count
+  const titleLines = wrap(layout.title, 50);
+  const HEADER_H = Math.max(100, 50 + titleLines.length * 28 + 14);
 
   // ── Build LEFT COLUMN elements, tracking y as we go ──────────────────────
   const leftEls: string[] = [];
@@ -208,9 +211,6 @@ function buildSVG(layout: InfographicLayout): string {
   const BODY_H = Math.max(leftColH, rightColH, 600);
   const TOTAL_H = HEADER_H + BODY_H + FOOTER_H;
 
-  // ── Title wrap ────────────────────────────────────────────────────────────
-  const titleLines = wrap(layout.title, 50);
-
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${TOTAL_H}" viewBox="0 0 ${W} ${TOTAL_H}">
   <defs><style>text { font-family: Arial, sans-serif; }</style></defs>
@@ -258,13 +258,14 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
     if (!captureRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(captureRef.current, {
+      const el = captureRef.current;
+      const canvas = await html2canvas(el, {
         scale: 3,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
         windowWidth: 900,
-        windowHeight: 1400,
+        windowHeight: el.scrollHeight + 100,
       });
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
