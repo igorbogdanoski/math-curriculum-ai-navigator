@@ -1,7 +1,7 @@
 /**
- * ThematicPlanOfficialForm — S94-E1
- * МОН-усогласен печатлив образец за тематски (единечен) план.
- * Паттерн: ист со AnnualPlanOfficialForm — inline-editable хедер + read-only табела.
+ * ThematicPlanOfficialForm — МОН официјален образец за тематски план.
+ * World-class A4 landscape print: pageStyle via useReactToPrint, table-layout:fixed,
+ * thead repeating headers, break-inside:avoid on every row.
  */
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
@@ -9,14 +9,64 @@ import type { AIGeneratedThematicPlan } from '../../types';
 
 export interface ThematicPlanOfficialFormProps {
   data: AIGeneratedThematicPlan;
-  gradeLabel: string;       // e.g. "VI одделение"
-  subject: string;          // e.g. "Математика"
+  gradeLabel: string;
+  subject: string;
   authorName: string;
   schoolName: string;
-  period: string;           // e.g. "Септември–Октомври 2026/2027"
-  academicYear: string;     // e.g. "2026/2027"
+  period: string;
+  academicYear: string;
   onClose: () => void;
 }
+
+// Injected into the print iframe — controls page geometry and table behaviour.
+const PAGE_STYLE = `
+  @page { size: A4 landscape; margin: 10mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0;
+  }
+  table { border-collapse: collapse !important; width: 100% !important; }
+  thead { display: table-header-group !important; }
+  tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+`;
+
+// Base cell style — all cells derive from this.
+const CELL: React.CSSProperties = {
+  border: '1px solid #000',
+  padding: '4px 7px',
+  verticalAlign: 'top',
+  fontFamily: "'Times New Roman', Times, serif",
+  fontSize: '10.5pt',
+  lineHeight: '1.4',
+  color: '#000',
+  wordBreak: 'break-word',
+  overflowWrap: 'break-word',
+};
+
+const HDR_CELL: React.CSSProperties = {
+  ...CELL,
+  textAlign: 'center',
+  fontWeight: 'bold',
+  backgroundColor: '#e8e8e8',
+  fontSize: '9.5pt',
+  padding: '5px 6px',
+  verticalAlign: 'middle',
+};
+
+const META_LABEL: React.CSSProperties = {
+  ...CELL,
+  fontWeight: 'bold',
+  backgroundColor: '#f0f0f0',
+  whiteSpace: 'nowrap',
+  width: '13%',
+};
+
+const META_VAL: React.CSSProperties = {
+  ...CELL,
+  width: '37%',
+};
 
 export const ThematicPlanOfficialForm: React.FC<ThematicPlanOfficialFormProps> = ({
   data, gradeLabel, subject, authorName, schoolName, period, academicYear, onClose,
@@ -26,22 +76,23 @@ export const ThematicPlanOfficialForm: React.FC<ThematicPlanOfficialFormProps> =
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Тематски план — ${data.thematicUnit}`,
+    pageStyle: PAGE_STYLE,
   });
 
   const totalHours = data.lessons.reduce((s, l) => s + (l.hours ?? 1), 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center overflow-y-auto py-6 px-2">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col">
 
-        {/* Toolbar */}
+        {/* ── Toolbar (no-print) ─────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-6 py-4 border-b no-print flex-shrink-0">
           <h2 className="text-lg font-black text-slate-900">📄 Официјален образец — Тематски план</h2>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => handlePrint()}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl text-sm font-bold hover:bg-brand-secondary transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-brand-primary text-white rounded-xl text-sm font-bold hover:bg-brand-secondary transition-colors shadow"
             >
               🖨️ Испечати / Зачувај PDF
             </button>
@@ -55,113 +106,181 @@ export const ThematicPlanOfficialForm: React.FC<ThematicPlanOfficialFormProps> =
           </div>
         </div>
 
-        {/* Printable area */}
-        <div ref={printRef} className="p-8 print:p-6 font-serif text-[13px] leading-snug">
+        {/* ── Printable area ─────────────────────────────────────────────────── */}
+        <div
+          ref={printRef}
+          style={{
+            padding: '28px 32px',
+            fontFamily: "'Times New Roman', Times, serif",
+            fontSize: '11pt',
+            color: '#000',
+            backgroundColor: '#fff',
+          }}
+        >
 
-          {/* MoN Header */}
-          <div className="text-center mb-6 print:mb-4">
-            <p className="text-[11px] uppercase tracking-widest text-gray-500 print:text-gray-700">
+          {/* МОН Header */}
+          <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+            <p style={{
+              fontFamily: "'Times New Roman', Times, serif",
+              fontSize: '8.5pt',
+              textTransform: 'uppercase',
+              letterSpacing: '1.8px',
+              color: '#444',
+              margin: '0 0 3px',
+            }}>
               Република Македонија — Министерство за образование и наука
             </p>
-            <h1 className="text-[18px] font-black uppercase tracking-wide mt-1 print:text-[16px]">
+            <h1 style={{
+              fontFamily: "'Times New Roman', Times, serif",
+              fontSize: '17pt',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '3px',
+              margin: '4px 0 3px',
+              color: '#000',
+            }}>
               ТЕМАТСКИ ПЛАН
             </h1>
-            <p className="text-[12px] text-gray-600 mt-0.5">Учебна {academicYear} година</p>
+            <p style={{
+              fontFamily: "'Times New Roman', Times, serif",
+              fontSize: '10pt',
+              color: '#555',
+              margin: '0',
+            }}>
+              Учебна {academicYear} година
+            </p>
           </div>
 
-          {/* Meta grid */}
-          <table className="w-full border border-gray-400 mb-6 print:mb-4 text-[12px]" style={{borderCollapse:'collapse'}}>
+          {/* Meta info grid */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', tableLayout: 'fixed' }}>
             <tbody>
               <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50 w-40">Училиште</td>
-                <td className="border border-gray-400 px-3 py-1.5">{schoolName || '___________________________'}</td>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50 w-40">Наставник</td>
-                <td className="border border-gray-400 px-3 py-1.5">{authorName || '___________________________'}</td>
+                <td style={META_LABEL}>Училиште</td>
+                <td style={META_VAL}>{schoolName || '___________________________'}</td>
+                <td style={META_LABEL}>Наставник</td>
+                <td style={META_VAL}>{authorName || '___________________________'}</td>
               </tr>
               <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50">Предмет</td>
-                <td className="border border-gray-400 px-3 py-1.5">{subject}</td>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50">Одделение</td>
-                <td className="border border-gray-400 px-3 py-1.5">{gradeLabel}</td>
+                <td style={META_LABEL}>Предмет</td>
+                <td style={META_VAL}>{subject}</td>
+                <td style={META_LABEL}>Одделение</td>
+                <td style={META_VAL}>{gradeLabel}</td>
               </tr>
               <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50">Тематска единица</td>
-                <td className="border border-gray-400 px-3 py-1.5 font-semibold" colSpan={3}>{data.thematicUnit}</td>
+                <td style={META_LABEL}>Тематска единица</td>
+                <td style={{ ...META_VAL, fontWeight: 'bold', width: '87%' }} colSpan={3}>
+                  {data.thematicUnit}
+                </td>
               </tr>
               <tr>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50">Период</td>
-                <td className="border border-gray-400 px-3 py-1.5">{period || '___________________________'}</td>
-                <td className="border border-gray-400 px-3 py-1.5 font-bold bg-gray-50">Вкупно часови</td>
-                <td className="border border-gray-400 px-3 py-1.5 font-semibold">{totalHours}</td>
+                <td style={META_LABEL}>Период</td>
+                <td style={META_VAL}>{period || '___________________________'}</td>
+                <td style={META_LABEL}>Вкупно часови</td>
+                <td style={{ ...META_VAL, fontWeight: 'bold' }}>{totalHours}</td>
               </tr>
             </tbody>
           </table>
 
-          {/* Lessons table */}
-          <table className="w-full border border-gray-400 text-[11px] print:text-[10px]" style={{borderCollapse:'collapse'}}>
+          {/* Main lessons table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10pt' }}>
+            <colgroup>
+              <col style={{ width: '4%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '26%' }} />
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '6%' }} />
+            </colgroup>
             <thead>
-              <tr className="bg-gray-100 print:bg-gray-200">
-                <th className="border border-gray-400 px-2 py-2 text-center font-bold w-8">Бр.</th>
-                <th className="border border-gray-400 px-2 py-2 text-left font-bold w-48">Наслов на лекцијата</th>
-                <th className="border border-gray-400 px-2 py-2 text-left font-bold">Наставни цели / Исходи</th>
-                <th className="border border-gray-400 px-2 py-2 text-left font-bold">Клучни активности</th>
-                <th className="border border-gray-400 px-2 py-2 text-left font-bold w-32">Оценување</th>
-                <th className="border border-gray-400 px-2 py-2 text-center font-bold w-10">Ч.</th>
+              <tr>
+                <th style={HDR_CELL}>Бр.</th>
+                <th style={HDR_CELL}>Наслов на лекцијата</th>
+                <th style={HDR_CELL}>Наставни цели / Исходи</th>
+                <th style={HDR_CELL}>Клучни активности</th>
+                <th style={HDR_CELL}>Следење на напредокот</th>
+                <th style={HDR_CELL}>Ч.</th>
               </tr>
             </thead>
             <tbody>
               {data.lessons.map((lesson, i) => (
-                <tr key={i} className={i % 2 === 0 ? '' : 'bg-gray-50 print:bg-gray-50'}>
-                  <td className="border border-gray-400 px-2 py-2 text-center font-semibold align-top">
+                <tr
+                  key={i}
+                  style={{
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                    backgroundColor: i % 2 === 1 ? '#fafafa' : '#fff',
+                  }}
+                >
+                  <td style={{ ...CELL, textAlign: 'center', fontWeight: 'bold', fontSize: '10pt' }}>
                     {lesson.lessonNumber ?? i + 1}
                   </td>
-                  <td className="border border-gray-400 px-2 py-2 font-semibold align-top leading-snug">
+                  <td style={{ ...CELL, fontWeight: '600' }}>
                     {lesson.lessonUnit}
                   </td>
-                  <td className="border border-gray-400 px-2 py-2 align-top leading-snug text-gray-800">
+                  <td style={{ ...CELL, fontStyle: 'italic' }}>
                     {lesson.learningOutcomes}
                   </td>
-                  <td className="border border-gray-400 px-2 py-2 align-top leading-snug text-gray-800">
+                  <td style={CELL}>
                     {lesson.keyActivities}
                   </td>
-                  <td className="border border-gray-400 px-2 py-2 align-top leading-snug text-gray-700">
+                  <td style={CELL}>
                     {lesson.assessment}
                   </td>
-                  <td className="border border-gray-400 px-2 py-2 text-center align-top">
+                  <td style={{ ...CELL, textAlign: 'center', fontWeight: 'bold' }}>
                     {lesson.hours ?? 1}
                   </td>
                 </tr>
               ))}
               {/* Total row */}
-              <tr className="font-bold bg-gray-100 print:bg-gray-200">
-                <td className="border border-gray-400 px-2 py-2 text-center" colSpan={5}>Вкупно часови</td>
-                <td className="border border-gray-400 px-2 py-2 text-center">{totalHours}</td>
+              <tr style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                <td
+                  colSpan={5}
+                  style={{ ...CELL, textAlign: 'right', fontWeight: 'bold', backgroundColor: '#e8e8e8' }}
+                >
+                  Вкупно часови:
+                </td>
+                <td style={{ ...CELL, textAlign: 'center', fontWeight: 'bold', backgroundColor: '#e8e8e8' }}>
+                  {totalHours}
+                </td>
               </tr>
             </tbody>
           </table>
 
           {/* Signatures */}
-          <div className="mt-8 print:mt-6 grid grid-cols-2 gap-8 text-[12px]">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
             <div>
-              <p className="font-bold mb-6">Изготвил/-а:</p>
-              <div className="border-b border-gray-500 w-48" />
-              <p className="text-gray-600 mt-1">{authorName || 'Наставник'}</p>
+              <p style={{ fontFamily: "'Times New Roman', Times, serif", fontWeight: 'bold', margin: '0 0 22px', fontSize: '10.5pt' }}>
+                Изготвил/-а:
+              </p>
+              <div style={{ borderBottom: '1px solid #000', width: '200px' }} />
+              <p style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '9pt', color: '#555', margin: '4px 0 0' }}>
+                {authorName || 'Наставник / Наставничка'}
+              </p>
             </div>
-            <div className="text-right">
-              <p className="font-bold mb-6">Одобрил/-а (директор):</p>
-              <div className="border-b border-gray-500 w-48 ml-auto" />
-              <p className="text-gray-600 mt-1">Потпис и печат</p>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: "'Times New Roman', Times, serif", fontWeight: 'bold', margin: '0 0 22px', fontSize: '10.5pt' }}>
+                Одобрил/-а (директор):
+              </p>
+              <div style={{ borderBottom: '1px solid #000', width: '200px', marginLeft: 'auto' }} />
+              <p style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '9pt', color: '#555', margin: '4px 0 0' }}>
+                Потпис и печат
+              </p>
             </div>
           </div>
 
-          {/* Print styles */}
-          <style>{`
-            @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              .no-print { display: none !important; }
-              @page { size: A4 landscape; margin: 15mm; }
-            }
-          `}</style>
+          {/* Footer */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '18px',
+            paddingTop: '6px',
+            borderTop: '1px solid #ccc',
+            fontSize: '7.5pt',
+            color: '#bbb',
+            fontFamily: 'Arial, sans-serif',
+          }}>
+            Создадено со AI Navigator · Министерство за образование и наука · {academicYear}
+          </div>
+
         </div>
       </div>
     </div>
