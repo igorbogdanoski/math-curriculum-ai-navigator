@@ -76,7 +76,7 @@ export const HomeworkAssignModal: React.FC<Props> = ({
                         <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{materialTitle}</p>
                     </div>
                     <button type="button" onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                        <ICONS.x className="w-5 h-5" />
+                        <ICONS.close className="w-5 h-5" />
                     </button>
                 </div>
 

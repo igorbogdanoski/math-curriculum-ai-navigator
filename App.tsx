@@ -454,9 +454,7 @@ const AppContent: React.FC = () => {
                 </SilentErrorBoundary>
             </div>
             <Suspense fallback={null}>
-              <SilentErrorBoundary name="AIGeneratorPanel" fallback={<AIGeneratorPanelFallback />}>
-                <AIGeneratorPanel />
-              </SilentErrorBoundary>
+              <AIGeneratorPanelWithBoundary />
             </Suspense>
             <Suspense fallback={null}>
               <SilentErrorBoundary name="AIChatPanel">
@@ -507,7 +505,8 @@ const AuthenticatedApp: React.FC = () => {
 }
 
 const AIGeneratorPanelFallback: React.FC = () => {
-    const { closeGeneratorPanel } = useGeneratorPanel();
+    const { closeGeneratorPanel, isOpen } = useGeneratorPanel();
+    if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-gray-900/40 z-50 flex items-center justify-center no-print">
             <div className="bg-white rounded-2xl p-8 max-w-sm shadow-xl text-center mx-4">
@@ -522,6 +521,16 @@ const AIGeneratorPanelFallback: React.FC = () => {
                 </button>
             </div>
         </div>
+    );
+};
+
+/** Wrapper so the SilentErrorBoundary resets when the panel is reopened */
+const AIGeneratorPanelWithBoundary: React.FC = () => {
+    const { isOpen } = useGeneratorPanel();
+    return (
+        <SilentErrorBoundary key={isOpen ? 'open' : 'closed'} name="AIGeneratorPanel" fallback={<AIGeneratorPanelFallback />}>
+            <AIGeneratorPanel />
+        </SilentErrorBoundary>
     );
 };
 
