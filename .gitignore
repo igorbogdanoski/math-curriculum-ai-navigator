@@ -104,6 +104,12 @@ lh-*.json
 # Dogfood / browser automation output (screenshots, traces)
 /dogfood-output/
 
+# Webinar assets (large binaries, not part of app source)
+/webinar-screenshots/
+*.docx
+~$*.docx
+/scripts/take-screenshots.mjs
+
 # Local dev scratch artifacts
 /keys-check.txt
 /list-env.ps1
