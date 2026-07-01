@@ -14,6 +14,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../utils/logger';
 import { DokDistributionBar } from '../components/common/DokBadge';
+import { publishMaterialFromGenerator } from '../services/firestoreService.scenarioBank';
 
 // ── Assessment model metadata ──────────────────────────────────────────────
 
@@ -147,17 +148,28 @@ export const TestGeneratorView: React.FC = () => {
     if (!generatedTest || !firebaseUser) return;
     setSaving(true);
     try {
-      const { db } = await import('../firebaseConfig');
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-      await addDoc(collection(db, 'saved_tests'), {
-        ...generatedTest,
-        teacherUid: firebaseUser.uid,
-        savedAt: serverTimestamp(),
+      const title = 'title' in generatedTest
+        ? (generatedTest.title as string)
+        : `Писмена — ${selectedTopics.join(', ')} (${gradeNum} одд.)`;
+      await publishMaterialFromGenerator({
+        title,
+        grade: gradeNum,
+        topicTitle: selectedTopics.join(', '),
+        materialType: assessmentModel === 'differentiated' ? 'differentiated_test'
+          : assessmentModel === 'mastery' ? 'mastery_test'
+          : assessmentModel === 'cbe' ? 'cbe_test'
+          : 'parallel_test',
+        content: generatedTest as unknown as Record<string, unknown>,
+        authorUid: firebaseUser.uid,
+        authorName: user?.name ?? firebaseUser.email ?? '',
+        schoolName: user?.schoolName ?? '',
+        isPublic: false,
       });
       setSaved(true);
-      addNotification('Тестот е зачуван во библиотеката! ✅', 'success');
-    } catch {
-      addNotification('Грешка при зачувување.', 'error');
+      addNotification('Тестот е зачуван во Банката на сценаријата! ✅', 'success');
+    } catch (e) {
+      logger.error('TestGeneratorView: save failed', e);
+      addNotification('Грешка при зачувување. Обиди се повторно.', 'error');
     } finally {
       setSaving(false);
     }
