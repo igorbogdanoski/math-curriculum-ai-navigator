@@ -59,7 +59,13 @@
       "Bash(agent-browser open *)",
       "Bash(agent-browser wait *)",
       "Bash(agent-browser get *)",
-      "Bash(agent-browser close *)"
+      "Bash(agent-browser close *)",
+      "Bash(npm test *)",
+      "WebFetch(domain:prompts.chat)",
+      "Bash(gh api *)",
+      "PowerShell(cd \"C:\\\\Users\\\\pc4all\\\\Downloads\\\\math-curriculum-ai-navigator\"; $v = \\(Get-Content views/AnnualPlanGeneratorView.tsx | Measure-Object -Line\\).Lines; $h = \\(Get-Content hooks/useAnnualPlanGeneration.ts | Measure-Object -Line\\).Lines; Write-Host \"View: $v lines   Hook: $h lines   \\(was 910 combined\\)\")",
+      "Skill(agent-browser)",
+      "Skill(agent-browser:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",
