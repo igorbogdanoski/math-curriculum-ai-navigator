@@ -18,7 +18,8 @@ import { PublishScenarioDialog } from '../components/scenario-bank/PublishScenar
 import type { PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
 import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/AIPedagogicalAnalysisDisplay';
-import { MathToolsPanel } from '../components/common/MathToolsPanel';
+import { MathToolsPanel, type MathToolTab } from '../components/common/MathToolsPanel';
+import { detectMathDomain } from '../utils/mathDomainDetector';
 import { LessonPlanFormFields } from '../components/lesson-plan-editor/LessonPlanFormFields';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
@@ -75,6 +76,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   );
 
   const [showMathTools, setShowMathTools] = useState(false);
+  const [mathToolsTab, setMathToolsTab] = useState<MathToolTab>('scratchpad');
   const [isSaving, setIsSaving] = useState(false);
   const [savedPlanForCoach, setSavedPlanForCoach] = useState<{ plan: typeof plan; key: string; navigateTo: string } | null>(null);
   const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
@@ -732,7 +734,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             {(plan.theme || plan.title) && (
               <ContextualMathTools
                 topicTitle={plan.theme || plan.title}
-                onNavigate={navigate}
+                onNavigate={(path) => {
+                  const tabMatch = path.match(/\/math-tools\?tab=(.+)/);
+                  if (tabMatch) {
+                    setMathToolsTab(tabMatch[1] as MathToolTab);
+                    setShowMathTools(true);
+                  } else {
+                    navigate(path);
+                  }
+                }}
               />
             )}
 
@@ -758,6 +768,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   Брзо создади
                 </h3>
                 <div className="grid grid-cols-1 gap-2">
+                  {detectMathDomain(plan.theme || plan.title || '') === 'algebra' && (
+                    <button
+                      type="button"
+                      onClick={() => { setMathToolsTab('algebra-tiles'); setShowMathTools(true); }}
+                      className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-colors border border-indigo-200"
+                    >
+                      <span>🔲</span> Алгебарски Плочки за оваа тема
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => navigate(`/dugga/build?topic=${encodeURIComponent(plan.theme || plan.title || '')}&grade=${plan.grade}`)}
@@ -812,6 +831,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             </div>
             <div className="flex-1 relative overflow-hidden bg-slate-50">
               <MathToolsPanel
+                defaultTab={mathToolsTab}
                 onClose={() => setShowMathTools(false)}
                 className="h-full"
                 onExportImage={(dataUrl, tool) => {
@@ -839,9 +859,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
       <button
         type="button"
-        onClick={() => setShowMathTools(true)}
         className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
-        title="Математички Алатки (GeoGebra, Desmos...)"
+        title="Математички Алатки (GeoGebra, Desmos, Алгебарски Плочки...)"
+        onClick={() => { setMathToolsTab('scratchpad'); setShowMathTools(true); }}
       >
         <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
         <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>

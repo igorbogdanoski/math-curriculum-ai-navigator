@@ -1,12 +1,22 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { PenTool, Box, LineChart, Maximize2, Minimize2, X, Save, WifiOff, RefreshCw } from 'lucide-react';
+import { PenTool, Box, LineChart, Maximize2, Minimize2, X, Save, WifiOff, RefreshCw, Grid3x3 } from 'lucide-react';
 import { DigitalScratchpad } from './DigitalScratchpad';
+
+const AlgebraTilesCanvas = React.lazy(() =>
+  import('../math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
+);
+
+export type MathToolTab = 'scratchpad' | 'geogebra' | 'desmos' | 'algebra-tiles';
 
 interface Props {
   onClose?: () => void;
   className?: string;
   /** Called when teacher clicks "Зачувај" — receives PNG data-URI and tool name */
   onExportImage?: (dataUrl: string, tool: 'geogebra' | 'desmos') => void;
+  /** Open directly on a specific tab — e.g. when routed from ContextualMathTools */
+  defaultTab?: MathToolTab;
+  /** Pre-populate algebra tiles with a preset expression, e.g. "x²+3x+2" */
+  algebraExpression?: string;
 }
 
 // ─── Script loader singletons (Promise-based, immune to concurrent mounts) ───
@@ -261,10 +271,29 @@ const DesmosPanel: React.FC<{ onExport?: (dataUrl: string) => void }> = ({ onExp
   );
 };
 
+// ─── Algebra Tiles panel ──────────────────────────────────────────────────────
+const AlgebraTilesPanel: React.FC<{ expression?: string }> = ({ expression }) => (
+  <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex items-center justify-between px-3 py-2 bg-indigo-50 border-b border-indigo-100 flex-shrink-0">
+      <span className="text-xs font-semibold text-indigo-700">🔲 Алгебарски Плочки — Манипулативна Алгебра</span>
+      <span className="text-[10px] text-indigo-400">Влечи · двоен клик за бришење · Ctrl+Z за враќање</span>
+    </div>
+    <div className="flex-1 overflow-y-auto">
+      <React.Suspense fallback={<LoadingSkeleton label="Вчитувам Алгебарски Плочки…" color="bg-indigo-200" />}>
+        <AlgebraTilesCanvas presetExpression={expression} />
+      </React.Suspense>
+    </div>
+  </div>
+);
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
-export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExportImage }) => {
-  const [activeTool, setActiveTool] = useState<'scratchpad' | 'geogebra' | 'desmos'>('scratchpad');
+export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExportImage, defaultTab, algebraExpression }) => {
+  const [activeTool, setActiveTool] = useState<MathToolTab>(defaultTab ?? 'scratchpad');
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (defaultTab) setActiveTool(defaultTab);
+  }, [defaultTab]);
   const [lastExport, setLastExport] = useState<{ dataUrl: string; tool: string } | null>(null);
 
   const handleExport = useCallback((dataUrl: string, tool: 'geogebra' | 'desmos') => {
@@ -317,6 +346,14 @@ export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExp
           >
             <LineChart size={16} /> <span className="hidden sm:inline">Desmos</span>
           </button>
+          <button type="button"
+            onClick={() => setActiveTool('algebra-tiles')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              activeTool === 'algebra-tiles' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Grid3x3 size={16} /> <span className="hidden sm:inline">Алг. Плочки</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -360,6 +397,9 @@ export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExp
         )}
         {activeTool === 'desmos' && (
           <DesmosPanel onExport={url => handleExport(url, 'desmos')} />
+        )}
+        {activeTool === 'algebra-tiles' && (
+          <AlgebraTilesPanel expression={algebraExpression} />
         )}
       </div>
     </div>

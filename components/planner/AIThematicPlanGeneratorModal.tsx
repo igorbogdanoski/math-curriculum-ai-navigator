@@ -14,6 +14,7 @@ import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
 import { CoachBubble } from '../common/CoachBubble';
 import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
 import { resolveGradeByLabel } from '../../utils/gradeMatch';
+import { detectMathDomain } from '../../utils/mathDomainDetector';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -416,6 +417,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Algebra Tiles suggestion for algebra topics */}
+                    {detectMathDomain(selectedTopicObj?.title ?? prefillThemeName ?? '') === 'algebra' && (
+                        <div className="mb-3 flex items-start gap-3 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+                            <span className="text-xl mt-0.5">🔲</span>
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-indigo-800">Препорачана алатка за оваа тема: Алгебарски Плочки</p>
+                                <p className="text-[10px] text-indigo-600 mt-0.5 leading-relaxed">
+                                    Визуелни манипулативи (x², x, 1) — идеални за факторизација, равенки и полиноми.
+                                    При создавање час за оваа тема, копчето <strong>„🔲 Алгебарски Плочки"</strong> ќе се прикажи автоматски во Брзо создади.
+                                </p>
+                            </div>
                         </div>
                     )}
 
