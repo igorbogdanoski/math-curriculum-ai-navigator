@@ -77,8 +77,16 @@ const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleU
                         {isMe && <span className="text-[10px] text-amber-600 font-bold">(ти)</span>}
                         {u.isPremium && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold">PRO</span>}
                         {u.hasUnlimitedCredits && <span className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.5 rounded font-bold">∞</span>}
+                        {u.proExpiresAt && new Date(u.proExpiresAt) < new Date() && (
+                            <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded font-bold">ИСТЕЧЕНО</span>
+                        )}
                     </p>
                     <p className="text-[11px] text-gray-400 truncate font-mono">{u.email || u.uid}</p>
+                    {u.proExpiresAt && (
+                        <p className={`text-[11px] truncate ${new Date(u.proExpiresAt) < new Date() ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
+                            Pro истекува: {new Date(u.proExpiresAt).toLocaleDateString('mk-MK')}
+                        </p>
+                    )}
                     {u.schoolId && (
                         <p className="text-[11px] text-gray-400 truncate">🏫 {schools.find((s: any) => s.id === u.schoolId)?.name ?? u.schoolId}</p>
                     )}

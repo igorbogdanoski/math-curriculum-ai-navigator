@@ -53,6 +53,10 @@ export interface TeachingProfile {
   isPremium?: boolean;
   hasUnlimitedCredits?: boolean;
   tier?: 'Free' | 'Pro' | 'School' | 'Unlimited';
+  /** ISO date string — Pro expires after this date; absent = no expiry (Unlimited/School/legacy) */
+  proExpiresAt?: string;
+  /** ISO date string set by stripe-webhook or admin manual activation */
+  upgradedAt?: string;
 
   schoolLogoUrl?: string;
   isMentor?: boolean;

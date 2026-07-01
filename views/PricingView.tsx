@@ -1,87 +1,114 @@
 import React, { useId, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { AppError, ErrorCode } from '../utils/errors';
 
 // ── Pricing constants ──────────────────────────────────────────────────────
-const PRO_PRICE_MKD = 1200;
+const PRO_PRICE_MKD = 1500;
 const PRO_PRICE_MONTHLY = Math.round(PRO_PRICE_MKD / 12);
+const BANK_ACCOUNT = '210501596102457';
+const BANK_NAME = 'НЛБ Банка';
+const BANK_RECIPIENT = 'Игор Богданоски';
+const CONTACT_EMAIL = 'bogdanoskiigor@gmail.com';
 
 // ── Feature comparison ─────────────────────────────────────────────────────
 const FEATURES: Array<{ label: string; free: string | boolean; pro: string | boolean; school: string | boolean }> = [
-  { label: 'AI генерации / ден',          free: '5',             pro: 'Неограничени',    school: 'Неограничени' },
-  { label: 'Квизови и тестови',           free: true,            pro: true,              school: true },
-  { label: 'Планови за часови',           free: true,            pro: true,              school: true },
-  { label: 'Диференцирани материјали 3×', free: false,           pro: true,              school: true },
-  { label: 'Презентации (Math Gamma)',    free: false,           pro: true,              school: true },
-  { label: 'GeoGebra + Desmos',           free: false,           pro: true,              school: true },
-  { label: 'Годишен план со AI',          free: false,           pro: true,              school: true },
-  { label: 'Аналитика за наставниците',  free: 'Основна',       pro: 'Целосна',         school: 'Целосна + Admin' },
-  { label: 'Национална библиотека',       free: 'Само читање',   pro: 'Читање + Објавување', school: 'Читање + Објавување' },
-  { label: 'Родителски портал',           free: true,            pro: true,              school: true },
-  { label: 'IEP поддршка',               free: false,           pro: true,              school: true },
-  { label: 'Офлајн режим (PWA)',          free: true,            pro: true,              school: true },
-  { label: 'Школски администратор',       free: false,           pro: false,             school: true },
-  { label: 'Приоритетна поддршка',        free: false,           pro: true,              school: 'Посветен менаџер' },
+  { label: 'Почетни AI кредити',           free: '50 (вкупно)',   pro: 'Неограничени',    school: 'Неограничени' },
+  { label: 'Квизови и тестови',            free: true,            pro: true,              school: true },
+  { label: 'Планови за часови',            free: true,            pro: true,              school: true },
+  { label: 'Диференцирани материјали 3×',  free: false,           pro: true,              school: true },
+  { label: 'Презентации (Math Gamma)',     free: false,           pro: true,              school: true },
+  { label: 'GeoGebra + Desmos',            free: false,           pro: true,              school: true },
+  { label: 'Алгебарски плочки (манип.)',   free: true,            pro: true,              school: true },
+  { label: 'Годишен план со AI',           free: false,           pro: true,              school: true },
+  { label: 'Аналитика за наставниците',   free: 'Основна',       pro: 'Целосна',         school: 'Целосна + Admin' },
+  { label: 'Банка на сценаријата',         free: 'Само читање',   pro: 'Читање + Објавување', school: 'Читање + Објавување' },
+  { label: 'Родителски портал',            free: true,            pro: true,              school: true },
+  { label: 'IEP поддршка',                free: false,           pro: true,              school: true },
+  { label: 'Офлајн режим (PWA)',           free: true,            pro: true,              school: true },
+  { label: 'Школски администратор',        free: false,           pro: false,             school: true },
+  { label: 'Приоритетна поддршка',         free: false,           pro: true,              school: 'Посветен менаџер' },
 ];
 
 // ── FAQ ─────────────────────────────────────────────────────────────────────
 const FAQ = [
   {
     q: 'Дали могу да го откажам претплатата?',
-    a: 'Нашиот Pro план е еднократна годишна уплата. Нема автоматско обновување. По истекот на годината, слободно изберете дали ќе продолжите.',
+    a: 'Pro планот е еднократна годишна уплата. Нема автоматско обновување. По истекот на годината, слободно изберете дали ќе продолжите.',
   },
   {
     q: 'Кои методи за плаќање се достапни?',
-    a: 'Плаќање со картичка преку Stripe (Visa, Mastercard) или банкарски трансфер на NLB Banka. Сметка: 210501596102457, примач: Игор Богданоски.',
+    a: `Плаќање со банкарски трансфер на ${BANK_NAME}. Сметка: ${BANK_ACCOUNT}, примач: ${BANK_RECIPIENT}. По уплатата испратете потврда на ${CONTACT_EMAIL} и вашиот Pro акаунт ќе биде активиран во рок од 24 часа.`,
   },
   {
     q: 'Колку брзо се активира Pro?',
-    a: 'При плаќање со картичка — веднаш автоматски. При банкарски трансфер — во рок од 24 часа по потврда на уплатата.',
+    a: 'По потврда на уплатата — во рок од 24 часа (обично многу побрзо). Добивате email потврда кога вашиот акаунт е активиран.',
   },
   {
     q: 'Дали постои попуст за повеќе наставници?',
-    a: 'Да — за 5+ наставници нудиме школска лиценца со значителен попуст. Контактирајте нè на contact@mismath.net.',
+    a: 'Да — за 5+ наставници нудиме школска лиценца со значителен попуст. Контактирајте нè на bogdanoskiigor@gmail.com.',
   },
   {
     q: 'Дали моите материјали се безбедни?',
-    a: 'Да. Сите материјали се приватни за вашиот акаунт. Само материјали кои вие изберете да ги објавите се видливи во Националната библиотека.',
+    a: 'Да. Сите материјали се приватни за вашиот акаунт. Само материјали кои вие изберете да ги објавите се видливи во Банката на сценаријата.',
+  },
+  {
+    q: 'Колку трае Pro планот?',
+    a: '12 месеци од денот на активацијата. 30 дена пред истекот добивате потсетник на вашата email адреса.',
   },
 ];
 
-// ── Checkout hook ──────────────────────────────────────────────────────────
-function useStripeCheckout() {
-  const { firebaseUser } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const startCheckout = async () => {
-    if (!firebaseUser) {
-      setError('Прво се најавете за да продолжите со плаќање.');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const token = await firebaseUser.getIdToken();
-      const res = await fetch('/api/stripe-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) { const msg = data.error || 'Грешка при создавање на плаќање.'; throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
-      if (data.url) window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Непозната грешка.');
-    } finally {
-      setLoading(false);
-    }
+// ── CopyButton ─────────────────────────────────────────────────────────────
+const CopyButton: React.FC<{ text: string }> = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-indigo-600 hover:text-indigo-800 transition-colors"
+      title="Копирај"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? 'Копирано' : 'Копирај'}
+    </button>
+  );
+};
 
-  return { startCheckout, loading, error };
-}
+// ── BankTransferBox ────────────────────────────────────────────────────────
+const BankTransferBox: React.FC<{ price: number }> = ({ price }) => (
+  <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 space-y-3">
+    <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
+      <Building2 className="w-4 h-4" />
+      Плаќање со банкарски трансфер
+    </div>
+    <div className="space-y-2 text-sm">
+      {[
+        { label: 'Банка', value: BANK_NAME },
+        { label: 'Примач', value: BANK_RECIPIENT },
+        { label: 'Сметка', value: BANK_ACCOUNT },
+        { label: 'Износ', value: `${price} МКД` },
+        { label: 'Цел', value: 'MisMath Pro лиценца' },
+      ].map(({ label, value }) => (
+        <div key={label} className="flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2 border border-indigo-100">
+          <span className="text-indigo-600 font-medium shrink-0">{label}:</span>
+          <span className="font-mono text-gray-800 font-semibold text-xs sm:text-sm">{value}</span>
+          <CopyButton text={value} />
+        </div>
+      ))}
+    </div>
+    <p className="text-xs text-indigo-600 leading-relaxed">
+      По уплатата испратете скенирана / фотографирана потврда на{' '}
+      <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold underline">{CONTACT_EMAIL}</a>
+      {' '}и вашиот акаунт ќе биде активиран во рок од 24 часа.
+    </p>
+  </div>
+);
 
 // ── FeatureCell ────────────────────────────────────────────────────────────
 const FeatureCell: React.FC<{ value: string | boolean }> = ({ value }) => {
@@ -104,7 +131,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
         className="w-full flex items-center justify-between px-5 py-4 text-left font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
       >
         {q}
-        {open ? <ChevronUp className="w-5 h-5 text-slate-500 flex-shrink-0" aria-hidden="true" /> : <ChevronDown className="w-5 h-5 text-slate-500 flex-shrink-0" aria-hidden="true" />}
+        {open ? <ChevronUp className="w-5 h-5 text-slate-500 shrink-0" aria-hidden="true" /> : <ChevronDown className="w-5 h-5 text-slate-500 shrink-0" aria-hidden="true" />}
       </button>
       {open && <div id={answerId} className="px-5 pb-4 text-sm text-slate-700 leading-relaxed">{a}</div>}
     </div>
@@ -114,7 +141,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 // ── Main Component ─────────────────────────────────────────────────────────
 export const PricingView: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
-  const { startCheckout, loading, error } = useStripeCheckout();
+  const [showBankDetails, setShowBankDetails] = useState(false);
   const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   // Success/cancel URL params
@@ -125,11 +152,10 @@ export const PricingView: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Helmet>
         <title>Цени и планови — MisMath AI</title>
-        <meta name="description" content="Бесплатен план за наставници, Pro план со неограничени AI генерации (1200 МКД/год) и School план за цели училишта. Започни бесплатно денес." />
+        <meta name="description" content="Бесплатен план за наставници, Pro план со неограничени AI генерации (1500 МКД/год) и School план за цели училишта. Започни бесплатно денес." />
         <meta property="og:title" content="Цени — MisMath AI Математичка Платформа" />
         <meta property="og:url" content="https://ai.mismath.net/pricing" />
         <link rel="canonical" href="https://ai.mismath.net/pricing" />
-        {/* Product schema — Free + Pro offers */}
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Product",
@@ -137,46 +163,21 @@ export const PricingView: React.FC = () => {
           "description": "AI платформа за македонски наставници по математика",
           "url": "https://ai.mismath.net",
           "offers": [
-            {
-              "@type": "Offer",
-              "name": "Free план",
-              "price": "0",
-              "priceCurrency": "MKD",
-              "availability": "https://schema.org/InStock",
-              "url": "https://ai.mismath.net/pricing"
-            },
-            {
-              "@type": "Offer",
-              "name": "Pro план",
-              "price": "1200",
-              "priceCurrency": "MKD",
-              "availability": "https://schema.org/InStock",
-              "priceValidUntil": "2027-12-31",
-              "url": "https://ai.mismath.net/pricing"
-            }
+            { "@type": "Offer", "name": "Free план", "price": "0", "priceCurrency": "MKD", "availability": "https://schema.org/InStock", "url": "https://ai.mismath.net/pricing" },
+            { "@type": "Offer", "name": "Pro план", "price": "1500", "priceCurrency": "MKD", "availability": "https://schema.org/InStock", "priceValidUntil": "2027-12-31", "url": "https://ai.mismath.net/pricing" }
           ]
         })}</script>
-        {/* FAQPage schema */}
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          "mainEntity": FAQ.map(f => ({
-            "@type": "Question",
-            "name": f.q,
-            "acceptedAnswer": { "@type": "Answer", "text": f.a }
-          }))
+          "mainEntity": FAQ.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
         })}</script>
       </Helmet>
 
       {/* Payment status banners */}
       {paymentStatus === 'success' && (
         <div className="bg-emerald-500 text-white text-center py-3 font-semibold text-sm">
-          🎉 Плаќањето е успешно! Вашиот Pro акаунт е активиран. Добредојдовте!
-        </div>
-      )}
-      {paymentStatus === 'cancelled' && (
-        <div className="bg-amber-500 text-white text-center py-3 font-semibold text-sm">
-          Плаќањето е откажано. Можете да обидете повторно кога сакате.
+          🎉 Уплатата е потврдена! Вашиот Pro акаунт ќе биде активиран во рок од 24 часа.
         </div>
       )}
 
@@ -216,9 +217,9 @@ export const PricingView: React.FC = () => {
               <p className="text-slate-600 text-sm">Засекогаш бесплатно</p>
             </div>
             <ul className="space-y-2.5 mb-8 flex-1">
-              {['50 почетни AI кредити', 'Квизови и тестови', 'Планови за часови', 'Офлајн PWA', 'Родителски портал'].map(f => (
+              {['50 почетни AI кредити', 'Квизови и тестови', 'Планови за часови', 'Алгебарски плочки', 'Офлајн PWA', 'Родителски портал'].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -246,23 +247,21 @@ export const PricingView: React.FC = () => {
                 <span className="text-4xl font-black text-white">{PRO_PRICE_MKD}</span>
                 <span className="text-indigo-100 text-sm mb-1.5">МКД / год.</span>
               </div>
-              <p className="text-indigo-100 text-sm">
-                = {PRO_PRICE_MONTHLY} МКД / месечно
-              </p>
+              <p className="text-indigo-100 text-sm">= {PRO_PRICE_MONTHLY} МКД / месечно · 12 месеци</p>
             </div>
             <ul className="space-y-2.5 mb-8 flex-1">
               {[
                 'Неограничени AI генерации',
                 'Диференцирани материјали 3×',
                 'Презентации (Math Gamma)',
-                'GeoGebra + Desmos',
+                'GeoGebra + Desmos + Алг. Плочки',
                 'Годишен план со AI',
                 'Целосна аналитика',
                 'IEP поддршка',
                 'Приоритетна поддршка',
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-white">
-                  <Check className="w-4 h-4 text-emerald-200 flex-shrink-0" aria-hidden="true" />
+                  <Check className="w-4 h-4 text-emerald-200 shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -272,27 +271,20 @@ export const PricingView: React.FC = () => {
                 ✅ Активен план
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <button
-                  onClick={startCheckout}
-                  disabled={loading}
-                  className="w-full py-3 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-lg disabled:opacity-60 text-sm"
+                  type="button"
+                  onClick={() => setShowBankDetails(v => !v)}
+                  className="w-full py-3 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-lg text-sm flex items-center justify-center gap-2"
                 >
-                  {loading ? 'Се подготвува...' : '💳 Плати со картичка'}
+                  <CreditCard className="w-4 h-4" />
+                  {showBankDetails ? 'Скриј детали за уплата' : 'Активирај Pro — плати сега'}
                 </button>
                 {!isAuthenticated && (
                   <p className="text-indigo-100 text-xs text-center">
-                    <a href="#/" className="underline">Најавете се</a> пред плаќање
+                    <a href="#/" className="underline">Најавете се</a> пред да испратите уплата
                   </p>
                 )}
-                {error && <p className="text-red-300 text-xs text-center">{error}</p>}
-                <div className="border-t border-white/20 pt-2">
-                  <p className="text-indigo-100 text-xs text-center mb-1">или банкарски трансфер:</p>
-                  <p className="text-white text-xs text-center font-mono">NLB 210501596102457</p>
-                  <a href="mailto:bogdanoskiigor@gmail.com" className="text-indigo-100 text-xs text-center block hover:text-white">
-                    bogdanoskiigor@gmail.com
-                  </a>
-                </div>
               </div>
             )}
           </div>
@@ -318,19 +310,26 @@ export const PricingView: React.FC = () => {
                 'Обука и onboarding',
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="w-4 h-4 text-purple-600 flex-shrink-0" aria-hidden="true" />
+                  <Check className="w-4 h-4 text-purple-600 shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
             </ul>
             <a
-              href="mailto:contact@mismath.net?subject=Школска лиценца — AI Navigator&body=Здраво, би сакале да дознаеме повеќе за школската лиценца."
+              href={`mailto:${CONTACT_EMAIL}?subject=Школска лиценца — MisMath AI&body=Здраво,%0D%0A%0D%0AБи сакале да дознаеме повеќе за школската лиценца за нашето училиште.%0D%0A%0D%0АБрој на наставници: %0D%0AУчилиште: `}
               className="w-full text-center py-2.5 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-colors text-sm"
             >
               Побарај понуда
             </a>
           </div>
         </div>
+
+        {/* Bank transfer expanded panel */}
+        {showBankDetails && (
+          <div className="mt-6 max-w-lg mx-auto">
+            <BankTransferBox price={PRO_PRICE_MKD} />
+          </div>
+        )}
       </div>
 
       {/* ── Feature Comparison Table ── */}
@@ -366,8 +365,8 @@ export const PricingView: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { icon: Shield, text: 'ГДПР / ЗЗЛП', sub: 'Податоците се ваши' },
-            { icon: Zap, text: 'Активација', sub: 'Веднаш по плаќање' },
-            { icon: HeadphonesIcon, text: 'Поддршка', sub: 'bogdanoskiigor@gmail.com' },
+            { icon: Zap, text: 'Активација 24ч', sub: 'По потврда на уплата' },
+            { icon: HeadphonesIcon, text: 'Поддршка', sub: CONTACT_EMAIL },
             { icon: BarChart3, text: 'Направено во МК', sub: 'За македонски наставници' },
           ].map(({ icon: Icon, text, sub }) => (
             <div key={text} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
@@ -390,15 +389,15 @@ export const PricingView: React.FC = () => {
       {/* ── Footer CTA ── */}
       <div className="bg-indigo-600 py-16 text-center px-4">
         <h2 className="text-3xl font-black text-white mb-3">Подготвени да почнете?</h2>
-        <p className="text-indigo-100 mb-6">Придружете се на наставниците кои веќе ја користат платформата.</p>
+        <p className="text-indigo-100 mb-6">Придружете се на 250+ наставници кои веќе ја користат платформата.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {!isPro && (
             <button
-              onClick={startCheckout}
-              disabled={loading}
-              className="px-8 py-3.5 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-xl disabled:opacity-60"
+              type="button"
+              onClick={() => { setShowBankDetails(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="px-8 py-3.5 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-xl"
             >
-              {loading ? 'Се подготвува...' : '💳 Надгради на Pro — 1200 МКД/год.'}
+              💳 Надгради на Pro — {PRO_PRICE_MKD} МКД/год.
             </button>
           )}
           <a
@@ -408,7 +407,6 @@ export const PricingView: React.FC = () => {
             Продолжи бесплатно
           </a>
         </div>
-        {error && <p className="text-red-300 text-sm mt-4">{error}</p>}
       </div>
 
     </div>

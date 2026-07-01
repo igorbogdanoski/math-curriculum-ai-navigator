@@ -551,3 +551,95 @@ export const replayForumReplyNotification = functions.https.onCall(async (data, 
     ...result,
   };
 });
+
+// ── Referral bonus — grant +10 credits to both referrer and new user ────────
+const REFERRAL_BONUS = 10;
+
+export const grantReferralBonus = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in.');
+  }
+
+  const newUserUid: string = typeof data.newUserUid === 'string' ? data.newUserUid.trim() : '';
+  const refCode: string = typeof data.refCode === 'string' ? data.refCode.trim() : '';
+
+  if (!newUserUid || !refCode) {
+    throw new functions.https.HttpsError('invalid-argument', 'newUserUid and refCode are required.');
+  }
+  if (newUserUid === refCode) {
+    throw new functions.https.HttpsError('invalid-argument', 'Self-referral is not allowed.');
+  }
+
+  const db = admin.firestore();
+
+  // Idempotency: check if this referral was already processed
+  const refDocId = `${refCode}_${newUserUid}`;
+  const refDocRef = db.collection('referrals').doc(refDocId);
+
+  return await db.runTransaction(async (tx) => {
+    const refDoc = await tx.get(refDocRef);
+    if (refDoc.exists && refDoc.data()?.bonusGranted === true) {
+      return { success: true, alreadyGranted: true };
+    }
+
+    const referrerRef = db.collection('users').doc(refCode);
+    const newUserRef = db.collection('users').doc(newUserUid);
+
+    const [referrerSnap, newUserSnap] = await Promise.all([
+      tx.get(referrerRef),
+      tx.get(newUserRef),
+    ]);
+
+    if (!referrerSnap.exists || !newUserSnap.exists) {
+      throw new functions.https.HttpsError('not-found', 'One or both users not found.');
+    }
+
+    const referrerBalance: number = referrerSnap.data()?.aiCreditsBalance ?? 0;
+    const newUserBalance: number = newUserSnap.data()?.aiCreditsBalance ?? 0;
+
+    tx.update(referrerRef, { aiCreditsBalance: referrerBalance + REFERRAL_BONUS });
+    tx.update(newUserRef, { aiCreditsBalance: newUserBalance + REFERRAL_BONUS });
+    tx.set(refDocRef, {
+      refCode,
+      newUserUid,
+      bonusGranted: true,
+      grantedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { success: true, alreadyGranted: false };
+  });
+});
+
+// ── Demo credits — admin-only grant for webinar/demo sessions ───────────────
+export const grantDemoCredits = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in.');
+  }
+
+  // Only admins can grant demo credits
+  const db = admin.firestore();
+  const callerSnap = await db.collection('users').doc(context.auth.uid).get();
+  const callerRole = callerSnap.data()?.role ?? '';
+  if (callerRole !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Only admins can grant demo credits.');
+  }
+
+  const targetUid: string = typeof data.targetUid === 'string' ? data.targetUid.trim() : '';
+  const amount: number = typeof data.amount === 'number' && data.amount > 0 ? Math.min(data.amount, 500) : 50;
+
+  if (!targetUid) {
+    throw new functions.https.HttpsError('invalid-argument', 'targetUid is required.');
+  }
+
+  const userRef = db.collection('users').doc(targetUid);
+
+  return await db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Target user not found.');
+    }
+    const current: number = snap.data()?.aiCreditsBalance ?? 0;
+    tx.update(userRef, { aiCreditsBalance: current + amount });
+    return { success: true, newBalance: current + amount };
+  });
+});

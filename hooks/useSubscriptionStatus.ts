@@ -16,20 +16,26 @@ export interface SubscriptionStatus {
   isPro: boolean;
 }
 
-/** Derive tier from profile fields — tier field takes precedence. */
+/** True if a Pro subscription has expired (proExpiresAt is in the past). */
+export function isProExpired(profile: TeachingProfile | null | undefined): boolean {
+  if (!profile?.proExpiresAt) return false;
+  return new Date(profile.proExpiresAt) < new Date();
+}
+
+/** Derive effective tier — respects proExpiresAt expiry for Pro tier. */
 export function deriveTier(profile: TeachingProfile | null): SubscriptionTier {
   if (!profile) return 'Free';
-  if (profile.tier) return profile.tier;
-  if (profile.hasUnlimitedCredits) return 'Unlimited';
-  if (profile.isPremium) return 'Pro';
-  return 'Free';
+  const raw = profile.tier ?? (profile.hasUnlimitedCredits ? 'Unlimited' : profile.isPremium ? 'Pro' : 'Free');
+  // Unlimited and School never expire via proExpiresAt
+  if (raw === 'Pro' && isProExpired(profile)) return 'Free';
+  return raw;
 }
 
 /** True if the user profile has unlimited AI generation (no credit deduction needed). */
 export function isUnlimitedProfile(profile: TeachingProfile | null | undefined): boolean {
   if (!profile) return false;
   const tier = deriveTier(profile);
-  return tier === 'Unlimited' || tier === 'School' || !!profile.hasUnlimitedCredits || !!profile.isPremium;
+  return tier === 'Unlimited' || tier === 'School';
 }
 
 export function useSubscriptionStatus(): SubscriptionStatus {

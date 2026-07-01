@@ -87,13 +87,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+      const upgradedAt = new Date();
+      const proExpiresAt = new Date(upgradedAt);
+      proExpiresAt.setFullYear(proExpiresAt.getFullYear() + 1);
+
       await db.collection('users').doc(uid).update({
         isPremium: true,
         tier: 'Pro',
         hasUnlimitedCredits: true,
         stripeCustomerId: session.customer ?? null,
         stripeSessionId: session.id,
-        upgradedAt: new Date().toISOString(),
+        upgradedAt: upgradedAt.toISOString(),
+        proExpiresAt: proExpiresAt.toISOString(),
       });
 
       console.info(`[stripe-webhook] User ${uid} upgraded to Pro. Session: ${session.id}`);

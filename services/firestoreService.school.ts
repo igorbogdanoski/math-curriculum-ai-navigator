@@ -200,9 +200,30 @@ export const schoolService = {
     await updateDoc(doc(db, 'users', uid), { isMentor });
   },
 
-  updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'School' | 'Unlimited' }): Promise<void> => {
+  updateUserSubscription: async (uid: string, updateData: {
+    aiCreditsBalance?: number;
+    isPremium?: boolean;
+    hasUnlimitedCredits?: boolean;
+    tier?: 'Free' | 'Pro' | 'School' | 'Unlimited';
+    proExpiresAt?: string | null;
+    upgradedAt?: string;
+  }): Promise<void> => {
     try {
-      await updateDoc(doc(db, 'users', uid), updateData);
+      const payload: Record<string, unknown> = { ...updateData };
+      // Auto-set proExpiresAt when manually activating Pro (if not explicitly provided)
+      if (updateData.tier === 'Pro' && updateData.proExpiresAt === undefined) {
+        const exp = new Date();
+        exp.setFullYear(exp.getFullYear() + 1);
+        payload.proExpiresAt = exp.toISOString();
+        payload.upgradedAt = new Date().toISOString();
+      }
+      // Clear expiry when downgrading to Free
+      if (updateData.tier === 'Free') {
+        payload.proExpiresAt = null;
+        payload.isPremium = false;
+        payload.hasUnlimitedCredits = false;
+      }
+      await updateDoc(doc(db, 'users', uid), payload);
     } catch (error) {
       logger.error('Error updating user subscription:', error);
       throw error;
