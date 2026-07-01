@@ -75,6 +75,12 @@
   background: radial-gradient(circle, rgba(49,27,146,0.25) 0%, transparent 70%);
 }
 
+/* Presentation slide progress bar — theme-specific fill colours */
+.pres-progress-modern  { background: #1d4ed8; }
+.pres-progress-classic { background: #374151; }
+.pres-progress-dark    { background: #818cf8; }
+.pres-progress-creative { background: #f97316; }
+
 .scratchpad-bg-grid {
   background-image: linear-gradient(to right, #ccc 1px, transparent 1px),
                     linear-gradient(to bottom, #ccc 1px, transparent 1px);
