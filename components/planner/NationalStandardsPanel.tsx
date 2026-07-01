@@ -45,7 +45,7 @@ export const NationalStandardsPanel: React.FC<Props> = ({ planTopics, gradeNum: 
           МОН Национални Стандарди — 8 Подрачја
         </h3>
         <span className="text-[10px] text-gray-400 italic">
-          Важат за крајот на основното образование (9. одд.)
+          Компетенции по завршување на основно образование — развиваат се постепено низ сите 9 год.
         </span>
       </div>
 

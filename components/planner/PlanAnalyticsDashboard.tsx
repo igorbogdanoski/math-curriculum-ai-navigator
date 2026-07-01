@@ -322,8 +322,8 @@ ${safeWeak}
           {' · '}
           <span className="text-cyan-500">─── Планирана</span>
         </p>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="w-full sm:w-64 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="w-full sm:w-80 flex-shrink-0">
             {bloomTotalHits === 0 ? (
               <div className="h-48 flex items-center justify-center text-gray-300 text-xs border-2 border-dashed border-gray-100 rounded-xl">
                 Нема доволно текст за анализа
@@ -332,7 +332,7 @@ ${safeWeak}
               <BloomRadarChart scores={bloomPct} targets={bloomTargetPct} />
             )}
           </div>
-          <div className="flex-1 grid grid-cols-2 gap-2">
+          <div className="flex-1 grid grid-cols-2 gap-2 pt-2">
             {BLOOM_AXES.map((ax, i) => (
               <div key={ax.level} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: ax.color }} />
