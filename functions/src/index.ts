@@ -178,10 +178,13 @@ export const deductCredits = functions.https.onCall(async (data, context) => {
 
       const userData = userDoc.data();
       const currentBalance = userData?.aiCreditsBalance || 0;
-      
-      // Allow bypass if they are premium/admin/unlimited/school (just in case they call it anyway)
+
+      // Bypass for admin/premium/unlimited tiers — server mirrors client isUnlimitedProfile()
       const userTier = userData?.tier as string | undefined;
-      if (userData?.role === 'admin' || userData?.isPremium || userData?.hasUnlimitedCredits || userTier === 'School' || userTier === 'Unlimited') {
+      const proExpiresAt = userData?.proExpiresAt as string | undefined;
+      const proExpired = proExpiresAt ? new Date(proExpiresAt) < new Date() : false;
+      const isProActive = (userTier === 'Pro' || userData?.isPremium === true) && !proExpired;
+      if (userData?.role === 'admin' || userData?.hasUnlimitedCredits || isProActive || userTier === 'School' || userTier === 'Unlimited') {
          return { success: true, newBalance: currentBalance, bypassed: true };
       }
 

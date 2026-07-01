@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
+exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -161,8 +161,12 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
             }
             const userData = userDoc.data();
             const currentBalance = (userData === null || userData === void 0 ? void 0 : userData.aiCreditsBalance) || 0;
-            // Allow bypass if they are premium/admin/unlimited (just in case they call it anyway)
-            if ((userData === null || userData === void 0 ? void 0 : userData.role) === 'admin' || (userData === null || userData === void 0 ? void 0 : userData.isPremium) || (userData === null || userData === void 0 ? void 0 : userData.hasUnlimitedCredits)) {
+            // Bypass for admin/premium/unlimited tiers — server mirrors client isUnlimitedProfile()
+            const userTier = userData === null || userData === void 0 ? void 0 : userData.tier;
+            const proExpiresAt = userData === null || userData === void 0 ? void 0 : userData.proExpiresAt;
+            const proExpired = proExpiresAt ? new Date(proExpiresAt) < new Date() : false;
+            const isProActive = (userTier === 'Pro' || (userData === null || userData === void 0 ? void 0 : userData.isPremium) === true) && !proExpired;
+            if ((userData === null || userData === void 0 ? void 0 : userData.role) === 'admin' || (userData === null || userData === void 0 ? void 0 : userData.hasUnlimitedCredits) || isProActive || userTier === 'School' || userTier === 'Unlimited') {
                 return { success: true, newBalance: currentBalance, bypassed: true };
             }
             if (currentBalance < amountToDeduct) {
@@ -231,7 +235,7 @@ const deliverForumReplyNotification = async (input, options) => {
             failureCount: 0,
         };
     }
-    const tokenSet = new Set();
+    const tokenToUid = new Map();
     const missingTokenUids = [];
     await Promise.all(Array.from(recipientUids).map(async (uid) => {
         var _a;
@@ -239,7 +243,8 @@ const deliverForumReplyNotification = async (input, options) => {
             const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
             const token = (_a = tokenSnap.data()) === null || _a === void 0 ? void 0 : _a.token;
             if (typeof token === 'string' && token.length > 0) {
-                tokenSet.add(token);
+                if (!tokenToUid.has(token))
+                    tokenToUid.set(token, uid);
             }
             else {
                 missingTokenUids.push(uid);
@@ -249,7 +254,7 @@ const deliverForumReplyNotification = async (input, options) => {
             missingTokenUids.push(uid);
         }
     }));
-    const tokens = Array.from(tokenSet);
+    const tokens = Array.from(tokenToUid.keys());
     if (tokens.length === 0) {
         console.info('[onForumReplyCreated] no tokens', {
             threadId: input.threadId,
@@ -318,11 +323,38 @@ const deliverForumReplyNotification = async (input, options) => {
             actorUid: input.actorUid,
         },
     });
+    // S19-P2 hardening: prune stale tokens (unregistered/invalid) so the next
+    // replay does not waste multicast slots on dead browser registrations.
+    const prunedTokenUids = [];
+    if (result.failureCount > 0) {
+        const stalePruneOps = [];
+        result.responses.forEach((resp, idx) => {
+            var _a, _b;
+            if (resp.success)
+                return;
+            const code = (_b = (_a = resp.error) === null || _a === void 0 ? void 0 : _a.code) !== null && _b !== void 0 ? _b : '';
+            const isStale = code === 'messaging/registration-token-not-registered' ||
+                code === 'messaging/invalid-registration-token' ||
+                code === 'messaging/invalid-argument';
+            if (!isStale)
+                return;
+            const token = tokens[idx];
+            const uid = token ? tokenToUid.get(token) : undefined;
+            if (!uid)
+                return;
+            prunedTokenUids.push(uid);
+            stalePruneOps.push(db.collection('user_tokens').doc(`${uid}_web`).delete().catch(() => undefined));
+        });
+        if (stalePruneOps.length > 0) {
+            await Promise.all(stalePruneOps);
+        }
+    }
     console.info('[onForumReplyCreated] delivery result', {
         threadId: input.threadId,
         replyId: input.replyId,
         successCount: result.successCount,
         failureCount: result.failureCount,
+        prunedTokenUids,
         source: options.source,
         dryRun: false,
     });
@@ -336,6 +368,7 @@ const deliverForumReplyNotification = async (input, options) => {
         dryRun: false,
         successCount: result.successCount,
         failureCount: result.failureCount,
+        prunedTokenUids,
     };
 };
 /**
@@ -449,5 +482,81 @@ exports.replayForumReplyNotification = functions.https.onCall(async (data, conte
         dryRun,
     });
     return Object.assign({ ok: true }, result);
+});
+// ── Referral bonus — grant +10 credits to both referrer and new user ────────
+const REFERRAL_BONUS = 10;
+exports.grantReferralBonus = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const newUserUid = typeof data.newUserUid === 'string' ? data.newUserUid.trim() : '';
+    const refCode = typeof data.refCode === 'string' ? data.refCode.trim() : '';
+    if (!newUserUid || !refCode) {
+        throw new functions.https.HttpsError('invalid-argument', 'newUserUid and refCode are required.');
+    }
+    if (newUserUid === refCode) {
+        throw new functions.https.HttpsError('invalid-argument', 'Self-referral is not allowed.');
+    }
+    const db = admin.firestore();
+    // Idempotency: check if this referral was already processed
+    const refDocId = `${refCode}_${newUserUid}`;
+    const refDocRef = db.collection('referrals').doc(refDocId);
+    return await db.runTransaction(async (tx) => {
+        var _a, _b, _c, _d, _e;
+        const refDoc = await tx.get(refDocRef);
+        if (refDoc.exists && ((_a = refDoc.data()) === null || _a === void 0 ? void 0 : _a.bonusGranted) === true) {
+            return { success: true, alreadyGranted: true };
+        }
+        const referrerRef = db.collection('users').doc(refCode);
+        const newUserRef = db.collection('users').doc(newUserUid);
+        const [referrerSnap, newUserSnap] = await Promise.all([
+            tx.get(referrerRef),
+            tx.get(newUserRef),
+        ]);
+        if (!referrerSnap.exists || !newUserSnap.exists) {
+            throw new functions.https.HttpsError('not-found', 'One or both users not found.');
+        }
+        const referrerBalance = (_c = (_b = referrerSnap.data()) === null || _b === void 0 ? void 0 : _b.aiCreditsBalance) !== null && _c !== void 0 ? _c : 0;
+        const newUserBalance = (_e = (_d = newUserSnap.data()) === null || _d === void 0 ? void 0 : _d.aiCreditsBalance) !== null && _e !== void 0 ? _e : 0;
+        tx.update(referrerRef, { aiCreditsBalance: referrerBalance + REFERRAL_BONUS });
+        tx.update(newUserRef, { aiCreditsBalance: newUserBalance + REFERRAL_BONUS });
+        tx.set(refDocRef, {
+            refCode,
+            newUserUid,
+            bonusGranted: true,
+            grantedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return { success: true, alreadyGranted: false };
+    });
+});
+// ── Demo credits — admin-only grant for webinar/demo sessions ───────────────
+exports.grantDemoCredits = functions.https.onCall(async (data, context) => {
+    var _a, _b;
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    // Only admins can grant demo credits
+    const db = admin.firestore();
+    const callerSnap = await db.collection('users').doc(context.auth.uid).get();
+    const callerRole = (_b = (_a = callerSnap.data()) === null || _a === void 0 ? void 0 : _a.role) !== null && _b !== void 0 ? _b : '';
+    if (callerRole !== 'admin') {
+        throw new functions.https.HttpsError('permission-denied', 'Only admins can grant demo credits.');
+    }
+    const targetUid = typeof data.targetUid === 'string' ? data.targetUid.trim() : '';
+    const amount = typeof data.amount === 'number' && data.amount > 0 ? Math.min(data.amount, 500) : 50;
+    if (!targetUid) {
+        throw new functions.https.HttpsError('invalid-argument', 'targetUid is required.');
+    }
+    const userRef = db.collection('users').doc(targetUid);
+    return await db.runTransaction(async (tx) => {
+        var _a, _b;
+        const snap = await tx.get(userRef);
+        if (!snap.exists) {
+            throw new functions.https.HttpsError('not-found', 'Target user not found.');
+        }
+        const current = (_b = (_a = snap.data()) === null || _a === void 0 ? void 0 : _a.aiCreditsBalance) !== null && _b !== void 0 ? _b : 0;
+        tx.update(userRef, { aiCreditsBalance: current + amount });
+        return { success: true, newBalance: current + amount };
+    });
 });
 //# sourceMappingURL=index.js.map

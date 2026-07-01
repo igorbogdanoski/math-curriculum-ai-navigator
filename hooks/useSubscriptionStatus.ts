@@ -35,7 +35,8 @@ export function deriveTier(profile: TeachingProfile | null): SubscriptionTier {
 export function isUnlimitedProfile(profile: TeachingProfile | null | undefined): boolean {
   if (!profile) return false;
   const tier = deriveTier(profile);
-  return tier === 'Unlimited' || tier === 'School';
+  // Pro, Unlimited, and School all get unlimited generation
+  return tier === 'Pro' || tier === 'Unlimited' || tier === 'School';
 }
 
 export function useSubscriptionStatus(): SubscriptionStatus {
