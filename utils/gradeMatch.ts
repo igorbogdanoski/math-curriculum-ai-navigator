@@ -1,12 +1,12 @@
 import type { Grade } from '../types';
 
 const ROMAN_TO_LEVEL: Record<string, number> = {
-  IX: 9, VIII: 8, VII: 7, VI: 6, IV: 4, V: 5, III: 3, II: 2, I: 1,
-  X: 10, XI: 11, XII: 12,
+  I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8,
+  IX: 9, X: 10, XI: 11, XII: 12, XIII: 13,
 };
 
-// Longest-first so "VIII" matches before "V"/"I" substrings.
-const GRADE_TOKEN_RE = /\b(XII|XI|X|IX|VIII|VII|VI|IV|V|III|II|I|[1-9]|1[0-2])\b/i;
+// Longest-first: XIII before XII, VIII before V/I, etc.
+const GRADE_TOKEN_RE = /\b(XIII|XII|XI|X|IX|VIII|VII|VI|IV|V|III|II|I|[1-9]|1[0-3])\b/i;
 
 /**
  * Resolves a `Grade` from a free-text label (e.g. AI-generated `plan.grade` values

@@ -684,7 +684,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             aria-labelledby="ai-thematic-plan-title"
         >
             <div
-                className="bg-white rounded-lg shadow-xl max-w-[92vw] w-full overflow-hidden flex flex-col my-0 min-h-0 max-h-[calc(100vh-3rem)]"
+                className="bg-white rounded-lg shadow-xl max-w-[min(92vw,calc(100vw-210px))] w-full overflow-hidden flex flex-col my-0 min-h-0 max-h-[calc(100vh-3rem)]"
                 onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
                 {/* Header */}
