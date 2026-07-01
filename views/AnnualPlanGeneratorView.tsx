@@ -105,17 +105,18 @@ const SortableTopic: React.FC<SortableTopicProps> = ({
     return (
         <div ref={setNodeRef} style={style} className="border border-gray-200 rounded-xl bg-gray-50 mb-6 bg-white overflow-hidden transition-all duration-200">
             <div
-                className={`flex justify-between items-center p-4 border-b border-gray-200 ${isEditing ? 'bg-blue-50' : 'bg-gray-100/50'}`}
+                className={`p-4 border-b border-gray-200 ${isEditing ? 'bg-blue-50' : 'bg-gray-100/50'}`}
                 {...(!isEditing ? { ...attributes, ...listeners } : {})}
                 style={!isEditing ? { cursor: 'grab' } : {}}
             >
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-3 flex-1 min-w-0">
+                {/* Row 1: drag handle + number + full title */}
+                <h3 className="text-base font-bold text-gray-800 flex items-center gap-3 mb-2">
                     {!isEditing && (
                         <div className="text-gray-400 hover:text-gray-600 flex-shrink-0">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                         </div>
                     )}
-                    <span className="bg-white border text-gray-600 w-8 h-8 flex items-center justify-center rounded-full shadow-sm text-sm flex-shrink-0">
+                    <span className="bg-white border text-gray-600 w-7 h-7 flex items-center justify-center rounded-full shadow-sm text-sm flex-shrink-0">
                         {idx + 1}
                     </span>
                     {isEditing ? (
@@ -129,10 +130,11 @@ const SortableTopic: React.FC<SortableTopicProps> = ({
                             onPointerDown={e => e.stopPropagation()}
                         />
                     ) : (
-                        <span className="truncate">{topic.title}</span>
+                        <span className="leading-snug">{topic.title}</span>
                     )}
                 </h3>
-                <div className="flex items-center gap-2 flex-wrap flex-shrink-0 ml-2" onPointerDown={e => e.stopPropagation()}>
+                {/* Row 2: action buttons */}
+                <div className="flex items-center gap-2 flex-wrap pl-9" onPointerDown={e => e.stopPropagation()}>
                     {isEditing ? (
                         <>
                             <button type="button" onClick={handleSaveEdit}
@@ -165,8 +167,8 @@ const SortableTopic: React.FC<SortableTopicProps> = ({
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg>
                                 Генерирај Час
                             </button>
-                            <span className="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full shadow-sm border border-blue-100 flex items-center gap-1">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                 {topic.durationWeeks} нед.
                             </span>
                             <button type="button" onClick={handleStartEdit}
@@ -184,7 +186,6 @@ const SortableTopic: React.FC<SortableTopicProps> = ({
                                     Програма
                                 </button>
                             )}
-                            {/* S94-E5: Progress Tracker badge */}
                             {lessonCount !== undefined && (
                                 <span
                                     title={`${lessonCount} зачувани час${lessonCount === 1 ? '' : 'а'} за оваа тема`}
@@ -193,7 +194,6 @@ const SortableTopic: React.FC<SortableTopicProps> = ({
                                     {lessonCount > 0 ? '✅' : '○'} {lessonCount} ч.
                                 </span>
                             )}
-                            {/* S93-D: Мои Бележки toggle */}
                             <button type="button"
                                 onClick={() => setShowNote(v => !v)}
                                 title={overlayNote ? 'Уреди белешка' : 'Додади белешка'}
