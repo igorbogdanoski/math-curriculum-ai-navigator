@@ -28,7 +28,6 @@ import {
   generateTaskDifferentiation,
 } from '../services/gemini/visionContracts';
 import { callImagenProxy } from '../services/gemini/core';
-import { saveQuestion } from '../services/firestoreService.materials';
 import { saveExtractedToBank } from '../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { useAuth } from '../contexts/AuthContext';
@@ -841,19 +840,10 @@ export const ExtractionHubView: React.FC = () => {
         authorName: firebaseUser.displayName ?? 'Наставник',
         isPublic: opts.isPublic,
       });
-      await Promise.all(tasks.map(task =>
-        saveQuestion({
-          question: task.latexStatement || task.statement,
-          type: 'open',
-          answer: '',
-          teacherUid: firebaseUser.uid,
-          topicId: task.topicMk,
-          dokLevel: task.dokLevel,
-          isVerified: false,
-          isPublic: false,
-        })
-      ));
-      addNotification(`Зачувани ${tasks.length} задачи во Националната Банка! ✓`, 'success');
+      addNotification(
+        `${tasks.length} задач${tasks.length === 1 ? 'а зачувана' : 'и зачувани'} во Банката на Сценарија! ✓`,
+        'success',
+      );
       setShowSaveDialog(false);
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
     finally { setIsSaving(false); }

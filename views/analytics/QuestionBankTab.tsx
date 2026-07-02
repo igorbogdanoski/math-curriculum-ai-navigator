@@ -1,6 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield, Globe } from 'lucide-react';
+import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import type { SavedQuestion, DokLevel } from '../../types';
 import { DOK_META } from '../../types';
@@ -32,8 +32,6 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [publishing, setPublishing] = useState<Set<string>>(new Set());
-  const [published, setPublished] = useState<Set<string>>(new Set());
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterGrade, setFilterGrade] = useState<string>('');
@@ -119,23 +117,6 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
     }
   };
 
-  const handlePublish = async (q: SavedQuestion) => {
-    if (!q.isVerified) {
-      addNotification(t('analytics.qbank.errNotVerified'), 'error');
-      return;
-    }
-    setPublishing(prev => new Set(prev).add(q.id));
-    try {
-      await firestoreService.publishToNationalLibrary(q, user?.name ?? t('analytics.qbank.defaultTitle'), user?.schoolName, user?.isMentor ?? false);
-      setPublished(prev => new Set(prev).add(q.id));
-      setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, isPublic: true } : item));
-      addNotification(t('analytics.qbank.published'), 'success');
-    } catch {
-      addNotification(t('analytics.qbank.errPublish'), 'error');
-    } finally {
-      setPublishing(prev => { const n = new Set(prev); n.delete(q.id); return n; });
-    }
-  };
 
   const handleDelete = (questionId: string) => {
     setConfirmDialog({
@@ -411,17 +392,6 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
                   >
                     {q.isVerified ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
                   </button>
-                  {q.isVerified && (
-                    <button
-                      type="button"
-                      onClick={() => handlePublish(q)}
-                      disabled={publishing.has(q.id) || published.has(q.id) || !!q.isPublic}
-                      title={q.isPublic ? t('analytics.qbank.alreadyPublished') : t('analytics.qbank.publishTip')}
-                      className={`p-1.5 transition ${q.isPublic || published.has(q.id) ? 'text-green-500 cursor-default' : 'text-gray-400 hover:text-indigo-600'}`}
-                    >
-                      <Globe className="w-4 h-4" />
-                    </button>
-                  )}
                   <button
                     type="button"
                     onClick={() => handleDelete(q.id)}

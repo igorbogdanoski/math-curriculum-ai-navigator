@@ -107,7 +107,6 @@ export async function deleteAllUserData(uid: string): Promise<void> {
     // Collections with different owner fields
     deleteCollectionByField('live_sessions', 'hostUid', uid),
     deleteCollectionByField('live_quizzes', 'hostUid', uid),
-    deleteCollectionByField('national_library', 'publishedByUid', uid),
     deleteCollectionByField('academic_annual_plans', 'userId', uid),
     deleteCollectionByField('user_tokens', 'uid', uid),
 
@@ -142,7 +141,6 @@ export async function exportUserData(
     annualPlans,
     savedQuestions,
     liveSessions,
-    nationalLibrary,
   ] = await Promise.all([
     getProfileSafe(uid, warnings),
     collectByFieldSafe('quiz_results', 'teacherUid', uid, warnings),
@@ -157,7 +155,6 @@ export async function exportUserData(
     collectByFieldSafe('academic_annual_plans', 'userId', uid, warnings),
     collectByFieldSafe('saved_questions', 'teacherUid', uid, warnings),
     collectByFieldSafe('live_sessions', 'hostUid', uid, warnings),
-    collectByFieldSafe('national_library', 'publishedByUid', uid, warnings),
   ]);
 
   return {
@@ -176,7 +173,6 @@ export async function exportUserData(
     annualPlans,
     savedQuestions,
     liveSessions,
-    nationalLibrary,
     ...(warnings.length > 0 ? { exportWarnings: warnings } : {}),
   };
 }
