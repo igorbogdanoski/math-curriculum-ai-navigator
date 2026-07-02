@@ -1,9 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   isPrime, primeFactors, sieve, euclideanSteps, gcd, lcm,
   modTable, fibonacci, arithmeticSeq, geometricSeq,
+  generateNumberTheorySet,
   NUMTHEORY_CURRICULUM, type CurriculumRef,
 } from './numberTheoryMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Curriculum badges ──────────────────────────────────────────────────────────
 function CurriculumBadges({ cur }: { cur: CurriculumRef }) {
@@ -539,8 +542,30 @@ function SequencesTab() {
   );
 }
 
+// ── Tab 5: Вежбај ────────────────────────────────────────────────────────────
+function ExercisesTab() {
+  const session = useLabSession('number-theory', 'Теорија на броеви');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateNumberTheorySet(level));
+  }, [difficulty, loadExercises]);
+
+  return (
+    <LabExercisePanel
+      session={session}
+      onNewSet={loadSet}
+      difficulty={difficulty}
+      onDifficultyChange={setDifficulty}
+    />
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
-type Tab = 'primes' | 'gcd' | 'modular' | 'sequences';
+type Tab = 'primes' | 'gcd' | 'modular' | 'sequences' | 'exercises';
 
 export default function NumberTheoryLab() {
   const [tab, setTab] = useState<Tab>('primes');
@@ -550,6 +575,7 @@ export default function NumberTheoryLab() {
     { id: 'gcd',       label: '⊂ НЗД / НЗС' },
     { id: 'modular',   label: '🕐 Модуларна' },
     { id: 'sequences', label: '📈 Низи' },
+    { id: 'exercises', label: '✏️ Вежбај' },
   ];
 
   return (
@@ -557,7 +583,7 @@ export default function NumberTheoryLab() {
       <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100 p-4">
         <h2 className="text-base font-bold text-gray-800">Лабораторија за теорија на броеви</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Прости броеви · НЗД &amp; НЗС · Модуларна аритметика · Низи
+          Прости броеви · НЗД &amp; НЗС · Модуларна аритметика · Низи · Вежбај
         </p>
         <CurriculumBadges cur={NUMTHEORY_CURRICULUM} />
       </div>
@@ -584,6 +610,7 @@ export default function NumberTheoryLab() {
         {tab === 'gcd'       && <GcdLcmTab />}
         {tab === 'modular'   && <ModularTab />}
         {tab === 'sequences' && <SequencesTab />}
+        {tab === 'exercises' && <ExercisesTab />}
       </div>
     </div>
   );

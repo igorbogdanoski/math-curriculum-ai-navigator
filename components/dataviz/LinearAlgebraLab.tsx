@@ -1,15 +1,11 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import {
-  gaussElim, cramer, determinantCofactor, inverseAdjugate, luDecompose,
-  choleskyDecompose, svdDecompose, matrixExp, jordanDecompose,
-  identity, matFromFlat, fmtNum,
-  type Mat,
-} from '../../utils/matrixOps';
-
-import { type Mat2, type Mat3, COLS_2_3, COLS_N, det2, det3, inv2, mul2, add2, transpose2, mul3, fmt, EMPTY2, EMPTY3 } from './linearAlgebraMath';
+import React, { useState, useMemo, useCallback } from 'react';
+import { type Mat2, type Mat3, det2, det3, inv2, mul2, add2, transpose2, mul3, fmt, EMPTY2, EMPTY3, generateLinearAlgebraSet } from './linearAlgebraMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 import { EigenLab } from './LinearAlgebraEigenLab';
 import { MatrixInput, MatrixDisplay } from './LinearAlgebraInputs';
-// ─── Matrix input component ───────────────────────────────────────────────────
+import { NxNSolverLab } from './LinearAlgebraAdvancedLab';
+
 // ─── Matrices sub-tab ─────────────────────────────────────────────────────────
 type MatOp = 'add' | 'mul' | 'invA' | 'transA' | 'detA';
 
@@ -40,18 +36,17 @@ function MatricesLab() {
   const detB = size === 2 ? det2(mB2) : null;
 
   const OPS: { id: MatOp; label: string; needsB: boolean }[] = [
-    { id: 'mul',    label: 'A × B',   needsB: true  },
-    { id: 'add',    label: 'A + B',   needsB: true  },
-    { id: 'invA',   label: 'A⁻¹',     needsB: false },
-    { id: 'transA', label: 'Aᵀ',      needsB: false },
-    { id: 'detA',   label: 'det(A)',  needsB: false },
+    { id: 'mul',    label: 'A × B',  needsB: true  },
+    { id: 'add',    label: 'A + B',  needsB: true  },
+    { id: 'invA',   label: 'A⁻¹',    needsB: false },
+    { id: 'transA', label: 'Aᵀ',     needsB: false },
+    { id: 'detA',   label: 'det(A)', needsB: false },
   ];
 
   const aVal = size === 2 ? mA2 : mA3;
   const bVal = size === 2 ? mB2 : mB3;
   const aChange = size === 2 ? (m: number[][]) => setMA2(m as Mat2) : (m: number[][]) => setMA3(m as Mat3);
   const bChange = size === 2 ? (m: number[][]) => setMB2(m as Mat2) : (m: number[][]) => setMB3(m as Mat3);
-
   const needsB = OPS.find(o => o.id === op)?.needsB ?? true;
 
   return (
@@ -128,7 +123,6 @@ function vecToSVG(x: number, y: number) {
 
 function VectorArrow({ vx, vy, color, label }: { vx: number; vy: number; color: string; label: string }) {
   const { sx, sy } = vecToSVG(vx, vy);
-  const angle = Math.atan2(-vy, vx) * (180 / Math.PI);
   const len = Math.sqrt(vx * vx + vy * vy) * vScale;
   if (len < 2) return null;
   return (
@@ -138,11 +132,7 @@ function VectorArrow({ vx, vy, color, label }: { vx: number; vy: number; color: 
           <path d="M0,0 L0,6 L6,3 z" fill={color} />
         </marker>
       </defs>
-      <line
-        x1={vCx} y1={vCy} x2={sx} y2={sy}
-        stroke={color} strokeWidth={2.5}
-        markerEnd={`url(#arrow-${label})`}
-      />
+      <line x1={vCx} y1={vCy} x2={sx} y2={sy} stroke={color} strokeWidth={2.5} markerEnd={`url(#arrow-${label})`} />
       <text x={sx + 6} y={sy - 4} fontSize={12} fill={color} fontWeight="bold">{label}</text>
     </g>
   );
@@ -159,8 +149,7 @@ function VectorsLab() {
   const lenV = Math.sqrt(vx * vx + vy * vy);
   const cosA = lenU > 0 && lenV > 0 ? dot / (lenU * lenV) : 0;
   const angle = Math.acos(Math.max(-1, Math.min(1, cosA))) * (180 / Math.PI);
-
-  const gridLines: number[] = [-3, -2, -1, 0, 1, 2, 3];
+  const gridLines = [-3, -2, -1, 0, 1, 2, 3];
 
   return (
     <div className="space-y-4">
@@ -185,8 +174,7 @@ function VectorsLab() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full max-h-[300px]">
-          {/* grid */}
+        <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" style={{ maxHeight: 300 }}>
           {gridLines.map(g => {
             const { sx } = vecToSVG(g, 0);
             const { sy } = vecToSVG(0, g);
@@ -199,10 +187,8 @@ function VectorsLab() {
               </g>
             );
           })}
-          {/* vectors */}
           <VectorArrow vx={ux} vy={uy} color="#6366f1" label="u" />
           <VectorArrow vx={vx} vy={vy} color="#f43f5e" label="v" />
-          {/* origin */}
           <circle cx={vCx} cy={vCy} r={3} fill="#374151" />
         </svg>
       </div>
@@ -246,23 +232,18 @@ type TransformPreset = 'identity' | 'rotate45' | 'rotate90' | 'scale2' | 'shear'
 
 const PRESETS: { id: TransformPreset; label: string; mat: Mat2 }[] = [
   { id: 'identity', label: 'I (Тождество)', mat: [[1,0],[0,1]] },
-  { id: 'rotate45', label: 'Ротација 45°',   mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
-  { id: 'rotate90', label: 'Ротација 90°',   mat: [[0,-1],[1,0]] },
-  { id: 'scale2',   label: 'Скалирање ×2',   mat: [[2,0],[0,2]] },
-  { id: 'shear',    label: 'Смолкнување',     mat: [[1,0.5],[0,1]] },
-  { id: 'reflectX', label: 'Рефлексија X',   mat: [[1,0],[0,-1]] },
-  { id: 'reflectY', label: 'Рефлексија Y',   mat: [[-1,0],[0,1]] },
-  { id: 'custom',   label: 'Прилагодено',     mat: [[1,1],[0,1]] },
+  { id: 'rotate45', label: 'Ротација 45°',  mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
+  { id: 'rotate90', label: 'Ротација 90°',  mat: [[0,-1],[1,0]] },
+  { id: 'scale2',   label: 'Скалирање ×2',  mat: [[2,0],[0,2]] },
+  { id: 'shear',    label: 'Смолкнување',    mat: [[1,0.5],[0,1]] },
+  { id: 'reflectX', label: 'Рефлексија X',  mat: [[1,0],[0,-1]] },
+  { id: 'reflectY', label: 'Рефлексија Y',  mat: [[-1,0],[0,1]] },
+  { id: 'custom',   label: 'Прилагодено',    mat: [[1,1],[0,1]] },
 ];
 
-const TW = 380, TH = 320;
-const tCx = TW / 2, tCy = TH / 2;
-const tScale = 55;
+const TW = 380, TH = 320, tCx = TW / 2, tCy = TH / 2, tScale = 55;
 
-function tVec(x: number, y: number) {
-  return { sx: tCx + x * tScale, sy: tCy - y * tScale };
-}
-
+function tVec(x: number, y: number) { return { sx: tCx + x * tScale, sy: tCy - y * tScale }; }
 function applyMat(m: Mat2, [x, y]: [number, number]): [number, number] {
   return [m[0][0]*x + m[0][1]*y, m[1][0]*x + m[1][1]*y];
 }
@@ -274,8 +255,7 @@ function TransformationsLab() {
 
   const corners: [number, number][] = [[0,0],[1,0],[1,1],[0,1]];
   const transformed = corners.map(c => applyMat(mat, c));
-
-  const gridLines: number[] = [-2,-1,0,1,2];
+  const gridLines = [-2,-1,0,1,2];
 
   const squarePath = (pts: [number,number][], fn: (x: number, y: number) => { sx: number; sy: number }) => {
     const [p0,...rest] = pts;
@@ -308,8 +288,7 @@ function TransformationsLab() {
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <svg viewBox={`0 0 ${TW} ${TH}`} className="w-full max-h-[300px]">
-          {/* grid */}
+        <svg viewBox={`0 0 ${TW} ${TH}`} className="w-full" style={{ maxHeight: 300 }}>
           {gridLines.map(g => {
             const { sx } = tVec(g, 0);
             const { sy } = tVec(0, g);
@@ -320,11 +299,8 @@ function TransformationsLab() {
               </g>
             );
           })}
-          {/* original square */}
           <path d={squarePath(corners, tVec)} fill="#6366f1" fillOpacity={0.15} stroke="#6366f1" strokeWidth={2} strokeDasharray="5 3" />
-          {/* transformed square */}
           <path d={squarePath(transformed, tVec)} fill="#10b981" fillOpacity={0.25} stroke="#10b981" strokeWidth={2.5} />
-          {/* basis vectors (transformed) */}
           <defs>
             <marker id="arrow-i" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
               <path d="M0,0 L0,6 L6,3 z" fill="#f59e0b" />
@@ -339,7 +315,6 @@ function TransformationsLab() {
             stroke="#f43f5e" strokeWidth={2.5} markerEnd="url(#arrow-j)" />
           <text x={tVec(basisI[0], basisI[1]).sx + 6} y={tVec(basisI[0], basisI[1]).sy - 4} fontSize={11} fill="#f59e0b" fontWeight="bold">e₁</text>
           <text x={tVec(basisJ[0], basisJ[1]).sx + 6} y={tVec(basisJ[0], basisJ[1]).sy - 4} fontSize={11} fill="#f43f5e" fontWeight="bold">e₂</text>
-          {/* legend */}
           <rect x={8} y={8} width={110} height={38} rx={6} fill="white" fillOpacity={0.9} stroke="#e5e7eb" />
           <line x1={14} y1={21} x2={28} y2={21} stroke="#6366f1" strokeWidth={2} strokeDasharray="4 2" />
           <text x={32} y={24} fontSize={10} fill="#6366f1">Оригинал</text>
@@ -404,57 +379,43 @@ function SystemsLab() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs font-bold text-indigo-600 mb-2">Линија 1: y = m₁x + b₁</p>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-semibold text-gray-400 w-6">m₁</span>
-            <input type="range" min={-3} max={3} step={0.25} value={m1}
-              onChange={e => setM1(parseFloat(e.target.value))}
-              className="flex-1 accent-indigo-600" aria-label="наклон 1" />
-            <span className="text-sm font-bold text-indigo-700 w-8 text-right">{m1}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 w-6">b₁</span>
-            <input type="range" min={-3} max={3} step={0.25} value={b1}
-              onChange={e => setB1(parseFloat(e.target.value))}
-              className="flex-1 accent-indigo-600" aria-label="исечок 1" />
-            <span className="text-sm font-bold text-indigo-700 w-8 text-right">{b1}</span>
-          </div>
+          {[{ label: 'm₁', v: m1, set: setM1 }, { label: 'b₁', v: b1, set: setB1 }].map(({ label, v, set }) => (
+            <div key={label} className="flex items-center gap-2 mb-1.5">
+              <span className="text-xs font-semibold text-gray-400 w-6">{label}</span>
+              <input type="range" min={-3} max={3} step={0.25} value={v}
+                onChange={e => set(parseFloat(e.target.value))}
+                className="flex-1 accent-indigo-600" aria-label={label} />
+              <span className="text-sm font-bold text-indigo-700 w-8 text-right">{v}</span>
+            </div>
+          ))}
         </div>
         <div>
           <p className="text-xs font-bold text-rose-600 mb-2">Линија 2: y = m₂x + b₂</p>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-semibold text-gray-400 w-6">m₂</span>
-            <input type="range" min={-3} max={3} step={0.25} value={m2}
-              onChange={e => setM2(parseFloat(e.target.value))}
-              className="flex-1 accent-rose-600" aria-label="наклон 2" />
-            <span className="text-sm font-bold text-rose-700 w-8 text-right">{m2}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-400 w-6">b₂</span>
-            <input type="range" min={-3} max={3} step={0.25} value={b2}
-              onChange={e => setB2(parseFloat(e.target.value))}
-              className="flex-1 accent-rose-600" aria-label="исечок 2" />
-            <span className="text-sm font-bold text-rose-700 w-8 text-right">{b2}</span>
-          </div>
+          {[{ label: 'm₂', v: m2, set: setM2 }, { label: 'b₂', v: b2, set: setB2 }].map(({ label, v, set }) => (
+            <div key={label} className="flex items-center gap-2 mb-1.5">
+              <span className="text-xs font-semibold text-gray-400 w-6">{label}</span>
+              <input type="range" min={-3} max={3} step={0.25} value={v}
+                onChange={e => set(parseFloat(e.target.value))}
+                className="flex-1 accent-rose-600" aria-label={label} />
+              <span className="text-sm font-bold text-rose-700 w-8 text-right">{v}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl p-2.5 bg-indigo-50 border border-indigo-200 text-center">
           <p className="text-[10px] text-gray-400 font-semibold">Равенка 1</p>
-          <p className="text-sm font-extrabold text-indigo-700 font-mono">
-            y = {m1}x {b1 >= 0 ? '+ ' : '− '}{Math.abs(b1)}
-          </p>
+          <p className="text-sm font-extrabold text-indigo-700 font-mono">y = {m1}x {b1 >= 0 ? '+ ' : '− '}{Math.abs(b1)}</p>
         </div>
         <div className="rounded-xl p-2.5 bg-rose-50 border border-rose-200 text-center">
           <p className="text-[10px] text-gray-400 font-semibold">Равенка 2</p>
-          <p className="text-sm font-extrabold text-rose-700 font-mono">
-            y = {m2}x {b2 >= 0 ? '+ ' : '− '}{Math.abs(b2)}
-          </p>
+          <p className="text-sm font-extrabold text-rose-700 font-mono">y = {m2}x {b2 >= 0 ? '+ ' : '− '}{Math.abs(b2)}</p>
         </div>
       </div>
 
       <div className="rounded-2xl border-2 border-indigo-200 bg-white overflow-hidden">
-        <svg viewBox={`0 0 ${SS_W} ${SS_H}`} className="w-full max-h-[280px]">
+        <svg viewBox={`0 0 ${SS_W} ${SS_H}`} className="w-full" style={{ maxHeight: 280 }}>
           <defs><clipPath id="sys-clip"><rect x={0} y={0} width={SS_W} height={SS_H} /></clipPath></defs>
           {[-3,-2,-1,0,1,2,3].map(g => {
             const gx = ssToSVG(g, 0).x;
@@ -473,9 +434,7 @@ function SystemsLab() {
           {inView && (
             <g clipPath="url(#sys-clip)">
               <circle cx={ixPt.x} cy={ixPt.y} r={7} fill="#10b981" stroke="white" strokeWidth={2}/>
-              <text x={ixPt.x+10} y={ixPt.y-6} fontSize={11} fill="#10b981" fontWeight="bold">
-                ({fmt(ix)}, {fmt(iy)})
-              </text>
+              <text x={ixPt.x+10} y={ixPt.y-6} fontSize={11} fill="#10b981" fontWeight="bold">({fmt(ix)}, {fmt(iy)})</text>
             </g>
           )}
         </svg>
@@ -495,9 +454,7 @@ function SystemsLab() {
         ) : (
           <>
             <p className="text-sm font-bold text-emerald-700">Единствено решение — Пресечна точка</p>
-            <p className="text-xl font-extrabold text-emerald-800 mt-1 font-mono">
-              x = {fmt(ix)},&nbsp; y = {fmt(iy)}
-            </p>
+            <p className="text-xl font-extrabold text-emerald-800 mt-1 font-mono">x = {fmt(ix)},&nbsp; y = {fmt(iy)}</p>
           </>
         )}
       </div>
@@ -521,367 +478,33 @@ function SystemsLab() {
   );
 }
 
-// ─── S62-C5/C6: n×n Solver Lab ───────────────────────────────────────────────
-const GRID_COLS: Record<number, string> = { 2:'grid-cols-2', 3:'grid-cols-3', 4:'grid-cols-4', 5:'grid-cols-5', 6:'grid-cols-6' };
-type NxNMode   = 'matrix' | 'system';
-type NxNMethod = 'gauss' | 'cramer' | 'cofactor' | 'lu' | 'adj' | 'chol' | 'svd' | 'exp' | 'jordan';
-
-const DIMS = [2, 3, 4, 5, 6] as const;
-type Dim = typeof DIMS[number];
-
-function makeFlat(n: number): number[] {
-  const id = identity(n);
-  return id.flat();
-}
-
-function MatGrid({ flat, n, onChange, color = 'indigo', label }: {
-  flat: number[]; n: Dim; onChange: (f: number[]) => void; color?: string; label: string;
-}) {
-  const update = (idx: number, v: string) => {
-    const next = [...flat];
-    next[idx] = parseFloat(v) || 0;
-    onChange(next);
-  };
-  const cellSize = n <= 3 ? 'w-12 h-10' : n <= 4 ? 'w-10 h-9' : 'w-9 h-8';
-  return (
-    <div>
-      <p className={`text-xs font-bold text-${color}-600 mb-1.5`}>{label}</p>
-      <div className={`inline-grid gap-0.5 ${GRID_COLS[n]}`}>
-        {flat.map((val, idx) => (
-          <input
-            key={idx}
-            type="number"
-            value={val}
-            onChange={e => update(idx, e.target.value)}
-            className={`${cellSize} text-center text-xs font-bold border-2 rounded-md focus:outline-none focus:ring-1 focus:ring-${color}-400 border-${color}-200 bg-${color}-50 text-${color}-800`}
-            aria-label={`${label} [${Math.floor(idx/n)+1},${idx%n+1}]`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VecInput({ vals, onChange, color = 'violet', label }: {
-  vals: number[]; onChange: (v: number[]) => void; color?: string; label: string;
-}) {
-  const update = (i: number, v: string) => {
-    const next = [...vals];
-    next[i] = parseFloat(v) || 0;
-    onChange(next);
-  };
-  return (
-    <div>
-      <p className={`text-xs font-bold text-${color}-600 mb-1.5`}>{label}</p>
-      <div className="flex flex-col gap-0.5">
-        {vals.map((v, i) => (
-          <input
-            key={i}
-            type="number"
-            value={v}
-            onChange={e => update(i, e.target.value)}
-            className={`w-12 h-8 text-center text-xs font-bold border-2 rounded-md focus:outline-none border-${color}-200 bg-${color}-50 text-${color}-800`}
-            aria-label={`b[${i+1}]`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MatResult({ m, label, color = 'emerald' }: { m: Mat | null; label: string; color?: string }) {
-  if (!m) return (
-    <div className="text-center p-3 rounded-xl border border-red-200 bg-red-50">
-      <p className="text-xs font-bold text-red-500">{label}</p>
-      <p className="text-sm text-red-600 mt-1">Не постои (сингуларна)</p>
-    </div>
-  );
-  const n = m.length;
-  return (
-    <div className={`rounded-xl border p-3 bg-${color}-50 border-${color}-200`}>
-      <p className={`text-xs font-bold text-${color}-600 mb-2`}>{label}</p>
-      <div className={`inline-grid gap-0.5 ${GRID_COLS[n]}`}>
-        {m.flat().map((v, i) => (
-          <div key={i} className={`w-14 h-8 flex items-center justify-center text-xs font-bold rounded border bg-white border-${color}-200 text-${color}-700`}>
-            {fmtNum(v, 3)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function NxNSolverLab() {
-  const [n, setN]           = useState<Dim>(3);
-  const [mode, setMode]     = useState<NxNMode>('system');
-  const [method, setMethod] = useState<NxNMethod>('gauss');
-  const [flatA, setFlatA]   = useState<number[]>(() => makeFlat(3));
-  const [bVec, setBVec]     = useState<number[]>([1, 0, 0]);
-
-  const A: Mat = useMemo(() => matFromFlat(flatA, n), [flatA, n]);
-
-  const changeN = (newN: Dim) => {
-    setN(newN);
-    setFlatA(makeFlat(newN));
-    setBVec(new Array(newN).fill(0));
-    // SVD and Jordan now work for all n (S64-F1/F2)
-  };
-
-  const changeMode = (newMode: NxNMode) => {
-    setMode(newMode);
-    // Reset to a safe method when switching modes
-    if (newMode === 'system' && !['gauss', 'cramer'].includes(method)) setMethod('gauss');
-  };
-
-  const MATRIX_METHODS: { id: NxNMethod; label: string; mode: NxNMode[] }[] = [
-    { id: 'gauss',    label: 'Гаусова елиминација', mode: ['system', 'matrix'] },
-    { id: 'cramer',   label: 'Крамерово правило',   mode: ['system'] },
-    { id: 'cofactor', label: 'Кофактори (det)',      mode: ['matrix'] },
-    { id: 'lu',       label: 'LU декомпозиција',     mode: ['matrix'] },
-    { id: 'adj',      label: 'Adj/det (инверз)',     mode: ['matrix'] },
-    { id: 'chol',     label: 'Чолески A=LLᵀ',       mode: ['matrix'] },
-    { id: 'svd',      label: 'SVD (A=UΣVᵀ)',        mode: ['matrix'] },
-    { id: 'exp',      label: 'Матрична exp (eᴬ)',   mode: ['matrix'] },
-    { id: 'jordan',   label: 'Жорданова форма',      mode: ['matrix'] },
-  ];
-
-  const availMethods = MATRIX_METHODS.filter(m =>
-    m.mode.includes(mode) && (m.id === 'jordan' ? n <= 3 : true)
-  );
-
-  const result = useMemo(() => {
-    try {
-      if (mode === 'system') {
-        if (method === 'gauss') return { type: 'gauss' as const, data: gaussElim(A, bVec) };
-        if (method === 'cramer') return { type: 'cramer' as const, data: cramer(A, bVec) };
-      } else {
-        if (method === 'gauss')    return { type: 'gaussMat' as const, data: gaussElim(A) };
-        if (method === 'cofactor') return { type: 'det' as const, data: { det: determinantCofactor(A) } };
-        if (method === 'lu')       return { type: 'lu' as const, data: luDecompose(A) };
-        if (method === 'adj')      return { type: 'inv' as const, data: inverseAdjugate(A) };
-        if (method === 'chol')     return { type: 'chol' as const, data: choleskyDecompose(A) };
-        if (method === 'svd')      return { type: 'svd' as const, data: svdDecompose(A) };
-        if (method === 'exp')      return { type: 'exp' as const, data: matrixExp(A) };
-        if (method === 'jordan')   return { type: 'jordan' as const, data: jordanDecompose(A) };
-      }
-    } catch { return null; }
-    return null;
-  }, [A, bVec, mode, method]);
-
-  return (
-    <div className="space-y-4">
-      {/* Dimension + mode pickers */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1">
-          {DIMS.map(d => (
-            <button key={d} type="button" onClick={() => changeN(d)}
-              className={`w-9 h-9 rounded-lg text-sm font-bold border-2 transition ${n === d ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-gray-200 text-gray-500 hover:border-sky-300'}`}>
-              {d}×{d}
-            </button>
-          ))}
-        </div>
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
-          {(['system', 'matrix'] as NxNMode[]).map(m => (
-            <button key={m} type="button" onClick={() => changeMode(m)}
-              className={`px-3 py-1.5 transition-colors ${mode === m ? 'bg-sky-600 text-white' : 'text-gray-600 hover:bg-gray-50'} ${m === 'matrix' ? 'border-l border-gray-200' : ''}`}>
-              {m === 'system' ? 'Систем Ax=b' : 'Матрица A'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Method picker */}
-      <div className="flex gap-2 flex-wrap">
-        {availMethods.map(me => (
-          <button key={me.id} type="button" onClick={() => setMethod(me.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition ${method === me.id ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-gray-200 text-gray-500 hover:border-sky-300'}`}>
-            {me.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Matrix + b input */}
-      <div className="flex gap-4 flex-wrap items-start">
-        <MatGrid flat={flatA} n={n} onChange={setFlatA} color="sky" label={`Матрица A (${n}×${n})`} />
-        {mode === 'system' && (
-          <VecInput vals={bVec} onChange={setBVec} color="violet" label="вектор b" />
-        )}
-      </div>
-
-      {/* Result */}
-      {result && (
-        <div className="space-y-3">
-          {result.type === 'gauss' && result.data.solution && (
-            <>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                <p className="text-xs font-bold text-emerald-600 mb-2">Решение x</p>
-                <div className="flex gap-2 flex-wrap">
-                  {result.data.solution.map((xi, i) => (
-                    <div key={i} className="px-3 py-2 bg-white border border-emerald-200 rounded-lg text-center">
-                      <p className="text-[10px] text-gray-400">x{i+1}</p>
-                      <p className="text-sm font-extrabold text-emerald-700 font-mono">{fmtNum(xi, 4)}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-emerald-500 mt-2">det(A) = {fmtNum(result.data.det, 6)} · ранг = {result.data.rank}</p>
-              </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 max-h-40 overflow-y-auto">
-                <p className="text-xs font-bold text-gray-500 mb-1.5">Чекори:</p>
-                {result.data.steps.map((s, i) => (
-                  <p key={i} className="text-xs font-mono text-gray-600 leading-5">
-                    <span className="text-gray-400">{i+1}.</span> {s.desc}
-                  </p>
-                ))}
-              </div>
-            </>
-          )}
-
-          {result.type === 'gauss' && !result.data.solution && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-              Системот нема единствено решение. det(A) ≈ {fmtNum(result.data.det, 6)}, ранг = {result.data.rank}.
-            </div>
-          )}
-
-          {result.type === 'cramer' && result.data && (
-            <div className="space-y-2">
-              <div className="bg-violet-50 border border-violet-200 rounded-xl p-3">
-                <p className="text-xs font-bold text-violet-600 mb-2">
-                  Крамер — det(A) = {fmtNum(result.data.det, 6)}
-                </p>
-                <div className="flex gap-2 flex-wrap">
-                  {result.data.solution.map((xi, i) => (
-                    <div key={i} className="px-3 py-2 bg-white border border-violet-200 rounded-lg text-center">
-                      <p className="text-[10px] text-gray-400">x{i+1} = D{i+1}/D</p>
-                      <p className="text-xs text-violet-500 font-mono">{fmtNum(result.data!.columns[i].detDi,3)} / {fmtNum(result.data!.det,3)}</p>
-                      <p className="text-sm font-extrabold text-violet-700 font-mono">{fmtNum(xi, 4)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {result.type === 'cramer' && !result.data && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-              Крамерово правило не важи — матрицата е сингуларна (det = 0).
-            </div>
-          )}
-
-          {result.type === 'det' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-              <p className="text-xs font-bold text-amber-600 mb-1">det(A) — Лапласова експанзија</p>
-              <p className="text-3xl font-extrabold text-amber-700 font-mono">{fmtNum(result.data.det, 8)}</p>
-              <p className="text-xs text-amber-500 mt-1">
-                {Math.abs(result.data.det) < 1e-10 ? 'Сингуларна — инверз не постои' : 'Инвертибилна матрица'}
-              </p>
-            </div>
-          )}
-
-          {result.type === 'lu' && (
-            <div className="grid md:grid-cols-2 gap-3">
-              <MatResult m={result.data.L} label="L (долна триаголна)" color="sky" />
-              <MatResult m={result.data.U} label="U (горна триаголна)" color="amber" />
-            </div>
-          )}
-
-          {result.type === 'inv' && (
-            <MatResult m={result.data} label="A⁻¹ = adj(A) / det(A)" color="emerald" />
-          )}
-
-          {result.type === 'chol' && (
-            result.data.isValid ? (
-              <div className="space-y-3">
-                <MatResult m={result.data.L} label="L (долна триаголна, A = L·Lᵀ)" color="teal" />
-                <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 text-xs text-teal-700">
-                  <strong>Чолески-Банахевич:</strong> A = L·Lᵀ &nbsp;|&nbsp;
-                  Lᵢᵢ = √(Aᵢᵢ − Σₖ Lᵢₖ²) &nbsp;|&nbsp;
-                  Lᵢⱼ = (Aᵢⱼ − Σₖ LᵢₖLⱼₖ) / Lⱼⱼ &nbsp;(за i &gt; j)
-                </div>
-              </div>
-            ) : (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-                Чолески декомпозиција не е можна: {result.data.reason}
-              </div>
-            )
-          )}
-
-          {result.type === 'svd' && (
-            <div className="space-y-3">
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
-                <p className="text-xs font-bold text-purple-600 mb-2">Сингуларни вредности σ</p>
-                <div className="flex gap-2 flex-wrap">
-                  {result.data.S.map((s, i) => (
-                    <div key={i} className="px-3 py-2 bg-white border border-purple-200 rounded-lg text-center">
-                      <p className="text-[10px] text-gray-400">σ{i+1}</p>
-                      <p className="text-sm font-extrabold text-purple-700 font-mono">{fmtNum(s, 4)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <MatResult m={result.data.U} label="U (леви сингуларни вектори)" color="indigo" />
-                <MatResult m={result.data.Vt} label="Vᵀ (десни сингуларни вектори)" color="rose" />
-              </div>
-              <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-700">
-                <strong>A = U · Σ · Vᵀ</strong> &nbsp;|&nbsp; σᵢ = √λᵢ(AᵀA) &nbsp;|&nbsp;
-                Rang(A) = број на ненулти σ &nbsp;|&nbsp; ||A||₂ = σ₁
-              </div>
-            </div>
-          )}
-
-          {result.type === 'exp' && (
-            <div className="space-y-3">
-              <MatResult m={result.data} label="eᴬ (матрична експоненцијала)" color="emerald" />
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-700">
-                <strong>eᴬ = Σₖ Aᵏ/k!</strong> &nbsp;|&nbsp; пресметано со Taylor серија (ред 20) + rescale-and-square &nbsp;|&nbsp;
-                За дијагонализабилна A = PDP⁻¹: eᴬ = P·diag(eλᵢ)·P⁻¹
-              </div>
-            </div>
-          )}
-
-          {result.type === 'jordan' && (
-            result.data.isValid ? (
-              <div className="space-y-3">
-                <MatResult m={result.data.J} label="J (Жорданова нормална форма)" color="amber" />
-                <MatResult m={result.data.P} label="P (матрица на премин)" color="sky" />
-                {result.data.Pinv && <MatResult m={result.data.Pinv} label="P⁻¹" color="slate" />}
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
-                  <strong>A = P J P⁻¹</strong> &nbsp;|&nbsp;
-                  {result.data.blocks.map((b, i) => (
-                    <span key={i}> Блок{i+1}: λ={fmtNum(b.eigenvalue,3)}{b.isComplex ? `±${fmtNum(b.complexIm??0,3)}i` : ''} ({b.size}×{b.size})</span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600">
-                {result.data.reason}
-              </div>
-            )
-          )}
-        </div>
-      )}
-
-      <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 text-xs text-sky-700">
-        <strong>Методи:</strong> Gauss · Cramer · Cofactor · LU · Adj/det · Чолески (pos-def) ·
-        SVD (A=UΣVᵀ) · eᴬ (матрична exp) · Jordan (нормална форма)
-      </div>
-    </div>
-  );
+// ─── Exercises sub-tab ────────────────────────────────────────────────────────
+function LinAlgExercisesTab() {
+  const session = useLabSession('linear-algebra', 'Линеарна алгебра');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateLinearAlgebraSet(level));
+  }, [difficulty, loadExercises]);
+  return <LabExercisePanel session={session} onNewSet={loadSet} difficulty={difficulty} onDifficultyChange={setDifficulty} />;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-type LinAlgTab = 'matrices' | 'vectors' | 'transforms' | 'systems' | 'nxn' | 'eigen';
+type LinAlgTab = 'matrices' | 'vectors' | 'transforms' | 'systems' | 'nxn' | 'eigen' | 'exercises';
 
 export function LinearAlgebraLab() {
   const [tab, setTab] = useState<LinAlgTab>('matrices');
 
   const TABS: { id: LinAlgTab; label: string; color: string }[] = [
-    { id: 'matrices',   label: '⊞ Матрици',         color: 'indigo'  },
-    { id: 'vectors',    label: '→ Вектори',          color: 'rose'    },
-    { id: 'transforms', label: '⊡ Трансформации',   color: 'teal'    },
-    { id: 'systems',    label: '⊕ Системи',          color: 'emerald' },
-    { id: 'nxn',        label: '⊟ n×n Решавач',     color: 'sky'     },
-    { id: 'eigen',      label: 'λ Сопствени',        color: 'fuchsia' },
+    { id: 'matrices',   label: '⊞ Матрици',       color: 'indigo'  },
+    { id: 'vectors',    label: '→ Вектори',        color: 'rose'    },
+    { id: 'transforms', label: '⊡ Трансформации', color: 'teal'    },
+    { id: 'systems',    label: '⊕ Системи',        color: 'emerald' },
+    { id: 'nxn',        label: '⊟ n×n Решавач',   color: 'sky'     },
+    { id: 'eigen',      label: 'λ Сопствени',      color: 'fuchsia' },
+    { id: 'exercises',  label: '✏️ Вежбај',        color: 'orange'  },
   ];
 
   return (
@@ -901,6 +524,7 @@ export function LinearAlgebraLab() {
       {tab === 'systems'    && <SystemsLab />}
       {tab === 'nxn'        && <NxNSolverLab />}
       {tab === 'eigen'      && <EigenLab />}
+      {tab === 'exercises'  && <LinAlgExercisesTab />}
     </div>
   );
 }

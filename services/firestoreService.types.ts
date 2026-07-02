@@ -146,6 +146,9 @@ export interface QuizResult {
   metacognitiveNote?: string; // П4 — рефлексивна белешка на ученикот по квизот
   classId?: string;           // И2 — одделение на ученикот (доколку се приклучил)
   dokLevel?: 1 | 2 | 3 | 4;  // S37-C1 DoK heatmap (explicit; falls back to differentiationLevel mapping)
+  quizType?: 'lab' | string;  // S116: 'lab' for lab exercise sessions; undefined = regular quiz
+  hintsUsed?: number;         // S116: lab sessions track hint usage
+  durationSeconds?: number;   // S116: lab session duration
 }
 
 export interface Announcement {

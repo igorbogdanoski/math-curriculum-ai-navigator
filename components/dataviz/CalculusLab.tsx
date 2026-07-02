@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { generateCalculusSet } from './calculusMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── Math helpers ─────────────────────────────────────────────────────────────
 type FnDef = { label: string; f: (x: number) => number; df: (x: number) => number; antiderivative?: (x: number) => number; latexLabel: string };
@@ -397,19 +400,33 @@ function LimitsLab() {
   );
 }
 
+// ─── Exercises sub-tab ────────────────────────────────────────────────────────
+function CalcExercisesTab() {
+  const session = useLabSession('calculus', 'Диференцијално и интегрално сметање');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateCalculusSet(level));
+  }, [difficulty, loadExercises]);
+  return <LabExercisePanel session={session} onNewSet={loadSet} difficulty={difficulty} onDifficultyChange={setDifficulty} />;
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 import { LogExpLab } from './LogExpLab';
 
-type CalcTab = 'deriv' | 'riemann' | 'limits' | 'logexp';
+type CalcTab = 'deriv' | 'riemann' | 'limits' | 'logexp' | 'exercises';
 
 export function CalculusLab() {
   const [tab, setTab] = useState<CalcTab>('deriv');
 
   const TABS: { id: CalcTab; label: string; color: string }[] = [
-    { id: 'deriv',   label: '∂ Изводи',             color: 'indigo' },
-    { id: 'riemann', label: '∫ Риманови суми',       color: 'emerald' },
-    { id: 'limits',  label: 'lim Граници',           color: 'violet' },
-    { id: 'logexp',  label: 'log / exp',             color: 'amber'  },
+    { id: 'deriv',     label: '∂ Изводи',           color: 'indigo'  },
+    { id: 'riemann',   label: '∫ Риманови суми',     color: 'emerald' },
+    { id: 'limits',    label: 'lim Граници',         color: 'violet'  },
+    { id: 'logexp',    label: 'log / exp',           color: 'amber'   },
+    { id: 'exercises', label: '✏️ Вежбај',           color: 'rose'    },
   ];
 
   return (
@@ -423,10 +440,11 @@ export function CalculusLab() {
         ))}
       </div>
 
-      {tab === 'deriv'   && <DerivativeLab />}
-      {tab === 'riemann' && <RiemannLab />}
-      {tab === 'limits'  && <LimitsLab />}
-      {tab === 'logexp'  && <LogExpLab />}
+      {tab === 'deriv'     && <DerivativeLab />}
+      {tab === 'riemann'   && <RiemannLab />}
+      {tab === 'limits'    && <LimitsLab />}
+      {tab === 'logexp'    && <LogExpLab />}
+      {tab === 'exercises' && <CalcExercisesTab />}
     </div>
   );
 }

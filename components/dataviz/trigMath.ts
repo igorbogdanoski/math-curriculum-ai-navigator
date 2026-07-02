@@ -1,4 +1,5 @@
 // Pure math utilities and data for TrigonometryLab
+import type { LabExercise } from '../../types/labTypes';
 
 export interface CurriculumRef {
   primary?: string[];
@@ -132,6 +133,23 @@ export interface TrigIdentity {
 
 const fmt = (n: number) => parseFloat(n.toFixed(6));
 
+// ─── Exact values lookup for special angles ───────────────────────────────────
+
+interface ExactVal { sin: string; cos: string; tan: string | null }
+
+const EXACT: Record<number, ExactVal> = {
+  0:   { sin: '0',      cos: '1',      tan: '0'       },
+  30:  { sin: '1/2',   cos: '√3/2',  tan: '√3/3'   },
+  45:  { sin: '√2/2',  cos: '√2/2',  tan: '1'       },
+  60:  { sin: '√3/2',  cos: '1/2',   tan: '√3'      },
+  90:  { sin: '1',      cos: '0',      tan: null       },
+  120: { sin: '√3/2',  cos: '-1/2',  tan: '-√3'     },
+  135: { sin: '√2/2',  cos: '-√2/2', tan: '-1'      },
+  150: { sin: '1/2',   cos: '-√3/2', tan: '-√3/3'  },
+  180: { sin: '0',      cos: '-1',     tan: '0'       },
+  270: { sin: '-1',     cos: '0',      tan: null       },
+};
+
 export const TRIG_IDENTITIES: TrigIdentity[] = [
   {
     id: 'pythag',
@@ -195,3 +213,181 @@ export const TRIG_IDENTITIES: TrigIdentity[] = [
     },
   },
 ];
+
+// ─── Lab exercise generator ───────────────────────────────────────────────────
+
+function tgRand(lo: number, hi: number) {
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+const EXACT_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180] as const;
+type ExactDeg = typeof EXACT_ANGLES[number];
+
+/** Generates trigonometry exercises for use with useLabSession. */
+export function generateTrigSet(difficulty: 1 | 2 | 3, count = 6): LabExercise[] {
+  const exs: LabExercise[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const id = `trig-${difficulty}-${i}`;
+    const qType = i % 3;
+
+    if (difficulty === 1) {
+      if (qType === 0) {
+        // sin(special angle) — multiple choice
+        const angles: ExactDeg[] = [0, 30, 45, 60, 90];
+        const deg = angles[tgRand(0, angles.length - 1)];
+        const ev = EXACT[deg];
+        const distractors = ['0', '1/2', '√2/2', '√3/2', '1'].filter(v => v !== ev.sin);
+        const opts = [ev.sin, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
+        exs.push({
+          id,
+          question: `sin(${deg}°) = ?`,
+          type: 'multiple_choice',
+          options: opts,
+          correctAnswer: ev.sin,
+          hint: `Запомни: sin(30°)=1/2, sin(45°)=√2/2, sin(60°)=√3/2, sin(90°)=1.`,
+          explanation: `sin(${deg}°) = ${ev.sin}`,
+          difficulty: 1, curriculumRef: 'МОН VII–IX одд.',
+        });
+      } else if (qType === 1) {
+        // cos(special angle) — multiple choice
+        const angles: ExactDeg[] = [0, 30, 45, 60, 90];
+        const deg = angles[tgRand(0, angles.length - 1)];
+        const ev = EXACT[deg];
+        const distractors = ['0', '1/2', '√2/2', '√3/2', '1'].filter(v => v !== ev.cos);
+        const opts = [ev.cos, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
+        exs.push({
+          id,
+          question: `cos(${deg}°) = ?`,
+          type: 'multiple_choice',
+          options: opts,
+          correctAnswer: ev.cos,
+          hint: `Запомни: cos(60°)=1/2, cos(45°)=√2/2, cos(30°)=√3/2, cos(0°)=1.`,
+          explanation: `cos(${deg}°) = ${ev.cos}`,
+          difficulty: 1, curriculumRef: 'МОН VII–IX одд.',
+        });
+      } else {
+        // Quadrant of angle
+        const angle = SPECIAL_ANGLES[tgRand(1, SPECIAL_ANGLES.length - 2)];
+        const q = angle < 90 ? 'I' : angle < 180 ? 'II' : angle < 270 ? 'III' : 'IV';
+        exs.push({
+          id,
+          question: `Во кој квадрант е аголот ${angle}°?`,
+          type: 'multiple_choice',
+          options: ['I', 'II', 'III', 'IV'],
+          correctAnswer: q,
+          hint: `I: 0°–90°, II: 90°–180°, III: 180°–270°, IV: 270°–360°.`,
+          explanation: `${angle}° е во ${q} квадрант.`,
+          difficulty: 1, curriculumRef: 'МОН VIII–IX одд.',
+        });
+      }
+    } else if (difficulty === 2) {
+      if (qType === 0) {
+        // tan(special angle) — multiple choice (avoid undefined)
+        const angles: ExactDeg[] = [0, 30, 45, 60];
+        const deg = angles[tgRand(0, angles.length - 1)];
+        const ev = EXACT[deg];
+        const tanVal = ev.tan!;
+        const distractors = ['0', '1', '√3', '√3/3', '-1'].filter(v => v !== tanVal);
+        const opts = [tanVal, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
+        exs.push({
+          id,
+          question: `tan(${deg}°) = ?`,
+          type: 'multiple_choice',
+          options: opts,
+          correctAnswer: tanVal,
+          hint: `tan(θ) = sin(θ)/cos(θ). sin(${deg}°)=${ev.sin}, cos(${deg}°)=${ev.cos}.`,
+          explanation: `tan(${deg}°) = ${ev.sin} / ${ev.cos} = ${tanVal}`,
+          difficulty: 2, curriculumRef: 'МОН VIII–IX одд.',
+        });
+      } else if (qType === 1) {
+        // Pythagorean identity at a specific angle
+        const deg = SPECIAL_ANGLES[tgRand(0, SPECIAL_ANGLES.length - 1)];
+        const r = toRad(deg);
+        const lhs = parseFloat((Math.sin(r) ** 2 + Math.cos(r) ** 2).toFixed(4));
+        exs.push({
+          id,
+          question: `sin²(${deg}°) + cos²(${deg}°) = ?`,
+          type: 'multiple_choice',
+          options: ['1', '0', '2', '-1'],
+          correctAnswer: '1',
+          hint: `Питагоровиот тригонометриски идентитет важи за секој агол θ.`,
+          explanation: `sin²(θ) + cos²(θ) = 1 за секое θ. Вредноста е ${lhs} ≈ 1.`,
+          difficulty: 2, curriculumRef: 'МОН IX одд. / Гимн. X',
+        });
+      } else {
+        // Period of A·sin(Bx)
+        const B = [1, 2, 3, 4][tgRand(0, 3)];
+        const A = tgRand(1, 4);
+        const periodLabel = B === 1 ? '2π' : B === 2 ? 'π' : B === 3 ? '2π/3' : 'π/2';
+        const opts = ['2π', 'π', '2π/3', 'π/2', '4π'].sort(() => Math.random() - 0.5).slice(0, 4);
+        if (!opts.includes(periodLabel)) opts[0] = periodLabel;
+        exs.push({
+          id,
+          question: `Периодот на ${A > 1 ? `${A}·` : ''}sin(${B > 1 ? `${B}x` : 'x'}) е ?`,
+          type: 'multiple_choice',
+          options: [...new Set(opts)],
+          correctAnswer: periodLabel,
+          hint: `T = 2π / |B|. Тука B = ${B}.`,
+          explanation: `T = 2π / ${B} = ${periodLabel}. Амплитудата (${A}) не го менува периодот.`,
+          difficulty: 2, curriculumRef: 'Гимн. X–XI',
+        });
+      }
+    } else {
+      // difficulty 3
+      if (qType === 0) {
+        // Double angle: sin(2·deg) = 2·sin(deg)·cos(deg) — compute numerically
+        const angles: ExactDeg[] = [30, 45, 60];
+        const deg = angles[tgRand(0, angles.length - 1)];
+        const ev = EXACT[deg];
+        const dbl = EXACT[(deg * 2) as ExactDeg];
+        const result = dbl ? dbl.sin : `${(2 * Math.sin(toRad(deg)) * Math.cos(toRad(deg))).toFixed(3)}`;
+        exs.push({
+          id,
+          question: `sin(2×${deg}°) = 2·sin(${deg}°)·cos(${deg}°). Колку е тоа?`,
+          type: 'multiple_choice',
+          options: ['0', '1/2', '√2/2', '√3/2', '1'].sort(() => Math.random() - 0.5).slice(0, 4),
+          correctAnswer: result,
+          hint: `sin(${deg}°)=${ev.sin}, cos(${deg}°)=${ev.cos}. Множи.`,
+          explanation: `2·${ev.sin}·${ev.cos} = sin(${deg * 2}°) = ${result}`,
+          difficulty: 3, curriculumRef: 'Гимн. XI',
+        });
+      } else if (qType === 1) {
+        // cos(90°+deg) sign rule
+        const deg = [30, 45, 60][tgRand(0, 2)];
+        const res = EXACT[(90 + deg) as ExactDeg];
+        const correct = res ? res.cos : `-${EXACT[deg as ExactDeg].sin}`;
+        exs.push({
+          id,
+          question: `cos(90°+${deg}°) = ?`,
+          type: 'multiple_choice',
+          options: [
+            `-${EXACT[deg as ExactDeg].sin}`,
+            EXACT[deg as ExactDeg].sin,
+            EXACT[deg as ExactDeg].cos,
+            `-${EXACT[deg as ExactDeg].cos}`,
+          ].filter((o, idx, a) => a.indexOf(o) === idx).sort(() => Math.random() - 0.5),
+          correctAnswer: correct,
+          hint: `cos(90°+θ) = −sin(θ). Тука θ = ${deg}°.`,
+          explanation: `cos(90°+${deg}°) = −sin(${deg}°) = −${EXACT[deg as ExactDeg].sin} = ${correct}`,
+          difficulty: 3, curriculumRef: 'Гимн. X–XI',
+        });
+      } else {
+        // Amplitude of A·sin(Bx+C) + D
+        const A = tgRand(2, 5);
+        const B = tgRand(1, 3);
+        const C = [0, 30, 45][tgRand(0, 2)];
+        exs.push({
+          id,
+          question: `Амплитудата на ${A}·sin(${B}x${C ? `+${C}` : ''}) е ?`,
+          type: 'numeric',
+          correctAnswer: String(A),
+          hint: `Амплитуда = |A|. Параметрите B и C не ја менуваат амплитудата.`,
+          explanation: `Амплитудата е |A| = ${A}.`,
+          difficulty: 3, curriculumRef: 'Гимн. X–XI',
+        });
+      }
+    }
+  }
+  return exs;
+}

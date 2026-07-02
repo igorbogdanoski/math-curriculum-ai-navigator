@@ -1,4 +1,5 @@
 // Pure math utilities for Place Value / Dienes blocks lab
+import type { LabExercise } from '../../types/labTypes';
 
 export interface Decomposition {
   thousands: number;
@@ -98,4 +99,93 @@ export function blockRows(count: number, perRow: number): number[][] {
     remaining -= take;
   }
   return rows;
+}
+
+// ─── Lab exercise generator ───────────────────────────────────────────────────
+
+function pvRand(lo: number, hi: number) {
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+/** Generates a set of place-value exercises for use with useLabSession. */
+export function generatePlaceValueSet(
+  grade: GradeRange,
+  difficulty: 1 | 2 | 3,
+  count = 6,
+): LabExercise[] {
+  const cfg = GRADE_CONFIGS[grade];
+  const gLabel = grade === 'g1' ? 'I–II' : grade === 'g2' ? 'III–IV' : 'V–VI';
+  const cur = `МОН ${gLabel} одд.`;
+  const exs: LabExercise[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const n = randomNumber(grade);
+    const d = decomposeNumber(n);
+    const id = `pv-${grade}-${difficulty}-${i}`;
+
+    if (difficulty === 1) {
+      // Describe blocks in words → multiple-choice (visual in parent)
+      const parts: string[] = [];
+      if (cfg.showThousands && d.thousands) parts.push(`${d.thousands} илјадарки`);
+      if (cfg.showHundreds  && d.hundreds)  parts.push(`${d.hundreds} стотки`);
+      if (d.tens) parts.push(`${d.tens} десетици`);
+      parts.push(`${d.ones} единици`);
+
+      const pool = new Set([n]);
+      for (const delta of [10, -10, 1, -1, 100, -100]) {
+        if (pool.size >= 4) break;
+        const c = n + delta;
+        if (c > 0 && c <= cfg.max) pool.add(c);
+      }
+      while (pool.size < 4) pool.add(pvRand(1, cfg.max));
+
+      exs.push({
+        id,
+        question: `Блоковите прикажуваат: ${parts.join(', ')}. Кој број е ова?`,
+        type: 'multiple_choice',
+        options: [...pool].sort((a, b) => a - b).map(String),
+        correctAnswer: String(n),
+        hint: `Собери: ${toExpandedForm(n)}`,
+        explanation: `${parts.join(' + ')} = ${n}`,
+        difficulty: 1,
+        curriculumRef: cur,
+      });
+    } else if (difficulty === 2) {
+      // Extract digit from a specific place value
+      type PK = 'ones' | 'tens' | 'hundreds' | 'thousands';
+      const avail: Array<{ k: PK; mk: string }> = [
+        { k: 'ones', mk: 'единици' },
+        { k: 'tens', mk: 'десетици' },
+      ];
+      if (cfg.showHundreds)  avail.push({ k: 'hundreds',  mk: 'стотки'    });
+      if (cfg.showThousands) avail.push({ k: 'thousands', mk: 'илјадарки' });
+      const pl = avail[pvRand(0, avail.length - 1)];
+      const digit = d[pl.k];
+
+      exs.push({
+        id,
+        question: `Колку ${pl.mk} има во бројот ${n}?`,
+        type: 'numeric',
+        correctAnswer: String(digit),
+        hint: `Разложи: ${toExpandedForm(n)}`,
+        explanation: `${n} = ${toExpandedForm(n)}. Бројот на ${pl.mk} е ${digit}.`,
+        difficulty: 2,
+        curriculumRef: cur,
+      });
+    } else {
+      // Read expanded form → write number
+      const exp = toExpandedForm(n);
+      exs.push({
+        id,
+        question: `${exp} = ?`,
+        type: 'numeric',
+        correctAnswer: String(n),
+        hint: `Собери ги деловите: ${exp}`,
+        explanation: `${exp} = ${n}`,
+        difficulty: 3,
+        curriculumRef: cur,
+      });
+    }
+  }
+  return exs;
 }

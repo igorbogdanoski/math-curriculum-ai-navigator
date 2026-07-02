@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   toRad, toDeg, radLabel, unitCirclePoint, QUADRANT_LABELS, SPECIAL_ANGLES,
-  generateWavePoints, period, TRIG_IDENTITIES,
+  generateWavePoints, period, TRIG_IDENTITIES, generateTrigSet,
   TRIG_CURRICULUM, type CurriculumRef,
 } from './trigMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Curriculum badges ─────────────────────────────────────────────────────────
 function CurriculumBadges({ cur }: { cur: CurriculumRef }) {
@@ -418,16 +420,39 @@ function TrigIdentitiesTab() {
   );
 }
 
+// ── Tab 4: Вежбај ─────────────────────────────────────────────────────────────
+function TrigExercisesTab() {
+  const session = useLabSession('trigonometry', 'Тригонометрија');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateTrigSet(level));
+  }, [difficulty, loadExercises]);
+
+  return (
+    <LabExercisePanel
+      session={session}
+      onNewSet={loadSet}
+      difficulty={difficulty}
+      onDifficultyChange={setDifficulty}
+    />
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
-type Tab = 'circle' | 'wave' | 'identity';
+type Tab = 'circle' | 'wave' | 'identity' | 'exercises';
 
 export default function TrigonometryLab() {
   const [tab, setTab] = useState<Tab>('circle');
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'circle', label: '⭕ Единечна кружница' },
-    { id: 'wave', label: '〰 Бранов истражувач' },
-    { id: 'identity', label: '≡ Тригонометриски идентитети' },
+    { id: 'circle',    label: '⭕ Единечна кружница' },
+    { id: 'wave',      label: '〰 Бранов истражувач' },
+    { id: 'identity',  label: '≡ Идентитети' },
+    { id: 'exercises', label: '✏️ Вежбај' },
   ];
 
   return (
@@ -438,7 +463,7 @@ export default function TrigonometryLab() {
           <div>
             <h2 className="text-base font-bold text-gray-800">Тригонометриска Лабораторија</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Единечна кружница · Амплитуда и Период · Тригонометриски идентитети
+              Единечна кружница · Амплитуда и Период · Идентитети · Вежбај
             </p>
             <CurriculumBadges cur={TRIG_CURRICULUM} />
           </div>
@@ -450,6 +475,7 @@ export default function TrigonometryLab() {
         {tabs.map(t => (
           <button
             key={t.id}
+            type="button"
             onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
               tab === t.id
@@ -463,9 +489,10 @@ export default function TrigonometryLab() {
       </div>
 
       {/* Tab content */}
-      {tab === 'circle' && <UnitCircleTab />}
-      {tab === 'wave' && <WaveExplorerTab />}
-      {tab === 'identity' && <TrigIdentitiesTab />}
+      {tab === 'circle'    && <UnitCircleTab />}
+      {tab === 'wave'      && <WaveExplorerTab />}
+      {tab === 'identity'  && <TrigIdentitiesTab />}
+      {tab === 'exercises' && <TrigExercisesTab />}
     </div>
   );
 }

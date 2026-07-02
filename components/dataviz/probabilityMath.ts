@@ -1,4 +1,5 @@
 // Pure math utilities and constants for ProbabilityLab
+import type { LabExercise } from '../../types/labTypes';
 
 export type ExperimentType = 'coin' | 'die' | 'two-dice' | 'dice-coin' | 'spinner' | 'binomial';
 
@@ -138,4 +139,89 @@ export function rollOne(exp: ExperimentType, df: number, sec: SpinnerSector[], b
       return `k=${successes}`;
     }
   }
+}
+
+// ─── Lab exercise generator ───────────────────────────────────────────────────
+
+function pbRand(lo: number, hi: number) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+
+export function generateProbabilitySet(difficulty: 1 | 2 | 3, count = 6): LabExercise[] {
+  const exs: LabExercise[] = [];
+  for (let i = 0; i < count; i++) {
+    const id = `pb-${difficulty}-${i}`;
+    const qt = i % 3;
+
+    if (difficulty === 1) {
+      if (qt === 0) {
+        exs.push({ id, question: 'Фрлаш монета. Веројатноста за ГЛАВА е?',
+          type: 'multiple_choice', options: ['1/2', '1/3', '1/4', '1'],
+          correctAnswer: '1/2', hint: 'Монетата има 2 рамноверојатни исходи.',
+          explanation: 'P(Глава) = 1/2', difficulty: 1, curriculumRef: 'МОН VII–VIII' });
+      } else if (qt === 1) {
+        const face = pbRand(1, 6);
+        exs.push({ id, question: `Фрлаш фер коцка d6. Веројатноста за ${face} е?`,
+          type: 'multiple_choice', options: ['1/6', '1/4', '1/3', '1/2'],
+          correctAnswer: '1/6', hint: 'Коцката има 6 страни, секоја рамноверојатна.',
+          explanation: `P(${face}) = 1/6 ≈ 0.167`, difficulty: 1, curriculumRef: 'МОН VII–VIII' });
+      } else {
+        exs.push({ id, question: 'Фрлаш фер коцка d6. Веројатноста за ПАРЕН број е?',
+          type: 'multiple_choice', options: ['1/2', '1/3', '2/3', '1/6'],
+          correctAnswer: '1/2', hint: 'Парни: 2, 4, 6 — 3 исходи од 6.',
+          explanation: 'P(пар) = 3/6 = 1/2', difficulty: 1, curriculumRef: 'МОН VII–VIII' });
+      }
+    } else if (difficulty === 2) {
+      if (qt === 0) {
+        exs.push({ id, question: 'C(4, 2) = ? (комбинации)',
+          type: 'numeric', correctAnswer: '6',
+          hint: 'C(n,k) = n! / (k!(n−k)!) = 4!/(2!·2!)',
+          explanation: 'C(4,2) = 24/4 = 6', difficulty: 2, curriculumRef: 'МОН VIII–IX' });
+      } else if (qt === 1) {
+        exs.push({ id, question: 'Фрлаш две коцки. P(сума = 7) = ?',
+          type: 'multiple_choice', options: ['1/6', '1/4', '5/36', '7/36'],
+          correctAnswer: '1/6', hint: 'Поволни: (1,6),(2,5),(3,4),(4,3),(5,2),(6,1) = 6. Вкупно: 36.',
+          explanation: 'P(сума=7) = 6/36 = 1/6', difficulty: 2, curriculumRef: 'МОН VIII–IX' });
+      } else {
+        const pA = pbRand(2, 8);
+        exs.push({ id, question: `Ако P(A) = 0.${pA}, колку е P(A')?`,
+          type: 'numeric', correctAnswer: String(+(1 - pA / 10).toFixed(1)),
+          hint: "P(A') = 1 − P(A)",
+          explanation: `P(A') = 1 − 0.${pA} = ${+(1 - pA / 10).toFixed(1)}`,
+          difficulty: 2, curriculumRef: 'МОН VIII–IX' });
+      }
+    } else {
+      const indepCases = [
+        { pA: '0.3', pB: '0.4', ans: '0.12' },
+        { pA: '0.5', pB: '0.6', ans: '0.3' },
+        { pA: '0.4', pB: '0.5', ans: '0.2' },
+      ];
+      const unionCases = [
+        { pA: '0.5', pB: '0.4', pAB: '0.2', ans: '0.7' },
+        { pA: '0.6', pB: '0.5', pAB: '0.3', ans: '0.8' },
+        { pA: '0.7', pB: '0.4', pAB: '0.2', ans: '0.9' },
+      ];
+      const n = pbRand(4, 7);
+      if (qt === 0) {
+        const c = indepCases[pbRand(0, indepCases.length - 1)];
+        exs.push({ id, question: `P(A)=${c.pA}, P(B)=${c.pB}, А и Б независни. P(A∩B) = ?`,
+          type: 'numeric', correctAnswer: c.ans,
+          hint: 'За независни: P(A∩B) = P(A) × P(B)',
+          explanation: `P(A∩B) = ${c.pA} × ${c.pB} = ${c.ans}`,
+          difficulty: 3, curriculumRef: 'Гимназија' });
+      } else if (qt === 1) {
+        const u = unionCases[pbRand(0, unionCases.length - 1)];
+        exs.push({ id, question: `P(A)=${u.pA}, P(B)=${u.pB}, P(A∩B)=${u.pAB}. P(A∪B) = ?`,
+          type: 'numeric', correctAnswer: u.ans,
+          hint: 'P(A∪B) = P(A) + P(B) − P(A∩B)',
+          explanation: `P(A∪B) = ${u.pA} + ${u.pB} − ${u.pAB} = ${u.ans}`,
+          difficulty: 3, curriculumRef: 'Гимназија' });
+      } else {
+        exs.push({ id, question: `A(${n}, 2) = ? (аранжмани)`,
+          type: 'numeric', correctAnswer: String(n * (n - 1)),
+          hint: `A(n,k) = n×(n−1)×... = ${n}×${n - 1}`,
+          explanation: `A(${n}, 2) = ${n} × ${n - 1} = ${n * (n - 1)}`,
+          difficulty: 3, curriculumRef: 'Гимназија' });
+      }
+    }
+  }
+  return exs;
 }

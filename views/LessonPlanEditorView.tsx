@@ -39,6 +39,7 @@ import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { CoachBubble } from '../components/common/CoachBubble';
 import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
+import { ClassInsightsBanner } from '../components/classroom/ClassInsightsBanner';
 import { VerticalProgressionPanel } from '../components/lesson-plan-editor/VerticalProgressionPanel';
 import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
 import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
@@ -678,6 +679,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             <PriorKnowledgeConnector
               conceptIds={plan.conceptIds ?? []}
               currentGrade={plan.grade ?? 6}
+            />
+
+            <ClassInsightsBanner
+              conceptIds={plan.conceptIds ?? []}
+              teacherUid={firebaseUser?.uid}
             />
 
             <PedagogicalDashboard activities={plan.scenario?.main || []} />

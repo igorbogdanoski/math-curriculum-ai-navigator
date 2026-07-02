@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Eye, PenLine, Layers, RefreshCw, CheckCircle2, XCircle, Plus, Minus } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Eye, PenLine, Layers, RefreshCw, Plus, Minus } from 'lucide-react';
 import {
   decomposeNumber, recompose, toExpandedForm, toWordFormMK,
-  randomNumber, GRADE_CONFIGS,
+  GRADE_CONFIGS, generatePlaceValueSet,
 } from './placeValueMath';
 import type { Decomposition, GradeRange } from './placeValueMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── SVG Dienes block primitives ─────────────────────────────────────────────
 
@@ -276,24 +278,15 @@ export const PlaceValueLab: React.FC = () => {
   const [showInput, setShowInput] = useState('');
   const showNumber = Math.max(0, Math.min(GRADE_CONFIGS[grade].max, parseInt(showInput) || 0));
 
-  // Practice mode
-  const [practiceTarget, setPracticeTarget] = useState<number>(() => randomNumber('g2'));
-  const [practiceAnswer, setPracticeAnswer] = useState('');
-  const [practiceResult, setPracticeResult] = useState<'correct' | 'wrong' | null>(null);
-  const practiceRef = useRef<HTMLInputElement>(null);
-
-  const nextPractice = useCallback(() => {
-    setPracticeTarget(randomNumber(grade));
-    setPracticeAnswer('');
-    setPracticeResult(null);
-    setTimeout(() => practiceRef.current?.focus(), 50);
-  }, [grade]);
-
-  const checkPractice = useCallback(() => {
-    const ans = parseInt(practiceAnswer);
-    if (isNaN(ans)) return;
-    setPracticeResult(ans === practiceTarget ? 'correct' : 'wrong');
-  }, [practiceAnswer, practiceTarget]);
+  // Practice mode — connected to quiz_results via useLabSession
+  const session = useLabSession('place-value', 'Дијенесови блокови');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generatePlaceValueSet(grade, level));
+  }, [grade, difficulty, loadExercises]);
 
   // Compose mode
   const [compose, setCompose] = useState<Decomposition>({ thousands: 0, hundreds: 0, tens: 0, ones: 0 });
@@ -302,7 +295,6 @@ export const PlaceValueLab: React.FC = () => {
 
   // Shared decomp for display
   const showDecomp = decomposeNumber(showNumber);
-  const practiceDecomp = decomposeNumber(practiceTarget);
 
   const MODES: { id: Mode; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'show',     label: 'Прикажи',  icon: Eye      },
@@ -328,8 +320,6 @@ export const PlaceValueLab: React.FC = () => {
                 setGrade(g);
                 setShowInput('');
                 setCompose({ thousands: 0, hundreds: 0, tens: 0, ones: 0 });
-                setPracticeTarget(randomNumber(g));
-                setPracticeAnswer(''); setPracticeResult(null);
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                 grade === g ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'
@@ -424,94 +414,23 @@ export const PlaceValueLab: React.FC = () => {
 
       {/* ── MODE: PRACTICE ──────────────────────────────────────────────────── */}
       {mode === 'practice' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Кој број го прикажуваат блоковите?</p>
-            <button type="button" onClick={nextPractice}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">
-              <RefreshCw className="w-3.5 h-3.5" /> Следна
-            </button>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-50 to-green-50 rounded-2xl border border-green-100 p-4 min-h-[180px] flex items-center justify-center overflow-x-auto">
-            <BlockDisplay decomp={practiceDecomp} showThousands={cfg.showThousands} showHundreds={cfg.showHundreds} />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              ref={practiceRef}
-              type="number"
-              min={0}
-              max={cfg.max}
-              value={practiceAnswer}
-              onChange={e => { setPracticeAnswer(e.target.value); setPracticeResult(null); }}
-              onKeyDown={e => e.key === 'Enter' && checkPractice()}
-              placeholder="Внеси твој одговор…"
-              disabled={practiceResult === 'correct'}
-              className={`w-44 px-4 py-2.5 border-2 rounded-xl text-xl font-black text-center focus:outline-none transition ${
-                practiceResult === 'correct' ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                : practiceResult === 'wrong'   ? 'border-red-400 bg-red-50 text-red-700'
-                : 'border-gray-200 focus:border-emerald-400'
-              }`}
-            />
-            <button type="button" onClick={checkPractice}
-              disabled={!practiceAnswer || practiceResult === 'correct'}
-              className="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-40 transition">
-              Провери
-            </button>
-            {practiceResult === 'correct' && (
-              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5" /> Точно!
-              </div>
-            )}
-            {practiceResult === 'wrong' && (
-              <div className="flex items-center gap-1.5 text-red-500 font-bold text-sm">
-                <XCircle className="w-5 h-5" /> Обиди се повторно
-              </div>
-            )}
-          </div>
-
-          {practiceResult === 'correct' && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-1">
-              <p className="text-sm font-bold text-emerald-800">✓ Точно! Бројот е <strong>{practiceTarget}</strong></p>
-              <p className="text-sm text-emerald-700">Проширена форма: <strong>{toExpandedForm(practiceTarget)}</strong></p>
-              <p className="text-sm text-emerald-700 capitalize">Со зборови: <em>{toWordFormMK(practiceTarget)}</em></p>
-              <button type="button" onClick={nextPractice}
-                className="mt-2 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition">
-                Следна задача →
-              </button>
+        <div className="space-y-3">
+          {/* Block visual for difficulty-1: reinforce the visual → number link */}
+          {difficulty === 1 && session.currentEx && !session.sessionDone && (
+            <div className="bg-gradient-to-br from-slate-50 to-green-50 rounded-2xl border border-green-100 p-3 overflow-x-auto">
+              <BlockDisplay
+                decomp={decomposeNumber(parseInt(session.currentEx.correctAnswer, 10) || 0)}
+                showThousands={cfg.showThousands}
+                showHundreds={cfg.showHundreds}
+              />
             </div>
           )}
-
-          {practiceResult === 'wrong' && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-3">
-              <p className="text-sm font-semibold text-red-700">
-                Погледни ги блоковите повторно — брои ги внимателно!
-              </p>
-              <div className={`grid ${cfg.showThousands ? 'grid-cols-4' : cfg.showHundreds ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-2`}>
-                {cfg.showThousands && practiceDecomp.thousands > 0 && (
-                  <div className="text-center text-xs font-semibold bg-purple-50 rounded-lg p-2">
-                    <span className="text-purple-700">{practiceDecomp.thousands}</span> илјадарк{practiceDecomp.thousands === 1 ? 'а' : 'и'}
-                  </div>
-                )}
-                {cfg.showHundreds && practiceDecomp.hundreds > 0 && (
-                  <div className="text-center text-xs font-semibold bg-green-50 rounded-lg p-2">
-                    <span className="text-green-700">{practiceDecomp.hundreds}</span> сто{practiceDecomp.hundreds === 1 ? 'тка' : 'тки'}
-                  </div>
-                )}
-                {practiceDecomp.tens > 0 && (
-                  <div className="text-center text-xs font-semibold bg-yellow-50 rounded-lg p-2">
-                    <span className="text-yellow-700">{practiceDecomp.tens}</span> десетиц{practiceDecomp.tens === 1 ? 'а' : 'и'}
-                  </div>
-                )}
-                {practiceDecomp.ones > 0 && (
-                  <div className="text-center text-xs font-semibold bg-red-50 rounded-lg p-2">
-                    <span className="text-red-600">{practiceDecomp.ones}</span> единиц{practiceDecomp.ones === 1 ? 'а' : 'и'}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <LabExercisePanel
+            session={session}
+            onNewSet={loadSet}
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
+          />
         </div>
       )}
 

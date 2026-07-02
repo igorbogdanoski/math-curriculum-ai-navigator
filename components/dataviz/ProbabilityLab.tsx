@@ -7,12 +7,28 @@ import {
   SPINNER_COLORS, DEFAULT_SECTORS, DIE_FACES, EXPERIMENTS, EXP_LABEL,
   wilsonCI, factorial, combinations, permutations, binomCoeff,
   binomialPMF, normalPDF, getOutcomes, theoretical, rollOne,
+  generateProbabilitySet,
 } from './probabilityMath';
 import { ConditionalProbabilityVenn, ProbabilityTreeBuilder, BinomialDistributionChart } from './ProbabilityLabPanels';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 export interface ProbabilityLabProps {
   onSendToDataViz: (tableData: TableData, config: Partial<ChartConfig>) => void;
   onGoToChart: () => void;
+}
+
+// ── Exercises sub-panel ───────────────────────────────────────────────────────
+function ProbExercisesPanel() {
+  const session = useLabSession('probability', 'Веројатност');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateProbabilitySet(level));
+  }, [difficulty, loadExercises]);
+  return <LabExercisePanel session={session} onNewSet={loadSet} difficulty={difficulty} onDifficultyChange={setDifficulty} />;
 }
 
 // ── SpinnerSVG ────────────────────────────────────────────────────────────────
@@ -252,6 +268,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
   const [animating, setAnimating]   = useState(false);
   const animTimerRef                = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimerRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [view, setView]             = useState<'sim' | 'ex'>('sim');
 
   const theory   = theoretical(experiment, dieFaces, sectors, binN, binP);
   const outcomes = getOutcomes(experiment, dieFaces, sectors, binN);
@@ -325,6 +342,16 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-1.5">
+        {(['sim', 'ex'] as const).map(v => (
+          <button key={v} type="button" onClick={() => setView(v)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${view === v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {v === 'sim' ? '🎲 Симулација' : '✏️ Вежбај'}
+          </button>
+        ))}
+      </div>
+      {view === 'ex' && <ProbExercisesPanel />}
+      {view === 'sim' && <>
 
       {/* ── Experiment selector ─────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
@@ -654,6 +681,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
 
       {/* ── Probability tree builder ─────────────────────────────────────────── */}
       <ProbabilityTreeBuilder />
+      </>}
 
     </div>
   );
