@@ -15,19 +15,14 @@
  * Педагошка основа: Portfolio Assessment (Paulson 1991), Metacognitive reflection
  */
 
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import {
   Award, BookOpen, BarChart2, Star, Printer,
   TrendingUp, MessageSquare, Loader2, Sparkles, AlertCircle,
   CheckCircle2, User, ClipboardList,
 } from 'lucide-react';
-import { useStudentProgress } from '../hooks/useStudentProgress';
-import { geminiService } from '../services/geminiService';
-import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
-import type { QuizResult, ConceptMastery } from '../services/firestoreService';
-import { fetchStudentDuggaSubmissionsByName } from '../services/firestoreService.dugga';
-import type { DuggaSubmission } from '../services/firestoreService.dugga';
+import { useStudentPortfolio } from '../hooks/useStudentPortfolio';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -89,98 +84,14 @@ export const StudentPortfolioView: React.FC = () => {
   });
   const [nameInput, setNameInput] = useState(studentName);
 
-  const { data, isLoading } = useStudentProgress(studentName);
-  const results: QuizResult[] = data?.results || [];
-  const mastery: ConceptMastery[] = data?.mastery || [];
-  const gamification = data?.gamification ?? null;
-
-  // ── Dugga submissions ─────────────────────────────────────────────────────
-  const [duggaSubs, setDuggaSubs] = useState<DuggaSubmission[]>([]);
-  useEffect(() => {
-    if (!studentName.trim()) return;
-    fetchStudentDuggaSubmissionsByName(studentName).then(setDuggaSubs).catch(() => {});
-  }, [studentName]);
-
-  // ── AI narrative ──────────────────────────────────────────────────────────
-  const [narrative, setNarrative] = useState<string>('');
-  const [narrativeLoading, setNarrativeLoading] = useState(false);
-  const [narrativeError, setNarrativeError] = useState(false);
-
-  // ── Derived stats ─────────────────────────────────────────────────────────
-  const avgPct = useMemo(() =>
-    results.length > 0 ? results.reduce((s, r) => s + r.percentage, 0) / results.length : 0,
-  [results]);
-
-  const masteredConcepts = useMemo(() =>
-    mastery.filter(m => m.mastered).sort((a, b) => {
-      const ta = a.updatedAt?.toDate?.()?.getTime() ?? 0;
-      const tb = b.updatedAt?.toDate?.()?.getTime() ?? 0;
-      return tb - ta;
-    }),
-  [mastery]);
-
-  const bestResults = useMemo(() => {
-    // Deduplicate: keep best score per conceptId (or quizId if no concept)
-    const best = new Map<string, QuizResult>();
-    for (const r of results) {
-      const key = r.conceptId || r.quizId;
-      const existing = best.get(key);
-      if (!existing || r.percentage > existing.percentage) {
-        best.set(key, r);
-      }
-    }
-    return Array.from(best.values())
-      .sort((a, b) => b.percentage - a.percentage)
-      .slice(0, 8);
-  }, [results]);
-
-  const metacognitiveNotes = useMemo(() =>
-    results
-      .filter(r => r.metacognitiveNote && r.metacognitiveNote.trim().length > 10)
-      .sort((a, b) => {
-        const ta = a.playedAt?.toDate?.()?.getTime() ?? 0;
-        const tb = b.playedAt?.toDate?.()?.getTime() ?? 0;
-        return tb - ta;
-      })
-      .slice(0, 6),
-  [results]);
-
-  const topConceptTitles = useMemo(() =>
-    masteredConcepts.slice(0, 5).map(m => m.conceptTitle || m.conceptId),
-  [masteredConcepts]);
-
-  const weakConceptTitles = useMemo(() => {
-    const failed = mastery
-      .filter(m => !m.mastered && (m.attempts ?? 0) > 1)
-      .sort((a, b) => (a.consecutiveHighScores ?? 0) - (b.consecutiveHighScores ?? 0));
-    return failed.slice(0, 3).map(m => m.conceptTitle || m.conceptId);
-  }, [mastery]);
-
-  const levelInfo = gamification ? calcFibonacciLevel(gamification.totalXP) : null;
-  const level = levelInfo?.level ?? 1;
-  const avatar = getAvatar(level);
-
-  // Generate narrative once we have enough data
-  useEffect(() => {
-    if (!studentName || results.length < 3 || narrative || narrativeLoading) return;
-    setNarrativeLoading(true);
-    setNarrativeError(false);
-    geminiService.generateStudentNarrative(
-      studentName,
-      masteredConcepts.length,
-      avgPct,
-      results.length,
-      topConceptTitles,
-      weakConceptTitles,
-      metacognitiveNotes.map(r => r.metacognitiveNote!),
-    ).then(text => {
-      setNarrative(text);
-    }).catch(() => {
-      setNarrativeError(true);
-    }).finally(() => {
-      setNarrativeLoading(false);
-    });
-  }, [studentName, results.length, masteredConcepts.length]);
+  const {
+    isLoading,
+    results, mastery, duggaSubs,
+    avgPct, masteredConcepts, bestResults, metacognitiveNotes,
+    level, avatar,
+    currentStreak, longestStreak,
+    narrative, narrativeLoading, narrativeError,
+  } = useStudentPortfolio(studentName);
 
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: `Портфолио_${studentName}` });
@@ -294,8 +205,8 @@ export const StudentPortfolioView: React.FC = () => {
           />
           <KPICard
             label="Серија (денови)"
-            value={(gamification?.currentStreak ?? 0).toString()}
-            sub={`Рекорд: ${gamification?.longestStreak ?? 0}`}
+            value={currentStreak.toString()}
+            sub={`Рекорд: ${longestStreak}`}
             icon={<Star className="w-7 h-7 text-amber-500" />}
             color="bg-amber-50 border border-amber-200"
           />

@@ -17,6 +17,19 @@ import { firestoreService } from '../services/firestoreService';
 import { isDueForReview, sortByReviewUrgency, getNextReviewLabel, type SpacedRepRecord } from '../utils/spacedRepetition';
 import { GamificationPanel } from '../components/student/GamificationPanel';
 import { ActivityFeed } from '../components/student/ActivityFeed';
+import { useStudentPortfolio } from '../hooks/useStudentPortfolio';
+import { StudentPortfolioReport } from '../components/portfolio/StudentPortfolioReport';
+
+function PortfolioTabPanel({ studentName }: { studentName: string }) {
+  const portfolioData = useStudentPortfolio(studentName);
+  return (
+    <div className="w-full max-w-2xl mb-8">
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <StudentPortfolioReport data={portfolioData} />
+      </div>
+    </div>
+  );
+}
 
 const formatDate = (ts: any): string => {
   if (!ts) return '�';
@@ -57,7 +70,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   );
 
   const [searched, setSearched] = useState(!!nameProp || !!(() => { try { return localStorage.getItem('studentName'); } catch { return null; } })());
-  const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
+  const [activeTab, setActiveTab] = useState<'activity' | 'map' | 'portfolio'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
@@ -388,11 +401,17 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           >
             <Target className="w-4 h-4" /> {t('progress.tab.map')}
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('activity')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'activity' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
           >
             <BarChart2 className="w-4 h-4" /> {t('progress.tab.activity')}
+          </button>
+          <button
+            onClick={() => setActiveTab('portfolio')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'portfolio' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
+          >
+            <Trophy className="w-4 h-4" /> Портфолио
           </button>
         </div>
       )}
@@ -401,6 +420,10 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         <div className="w-full max-w-2xl no-print mb-8">
           <LogicMap masteryRecords={masteryRecords} nextQuizIds={nextQuizIds} />
         </div>
+      )}
+
+      {searched && !loading && activeTab === 'portfolio' && (
+        <PortfolioTabPanel studentName={studentName} />
       )}
 
       {searched && !loading && activeTab === 'activity' && (
