@@ -265,7 +265,7 @@ export function layoutTiles(specs: { kind: TileKind; sign: TileSign; count: numb
 export const UNDO_MAX = 20;
 
 // ─── ID counter ───────────────────────────────────────────────────────────────
-export let _uid = 0;
+let _uid = 0;
 export const nextUid = () => `t${++_uid}`;
 
 // ─── Coefficient extractor (for balance comparison) ────────────────────────────

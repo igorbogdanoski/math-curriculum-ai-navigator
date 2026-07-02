@@ -1,15 +1,12 @@
 import React from 'react';
 import { Eye, ZoomIn, ZoomOut, CheckCircle2, Loader2, ClipboardList, ArrowLeftRight, Pencil, Shield, Crosshair, Eraser, BookOpen, Sparkles } from 'lucide-react';
 import type { AIGeneratedPresentation, AIGeneratedAssessment, PresentationSlide } from '../../types';
-import type { DokLevel } from '../../types';
-import { DokBadge } from '../common/DokBadge';
 import { MathRenderer } from '../common/MathRenderer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 import { ChartPreview } from '../dataviz/ChartPreview';
 import type { ChartConfig } from '../dataviz/ChartPreview';
 import type { TableData } from '../dataviz/DataTable';
 import { SlideSVGRenderer } from './SlideSVGRenderer';
-import { generateMathSVG } from '../../services/gemini/svg';
 import { Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 
 const Shape3DViewer = React.lazy(() =>
@@ -23,15 +20,10 @@ export interface SlideBodyProps {
   slide: PresentationSlide;
   data: AIGeneratedPresentation;
   idx: number;
-  editMode: boolean;
-  setSlides: React.Dispatch<React.SetStateAction<PresentationSlide[]>>;
-  isRegenerating: boolean;
-  setIsRegenerating: React.Dispatch<React.SetStateAction<boolean>>;
   svgCache: Record<number, string>;
   setSvgCache: React.Dispatch<React.SetStateAction<Record<number, string>>>;
   svgLoading: Record<number, boolean>;
   setSvgLoading: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
-  generatingRef: React.MutableRefObject<Set<number>>;
   formulaZoom: number;
   setFormulaZoom: React.Dispatch<React.SetStateAction<number>>;
   revealed: boolean;
@@ -48,9 +40,7 @@ export interface SlideBodyProps {
 
 export const SlideBody: React.FC<SlideBodyProps> = ({
   slide, data, idx,
-  editMode, setSlides,
-  isRegenerating, setIsRegenerating,
-  svgCache, setSvgCache, svgLoading, setSvgLoading, generatingRef,
+  svgCache, setSvgCache, svgLoading, setSvgLoading,
   formulaZoom, setFormulaZoom,
   revealed, setRevealed,
   stepIdx, setStepIdx,

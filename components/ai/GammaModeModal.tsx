@@ -778,15 +778,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           slide={slide}
           data={data}
           idx={idx}
-          editMode={editMode}
-          setSlides={setSlides}
-          isRegenerating={isRegenerating}
-          setIsRegenerating={setIsRegenerating}
           svgCache={svgCache}
           setSvgCache={setSvgCache}
           svgLoading={svgLoading}
           setSvgLoading={setSvgLoading}
-          generatingRef={generatingRef}
           formulaZoom={formulaZoom}
           setFormulaZoom={setFormulaZoom}
           revealed={revealed}
