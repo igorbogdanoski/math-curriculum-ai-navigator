@@ -28,6 +28,7 @@ import { PedagogicalDashboard } from '../components/lesson-plan-editor/Pedagogic
 import { AILessonAssistant } from '../components/lesson-plan-editor/AILessonAssistant';
 import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
 import { initialPlanState } from '../components/lesson-plan-editor/lessonPlanEditorHelpers';
+import { LessonExecutionOverlay } from '../components/classroom/LessonExecutionOverlay';
 import { useLessonPlanAIActions } from '../components/lesson-plan-editor/useLessonPlanAIActions';
 import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonPlanExport';
 import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
@@ -75,6 +76,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     initialPlanState
   );
 
+  const [execOpen, setExecOpen] = useState(false);
   const [showMathTools, setShowMathTools] = useState(false);
   const [mathToolsTab, setMathToolsTab] = useState<MathToolTab>('scratchpad');
   const [isSaving, setIsSaving] = useState(false);
@@ -650,11 +652,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                       </>
                     )}
                   </button>
-                  {/* S98.1 — Start Class */}
+                  {/* S98.1 — Start Class (inline overlay, no navigation) */}
                   {isEditing && id && (
                     <button
                       type="button"
-                      onClick={() => navigate(`/classroom/${id}`)}
+                      onClick={() => setExecOpen(true)}
                       title="Стартувај ја реализацијата на часот"
                       className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold"
                     >
@@ -1014,6 +1016,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             </div>
           </div>
         </div>
+      )}
+      {/* C.3 — AI Lesson Execution overlay (inline, no navigation) */}
+      {execOpen && plan && (plan as LessonPlan).id && (
+        <LessonExecutionOverlay
+          plan={plan as LessonPlan}
+          onClose={() => setExecOpen(false)}
+        />
       )}
     </div>
   );
