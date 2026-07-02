@@ -23,6 +23,8 @@ export interface StudentPortfolioData {
   currentStreak: number;
   longestStreak: number;
   totalXP: number;
+  labSessions: QuizResult[];
+  labAvgPct: number;
   narrative: string;
   narrativeLoading: boolean;
   narrativeError: boolean;
@@ -90,6 +92,19 @@ export function useStudentPortfolio(studentName: string): StudentPortfolioData {
     return failed.slice(0, 3).map(m => m.conceptTitle || m.conceptId);
   }, [mastery]);
 
+  const labSessions = useMemo(() =>
+    results
+      .filter(r => r.quizType === 'lab')
+      .sort((a, b) => (b.playedAt?.toDate?.()?.getTime() ?? 0) - (a.playedAt?.toDate?.()?.getTime() ?? 0))
+      .slice(0, 10),
+  [results]);
+
+  const labAvgPct = useMemo(() =>
+    labSessions.length > 0
+      ? labSessions.reduce((s, r) => s + r.percentage, 0) / labSessions.length
+      : 0,
+  [labSessions]);
+
   // Generate AI narrative once we have enough data
   useEffect(() => {
     if (!studentName || results.length < 3 || narrative || narrativeLoading) return;
@@ -132,6 +147,8 @@ export function useStudentPortfolio(studentName: string): StudentPortfolioData {
     currentStreak: gamification?.currentStreak ?? 0,
     longestStreak: gamification?.longestStreak ?? 0,
     totalXP: gamification?.totalXP ?? 0,
+    labSessions,
+    labAvgPct,
     narrative,
     narrativeLoading,
     narrativeError,

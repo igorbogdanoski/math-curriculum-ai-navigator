@@ -21,6 +21,7 @@ export const StudentPortfolioReport: React.FC<StudentPortfolioReportProps> = ({ 
   const {
     studentName, isLoading, results, masteredConcepts,
     avgPct, currentStreak, bestResults, weakConceptTitles,
+    labSessions, labAvgPct,
     avatar, level, narrative, narrativeLoading, narrativeError,
   } = data;
 
@@ -126,6 +127,49 @@ export const StudentPortfolioReport: React.FC<StudentPortfolioReportProps> = ({ 
           </div>
         </div>
       )}
+
+      {/* ── Lab activities ───────────────────────────────────────────────────── */}
+      {labSessions.length > 0 && (() => {
+        const uniqueLabCount = new Set(labSessions.map(r => r.conceptId)).size;
+        return (
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              🔬 Лабораториски вежби
+            </p>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="rounded-lg bg-teal-50 border border-teal-100 p-2 text-center">
+                <p className="text-lg font-black text-teal-700">{labSessions.length}</p>
+                <p className="text-[10px] text-gray-500">Сесии</p>
+              </div>
+              <div className="rounded-lg bg-teal-50 border border-teal-100 p-2 text-center">
+                <p className="text-lg font-black text-teal-700">{uniqueLabCount}</p>
+                <p className="text-[10px] text-gray-500">Лаборатории</p>
+              </div>
+              <div className="rounded-lg bg-teal-50 border border-teal-100 p-2 text-center">
+                <p className={`text-lg font-black ${getScoreColor(labAvgPct)}`}>{fmt(labAvgPct)}%</p>
+                <p className="text-[10px] text-gray-500">Просек</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {labSessions.slice(0, 4).map((r, i) => (
+                <div key={i} className="flex items-center justify-between bg-teal-50 border border-teal-100 rounded-lg px-3 py-1.5">
+                  <span className="text-xs text-gray-700 truncate mr-2">
+                    {r.quizTitle?.replace('Лабораторија: ', '') ?? r.conceptId}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {r.hintsUsed != null && r.hintsUsed > 0 && (
+                      <span className="text-[10px] text-gray-400">💡×{r.hintsUsed}</span>
+                    )}
+                    <span className={`text-sm font-black tabular-nums ${getScoreColor(r.percentage)}`}>
+                      {fmt(r.percentage)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── AI narrative excerpt ─────────────────────────────────────────────── */}
       {(narrative || narrativeLoading) && (
