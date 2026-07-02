@@ -1,251 +1,21 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
-import { Card } from '../components/common/Card';
-import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe, MessageSquare, BookOpen, Trash2, Star, RefreshCw, Activity, DatabaseZap, Zap } from 'lucide-react';
-import { getRagStats, getEffectiveSimilarityThreshold, type RagStats } from '../services/ragService';
+import { ShieldAlert, Copy, Check } from 'lucide-react';
+import { getRagStats, type RagStats } from '../services/ragService';
 import { firestoreService } from '../services/firestoreService';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread } from '../services/firestoreService.forum';
-import {
-    computeActivityCounts,
-    computeStickinessRatio,
-    bucketWeeklyCohorts,
-    computeCreditBurnRatio,
-    type UserActivityRecord,
-    type CohortRetentionPoint,
-} from '../utils/cohortMetrics';
+import { type UserActivityRecord } from '../utils/cohortMetrics';
+
+import { AdminSchoolsTab } from './admin/AdminSchoolsTab';
+import { AdminUsersTab } from './admin/AdminUsersTab';
+import { AdminStatsTab } from './admin/AdminStatsTab';
+import { AdminForumTab } from './admin/AdminForumTab';
+import { AdminContentTab } from './admin/AdminContentTab';
+import { CohortDashboard } from './admin/CohortDashboard';
 
 type Tab = 'schools' | 'users' | 'stats' | 'forum' | 'content' | 'cohort';
-
-const ROLE_LABELS: Record<string, string> = {
-  teacher:     '🎓 Наставник',
-  school_admin: '🏫 Директор',
-  admin:       '🛡️ Систем Админ',
-};
-
-const TRACK_LABELS: Record<string, string> = {
-  vocational4: 'Стручно 4г',
-  vocational3: 'Стручно 3г',
-  vocational2: 'Стручно 2г',
-  gymnasium:   'Гимназија',
-  gymnasium_elective: 'Гимн. изб.',
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  teacher:      'bg-blue-50 text-blue-700 border-blue-200',
-  school_admin: 'bg-amber-50 text-amber-700 border-amber-200',
-  admin:        'bg-red-50 text-red-700 border-red-200',
-};
-
-const TIER_OPTIONS: { value: 'Free' | 'Pro' | 'Unlimited'; label: string; color: string }[] = [
-    { value: 'Free',      label: 'Free',      color: 'bg-gray-100 text-gray-600' },
-    { value: 'Pro',       label: 'Pro',        color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'Unlimited', label: 'Unlimited',  color: 'bg-purple-100 text-purple-800' },
-];
-
-const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleUpdateSubscription, handleDeleteUser }: any) => {
-    const role = u.role ?? 'teacher';
-    const [isEditing, setIsEditing] = useState(false);
-    const [editCredits, setEditCredits] = useState(u.aiCreditsBalance || 0);
-    const [editPremium, setEditPremium] = useState(u.isPremium || false);
-    const [editUnlimited, setEditUnlimited] = useState(u.hasUnlimitedCredits || false);
-    const [editTier, setEditTier] = useState<'Free' | 'Pro' | 'Unlimited'>(u.tier || 'Free');
-
-    // Keep local state in sync if parent refreshes
-    React.useEffect(() => {
-        setEditCredits(u.aiCreditsBalance || 0);
-        setEditPremium(u.isPremium || false);
-        setEditUnlimited(u.hasUnlimitedCredits || false);
-        setEditTier(u.tier || 'Free');
-    }, [u.aiCreditsBalance, u.isPremium, u.hasUnlimitedCredits, u.tier]);
-
-    const tierColor = TIER_OPTIONS.find(t => t.value === (u.tier || 'Free'))?.color ?? 'bg-gray-100 text-gray-600';
-
-    return (
-        <div className={`flex flex-col gap-2 py-3 ${isMe ? 'bg-amber-50/40' : ''}`}>
-            <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
-                    {(u.name ?? '?').charAt(0).toUpperCase()}
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
-                        {u.name ?? 'Непознат'}
-                        {isMe && <span className="text-[10px] text-amber-600 font-bold">(ти)</span>}
-                        {u.isPremium && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold">PRO</span>}
-                        {u.hasUnlimitedCredits && <span className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.5 rounded font-bold">∞</span>}
-                        {u.proExpiresAt && new Date(u.proExpiresAt) < new Date() && (
-                            <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded font-bold">ИСТЕЧЕНО</span>
-                        )}
-                    </p>
-                    <p className="text-[11px] text-gray-400 truncate font-mono">{u.email || u.uid}</p>
-                    {u.proExpiresAt && (
-                        <p className={`text-[11px] truncate ${new Date(u.proExpiresAt) < new Date() ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
-                            Pro истекува: {new Date(u.proExpiresAt).toLocaleDateString('mk-MK')}
-                        </p>
-                    )}
-                    {u.schoolId && (
-                        <p className="text-[11px] text-gray-400 truncate">🏫 {schools.find((s: any) => s.id === u.schoolId)?.name ?? u.schoolId}</p>
-                    )}
-                </div>
-                {/* Credits + tier + role */}
-                <div className="shrink-0 flex items-center gap-2 flex-wrap justify-end">
-                    <div className="flex items-center gap-1 text-xs border rounded-md px-2 py-1">
-                        <span>🪙 {u.hasUnlimitedCredits ? '∞' : (u.aiCreditsBalance || 0)}</span>
-                        {!isMe && (
-                            <button type="button" onClick={() => setIsEditing(!isEditing)} className="text-blue-500 hover:text-blue-700 ml-1" title="Уреди претплата">✏️</button>
-                        )}
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tierColor}`}>
-                        {u.tier || 'Free'}
-                    </span>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? ROLE_COLORS.teacher}`}>
-                        {ROLE_LABELS[role] ?? role}
-                    </span>
-                    {u.secondaryTrack && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200" title={`Средно: ${u.secondaryTrack}`}>
-                            🎓 {TRACK_LABELS[u.secondaryTrack] ?? u.secondaryTrack}
-                        </span>
-                    )}
-                    {!isMe && (
-                        <select
-                            aria-label={`Улога за ${u.name ?? u.uid}`}
-                            disabled={updatingUid === u.uid}
-                            value={role}
-                            onChange={e => handleChangeRole(u.uid, e.target.value as 'teacher' | 'school_admin' | 'admin', u.schoolId)}
-                            className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-red-400 outline-none cursor-pointer disabled:opacity-50"
-                        >
-                            <option value="teacher">Наставник</option>
-                            <option value="school_admin">Директор</option>
-                            <option value="admin">Систем Админ</option>
-                        </select>
-                    )}
-                    {updatingUid === u.uid && (
-                        <span className="text-xs text-gray-400 animate-pulse">Зачувувам...</span>
-                    )}
-                    {!isMe && !u.name && (
-                        <button
-                            type="button"
-                            onClick={() => handleDeleteUser(u.uid)}
-                            title="Избриши непознат корисник"
-                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* ── Expanded Subscription Edit Form ── */}
-            {isEditing && !isMe && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-1 ml-12 space-y-3 text-sm">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Уреди претплата — {u.name ?? u.uid}</p>
-
-                    {/* Credits row */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                            🪙 Кредити:
-                            <input
-                                type="number"
-                                min={0}
-                                className="w-20 px-2 py-1 border rounded-lg text-sm"
-                                value={editCredits}
-                                onChange={e => setEditCredits(Math.max(0, parseInt(e.target.value) || 0))}
-                                disabled={editUnlimited}
-                            />
-                        </label>
-                        <div className="flex gap-1.5">
-                            {[10, 50, 100, 500].map(amt => (
-                                <button
-                                    key={amt}
-                                    type="button"
-                                    disabled={editUnlimited}
-                                    onClick={() => setEditCredits((c: number) => c + amt)}
-                                    className="px-2 py-1 bg-white border rounded-lg text-xs hover:bg-gray-100 disabled:opacity-30 transition"
-                                >
-                                    +{amt}
-                                </button>
-                            ))}
-                            <button type="button" onClick={() => setEditCredits(0)} disabled={editUnlimited} className="px-2 py-1 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 hover:bg-red-100 disabled:opacity-30 transition">Reset</button>
-                        </div>
-                    </div>
-
-                    {/* Tier + toggles row */}
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                            Ниво:
-                            <select
-                                value={editTier}
-                                onChange={e => {
-                                    const t = e.target.value as 'Free' | 'Pro' | 'Unlimited';
-                                    setEditTier(t);
-                                    setEditPremium(t !== 'Free');
-                                    setEditUnlimited(t === 'Unlimited');
-                                }}
-                                className="border rounded-lg px-2 py-1 text-xs bg-white focus:ring-2 focus:ring-indigo-400 outline-none"
-                            >
-                                <option value="Free">Free</option>
-                                <option value="Pro">Pro (Premium)</option>
-                                <option value="Unlimited">Unlimited (∞)</option>
-                            </select>
-                        </label>
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={editPremium}
-                                onChange={e => setEditPremium(e.target.checked)}
-                                className="rounded"
-                            />
-                            Premium
-                        </label>
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={editUnlimited}
-                                onChange={e => {
-                                    setEditUnlimited(e.target.checked);
-                                    if (e.target.checked) setEditPremium(true);
-                                }}
-                                className="rounded"
-                            />
-                            Неограничени (∞)
-                        </label>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleUpdateSubscription(u.uid, editCredits, editPremium, editUnlimited, editTier);
-                                setIsEditing(false);
-                            }}
-                            disabled={updatingUid === u.uid}
-                            className="bg-brand-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-primary/90 disabled:opacity-40 transition"
-                        >
-                            {updatingUid === u.uid ? 'Зачувувам...' : '✓ Зачувај'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsEditing(false)}
-                            className="px-4 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition"
-                        >
-                            Откажи
-                        </button>
-                        {/* Quick presets */}
-                        <div className="ml-auto flex gap-1.5">
-                            <button type="button" onClick={() => { setEditTier('Free'); setEditPremium(false); setEditUnlimited(false); setEditCredits(50); }} className="text-xs text-gray-400 hover:text-gray-600 underline">Free+50</button>
-                            <button type="button" onClick={() => { setEditTier('Pro'); setEditPremium(true); setEditUnlimited(false); setEditCredits(0); }} className="text-xs text-yellow-600 hover:text-yellow-800 underline font-bold">→ Pro</button>
-                            <button type="button" onClick={() => { setEditTier('Unlimited'); setEditPremium(true); setEditUnlimited(true); setEditCredits(0); }} className="text-xs text-purple-600 hover:text-purple-800 underline font-bold">→ ∞ Unlimited</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
@@ -253,7 +23,6 @@ export const SystemAdminView: React.FC = () => {
     const { allConcepts } = useCurriculum();
     const [activeTab, setActiveTab] = useState<Tab>('schools');
 
-    // Build conceptId → title lookup map from curriculum data
     const conceptNameMap = useMemo(() => {
         const map: Record<string, string> = {};
         allConcepts.forEach(c => { map[c.id] = c.title; });
@@ -287,116 +56,90 @@ export const SystemAdminView: React.FC = () => {
     const [forumSearch, setForumSearch] = useState('');
     const [forumActionUid, setForumActionUid] = useState<string | null>(null);
 
-
-    // ── S39-F5: Cohort/Activity state ──
+    // ── Cohort/Activity state ──
     const [cohortUsers, setCohortUsers] = useState<UserActivityRecord[] | null>(null);
     const [cohortBurn, setCohortBurn] = useState<{ aiCreditsBalance?: number }[]>([]);
     const [isLoadingCohort, setIsLoadingCohort] = useState(false);
     const [cohortClock, setCohortClock] = useState<number>(() => Date.now());
 
-    // ── RAG Indexing: Official Curriculum ──
+    // ── RAG Indexing state ──
     const [ragIndexStatus, setRagIndexStatus] = useState<Record<number, 'idle' | 'running' | 'done' | 'error'>>({ 6: 'idle', 7: 'idle', 8: 'idle' });
     const [ragIndexLog, setRagIndexLog] = useState<string[]>([]);
     const [ragStats, setRagStats] = useState<RagStats | null>(null);
     const [ragEnabled, setRagEnabled] = useState(() => localStorage.getItem('VITE_ENABLE_VECTOR_RAG') === 'true');
 
-    const handleRefreshRagStats = useCallback(() => {
-      setRagStats(getRagStats());
-    }, []);
+    const handleRefreshRagStats = useCallback(() => { setRagStats(getRagStats()); }, []);
 
     const handleToggleRag = useCallback((enabled: boolean) => {
-      if (enabled) localStorage.setItem('VITE_ENABLE_VECTOR_RAG', 'true');
-      else localStorage.removeItem('VITE_ENABLE_VECTOR_RAG');
-      setRagEnabled(enabled);
+        if (enabled) localStorage.setItem('VITE_ENABLE_VECTOR_RAG', 'true');
+        else localStorage.removeItem('VITE_ENABLE_VECTOR_RAG');
+        setRagEnabled(enabled);
     }, []);
 
     const handleIndexGrade = useCallback(async (grade: number) => {
-      const gradeLabel = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
-      setRagIndexStatus(prev => ({ ...prev, [grade]: 'running' }));
-      setRagIndexLog([`Започнувам индексирање на официјалната програма за ${gradeLabel} одделение...`]);
-      try {
-        const [{ callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
-          import('../services/gemini/core'),
-          import('firebase/firestore'),
-        ]);
-        const { db } = await import('../firebaseConfig');
+        const gradeLabel = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
+        setRagIndexStatus(prev => ({ ...prev, [grade]: 'running' }));
+        setRagIndexLog([`Започнувам индексирање на официјалната програма за ${gradeLabel} одделение...`]);
+        try {
+            const [{ callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
+                import('../services/gemini/core'),
+                import('firebase/firestore'),
+            ]);
+            const { db } = await import('../firebaseConfig');
 
-        type SubDoc = { id: string; grade: number; text: string; topicId: string; topicTitle: string; subtopicTitle: string };
-        let subtopics: SubDoc[];
-        if (grade === 6) {
-          const m = await import('../data/official/grade6Official');
-          subtopics = m.getOfficialSubtopicDocs();
-        } else if (grade === 7) {
-          const m = await import('../data/official/grade7Official');
-          subtopics = m.getOfficialSubtopicDocs();
-        } else {
-          const m = await import('../data/official/grade8Official');
-          subtopics = m.getOfficialSubtopicDocs(8);
+            type SubDoc = { id: string; grade: number; text: string; topicId: string; topicTitle: string; subtopicTitle: string };
+            let subtopics: SubDoc[];
+            if (grade === 6) {
+                const m = await import('../data/official/grade6Official');
+                subtopics = m.getOfficialSubtopicDocs();
+            } else if (grade === 7) {
+                const m = await import('../data/official/grade7Official');
+                subtopics = m.getOfficialSubtopicDocs();
+            } else {
+                const m = await import('../data/official/grade8Official');
+                subtopics = m.getOfficialSubtopicDocs(8);
+            }
+
+            setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
+
+            const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+            let done = 0;
+            for (const sub of subtopics) {
+                if (done > 0) await sleep(600);
+                const vector = await callEmbeddingProxy(sub.text, undefined, 'RETRIEVAL_DOCUMENT', 768);
+                await setDoc(doc(db, 'concept_embeddings', sub.id), {
+                    vector, text: sub.text, grade: sub.grade,
+                    topicId: sub.topicId, topicTitle: sub.topicTitle, subtopicTitle: sub.subtopicTitle,
+                    source: 'official_mon_2025', indexedAt: new Date().toISOString(),
+                });
+                done += 1;
+                setRagIndexLog(prev => [...prev, `[${done}/${subtopics.length}] ${sub.subtopicTitle}`]);
+            }
+            setRagIndexLog(prev => [...prev, `✅ Завршено! ${done} подтеми индексирани во concept_embeddings.`]);
+            setRagIndexStatus(prev => ({ ...prev, [grade]: 'done' }));
+        } catch (err) {
+            setRagIndexLog(prev => [...prev, `❌ Грешка: ${err instanceof Error ? err.message : String(err)}`]);
+            setRagIndexStatus(prev => ({ ...prev, [grade]: 'error' }));
         }
-
-        setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
-
-        const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-        let done = 0;
-        for (const sub of subtopics) {
-          if (done > 0) await sleep(600);
-          const vector = await callEmbeddingProxy(sub.text, undefined, 'RETRIEVAL_DOCUMENT', 768);
-          await setDoc(doc(db, 'concept_embeddings', sub.id), {
-            vector,
-            text: sub.text,
-            grade: sub.grade,
-            topicId: sub.topicId,
-            topicTitle: sub.topicTitle,
-            subtopicTitle: sub.subtopicTitle,
-            source: 'official_mon_2025',
-            indexedAt: new Date().toISOString(),
-          });
-          done += 1;
-          setRagIndexLog(prev => [...prev, `[${done}/${subtopics.length}] ${sub.subtopicTitle}`]);
-        }
-        setRagIndexLog(prev => [...prev, `✅ Завршено! ${done} подтеми индексирани во concept_embeddings.`]);
-        setRagIndexStatus(prev => ({ ...prev, [grade]: 'done' }));
-      } catch (err) {
-        setRagIndexLog(prev => [...prev, `❌ Грешка: ${err instanceof Error ? err.message : String(err)}`]);
-        setRagIndexStatus(prev => ({ ...prev, [grade]: 'error' }));
-      }
     }, []);
 
     useEffect(() => {
-        if (!user || user.role !== 'admin') {
-            navigate('/');
-            return;
-        }
+        if (!user || user.role !== 'admin') { navigate('/'); return; }
         loadSchools();
     }, [user, navigate]);
 
     useEffect(() => {
-        if (activeTab === 'users' && users.length === 0) {
-            loadUsers();
-        }
-        if (activeTab === 'stats' && !nationalStats) {
-            loadNationalStats();
-        }
-        if (activeTab === 'forum' && forumThreads.length === 0) {
-            loadForumThreads();
-        }
-
-        if (activeTab === 'cohort' && cohortUsers === null) {
-            loadCohort();
-        }
+        if (activeTab === 'users' && users.length === 0) loadUsers();
+        if (activeTab === 'stats' && !nationalStats) loadNationalStats();
+        if (activeTab === 'forum' && forumThreads.length === 0) loadForumThreads();
+        if (activeTab === 'cohort' && cohortUsers === null) loadCohort();
     }, [activeTab]);
 
     const loadCohort = async () => {
         setIsLoadingCohort(true);
         try {
             const data = await firestoreService.fetchAllUsers();
-            setCohortUsers(data.map(u => ({
-                uid: u.uid,
-                createdAt: u.createdAt,
-                lastLoginAt: u.lastLoginAt,
-                lastSeenAt: u.lastSeenAt,
-                role: u.role,
-            })));
+            setCohortUsers(data.map(u => ({ uid: u.uid, createdAt: u.createdAt, lastLoginAt: u.lastLoginAt, lastSeenAt: u.lastSeenAt, role: u.role })));
             setCohortBurn(data.map(u => ({ aiCreditsBalance: u.aiCreditsBalance })));
             setCohortClock(Date.now());
         } finally {
@@ -421,7 +164,6 @@ export const SystemAdminView: React.FC = () => {
         setUserError('');
         try {
             const data = await firestoreService.fetchAllUsers();
-            // Sort: admin first, then school_admin, then teacher, alphabetically within
             const order: Record<string, number> = { admin: 0, school_admin: 1, teacher: 2 };
             data.sort((a, b) => (order[a.role ?? 'teacher'] ?? 2) - (order[b.role ?? 'teacher'] ?? 2) || (a.name ?? '').localeCompare(b.name ?? ''));
             setUsers(data);
@@ -472,15 +214,11 @@ export const SystemAdminView: React.FC = () => {
         }
     };
 
-
     const handleCreateSchool = async (e: React.FormEvent) => {
         e.preventDefault();
         setSchoolError('');
         setSchoolSuccess('');
-        if (!newSchoolName.trim() || !newSchoolCity.trim()) {
-            setSchoolError('Внесете и ime и град.');
-            return;
-        }
+        if (!newSchoolName.trim() || !newSchoolCity.trim()) { setSchoolError('Внесете и ime и град.'); return; }
         setIsSubmitting(true);
         try {
             await firestoreService.createSchool(newSchoolName.trim(), newSchoolCity.trim(), firebaseUser?.uid);
@@ -525,7 +263,7 @@ export const SystemAdminView: React.FC = () => {
         try {
             await firestoreService.updateUserSubscription(uid, { aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier });
             setUsers(prev => prev.map(u => u.uid === uid ? { ...u, aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier } : u));
-        } catch (err: any) {
+        } catch {
             setUserError('Грешка при ажурирање претплата.');
         } finally {
             setUpdatingUid(null);
@@ -544,8 +282,6 @@ export const SystemAdminView: React.FC = () => {
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-0">
-
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -556,7 +292,6 @@ export const SystemAdminView: React.FC = () => {
                 </div>
             </div>
 
-            {/* My UID card — for bootstrap */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
                 <div>
                     <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Твојот Firebase UID</p>
@@ -571,7 +306,6 @@ export const SystemAdminView: React.FC = () => {
                 </button>
             </div>
 
-            {/* Tabs */}
             <div className="flex flex-wrap gap-1 border-b border-gray-200">
                 {([['schools', '🏫 Училишта'], ['users', '👥 Корисници'], ['stats', '📊 Статистики'], ['cohort', '📈 Cohort'], ['forum', '💬 Форум'], ['content', '📚 Содржина']] as [Tab, string][]).map(([id, label]) => (
                     <button
@@ -585,462 +319,72 @@ export const SystemAdminView: React.FC = () => {
                 ))}
             </div>
 
-            {/* ── TAB: Schools ── */}
             {activeTab === 'schools' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Add school form */}
-                    <div className="lg:col-span-1">
-                        <Card className="p-6 sticky top-6">
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                <Plus className="w-5 h-5 text-gray-500" />
-                                Додади Училиште
-                            </h2>
-                            {schoolError && <div className="mb-3 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{schoolError}</div>}
-                            {schoolSuccess && <div className="mb-3 p-3 bg-green-50 text-green-700 text-sm rounded-lg">{schoolSuccess}</div>}
-                            <form onSubmit={handleCreateSchool} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Име на училиште</label>
-                                    <input
-                                        type="text"
-                                        value={newSchoolName}
-                                        onChange={e => setNewSchoolName(e.target.value)}
-                                        placeholder="пр. ООУ Гоце Делчев"
-                                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 outline-none text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Град / Општина</label>
-                                    <input
-                                        type="text"
-                                        value={newSchoolCity}
-                                        onChange={e => setNewSchoolCity(e.target.value)}
-                                        placeholder="пр. Скопје"
-                                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-red-400 outline-none text-sm"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting || !newSchoolName || !newSchoolCity}
-                                    className="w-full py-2.5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 disabled:opacity-40 transition-colors text-sm"
-                                >
-                                    {isSubmitting ? 'Се создава...' : 'Регистрирај Училиште'}
-                                </button>
-                            </form>
-                        </Card>
-                    </div>
-
-                    {/* School list */}
-                    <div className="lg:col-span-2">
-                        <Card className="p-6">
-                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                <Building className="w-5 h-5 text-gray-500" />
-                                Регистрирани училишта ({schools.length})
-                            </h2>
-                            {isLoadingSchools ? (
-                                <div className="space-y-3">
-                                    {[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
-                                </div>
-                            ) : schools.length === 0 ? (
-                                <p className="text-center py-8 text-gray-400 text-sm">Нема регистрирани училишта.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {schools.map(school => (
-                                        <div key={school.id} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div>
-                                                <p className="font-bold text-gray-900 text-sm">{school.name}</p>
-                                                <p className="text-xs text-gray-500">{school.city}</p>
-                                            </div>
-                                            <p className="text-[10px] text-gray-400 font-mono bg-white px-2 py-1 rounded border truncate max-w-[120px]">{school.id}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </Card>
-                    </div>
-                </div>
+                <AdminSchoolsTab
+                    schools={schools}
+                    isLoadingSchools={isLoadingSchools}
+                    schoolError={schoolError}
+                    schoolSuccess={schoolSuccess}
+                    newSchoolName={newSchoolName}
+                    newSchoolCity={newSchoolCity}
+                    isSubmitting={isSubmitting}
+                    setNewSchoolName={setNewSchoolName}
+                    setNewSchoolCity={setNewSchoolCity}
+                    handleCreateSchool={handleCreateSchool}
+                />
             )}
 
-            {/* ── TAB: Users ── */}
             {activeTab === 'users' && (
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold flex items-center gap-2">
-                            <Users className="w-5 h-5 text-gray-500" />
-                            Регистрирани корисници ({users.length})
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={loadUsers}
-                            className="text-xs text-gray-500 hover:text-gray-700 underline"
-                        >
-                            Освежи
-                        </button>
-                    </div>
-
-                    {/* Subscription summary pills */}
-                    {users.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4 text-xs">
-                            {[
-                                { label: 'Free',      count: users.filter(u => !u.isPremium && !u.hasUnlimitedCredits).length, color: 'bg-gray-100 text-gray-600' },
-                                { label: 'Pro',       count: users.filter(u => u.isPremium && !u.hasUnlimitedCredits).length,  color: 'bg-yellow-100 text-yellow-800' },
-                                { label: 'Unlimited', count: users.filter(u => u.hasUnlimitedCredits).length,                  color: 'bg-purple-100 text-purple-800' },
-                            ].map(p => (
-                                <span key={p.label} className={`px-2.5 py-1 rounded-full font-bold ${p.color}`}>
-                                    {p.label}: {p.count}
-                                </span>
-                            ))}
-                            <span className="px-2.5 py-1 rounded-full font-bold bg-blue-50 text-blue-700">
-                                🪙 Вкупно кредити: {users.filter(u => !u.hasUnlimitedCredits).reduce((s: number, u: any) => s + (u.aiCreditsBalance || 0), 0)}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Secondary track breakdown */}
-                    {users.length > 0 && (() => {
-                        const primary = users.filter(u => !u.secondaryTrack).length;
-                        const secondary = users.filter(u => !!u.secondaryTrack);
-                        const trackCounts: Record<string, number> = {};
-                        secondary.forEach(u => { trackCounts[u.secondaryTrack] = (trackCounts[u.secondaryTrack] ?? 0) + 1; });
-                        return (
-                            <div className="flex flex-wrap gap-2 mb-4 text-xs border-t border-gray-100 pt-3">
-                                <span className="text-gray-400 text-[10px] uppercase tracking-wide self-center mr-1">Програма:</span>
-                                <span className="px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600">
-                                    📘 Основно: {primary}
-                                </span>
-                                {Object.entries(trackCounts).map(([track, count]) => (
-                                    <span key={track} className="px-2.5 py-1 rounded-full font-bold bg-teal-50 text-teal-700 border border-teal-100">
-                                        🎓 {TRACK_LABELS[track] ?? track}: {count}
-                                    </span>
-                                ))}
-                                {secondary.length > 0 && (
-                                    <span className="px-2.5 py-1 rounded-full font-bold bg-indigo-50 text-indigo-700">
-                                        Средно вкупно: {secondary.length}
-                                    </span>
-                                )}
-                            </div>
-                        );
-                    })()}
-
-                    {/* Search */}
-                    <input
-                        type="search"
-                        placeholder="Пребарај по ime или email..."
-                        value={userSearch}
-                        onChange={e => setUserSearch(e.target.value)}
-                        className="w-full mb-4 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 outline-none"
-                    />
-
-                    {userError && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{userError}</div>}
-
-                    {isLoadingUsers ? (
-                        <div className="space-y-3">
-                            {[1,2,3,4].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
-                        </div>
-                    ) : users.length === 0 ? (
-                        <p className="text-center py-8 text-gray-400 text-sm">Нема корисници.</p>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {users
-                                .filter(u => {
-                                    if (!userSearch.trim()) return true;
-                                    const q = userSearch.toLowerCase();
-                                    return (u.name ?? '').toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q) || (u.uid ?? '').toLowerCase().includes(q);
-                                })
-                                .map(u => (
-                                    <UserAdminRow
-                                        key={u.uid}
-                                        u={u}
-                                        isMe={u.uid === firebaseUser?.uid}
-                                        schools={schools}
-                                        updatingUid={updatingUid}
-                                        handleChangeRole={handleChangeRole}
-                                        handleUpdateSubscription={handleUpdateSubscription}
-                                        handleDeleteUser={handleDeleteUser}
-                                    />
-                                ))
-                            }
-                        </div>
-                    )}
-                </Card>
+                <AdminUsersTab
+                    users={users}
+                    isLoadingUsers={isLoadingUsers}
+                    userError={userError}
+                    userSearch={userSearch}
+                    setUserSearch={setUserSearch}
+                    updatingUid={updatingUid}
+                    currentUid={firebaseUser?.uid}
+                    schools={schools}
+                    handleChangeRole={handleChangeRole}
+                    handleUpdateSubscription={handleUpdateSubscription}
+                    handleDeleteUser={handleDeleteUser}
+                    onRefresh={loadUsers}
+                />
             )}
-            {/* ── TAB: Stats ── */}
+
             {activeTab === 'stats' && (
-                <div className="space-y-6">
-                    {isLoadingStats ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
-                        </div>
-                    ) : nationalStats ? (
-                        <>
-                            {/* KPI Cards */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[
-                                    { label: 'Училишта', value: nationalStats.totalSchools, icon: <Building className="w-5 h-5 text-indigo-500" />, bg: 'bg-indigo-50' },
-                                    { label: 'Наставници', value: nationalStats.totalTeachers, icon: <Users className="w-5 h-5 text-blue-500" />, bg: 'bg-blue-50' },
-                                    { label: 'Квизови (2000)', value: nationalStats.totalQuizzes, icon: <Globe className="w-5 h-5 text-teal-500" />, bg: 'bg-teal-50' },
-                                    { label: 'Нац. просек', value: `${nationalStats.nationalAvg}%`, icon: <BarChart2 className="w-5 h-5 text-green-500" />, bg: 'bg-green-50' },
-                                ].map(card => (
-                                    <Card key={card.label} className={`p-5 ${card.bg}`}>
-                                        <div className="flex items-center gap-3">
-                                            {card.icon}
-                                            <div>
-                                                <p className="text-xs text-gray-500 font-medium">{card.label}</p>
-                                                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-
-                            {/* Grade breakdown */}
-                            {nationalStats.gradeStats.length > 0 && (
-                                <Card className="p-6">
-                                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <BarChart2 className="w-4 h-4" />
-                                        Национален просек по одделение
-                                    </h2>
-                                    <div className="space-y-3">
-                                        {nationalStats.gradeStats.map((g: any) => (
-                                            <div key={g.grade} className="flex items-center gap-3 text-sm">
-                                                <span className="w-16 font-semibold text-gray-700 shrink-0">{g.grade}</span>
-                                                <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={`h-full rounded-full transition-all ${g.avgPct >= 70 ? 'bg-green-400' : g.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                                                        style={{ width: `${Math.max(g.avgPct, 2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className={`w-12 text-right font-bold ${g.avgPct >= 70 ? 'text-green-600' : g.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                                    {g.avgPct}%
-                                                </span>
-                                                <span className="text-xs text-gray-400 w-20 text-right">{g.attempts} обиди</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </Card>
-                            )}
-
-                            {/* Weak concepts */}
-                            {nationalStats.weakConcepts.length > 0 && (
-                                <Card className="p-6">
-                                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <TrendingDown className="w-4 h-4 text-red-400" />
-                                        Топ 10 концепти со слаба совладаност (национален пресек)
-                                    </h2>
-                                    <div className="divide-y divide-gray-100">
-                                        {nationalStats.weakConcepts.map((c: any, i: number) => (
-                                            <div key={c.conceptId} className="flex items-center gap-3 py-2.5 text-sm">
-                                                <span className="w-6 text-center font-bold text-gray-400">{i + 1}</span>
-                                                <span className="flex-1 text-gray-700 truncate text-xs font-medium" title={c.conceptId}>{conceptNameMap[c.conceptId] ?? c.conceptId}</span>
-                                                <div className="w-32 h-3 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-red-400 rounded-full"
-                                                        style={{ width: `${Math.max(c.avgPct, 2)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="w-10 text-right font-bold text-red-500">{c.avgPct}%</span>
-                                                <span className="text-xs text-gray-400 w-16 text-right">{c.attempts} обиди</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </Card>
-                            )}
-
-                            {nationalStats.gradeStats.length === 0 && nationalStats.weakConcepts.length === 0 && (
-                                <Card className="p-8 text-center text-gray-400 text-sm">
-                                    Нема доволно податоци за национална статистика.
-                                </Card>
-                            )}
-                        </>
-                    ) : null}
-                    <div className="flex justify-end">
-                        <button type="button" onClick={loadNationalStats} className="text-xs text-gray-500 hover:text-gray-700 underline">
-                            Освежи
-                        </button>
-                    </div>
-                </div>
+                <AdminStatsTab
+                    nationalStats={nationalStats}
+                    isLoadingStats={isLoadingStats}
+                    conceptNameMap={conceptNameMap}
+                    onRefresh={loadNationalStats}
+                />
             )}
 
-            {/* ── TAB: Forum Moderation ── */}
             {activeTab === 'forum' && (
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-gray-500" />
-                            Модерирање на форум ({forumThreads.length})
-                        </h2>
-                        <button type="button" onClick={loadForumThreads} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 underline">
-                            <RefreshCw className="w-3.5 h-3.5" /> Освежи
-                        </button>
-                    </div>
-
-                    <input
-                        type="search"
-                        placeholder="Пребарај по наслов или автор..."
-                        value={forumSearch}
-                        onChange={e => setForumSearch(e.target.value)}
-                        className="w-full mb-4 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 outline-none"
-                    />
-
-                    {isLoadingForum ? (
-                        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}</div>
-                    ) : forumThreads.length === 0 ? (
-                        <p className="text-center py-8 text-gray-400 text-sm">Нема нишки во форумот.</p>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {forumThreads
-                                .filter(t => {
-                                    if (!forumSearch.trim()) return true;
-                                    const q = forumSearch.toLowerCase();
-                                    return (t.title ?? '').toLowerCase().includes(q) || (t.authorName ?? '').toLowerCase().includes(q);
-                                })
-                                .map(thread => (
-                                    <div key={thread.id} className={`flex items-start gap-3 py-3 ${thread.deleted ? 'opacity-50' : ''}`}>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
-                                                {thread.title}
-                                                {thread.deleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">ИЗБРИШАНА</span>}
-                                            </p>
-                                            <p className="text-xs text-gray-400">{thread.authorName} · {thread.replyCount} одговори · {thread.upvotedBy?.length ?? 0} гласови</p>
-                                            {thread.conceptTitle && <p className="text-[11px] text-indigo-500 mt-0.5">📌 {thread.conceptTitle}</p>}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            {thread.deleted ? (
-                                                <button
-                                                    type="button"
-                                                    disabled={forumActionUid === thread.id}
-                                                    onClick={() => handleForumRestore(thread.id)}
-                                                    className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-40 transition font-medium"
-                                                >
-                                                    Врати
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    disabled={forumActionUid === thread.id}
-                                                    onClick={() => handleForumDelete(thread.id)}
-                                                    className="text-xs px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-40 transition font-medium flex items-center gap-1"
-                                                >
-                                                    <Trash2 className="w-3 h-3" /> Избриши
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                        </div>
-                    )}
-                </Card>
+                <AdminForumTab
+                    forumThreads={forumThreads}
+                    isLoadingForum={isLoadingForum}
+                    forumSearch={forumSearch}
+                    setForumSearch={setForumSearch}
+                    forumActionUid={forumActionUid}
+                    handleForumDelete={handleForumDelete}
+                    handleForumRestore={handleForumRestore}
+                    onRefresh={loadForumThreads}
+                />
             )}
 
-            {/* ── TAB: Content Moderation ── */}
             {activeTab === 'content' && (
-              <div className="space-y-4">
-                {/* RAG Indexing Panel */}
-                <Card className="p-5 border-2 border-dashed border-emerald-200 bg-emerald-50">
-                  <div className="flex items-start gap-3">
-                    <DatabaseZap className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-sm font-bold text-emerald-800 mb-0.5">
-                        Vector RAG — Индексирај официјална програма МОН 2025
-                      </h2>
-                      <p className="text-xs text-emerald-700 mb-3">
-                        Ги претвора сите подтеми во 768-dim вектори и ги зачувува во <code className="bg-emerald-100 px-1 rounded">concept_embeddings</code> Firestore. По индексирање, <strong>сите AI функции</strong> автоматски ги пронаоѓаат официјалните активности и стандарди семантички.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {([6, 7, 8] as const).map(grade => {
-                          const status = ragIndexStatus[grade];
-                          const label = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
-                          return (
-                            <button
-                              key={grade}
-                              type="button"
-                              disabled={status === 'running'}
-                              onClick={() => handleIndexGrade(grade)}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                                status === 'running'
-                                  ? 'bg-emerald-200 text-emerald-500 cursor-not-allowed'
-                                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                              }`}
-                            >
-                              <DatabaseZap className={`w-3.5 h-3.5 ${status === 'running' ? 'animate-pulse' : ''}`} />
-                              {status === 'running' ? 'Индексирање...' : status === 'done' ? `✅ ${label} одд.` : `Индексирај ${label} одд.`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {ragIndexLog.length > 0 && (
-                        <div className="mt-3 bg-white/70 rounded-lg border border-emerald-200 p-3 max-h-40 overflow-y-auto">
-                          {ragIndexLog.map((line, i) => (
-                            <p key={i} className="text-[11px] font-mono text-gray-700 leading-relaxed">{line}</p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-
-                {/* RAG Stats Panel */}
-                <Card className="p-5 border border-violet-200 bg-violet-50">
-                  <div className="flex items-start gap-3">
-                    <Zap className="w-5 h-5 text-violet-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                        <h2 className="text-sm font-bold text-violet-800">Vector RAG — Статистики</h2>
-                        <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={ragEnabled}
-                              onChange={e => handleToggleRag(e.target.checked)}
-                              className="rounded"
-                            />
-                            Активиран
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleRefreshRagStats}
-                            className="flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 underline"
-                          >
-                            <RefreshCw className="w-3 h-3" /> Освежи
-                          </button>
-                        </div>
-                      </div>
-                      {!ragEnabled && (
-                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
-                          ⚠️ Vector RAG е исклучен. Штиклирај „Активиран" за да го вклучиш.
-                        </p>
-                      )}
-                      {ragStats && ragStats.count > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
-                          {[
-                            { label: 'Пребарувања', value: ragStats.count },
-                            { label: 'Просечни hits', value: ragStats.avgHits.toFixed(1) },
-                            { label: 'Embed P50', value: `${ragStats.embedP50.toFixed(0)}ms` },
-                            { label: 'Embed P95', value: `${ragStats.embedP95.toFixed(0)}ms` },
-                            { label: 'Fetch P50', value: `${ragStats.fetchP50.toFixed(0)}ms` },
-                            { label: 'Fetch P95', value: `${ragStats.fetchP95.toFixed(0)}ms` },
-                            { label: 'Total P50', value: `${ragStats.totalP50.toFixed(0)}ms` },
-                            { label: 'Праг', value: getEffectiveSimilarityThreshold().toFixed(2) },
-                          ].map(s => (
-                            <div key={s.label} className="bg-white/80 rounded-lg px-3 py-2 text-center border border-violet-100">
-                              <p className="text-[10px] text-violet-500 font-semibold uppercase tracking-wide">{s.label}</p>
-                              <p className="text-sm font-bold text-violet-800">{s.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-violet-600 mt-1">
-                          Нема статистики уште — кликни „Освежи" по генерирање на AI материјал со активен RAG.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-
-              </div>
+                <AdminContentTab
+                    ragIndexStatus={ragIndexStatus}
+                    ragIndexLog={ragIndexLog}
+                    ragStats={ragStats}
+                    ragEnabled={ragEnabled}
+                    handleIndexGrade={handleIndexGrade}
+                    handleRefreshRagStats={handleRefreshRagStats}
+                    handleToggleRag={handleToggleRag}
+                />
             )}
 
-            {/* ── TAB: Cohort / Activity (S39-F5) ── */}
             {activeTab === 'cohort' && (
                 <CohortDashboard
                     users={cohortUsers}
@@ -1050,136 +394,6 @@ export const SystemAdminView: React.FC = () => {
                     onRefresh={loadCohort}
                 />
             )}
-        </div>
-    );
-};
-
-// ─── S39-F5: Cohort dashboard sub-component ────────────────────────────────
-interface CohortDashboardProps {
-    users: UserActivityRecord[] | null;
-    burnUsers: { aiCreditsBalance?: number }[];
-    isLoading: boolean;
-    now: number;
-    onRefresh: () => void;
-}
-
-const CohortDashboard: React.FC<CohortDashboardProps> = ({ users, burnUsers, isLoading, now, onRefresh }) => {
-    const counts = useMemo(() => users ? computeActivityCounts(users, now) : null, [users, now]);
-    const stickiness = useMemo(() => counts ? computeStickinessRatio(counts) : null, [counts]);
-    const cohorts = useMemo<CohortRetentionPoint[]>(
-        () => users ? bucketWeeklyCohorts(users, now, 8) : [],
-        [users, now],
-    );
-    const burnRatio = useMemo(() => computeCreditBurnRatio(burnUsers, 50, 0), [burnUsers]);
-
-    if (isLoading || !counts) {
-        return (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
-            </div>
-        );
-    }
-
-    const kpis = [
-        { label: 'DAU (24h)',       value: counts.dau,             color: 'bg-emerald-50 text-emerald-700' },
-        { label: 'WAU (7d)',        value: counts.wau,             color: 'bg-blue-50 text-blue-700' },
-        { label: 'MAU (30d)',       value: counts.mau,             color: 'bg-indigo-50 text-indigo-700' },
-        { label: 'Регистрирани',    value: counts.totalRegistered, color: 'bg-slate-50 text-slate-700' },
-    ];
-
-    return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {kpis.map(k => (
-                    <Card key={k.label} className={`p-5 ${k.color}`}>
-                        <p className="text-xs font-semibold uppercase tracking-widest opacity-70">{k.label}</p>
-                        <p className="text-3xl font-bold mt-1">{k.value}</p>
-                    </Card>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-5">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Activity className="w-4 h-4" /> Stickiness (DAU / MAU)
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">
-                        {stickiness == null ? '—' : `${(stickiness * 100).toFixed(1)}%`}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-1">
-                        Цел: ≥ 20 % за здраво продуктно ангажирање.
-                    </p>
-                </Card>
-                <Card className="p-5">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4" /> Credit-burn ratio (≤ 0 кредити)
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">
-                        {`${(burnRatio * 100).toFixed(1)}%`}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-1">
-                        Цел кон крај на S41: ≥ 8 % (Baseline ≈ 2 %).
-                    </p>
-                </Card>
-            </div>
-
-            <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                        <BarChart2 className="w-4 h-4" /> Неделни кохорти на регистрација (последни 8 недели)
-                    </h2>
-                    <button type="button" onClick={onRefresh} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 underline">
-                        <RefreshCw className="w-3.5 h-3.5" /> Освежи
-                    </button>
-                </div>
-                {cohorts.length === 0 ? (
-                    <p className="text-center py-8 text-gray-400 text-sm">
-                        Нема корисници регистрирани во последните 8 недели (или недостасуваат `createdAt` полиња).
-                    </p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                            <thead className="text-gray-400 uppercase tracking-widest">
-                                <tr>
-                                    <th className="text-left py-2 pr-3">Кохорта (нед. почеток)</th>
-                                    <th className="text-right py-2 pr-3">Големина</th>
-                                    {[0, 1, 3, 7, 14, 30].map(d => (
-                                        <th key={d} className="text-right py-2 pr-3">D+{d}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="text-gray-700">
-                                {cohorts.map(c => (
-                                    <tr key={c.cohortStart} className="border-t border-gray-100">
-                                        <td className="py-2 pr-3 font-mono">
-                                            {new Date(c.cohortStart).toISOString().slice(0, 10)}
-                                        </td>
-                                        <td className="py-2 pr-3 text-right font-bold">{c.cohortSize}</td>
-                                        {[0, 1, 3, 7, 14, 30].map(d => {
-                                            const ret = c.retainedByDay[d] ?? 0;
-                                            const pct = c.cohortSize > 0 ? Math.round((ret / c.cohortSize) * 100) : 0;
-                                            return (
-                                                <td key={d} className="py-2 pr-3 text-right">
-                                                    {ret > 0 ? (
-                                                        <span className={`font-semibold ${pct >= 50 ? 'text-emerald-600' : pct >= 20 ? 'text-amber-600' : 'text-gray-400'}`}>
-                                                            {pct}%
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-300">—</span>
-                                                    )}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-                <p className="text-[10px] text-gray-400 mt-3">
-                    D+N = % на корисници кои имале активност N дена по регистрација (по `lastSeenAt` / `lastLoginAt`).
-                </p>
-            </Card>
         </div>
     );
 };
