@@ -1,18 +1,20 @@
 /**
  * services/gemini/ragService.ts
- * Few-shot RAG for assessment generation.
+ * Few-shot RAG for assessment and lesson plan generation.
  *
  * Fetches real examples from:
  *   1. matura_questions  — curated national exam questions (by topicArea)
  *   2. cached_ai_materials — previously generated assessments (by conceptId)
+ *   3. scenario_bank — public lesson plans from other teachers (by grade)
  *
- * Returns a formatted Macedonian prompt section injected into generateAssessment().
+ * Returns a formatted Macedonian prompt section injected into generation calls.
  * Non-blocking: returns '' on any Firestore error so generation always proceeds.
  */
 
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { CACHE_COLLECTION } from './core';
+import type { LessonPlan } from '../../types';
 
 // ─── Topic area mapping ────────────────────────────────────────────────────────
 
@@ -143,6 +145,67 @@ async function fetchCachedExamples(conceptId: string): Promise<string> {
 
     if (!examples.length) return '';
     return `\n\n--- ПРЕТХОДНО ГЕНЕРИРАНИ ПРИМЕРИ (conceptId: ${conceptId}) ---\nСледниве примери биле генерирани за ист концепт. Избегни дупликати; создади нови со слична сложеност:\n${examples.join('\n\n')}`;
+  } catch {
+    return '';
+  }
+}
+
+// ─── Scenario bank lesson plan examples ───────────────────────────────────────
+
+interface ScenarioBankDoc {
+  entryType?: string;
+  title?: string;
+  fullPlan?: LessonPlan & {
+    objectives?: string[];
+    openingActivity?: string;
+    mainActivity?: Array<{ text: string; bloomsLevel?: string }>;
+  };
+}
+
+/**
+ * Fetches up to 3 public lesson plans from scenario_bank (cross-teacher) for
+ * the given grade level, to use as structural few-shot context in lesson plan
+ * generation prompts. Returns '' if nothing useful found or on any error.
+ */
+export async function fetchScenarioBankContext(
+  grade: number,
+  topicTitle?: string,
+): Promise<string> {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'scenario_bank'),
+        where('deleted', '==', false),
+        where('isPublic', '==', true),
+        where('grade', '==', grade),
+        orderBy('publishedAt', 'desc'),
+        limit(8),
+      ),
+    );
+    if (snap.empty) return '';
+
+    const examples: string[] = [];
+    for (const d of snap.docs) {
+      const data = d.data() as ScenarioBankDoc;
+      if (data.entryType && data.entryType !== 'lesson_plan') continue;
+      const plan = data.fullPlan;
+      if (!plan) continue;
+
+      const title = data.title ?? plan.title ?? '';
+      const objectives = Array.isArray(plan.objectives) ? plan.objectives.slice(0, 2).join('; ') : '';
+      const opening = typeof plan.openingActivity === 'string' ? plan.openingActivity.slice(0, 120) : '';
+      const mainActs = Array.isArray(plan.mainActivity)
+        ? plan.mainActivity.slice(0, 2).map((a) => a.text?.slice(0, 100)).filter(Boolean).join(' | ')
+        : '';
+
+      if (!title && !objectives) continue;
+      examples.push(`• ${title}${objectives ? `\n  Цели: ${objectives}` : ''}${opening ? `\n  Вовед: ${opening}` : ''}${mainActs ? `\n  Активности: ${mainActs}` : ''}`);
+      if (examples.length >= 3) break;
+    }
+
+    if (!examples.length) return '';
+    const topicCtx = topicTitle ? ` за "${topicTitle}"` : '';
+    return `\n\n--- ПРИМЕРИ НА ЈАВНИ СЦЕНАРИЈА ОД БАНКАТА${topicCtx} (одд. ${grade}) ---\nСледниве се реални подготовки за час од наставници со иста возрасна група. Користи ги за калибрација на сложеноста и стил, но создади РАЗЛИЧНА и ОРИГИНАЛНА подготовка:\n${examples.join('\n\n')}\n--- КРАЈ НА ПРИМЕРИ ---`;
   } catch {
     return '';
   }

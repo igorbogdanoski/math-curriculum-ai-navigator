@@ -1,5 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
+import { fetchScenarioBankContext } from './ragService';
 import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH } from '../../data/allNationalStandardsComplete';
 import { streamGeminiProxy } from './core.proxy';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext, PresentationSlide } from '../../types';
@@ -827,6 +828,9 @@ ${gradeLevel > 9
 
   const safeInstruction = sanitizePromptInput(customInstruction, 500);
   if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
+
+  const scenarioBankCtx = await fetchScenarioBankContext(gradeLevel, topicTitle);
+  if (scenarioBankCtx) prompt += scenarioBankCtx;
 
   const ragQueryStream = [topic?.title, ...concepts.map(c => c.title)].filter(Boolean).join(' ');
   const systemInstr = await buildDynamicSystemInstruction(
