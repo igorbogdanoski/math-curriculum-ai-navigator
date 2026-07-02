@@ -38,6 +38,9 @@ const AlgebraTilesLazy = lazy(() =>
 const TrigonometryLabLazy = lazy(() =>
   import('../components/dataviz/TrigonometryLab')
 );
+const NumberTheoryLabLazy = lazy(() =>
+  import('../components/dataviz/NumberTheoryLab')
+);
 
 const LabLoading: React.FC = () => (
   <div className="flex items-center justify-center py-16 text-sm text-gray-500">
@@ -79,7 +82,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -126,7 +129,7 @@ export const DataVizStudioView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>(() => {
     const hash = window.location.hash;
     const tabParam = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '').get('tab');
-    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig'];
+    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig', 'numtheory'];
     return (validTabs.includes(tabParam as StudioTab) ? tabParam : 'chart') as StudioTab;
   });
 
@@ -225,7 +228,8 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'solid'  as StudioTab, label: t('dataviz.tab.solid'),  icon: Box,            color: 'orange'  },
     { id: 'conic'  as StudioTab, label: t('dataviz.tab.conic'),  icon: Triangle,       color: 'violet'  },
     { id: 'algebra' as StudioTab, label: t('dataviz.tab.algebra'), icon: LayoutGrid,    color: 'indigo'  },
-    { id: 'trig'    as StudioTab, label: 'Тригонометрија',         icon: Sigma,         color: 'violet'  },
+    { id: 'trig'      as StudioTab, label: 'Тригонометрија',         icon: Sigma,         color: 'violet'  },
+    { id: 'numtheory' as StudioTab, label: 'Теорија на броеви',     icon: Sigma,         color: 'emerald' },
   ];
 
   return (
@@ -700,6 +704,17 @@ export const DataVizStudioView: React.FC = () => {
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <TrigonometryLabLazy />
+              </Suspense>
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: NUMBER THEORY LAB ════════════════════════════════════════════ */}
+        {activeTab === 'numtheory' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <SilentErrorBoundary>
+              <Suspense fallback={<LabLoading />}>
+                <NumberTheoryLabLazy />
               </Suspense>
             </SilentErrorBoundary>
           </div>
