@@ -176,7 +176,8 @@ export const schoolService = {
 
   fetchAllUsers: async (): Promise<Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>> => {
     try {
-      const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(2000)));
+      // orderBy('createdAt') excluded legacy users who predate that field — use limit-only
+      const snap = await getDocs(query(collection(db, 'users'), limit(2000)));
       return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>;
     } catch (error) {
       logger.error('Error fetching all users:', error);

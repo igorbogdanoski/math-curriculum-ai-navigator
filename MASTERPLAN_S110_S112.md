@@ -1,6 +1,6 @@
 # MASTERPLAN S110–S112 — Комплетна Реализација
 
-> Статус: 🟡 ВО ТЕК | Почеток: 2026-07-02 | Стандарди: TSC 0 · Tests ≥1924 · LOC ≤750/file
+> Статус: ✅ ЗАВРШЕНО | Почеток: 2026-07-02 | Крај: 2026-07-02 | TSC 0 · Tests ≥1924 · LOC ≤750/file
 
 ---
 
@@ -8,21 +8,23 @@
 
 | Спринт | Опис | Статус | Commit |
 |--------|------|--------|--------|
-| A.1 | P2 Cleanup — мртви импорти + unused props | 🔲 | — |
-| B.1 | ExtractionHub → scenario_bank миграција | 🔲 | — |
-| B.2 | ScenarioBankView — extracted_material таб | 🔲 | — |
-| B.3 | Бришење мртви national_library функции | 🔲 | — |
-| B.4 | GDPR сервис — отстрани national_library refs | 🔲 | — |
-| B.5 | Composite Firestore index + server-side filter | 🔲 | — |
-| B.6 | Firestore Rules cleanup | 🔲 | — |
-| B.7 | RAG проширување на scenario_bank | 🔲 | — |
-| A.2a | Giant splits: ExtractionHubView + TeacherForumView + GeneratedPresentation | 🔲 | — |
-| A.2b | Giant splits: SettingsView + MaturaPracticeView + CurriculumGraphView | 🔲 | — |
-| A.2c | Giant splits: SystemAdminView + MaturaSimulationView + visionContracts + ChartPreview | 🔲 | — |
-| C.1 | TrigonometryLab (trigMath.ts + TrigonometryLab.tsx) | 🔲 | — |
-| C.2 | NumberTheoryLab (numberTheoryMath.ts + NumberTheoryLab.tsx) | 🔲 | — |
-| C.3 | AI Lesson Execution Mode (3 файлови) | 🔲 | — |
-| C.4 | Student AI Portfolio + Parent Report (2 файлови) | 🔲 | — |
+| A.1 | P2 Cleanup — мртви импорти + unused props | ✅ | 120e8ab |
+| B.1 | ExtractionHub → scenario_bank миграција | ✅ | b785a27 |
+| B.2 | ScenarioBankView — extracted_material таб | ✅ | b785a27 |
+| B.3 | Бришење мртви national_library функции | ✅ | b785a27 |
+| B.4 | GDPR сервис — отстрани national_library refs | ✅ | b785a27 |
+| B.5 | Composite Firestore index + server-side filter | ✅ | b785a27 |
+| B.6 | Firestore Rules cleanup | ✅ | b785a27 |
+| B.7 | RAG проширување на scenario_bank | ✅ | b785a27 |
+| A.2a | Giant splits: ExtractionHubView + TeacherForumView + GeneratedPresentation | ✅ | 120e8ab |
+| A.2b | Giant splits: SettingsView + MaturaPracticeView + CurriculumGraphView | ✅ | prev session |
+| A.2c | Giant splits: SystemAdminView + MaturaSimulationView + visionContracts + ChartPreview | ✅ | c0692fb / cb66174 |
+| C.1 | TrigonometryLab (trigMath.ts + TrigonometryLab.tsx) | ✅ | prev session |
+| C.2 | NumberTheoryLab (numberTheoryMath.ts + NumberTheoryLab.tsx) | ✅ | prev session |
+| C.2+ | PlaceValueLab (placeValueMath.ts + PlaceValueLab.tsx) — Диенесови блокови | ✅ | ffee16e |
+| C.3 | AI Lesson Execution Mode (useLessonExecution + LessonExecutionOverlay) | ✅ | 264128d |
+| C.4 | Student AI Portfolio (useStudentPortfolio + StudentPortfolioReport) | ✅ | 949a55e |
+| BUG | Admin users tab — fetchAllUsers orderBy exclusion fix | ✅ | — |
 
 Легенда: 🔲 Чека · 🟡 Во тек · ✅ Завршено
 
