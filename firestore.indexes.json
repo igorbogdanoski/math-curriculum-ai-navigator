@@ -607,6 +607,34 @@
                                    ]
                     },
                     {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",     "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",     "order": "ASCENDING" },
+                                       { "fieldPath": "forkCount",    "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",     "order": "ASCENDING" },
+                                       { "fieldPath": "usageCount",   "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "academic_annual_plans",
                         "queryScope":  "COLLECTION",
                         "fields":  [

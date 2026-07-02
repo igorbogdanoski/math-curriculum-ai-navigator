@@ -106,32 +106,31 @@ export const fetchScenarios = async (
   filters: ScenarioBankFilter = {},
   pageLimit = 24,
 ): Promise<ScenarioBankEntry[]> => {
-  // Note: isPublic is filtered client-side to avoid needing a composite index
-  // for every combination of equality fields + orderBy field.
+  const hasClientFilters = filters.dokLevel != null || filters.teachingModel != null;
   const constraints: Parameters<typeof query>[1][] = [
     where('deleted', '==', false),
+    where('isPublic', '==', true),
   ];
 
   if (filters.grade != null) constraints.push(where('grade', '==', filters.grade));
-  if (filters.dokLevel != null) constraints.push(where('dokLevel', '==', filters.dokLevel));
   if (filters.verifiedOnly) constraints.push(where('verifiedByBRO', '==', true));
-  if (filters.teachingModel) constraints.push(where('teachingModel', '==', filters.teachingModel));
 
   const sortField =
     filters.sortBy === 'forks' ? 'forkCount' :
     filters.sortBy === 'usage' ? 'usageCount' :
-    filters.sortBy === 'rating' ? 'publishedAt' :
     'publishedAt';
 
   constraints.push(orderBy(sortField, 'desc'));
-  // Fetch extra to account for client-side isPublic filter
-  constraints.push(limit(pageLimit + 20));
+  // Over-fetch when client-side filters (dokLevel/teachingModel) are active
+  constraints.push(limit(hasClientFilters ? pageLimit + 40 : pageLimit));
 
   const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
-  return snap.docs
-    .map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry))
-    .filter(s => s.isPublic)
-    .slice(0, pageLimit);
+  let results = snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry));
+
+  if (filters.dokLevel != null) results = results.filter(s => s.dokLevel === filters.dokLevel);
+  if (filters.teachingModel) results = results.filter(s => s.teachingModel === filters.teachingModel);
+
+  return results.slice(0, pageLimit);
 };
 
 export const fetchScenarioById = async (id: string): Promise<ScenarioBankEntry | null> => {
