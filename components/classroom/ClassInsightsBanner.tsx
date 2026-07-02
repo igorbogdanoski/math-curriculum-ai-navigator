@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, BookOpen, FlaskConical, AlertTriangle, Users } from 'lucide-react';
 import { useClassInsights } from '../../hooks/useClassInsights';
 
@@ -40,8 +40,12 @@ export function ClassInsightsBanner({ conceptIds, teacherUid, onOpenLab }: Class
 
   const hasData = data.regularSessions > 0 || data.labSessions > 0;
 
-  // Auto-expand when there are weak spots
   const hasWeakSpots = data.weakConceptIds.length > 0;
+
+  // Auto-expand when weak spots are detected
+  useEffect(() => {
+    if (hasWeakSpots) setExpanded(true);
+  }, [hasWeakSpots]);
 
   return (
     <div className={`rounded-xl border-2 overflow-hidden transition-all ${avgBg(hasData ? data.regularAvg : 0)}`}>

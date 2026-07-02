@@ -8,6 +8,7 @@ export interface ConceptInsight {
   avgPercentage: number;
   labSessions: number;
   labAvg: number;
+  regularSessions: number;
 }
 
 export interface ClassInsightsData {
@@ -54,7 +55,7 @@ function computeInsights(results: QuizResult[], conceptIds: string[]): ClassInsi
       labSessions: cLabs.length,
       labAvg: avg(cLabs),
       regularSessions: cReg.length,
-    } as ConceptInsight;
+    };
   }).filter(c => c.totalSessions > 0);
 
   const weakConceptIds = byConceptId
@@ -63,8 +64,8 @@ function computeInsights(results: QuizResult[], conceptIds: string[]): ClassInsi
 
   // Trend: last-5 sessions vs previous-5
   const sorted = [...regular].sort((a, b) => {
-    const ta = (a.playedAt as any)?.seconds ?? 0;
-    const tb = (b.playedAt as any)?.seconds ?? 0;
+    const ta = a.playedAt?.toDate?.()?.getTime() ?? 0;
+    const tb = b.playedAt?.toDate?.()?.getTime() ?? 0;
     return tb - ta;
   });
   const last5 = avg(sorted.slice(0, 5));
@@ -90,7 +91,7 @@ export function useClassInsights(
 
   const { data: results = [], isLoading } = useQuery<QuizResult[]>({
     queryKey: ['class-insights', teacherUid, conceptIds.join(',')],
-    queryFn:  () => firestoreService.fetchQuizResults(300, teacherUid),
+    queryFn:  () => firestoreService.fetchQuizResults(500, teacherUid),
     enabled,
     staleTime: 5 * 60 * 1000,   // 5 min — class data doesn't change often
     gcTime:    15 * 60 * 1000,

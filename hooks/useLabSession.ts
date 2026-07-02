@@ -17,6 +17,7 @@ interface UseLabSessionReturn {
   score: number;
   sessionDone: boolean;
   saving: boolean;
+  saveError: boolean;
   difficultyStreak: { correct: number; wrong: number };
   // Actions
   setUserAnswer: (v: string) => void;
@@ -39,6 +40,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
   const [score,       setScore]       = useState(0);
   const [sessionDone, setSessionDone] = useState(false);
   const [saving,      setSaving]      = useState(false);
+  const [saveError,   setSaveError]   = useState(false);
   const [difficultyStreak, setDifficultyStreak] = useState({ correct: 0, wrong: 0 });
 
   const startedAt = useRef<number>(Date.now());
@@ -98,6 +100,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
   const saveSession = useCallback(async (studentName: string) => {
     if (!studentName.trim() || saving || exercises.length === 0) return;
     setSaving(true);
+    setSaveError(false);
     try {
       const pct = Math.round((score / exercises.length) * 100);
       const duration = Math.round((Date.now() - startedAt.current) / 1000);
@@ -118,6 +121,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
       try { localStorage.setItem('studentName', studentName.trim()); } catch { /* incognito */ }
     } catch (err) {
       logger.error('[Lab] saveSession failed:', err);
+      setSaveError(true);
     } finally {
       setSaving(false);
     }
@@ -125,7 +129,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
 
   return {
     exercises, currentIdx, currentEx,
-    userAnswer, submitted, correct, showHint, hintsUsed, score, sessionDone, saving,
+    userAnswer, submitted, correct, showHint, hintsUsed, score, sessionDone, saving, saveError,
     difficultyStreak,
     setUserAnswer, loadExercises, submitAnswer, useHint, nextExercise, resetSession, saveSession,
   };

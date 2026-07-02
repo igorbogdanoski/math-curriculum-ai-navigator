@@ -684,6 +684,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             <ClassInsightsBanner
               conceptIds={plan.conceptIds ?? []}
               teacherUid={firebaseUser?.uid}
+              onOpenLab={(conceptId) => {
+                const base = `${window.location.origin}${window.location.pathname}`;
+                window.open(`${base}#/data-viz?lab=${conceptId}&tab=exercises`, '_blank');
+              }}
             />
 
             <PedagogicalDashboard activities={plan.scenario?.main || []} />

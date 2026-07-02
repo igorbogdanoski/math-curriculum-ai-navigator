@@ -12,14 +12,17 @@ export interface LabExercise {
   curriculumRef: string;    // "МОН VII одд." / "Гимн. I год."
 }
 
-export interface LabSessionResult {
-  labId: string;
-  labTitle: string;
-  totalExercises: number;
-  correctAnswers: number;
-  hintsUsed: number;
-  durationSeconds: number;
-  percentage: number;
+/** Shared alias for pool entries before id is assigned */
+export type LabExEntry = Omit<LabExercise, 'id'>;
+
+/** Fisher-Yates shuffle — vary exercise order on retry */
+export function shufflePool<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 // ─── Answer normalization ──────────────────────────────────────────────────────

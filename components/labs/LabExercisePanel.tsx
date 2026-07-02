@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, XCircle, Lightbulb, ChevronRight, RotateCcw, Shuffle, Trophy, Save, TrendingUp, TrendingDown } from 'lucide-react';
 import type { useLabSession } from '../../hooks/useLabSession';
 
@@ -114,7 +114,7 @@ function AnswerInput({ session }: { session: LabSession }) {
   return (
     <div className="mt-4 flex gap-2">
       <input
-        type={currentEx.type === 'numeric' ? 'text' : 'text'}
+        type="text"
         inputMode={currentEx.type === 'numeric' ? 'decimal' : 'text'}
         value={userAnswer}
         onChange={e => setUserAnswer(e.target.value)}
@@ -135,13 +135,15 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
   difficulty?: 1 | 2 | 3;
   onDifficultyChange?: (d: 1 | 2 | 3) => void;
 }) {
-  const { score, exercises, hintsUsed, saving, saveSession, resetSession } = session;
+  const { score, exercises, hintsUsed, saving, saveError, saveSession, resetSession } = session;
   const [name, setName] = useState(getStoredName);
   const [saved, setSaved] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const pct = exercises.length > 0 ? Math.round((score / exercises.length) * 100) : 0;
   const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '📚';
 
   const handleSave = async () => {
+    setRetrying(false);
     await saveSession(name);
     setSaved(true);
   };
@@ -161,15 +163,15 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
 
       {!saved ? (
         <div className="w-full max-w-sm space-y-2">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Твоето ime</label>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Твоето Иme</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Внеси го своето ime..."
+              placeholder="Внеси го своето Иme..."
               className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-              aria-label="Ime"
+              aria-label="Иme"
             />
             <button
               type="button"
@@ -181,6 +183,15 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
               {saving ? '…' : 'Зачувај'}
             </button>
           </div>
+        </div>
+      ) : saveError ? (
+        <div className="w-full max-w-sm flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-sm font-semibold">
+          <XCircle className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Зачувувањето не успеа.</span>
+          <button type="button" onClick={() => setSaved(false)}
+            className="underline hover:no-underline font-bold shrink-0">
+            Обиди се пак
+          </button>
         </div>
       ) : (
         <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-sm font-semibold">
@@ -239,9 +250,6 @@ export function LabExercisePanel({
     submitAnswer, useHint, nextExercise, difficultyStreak,
   } = session;
 
-  // Reset saved state when session restarts
-  const [localSaved, setLocalSaved] = useState(false);
-  useEffect(() => { setLocalSaved(false); }, [exercises]);
 
   if (exercises.length === 0) {
     return (
