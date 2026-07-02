@@ -4,7 +4,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AlgebraTilesCanvas, buildExpression } from './AlgebraTilesCanvas';
+import { AlgebraTilesCanvas } from './AlgebraTilesCanvas';
+import { buildExpression } from './algebraTilesMath';
 
 vi.mock('../common/MathRenderer', () => ({
   MathRenderer: ({ text }: { text: string }) => <span>{text}</span>,

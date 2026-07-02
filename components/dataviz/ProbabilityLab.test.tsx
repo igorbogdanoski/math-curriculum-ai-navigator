@@ -4,7 +4,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, act } from '@testing-library/react';
-import { ProbabilityLab, binomialPMF } from './ProbabilityLab';
+import { ProbabilityLab } from './ProbabilityLab';
+import { binomialPMF } from './probabilityMath';
 
 describe('ProbabilityLab', () => {
   beforeEach(() => {
