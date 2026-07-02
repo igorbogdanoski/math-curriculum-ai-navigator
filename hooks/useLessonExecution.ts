@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { getGradeHoursInfo } from '../services/gemini/plans';
 import { saveClassroomExecution } from '../services/firestoreService.classroom';
-import { buildPhases, formatTime } from '../views/ClassroomView';
-import type { PhaseConfig } from '../views/ClassroomView';
+import { buildPhases, formatTime, type PhaseConfig } from '../utils/classroomUtils';
 import type { LessonPlan } from '../types';
 
-export type { PhaseConfig } from '../views/ClassroomView';
-export { formatTime } from '../views/ClassroomView';
+export type { PhaseConfig } from '../utils/classroomUtils';
+export { formatTime } from '../utils/classroomUtils';
 
 export interface LessonExecutionState {
   phases: PhaseConfig[];

@@ -1,7 +1,7 @@
 // Pure math for CalculusLab exercises
-import type { LabExercise } from '../../types/labTypes';
+import { type LabExEntry, type LabExercise, shufflePool } from '../../types/labTypes';
 
-type ExEntry = Omit<LabExercise, 'id'>;
+type ExEntry = LabExEntry;
 
 const POOL1: ExEntry[] = [
   { question: 'd/dx(x²) = ?', type: 'multiple_choice', options: ['2x', 'x', 'x²', '2'],
@@ -50,5 +50,5 @@ const POOL3: ExEntry[] = [
 
 export function generateCalculusSet(difficulty: 1 | 2 | 3, count = 6): LabExercise[] {
   const pool = difficulty === 1 ? POOL1 : difficulty === 2 ? POOL2 : POOL3;
-  return Array.from({ length: count }, (_, i) => ({ id: `calc-${difficulty}-${i}`, ...pool[i % pool.length] }));
+  return shufflePool(pool).slice(0, count).map((e, i) => ({ id: `calc-${difficulty}-${i}`, ...e }));
 }

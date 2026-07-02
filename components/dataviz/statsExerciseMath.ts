@@ -1,7 +1,7 @@
 // Pure math for SecondaryStatsLab exercises
-import type { LabExercise } from '../../types/labTypes';
+import { type LabExEntry, type LabExercise, shufflePool } from '../../types/labTypes';
 
-type ExEntry = Omit<LabExercise, 'id'>;
+type ExEntry = LabExEntry;
 
 const POOL1: ExEntry[] = [
   { question: 'Средна вредност на: 2, 4, 6, 8, 10 = ?', type: 'numeric', correctAnswer: '6',
@@ -58,5 +58,5 @@ const POOL3: ExEntry[] = [
 
 export function generateStatsSet(difficulty: 1 | 2 | 3, count = 6): LabExercise[] {
   const pool = difficulty === 1 ? POOL1 : difficulty === 2 ? POOL2 : POOL3;
-  return Array.from({ length: count }, (_, i) => ({ id: `stats-${difficulty}-${i}`, ...pool[i % pool.length] }));
+  return shufflePool(pool).slice(0, count).map((e, i) => ({ id: `stats-${difficulty}-${i}`, ...e }));
 }

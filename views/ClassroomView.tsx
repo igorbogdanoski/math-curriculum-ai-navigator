@@ -18,66 +18,15 @@ import { getGradeHoursInfo } from '../services/gemini/plans';
 import { saveClassroomExecution } from '../services/firestoreService.classroom';
 import { Card } from '../components/common/Card';
 import { Loader2, Lightbulb } from 'lucide-react';
+import { buildPhases, formatTime, type PhaseConfig } from '../utils/classroomUtils';
 
 interface ClassroomViewProps {
   lessonPlanId?: string;
 }
 
-// ── Phase config ──────────────────────────────────────────────────────────────
-
-export interface PhaseConfig {
-  key: 'intro' | 'main' | 'conclusion';
-  label: string;
-  emoji: string;
-  minutes: number;
-  bgColor: string;
-  borderColor: string;
-  textColor: string;
-}
-
-export function buildPhases(lessonMinutes: number): PhaseConfig[] {
-  const intro = Math.round(lessonMinutes * 0.25);           // ~25%
-  const conclusion = 5;                                      // always 5 min
-  const main = lessonMinutes - intro - conclusion;           // rest
-
-  return [
-    {
-      key: 'intro',
-      label: 'Вовод',
-      emoji: '🎯',
-      minutes: intro,
-      bgColor: 'bg-sky-50',
-      borderColor: 'border-sky-300',
-      textColor: 'text-sky-700',
-    },
-    {
-      key: 'main',
-      label: 'Главен дел',
-      emoji: '📚',
-      minutes: main,
-      bgColor: 'bg-brand-primary/5',
-      borderColor: 'border-brand-primary/30',
-      textColor: 'text-brand-primary',
-    },
-    {
-      key: 'conclusion',
-      label: 'Завршница',
-      emoji: '✅',
-      minutes: conclusion,
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-300',
-      textColor: 'text-emerald-700',
-    },
-  ];
-}
-
-// ── Timer helpers ─────────────────────────────────────────────────────────────
-
-export function formatTime(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
+// ── Phase config + timer helpers ── re-exported from utils/classroomUtils ────
+export type { PhaseConfig } from '../utils/classroomUtils';
+export { buildPhases, formatTime } from '../utils/classroomUtils';
 
 // ── Phase action buttons per phase ────────────────────────────────────────────
 
