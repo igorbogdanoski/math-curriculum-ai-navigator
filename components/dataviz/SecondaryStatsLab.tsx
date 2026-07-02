@@ -1,4 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { generateStatsSet } from './statsExerciseMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Math Utilities ─────────────────────────────────────────────────────────────
 
@@ -50,7 +53,7 @@ function chiSquared(observed: number[], expected: number[]): number {
 
 // ── Sub-tab types ──────────────────────────────────────────────────────────────
 
-type SubTab = 'normal' | 'regression' | 'bayes' | 'montecarlo' | 'chisq';
+type SubTab = 'normal' | 'regression' | 'bayes' | 'montecarlo' | 'chisq' | 'exercises';
 
 const SUB_TABS: { id: SubTab; label: string; emoji: string }[] = [
   { id: 'normal',      label: 'Нормална Дистрибуција', emoji: '🔔' },
@@ -58,7 +61,21 @@ const SUB_TABS: { id: SubTab; label: string; emoji: string }[] = [
   { id: 'bayes',       label: 'Баесова Теорема',       emoji: '🔀' },
   { id: 'montecarlo',  label: 'Монте Карло',           emoji: '🎯' },
   { id: 'chisq',       label: 'Хи-квадрат Тест',       emoji: '📊' },
+  { id: 'exercises',   label: 'Вежбај',                emoji: '✏️'  },
 ];
+
+// ── Exercises sub-panel ───────────────────────────────────────────────────────
+function StatsExercisesTab() {
+  const session = useLabSession('secondary-stats', 'Статистика и веројатност');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateStatsSet(level));
+  }, [difficulty, loadExercises]);
+  return <LabExercisePanel session={session} onNewSet={loadSet} difficulty={difficulty} onDifficultyChange={setDifficulty} />;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // NORMAL DISTRIBUTION
@@ -648,6 +665,7 @@ export const SecondaryStatsLab: React.FC = () => {
       {tab === 'bayes'      && <BayesLab />}
       {tab === 'montecarlo' && <MonteCarlo />}
       {tab === 'chisq'      && <ChiSquaredLab />}
+      {tab === 'exercises'  && <StatsExercisesTab />}
     </div>
   );
 };
