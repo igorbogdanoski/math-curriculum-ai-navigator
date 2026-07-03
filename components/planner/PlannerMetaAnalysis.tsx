@@ -55,7 +55,7 @@ export const PlannerMetaAnalysis: React.FC<Props> = ({ items, lessonPlans }) => 
     const midOrder = counts['Applying'];
     const lowOrder = counts['Remembering'] + counts['Understanding'];
 
-    let tips: string[] = [];
+    const tips: string[] = [];
     if (totalObjectives > 0) {
       const highPerc = (highOrder / totalObjectives) * 100;
       const lowPerc = (lowOrder / totalObjectives) * 100;

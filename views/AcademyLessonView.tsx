@@ -194,7 +194,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
   // Handle Dynamic Action Generation Logic
   const handleTryItOut = () => {
-    let statePayload: Partial<GeneratorState> = {};
+    const statePayload: Partial<GeneratorState> = {};
     if (lesson.type === 'model') {
       statePayload.learningDesignModel = lesson.generatorKey;
     } else if (lesson.type === 'tone') {
@@ -251,7 +251,6 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
         </div>
         {/* Scroll progress bar — purely decorative, no ARIA role needed */}
         <div className="h-0.5 bg-gray-100" aria-hidden="true">
-          {/* eslint-disable-next-line react/forbid-component-props */}
           <div className="h-full bg-indigo-500 transition-all duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>

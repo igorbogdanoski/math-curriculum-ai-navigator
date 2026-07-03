@@ -4,7 +4,7 @@ const run = () => {
     let content = fs.readFileSync('views/MaterialsGeneratorView.tsx', 'utf8');
 
     // First remove the botched materialOptions and `t` from outside if they exist
-    const regexRemove = /  const { t } = useLanguage\(\);\s+const materialOptions[\s\S]*?\];/g;
+    const regexRemove = / {2}const { t } = useLanguage\(\);\s+const materialOptions[\s\S]*?\];/g;
     content = content.replace(regexRemove, '');
 
     // Now inject it correctly into MaterialsGeneratorView

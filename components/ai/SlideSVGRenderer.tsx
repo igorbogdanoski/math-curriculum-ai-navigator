@@ -60,7 +60,6 @@ export const SlideSVGRenderer: React.FC<Props> = ({ svg, caption, className = ''
         role="img"
         aria-label={caption ? `Илустрација: ${caption}` : 'Математичка илустрација'}
         className="w-full max-w-xs rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-3 shadow-lg overflow-hidden"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: safeSvg }}
       />
     </div>

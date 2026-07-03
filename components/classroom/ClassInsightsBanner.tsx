@@ -35,17 +35,19 @@ export function ClassInsightsBanner({ conceptIds, teacherUid, onOpenLab }: Class
   const { data, isLoading } = useClassInsights(conceptIds, teacherUid);
   const [expanded, setExpanded] = useState(false);
 
-  // Don't render if no teacherUid or no conceptIds
-  if (!teacherUid || conceptIds.length === 0) return null;
-
   const hasData = data.regularSessions > 0 || data.labSessions > 0;
-
   const hasWeakSpots = data.weakConceptIds.length > 0;
 
-  // Auto-expand when weak spots are detected
+  // Auto-expand when weak spots are detected. Must run unconditionally — every hook in
+  // this component has to fire on every render regardless of the teacherUid/conceptIds
+  // early-return below, or React throws "Rendered fewer hooks than expected" the moment
+  // those props flip from empty to populated between renders.
   useEffect(() => {
     if (hasWeakSpots) setExpanded(true);
   }, [hasWeakSpots]);
+
+  // Don't render if no teacherUid or no conceptIds
+  if (!teacherUid || conceptIds.length === 0) return null;
 
   return (
     <div className={`rounded-xl border-2 overflow-hidden transition-all ${avgBg(hasData ? data.regularAvg : 0)}`}>

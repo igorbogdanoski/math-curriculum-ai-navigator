@@ -547,7 +547,6 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <span className="text-[10px] font-black text-gray-400 absolute top-1 right-2">{idx + 1}</span>
                         <p className="text-[10px] font-bold line-clamp-2 mt-2 leading-tight">{s.title}</p>
                         <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-                            {/* eslint-disable-next-line react/forbid-component-props */}
                             <div className="h-full bg-brand-primary/20" style={{ width: `${((idx + 1) / data.slides.length) * 100}%` }} />
                         </div>
                     </button>

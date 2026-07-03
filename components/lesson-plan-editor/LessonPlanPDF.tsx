@@ -558,7 +558,6 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ data }) => {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {plan.mathEmbeds.map((embed, i) => (
                 <View key={i} style={{ alignItems: 'center', marginRight: 8, marginBottom: 8 }}>
-                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
                   <Image src={embed.dataUrl} style={{ width: 180, height: 120 }} />
                   <Text style={{ fontSize: 8, color: '#6B7280', marginTop: 2 }}>
                     {embed.tool === 'geogebra' ? 'GeoGebra' : 'Desmos'}

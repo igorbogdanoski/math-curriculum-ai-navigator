@@ -72,7 +72,6 @@ export const GeometryDiagramRenderer: React.FC<Props> = ({ svg, caption, classNa
         role="img"
         aria-label={ariaLabel}
         className="bg-white border-2 border-indigo-100 rounded-2xl p-3 shadow-sm max-w-[280px] w-full"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: safeSvg }}
       />
       {caption && (

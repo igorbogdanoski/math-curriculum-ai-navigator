@@ -62,7 +62,6 @@ export const NationalStandardsPanel: React.FC<Props> = ({ planTopics, gradeNum: 
           </span>
         </div>
         <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          {/* eslint-disable-next-line react/forbid-component-props -- dynamic width requires inline style */}
           <div className={`h-full rounded-full ${mathPct >= 70 ? 'bg-emerald-500' : mathPct >= 40 ? 'bg-amber-400' : 'bg-indigo-300'}`} style={{ width: `${mathPct}%` }} />
         </div>
         <div className="flex flex-wrap gap-1">

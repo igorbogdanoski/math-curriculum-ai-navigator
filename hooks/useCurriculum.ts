@@ -199,7 +199,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;
-        let standards = [...(data.nationalStandardsData || [])];
+        const standards = [...(data.nationalStandardsData || [])];
         
         // Dynamically extract assessmentStandards for grades 1-5
         if (data.curriculumData?.grades) {

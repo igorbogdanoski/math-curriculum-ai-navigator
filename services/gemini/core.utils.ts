@@ -47,7 +47,7 @@ export function cleanJsonString(text: string): string {
     if (lastBrace !== -1 && (lastBracket === -1 || lastBrace > lastBracket)) endIndex = lastBrace;
     else if (lastBracket !== -1) endIndex = lastBracket;
     if (endIndex !== -1) cleaned = cleaned.substring(0, endIndex + 1);
-    cleaned = cleaned.replace(/\\(?![^"nrtbf\/u\\])/g, '\\\\');
+    cleaned = cleaned.replace(/\\(?![^"nrtbf/u\\])/g, '\\\\');
     return cleaned.trim();
 }
 

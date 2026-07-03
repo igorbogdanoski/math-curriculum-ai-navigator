@@ -251,7 +251,7 @@ export function printGammaHandout(data: AIGeneratedPresentation, options?: Pick<
     <p style="font-size:12px;color:#6b7280;margin-top:4px">${data.topic} · ${data.gradeLevel}. одделение · ${brandText}</p>
   </div>
   ${slidesHtml}
-  <script>window.onload = () => { window.print(); }<\/script>
+  <script>window.onload = () => { window.print(); }<${'/'}script>
 </body></html>`);
   win.document.close();
 }

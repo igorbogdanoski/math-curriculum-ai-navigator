@@ -30,7 +30,7 @@ const LATEX_MACROS = [
 
 const LATEX_MACRO_RE = new RegExp(`\\\\(${LATEX_MACROS.join('|')})\\b`, 'i');
 // Detect: `a^2`, `x_n`, `a_i`, exponents with digits/letters, subscripts
-const POWER_INDEX_RE = /[A-Za-zА-Шаа-шШ]\s*[\^_]\s*\{?\s*[A-Za-z0-9+\-]/;
+const POWER_INDEX_RE = /[A-Za-zА-Шаа-шШ]\s*[\^_]\s*\{?\s*[A-Za-z0-9+-]/;
 // Detect equations/inequalities: `... = ...`, `... < ...`, `... >= ...` with at least one digit or variable on each side
 const RELATION_RE = /[A-Za-zА-Шаа-шШ0-9)\]]\s*[=≠≤≥<>]\s*[-+A-Za-zА-Шаа-шШ0-9(\\]/;
 // Classic arithmetic form `d op d`, plus Greek letters π, θ etc., plus percent, degree, integral sign

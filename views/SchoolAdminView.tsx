@@ -288,7 +288,6 @@ export const SchoolAdminView: React.FC = () => {
                   <div key={g.grade} className="flex items-center gap-3 text-sm">
                     <span className="w-16 font-semibold text-gray-700 shrink-0">{g.grade}</span>
                     <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-                      {/* eslint-disable-next-line react/forbid-dom-props */}
                       <div className={`h-full rounded-full transition-all ${g.avgPct >= 70 ? 'bg-green-400' : g.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
                         style={{ width: `${Math.max(g.avgPct, 2)}%` }} />
                     </div>
@@ -313,9 +312,7 @@ export const SchoolAdminView: React.FC = () => {
                 {stats.weeklyTrend.map((w, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <span className="text-xs font-bold text-gray-600">{w.avg}%</span>
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
                     <div className="w-full bg-gray-100 rounded-t-md relative h-20">
-                      {/* eslint-disable-next-line react/forbid-dom-props */}
                       <div className={`absolute bottom-0 w-full rounded-t-md transition-all ${w.avg >= 70 ? 'bg-indigo-400' : w.avg >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
                         style={{ height: `${Math.max(w.avg, 2)}%` }} />
                     </div>

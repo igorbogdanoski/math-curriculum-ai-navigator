@@ -38,6 +38,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prepare": "husky",
     "vercel:env:push": "node scripts/vercel-env-push.mjs",
     "vercel:env:dry": "node scripts/vercel-env-push.mjs --dry-run",
@@ -95,6 +97,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.2",
+    "@eslint/js": "^9.39.4",
     "@firebase/rules-unit-testing": "^5.0.1",
     "@playwright/test": "^1.58.2",
     "@sentry/vite-plugin": "^5.1.1",

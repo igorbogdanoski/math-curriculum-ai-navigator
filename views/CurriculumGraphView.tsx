@@ -148,9 +148,9 @@ export const CurriculumGraphView: React.FC = () => {
   const { nodes, edges } = useMemo(() => {
     if (!allConcepts) return { nodes: [], edges: [] };
 
-    let activeConceptIds = new Set<string>();
-    let upstreamNodes   = new Set<string>();
-    let downstreamNodes = new Set<string>();
+    const activeConceptIds = new Set<string>();
+    const upstreamNodes   = new Set<string>();
+    const downstreamNodes = new Set<string>();
 
     if (focusNodeId) {
       const childrenMap = new Map<string, string[]>();

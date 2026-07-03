@@ -325,7 +325,7 @@ function symEigen3x3(M: Mat): { vals: [number, number, number]; vecs: [[number,n
 function symEigenNxN(M: Mat): { vals: number[]; V: Mat } {
   const n = M.length;
   const A = M.map(row => [...row]);
-  let V = identity(n);
+  const V = identity(n);
   const maxIter = n * n * 20;
   for (let iter = 0; iter < maxIter; iter++) {
     let p = 0, q = 1, maxOff = 0;

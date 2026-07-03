@@ -104,7 +104,6 @@ export const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: s
 // This is React-idiomatic for runtime values — Tailwind can't generate arbitrary
 // runtime classes. Same pattern as InteractiveQuizPlayer.tsx line 257.
 
-// eslint-disable-next-line react/forbid-component-props
 export const ScoreBar: React.FC<{ pct: number; color: string }> = ({ pct, color }) => (
     <div className="flex items-center gap-2 text-xs">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">

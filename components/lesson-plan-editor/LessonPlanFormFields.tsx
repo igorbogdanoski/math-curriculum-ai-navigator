@@ -159,7 +159,6 @@ const LiveBloomHeatmap: React.FC<{ objectivesText: string }> = ({ objectivesText
             </div>
             <div className="flex gap-1 h-4 rounded-lg overflow-hidden">
                 {BLOOM_LEVELS.map((bl, i) => pcts[i] > 0 && (
-                    // eslint-disable-next-line react/forbid-component-props -- dynamic bloom width requires inline style
                     <div
                         key={bl.num}
                         className={`${bl.bar} transition-all duration-300`}
@@ -577,7 +576,6 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
 
                 {/* Phase timeline indicator */}
                 <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-gray-200 mb-5 mt-1 text-[11px] font-bold text-white">
-                    {/* eslint-disable-next-line react/forbid-component-props -- proportional phase width requires inline style */}
                     <div
                         className="flex items-center justify-center gap-1 bg-blue-500 py-1.5 px-2"
                         style={{ width: `${(phaseMinutes.intro / phaseMinutes.total) * 100}%` }}
@@ -591,7 +589,6 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     >
                         🟡 {phaseMinutes.main} мин
                     </div>
-                    {/* eslint-disable-next-line react/forbid-component-props -- proportional phase width requires inline style */}
                     <div
                         className="flex items-center justify-center gap-1 bg-emerald-500 py-1.5 px-2"
                         style={{ width: `${(phaseMinutes.closing / phaseMinutes.total) * 100}%` }}

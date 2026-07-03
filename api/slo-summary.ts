@@ -166,7 +166,7 @@ async function fetchCIReliability(): Promise<CIReliabilityData> {
 
     const QUALITY_GATE_JOB = 'Typecheck + Unit + Build';
     const results: ('success' | 'failure')[] = [];
-    let lastRunAt: string | null = runs[0]?.created_at ?? null;
+    const lastRunAt: string | null = runs[0]?.created_at ?? null;
 
     for (const run of runs) {
       try {

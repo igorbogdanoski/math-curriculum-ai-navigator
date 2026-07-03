@@ -11,7 +11,7 @@ import type { Grade, Topic } from '../types';
 
 // Helper function to add working days to a date, skipping weekends
 function addWorkingDays(startDate: Date, days: number): Date {
-  let date = new Date(startDate);
+  const date = new Date(startDate);
   let added = 0;
   while (added < days) {
     date.setDate(date.getDate() + 1);

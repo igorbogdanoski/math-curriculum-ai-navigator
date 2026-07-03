@@ -73,7 +73,7 @@ describe('calcNextSM2', () => {
   });
 
   it('ease factor never drops below 1.3', () => {
-    let state = { easeFactor: 1.35, interval: 10, repetitions: 5 };
+    const state = { easeFactor: 1.35, interval: 10, repetitions: 5 };
     // Quality 0 causes the steepest ease decrease
     const result = calcNextSM2(state, 0);
     expect(result.easeFactor).toBeGreaterThanOrEqual(1.3);

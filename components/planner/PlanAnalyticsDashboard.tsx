@@ -33,7 +33,6 @@ function UbDBar({ label, pct, color }: { label: string; pct: number; color: stri
         <span className={color}>{pct}%</span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-        {/* eslint-disable-next-line react/forbid-component-props -- dynamic width requires inline style */}
         <div className={`h-full rounded-full transition-all duration-700 ${pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
           style={{ width: `${pct}%` }} />
       </div>

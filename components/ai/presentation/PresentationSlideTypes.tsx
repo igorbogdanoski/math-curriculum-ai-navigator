@@ -25,7 +25,6 @@ export const StepByStepSlide: React.FC<{ steps: string[]; theme: PresentationThe
     <div className="flex flex-col gap-3 w-full">
       {/* Progress bar */}
       <div className="w-full h-1.5 bg-gray-200/40 rounded-full overflow-hidden mb-1">
-        {/* eslint-disable-next-line react/forbid-component-props */}
         <div
           className={`h-full rounded-full transition-all duration-500 pres-progress-${theme}`}
           style={{ width: activeStep !== null ? `${((activeStep + 1) / total) * 100}%` : '0%' }}

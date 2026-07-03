@@ -78,8 +78,8 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
   const { nodes, edges } = useMemo(() => {
     if (!topic) return { nodes: [], edges: [] };
 
-    let nodes: any[] = [];
-    let edges: any[] = [];
+    const nodes: any[] = [];
+    const edges: any[] = [];
     
     // 1. Central Topic Node
     const topicTooltip = (() => {

@@ -355,7 +355,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         const filename = `${editableMaterial.title.replace(/[^a-z0-9а-шѓѕјљњќџч]/gi, '_').toLowerCase()}`;
         let content = '';
         let mimeType = 'text/plain;charset=utf-8';
-        let extension = format;
+        const extension = format;
         
         const formatVersionForText = (title: string, questions: AssessmentQuestion[], selfAssessment?: string[]) => {
             let textContent = `${title}\n\n`;

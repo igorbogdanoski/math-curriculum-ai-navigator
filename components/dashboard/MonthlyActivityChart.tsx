@@ -2,7 +2,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { loadScript } from '../../utils/loadScript';
 import React, { useEffect, useRef } from 'react';
 
-declare var Chart: any;
+declare let Chart: any;
 
 interface ChartData {
     labels: string[];

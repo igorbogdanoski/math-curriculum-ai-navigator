@@ -237,7 +237,6 @@ const AICreditsWidget: React.FC<{ user: import('../types').TeachingProfile | nul
           <span className="text-[11px] text-slate-400">{credits} преостанати</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-          {/* eslint-disable-next-line react/forbid-component-props */}
           <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
         </div>
         <p className="text-[11px] text-slate-500 mt-1">

@@ -6,7 +6,7 @@ export const cyrillicMap: Record<string, string> = {
   };
   
   export function slugify(text: string): string {
-    let slug = text.toLowerCase();
+    const slug = text.toLowerCase();
     let result = '';
     for (let i = 0; i < slug.length; i++) {
       result += cyrillicMap[slug[i]] || slug[i];
