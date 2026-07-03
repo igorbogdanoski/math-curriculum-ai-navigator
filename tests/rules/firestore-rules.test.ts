@@ -111,6 +111,19 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertFails(f.doc('users/alice').update({ role: 'admin' }));
       await assertFails(f.doc('users/alice').update({ aiCreditsBalance: 99999 }));
     });
+
+    it('owner cannot self-create with an elevated role or credits (create-path escalation)', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const ctx = testEnv.authenticatedContext('carol');
+      const f = ctx.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertFails(f.doc('users/carol').set({ role: 'admin', name: 'Carol' }));
+      await assertFails(f.doc('users/carol').set({ role: 'teacher', isPremium: true, name: 'Carol' }));
+      await assertFails(f.doc('users/carol').set({ role: 'teacher', aiCreditsBalance: 99999, name: 'Carol' }));
+      await assertSucceeds(f.doc('users/carol').set({ role: 'teacher', aiCreditsBalance: 50, tier: 'Free', isPremium: false, hasUnlimitedCredits: false, name: 'Carol' }));
+    });
   });
 
   describe('quiz_results/{doc}', () => {
@@ -168,6 +181,121 @@ d('SEC-2 — Firestore rules coverage', () => {
       };
       await assertFails(fIntruder.doc('assignments/a1').delete());
       await assertSucceeds(fOwner.doc('assignments/a1').delete());
+    });
+  });
+
+  describe('class_memberships/{deviceDoc}', () => {
+    it('a plain authenticated (non-anonymous) user cannot read/write another device\'s membership', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('class_memberships/device1').set({ deviceId: 'device1', teacherUid: 'teacher1', classId: 'c1' });
+      });
+      const ctx = testEnv.authenticatedContext('randomUser');
+      const f = ctx.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertFails(f.doc('class_memberships/device1').get());
+      await assertFails(f.doc('class_memberships/device2').set({ deviceId: 'device2', teacherUid: 'teacher1', classId: 'c1' }));
+    });
+
+    it('an anonymous student session can read/write class_memberships', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const ctx = testEnv.authenticatedContext('anonDevice', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(f.doc('class_memberships/anonDevice').set({ deviceId: 'anonDevice', teacherUid: 'teacher1', classId: 'c1' }));
+    });
+
+    it('the owning teacher can read their class memberships (GDPR self-service delete path)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('class_memberships/device3').set({ deviceId: 'device3', teacherUid: 'teacherX', classId: 'c1' });
+      });
+      const ctx = testEnv.authenticatedContext('teacherX');
+      const f = ctx.firestore() as unknown as { doc(p: string): { delete(): Promise<unknown> } };
+      await assertSucceeds(f.doc('class_memberships/device3').delete());
+    });
+  });
+
+  describe('saved_questions/{doc} — admin moderation workflow', () => {
+    it('admin can approve (full review field set); a random authenticated user cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('users/admin1').set({ role: 'admin' });
+        await f.doc('saved_questions/q1').set({ teacherUid: 'teacher1', isApproved: false });
+      });
+      const admin = testEnv.authenticatedContext('admin1');
+      const intruder = testEnv.authenticatedContext('someoneElse');
+      const fAdmin = admin.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      const fIntruder = intruder.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(fIntruder.doc('saved_questions/q1').update({ isApproved: true, isVerified: true, reviewStatus: 'approved' }));
+      await assertSucceeds(fAdmin.doc('saved_questions/q1').update({
+        isApproved: true, isVerified: true, isPublic: true, reviewStatus: 'approved',
+        reviewedBy: 'admin1', reviewedAt: new Date(),
+      }));
+    });
+  });
+
+  describe('scenario_bank/{docId} — moderation fields scoping', () => {
+    it('any authenticated teacher may bump community counters, but not flip deleted/isFeatured', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('scenario_bank/s1').set({ authorUid: 'author1', forkCount: 0, deleted: false, isFeatured: false });
+      });
+      const ctx = testEnv.authenticatedContext('someTeacher');
+      const f = ctx.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('scenario_bank/s1').update({ forkCount: 1 }));
+      await assertFails(f.doc('scenario_bank/s1').update({ deleted: true }));
+      await assertFails(f.doc('scenario_bank/s1').update({ isFeatured: true }));
+    });
+  });
+
+  describe('previously-unruled collections (now fixed)', () => {
+    it('school_inquiries: public create succeeds; only admin can read', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.unauthenticatedContext();
+      const fAnon = anon.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fAnon.collection('school_inquiries').add({ schoolName: 'Test School', teacherCount: 5 }));
+
+      const ctx = testEnv.authenticatedContext('randomTeacher');
+      const f = ctx.firestore() as unknown as { collection(p: string): { get(): Promise<unknown> } };
+      await assertFails(f.collection('school_inquiries').get());
+    });
+
+    it('grade_books: only the owning teacher can read/write their gradebook', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('grade_books/gb1').set({ teacherUid: 'teacherY', className: 'X' });
+      });
+      const owner = testEnv.authenticatedContext('teacherY');
+      const intruder = testEnv.authenticatedContext('nosyTeacher');
+      const fOwner = owner.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      const fIntruder = intruder.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(fOwner.doc('grade_books/gb1').get());
+      await assertFails(fIntruder.doc('grade_books/gb1').get());
     });
   });
 });

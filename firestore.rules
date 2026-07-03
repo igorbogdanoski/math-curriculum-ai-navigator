@@ -49,8 +49,17 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
 
-      // Prevent client-side manipulation of credits, subscription flags, and role
-      allow create: if isOwner(uid) || isAdmin();
+      // Prevent client-side manipulation of credits, subscription flags, and role —
+      // matches the always-'teacher'/50-credit/'Free' shape written by every real
+      // signup path in contexts/AuthContext.tsx. isAdmin() may still create any shape.
+      allow create: if isAdmin() || (
+        isOwner(uid) &&
+        (!('role' in request.resource.data) || request.resource.data.role == 'teacher') &&
+        (!('isPremium' in request.resource.data) || request.resource.data.isPremium == false) &&
+        (!('hasUnlimitedCredits' in request.resource.data) || request.resource.data.hasUnlimitedCredits == false) &&
+        (!('tier' in request.resource.data) || request.resource.data.tier == 'Free') &&
+        (!('aiCreditsBalance' in request.resource.data) || request.resource.data.aiCreditsBalance <= 50)
+      );
       allow update: if isAdmin() || (
         isOwner(uid) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
@@ -59,7 +68,13 @@ service cloud.firestore {
       );
       allow delete: if isAdmin();
 
-      match /{document=**} {
+      // NOTE: {document=**} is a recursive wildcard that also matches ZERO segments —
+      // i.e. it would ALSO match users/{uid} itself, silently overriding the field
+      // restrictions on create/update above via `write` + isOwner(uid) with no field
+      // scoping at all. Requiring one named segment before the recursive wildcard
+      // scopes this to actual subcollections (material_feedback, maturaResults, etc.)
+      // without re-opening the parent document. Verified via emulator test.
+      match /{subcollection}/{document=**} {
         allow read, write: if isOwner(uid) || isAdmin();
       }
     }
@@ -85,7 +100,7 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['metacognitiveNote'])
           && request.resource.data.metacognitiveNote is string
       );
-      allow delete: if isAdmin();
+      allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
     // ── Кеширани AI материјали (cached_ai_materials) ──
@@ -122,7 +137,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow update: if isAuthenticated() && (
         isOwner(resource.data.teacherUid) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedBy']))
+        // Student self-marking completion — narrowed to anonymous student sessions only
+        // (still not scoped to "their own" assignment specifically; deviceId isn't
+        // auth-verifiable under the current identity model, see class_memberships).
+        (isAnonymousStudent() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedBy']))
       );
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
@@ -154,7 +172,7 @@ service cloud.firestore {
         isAnonymousStudent() ||
         isAdmin()
       ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
-      allow delete: if isAdmin();
+      allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
     // ── Заедничка библиотека на планови (communityLessonPlans) ──
@@ -178,7 +196,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         isAnonymousStudent() || isDocOwner() || isAdmin()
       ) && resource.data.studentName == request.resource.data.studentName;
-      allow delete: if isAdmin();
+      allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
     // ── Групи на ученици (student_groups) ──
@@ -236,18 +254,29 @@ service cloud.firestore {
     // Документ ID = deviceId на ученикот.
     // Ученикот (anonymous auth) може сам да ги чита/пишува своите.
     // Наставникот може да чита (за analytics).
+    // Student-only, self-service (join-class-by-code); doc ID = deviceId (client-generated,
+    // unverifiable — this only narrows from "any authenticated principal" to "any anonymous
+    // student session", it cannot verify a session owns a *specific* deviceId).
     match /class_memberships/{deviceDoc} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read, write: if isAnonymousStudent() || isAdmin() ||
+        (isAuthenticated() && resource.data.teacherUid == request.auth.uid);
     }
 
     // ── Зачувани прашања (saved_questions) ──
     match /saved_questions/{doc} {
-      allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'isVerified', 'verifiedAt']);
+      allow delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      // Author may flip public/verified flags on their own question; admin moderation
+      // (ContentReviewView approve/revision-request flow) may set the full review field set.
+      allow update: if isAuthenticated() && (
+        (resource.data.teacherUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'isVerified', 'verifiedAt'])) ||
+        (isAdmin() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+            ['isApproved', 'isVerified', 'isPublic', 'reviewStatus', 'reviewedBy', 'reviewedAt', 'reviewReasonCodes', 'reviewComments']
+          ))
+      );
     }
 
     // ── Огласи (announcements) ──
@@ -269,7 +298,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
 
-      match /{document=**} {
+      // {document=**} also matches zero segments (the schools/{schoolId} doc itself),
+      // which would let a school_admin write to the root school doc (teacherUids/
+      // adminUids) despite the explicit isAdmin()-only rule above. Scope to actual
+      // subcollections only — see the identical fix + explanation under users/{uid}.
+      match /{subcollection}/{document=**} {
         allow read: if isAuthenticated();
         allow write: if isSchoolAdmin(schoolId) || isAdmin();
       }
@@ -336,15 +369,15 @@ service cloud.firestore {
       allow read:   if isAuthenticated() && (isAnonymousStudent() || isAdmin() || isDocOwner());
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (isAnonymousStudent() || isDocOwner() || isAdmin());
-      allow delete: if isAdmin();
+      allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
     // ── Повратна информација за материјали (material_feedback) ──
     match /material_feedback/{doc} {
       allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
-      allow delete: if isAdmin();
+      allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
     // ── AI feedback telemetry (ai_material_feedback_events) ──
@@ -515,11 +548,13 @@ service cloud.firestore {
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated() && !isAnonymousStudent()
                     && request.resource.data.authorUid == request.auth.uid;
+      // Community actions (rating, saving, fork/usage counters) are open to any authenticated
+      // teacher; `deleted`/`isFeatured` are moderation-level and restricted to author/admin above.
       allow update: if isAuthenticated() && (
         resource.data.authorUid == request.auth.uid ||
         isAdmin() ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-          ['ratingsByUid', 'savedByUids', 'forkCount', 'usageCount', 'deleted', 'isFeatured']
+          ['ratingsByUid', 'savedByUids', 'forkCount', 'usageCount']
         )
       );
       allow delete: if isAdmin();
@@ -648,6 +683,45 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read:   if isAdmin();
       allow update, delete: if false;
+    }
+
+    // ── Зачувани презентации (saved_presentations) ──
+    match /saved_presentations/{doc} {
+      allow read, update, delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+    }
+
+    // ── ZPD adaptive difficulty calibration (adaptive_difficulty/{teacherUid}/students/{key}) ──
+    match /adaptive_difficulty/{teacherUid} {
+      match /students/{key} {
+        allow read, write: if isOwner(teacherUid) || isAdmin();
+      }
+    }
+
+    // ── Scan artifacts (vision/homework extraction archive) ──
+    match /scan_artifacts/{doc} {
+      allow read, update, delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+    }
+
+    // ── National benchmark (opt-in anonymous class-performance aggregate) — Ж6.4 ──
+    // Doc ID = teacherUid. No student PII — safe to be broadly readable by any authenticated teacher.
+    match /national_benchmark/{teacherUid} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(teacherUid);
+    }
+
+    // ── School B2B inquiry (public lead-capture form, /school-pricing) ──
+    // Unauthenticated by design — pre-signup. Write-only from the client; only admins read leads.
+    match /school_inquiries/{doc} {
+      allow create: if request.resource.data.keys().hasAll(['schoolName', 'teacherCount']);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Grade books (saved gradebook snapshots) ──
+    match /grade_books/{doc} {
+      allow read, update, delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
     }
 
     // Сè друго: одбиено

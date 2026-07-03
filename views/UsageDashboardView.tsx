@@ -75,7 +75,7 @@ export function UsageDashboardView() {
     getDocs(
       query(
         collection(db, CACHE_COLLECTION),
-        where('uid', '==', uid),
+        where('teacherUid', '==', uid),
         orderBy('createdAt', 'desc'),
         limit(50),
       ),

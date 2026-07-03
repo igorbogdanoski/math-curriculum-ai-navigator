@@ -95,7 +95,7 @@ export async function deleteAllUserData(uid: string): Promise<void> {
     'assignments',
     'material_feedback',
     'saved_questions',
-    'announcement',
+    'announcements',
     'chat_sessions',
     'spaced_rep',
   ];

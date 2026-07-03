@@ -713,6 +713,145 @@
                                            "order":  "DESCENDING"
                                        }
                                    ]
+                    },
+
+                    {
+                        "collectionGroup":  "matura_assignments",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "classId",    "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "conceptId",  "order": "ASCENDING" },
+                                       { "fieldPath": "playedAt",   "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "assignments",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "classId",  "order": "ASCENDING" },
+                                       { "fieldPath": "dueDate",  "order": "ASCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_observations",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "authorUid",   "order": "ASCENDING" },
+                                       { "fieldPath": "observedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "exam_sessions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "createdBy",  "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "thematic_plan_edits",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "uid",      "order": "ASCENDING" },
+                                       { "fieldPath": "savedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "cognitive_telemetry",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "conceptId",   "order": "ASCENDING" },
+                                       { "fieldPath": "recordedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "cognitive_telemetry",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "teacherUid",  "order": "ASCENDING" },
+                                       { "fieldPath": "recordedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",     "order": "ASCENDING" },
+                                       { "fieldPath": "grade",        "order": "ASCENDING" },
+                                       { "fieldPath": "forkCount",    "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",     "order": "ASCENDING" },
+                                       { "fieldPath": "grade",        "order": "ASCENDING" },
+                                       { "fieldPath": "usageCount",   "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "forkCount",       "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "usageCount",      "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "grade",           "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",     "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "grade",           "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "forkCount",       "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",         "order": "ASCENDING" },
+                                       { "fieldPath": "isPublic",        "order": "ASCENDING" },
+                                       { "fieldPath": "grade",           "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
+                                       { "fieldPath": "usageCount",      "order": "DESCENDING" }
+                                   ]
                     }
                 ],
     "fieldOverrides":  [
