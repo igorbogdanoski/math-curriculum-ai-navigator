@@ -6,11 +6,21 @@ import { PermissionError, AIServiceError, AppError, ErrorCode } from '../../util
 import { retryWithBackoff, circuitBreakerCall } from '../../utils/retryWithBackoff';
 import {
     DEFAULT_MODEL, PRO_MODEL, ULTIMATE_MODEL, IMAGEN_MODEL, EMBEDDING_MODEL,
-    GENERATION_TIMEOUT_MS, Part, Content, ImagenProxyResponse, StreamChunk,
+    GENERATION_TIMEOUT_MS, Part, Content, SafetySetting, ImagenProxyResponse, StreamChunk,
 } from './core.constants';
+
+/** Extracts a safe display message from an unknown caught error. */
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** True when the caught error is a DOM AbortError (fetch/timeout cancellation). */
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError';
+}
 import { checkDailyQuotaGuard, markDailyQuotaExhausted } from './core.quota';
 
-let lastRequest: Promise<any> = Promise.resolve();
+let lastRequest: Promise<unknown> = Promise.resolve();
 
 export async function queueRequest<T>(fn: () => Promise<T>): Promise<T> {
   checkDailyQuotaGuard();
@@ -26,28 +36,38 @@ export async function getAuthToken(): Promise<string> {
   return user.getIdToken();
 }
 
-export function normalizeContents(contents: any): any[] {
+/**
+ * `contents` is accepted in whatever flexible legacy shape a caller has on hand — a
+ * plain string, an already-normalized Content[], a flat array of Part-like objects, or
+ * a mix — and this function's entire job is duck-typing that into canonical Content[].
+ * `LooseItem` names that "arbitrary object, probe its fields at runtime" contract
+ * instead of disabling type checking outright; the conditional logic below is
+ * unchanged from before this file's `any` cleanup (2026-07-04).
+ */
+type LooseItem = Record<string, unknown>;
+
+export function normalizeContents(contents: unknown): Content[] {
   if (!contents) return [];
   if (typeof contents === 'string') return [{ role: 'user', parts: [{ text: contents }] }];
   if (!Array.isArray(contents)) return [{ role: 'user', parts: [{ text: String(contents) }] }];
-  if (contents.length > 0 && contents[0].parts) return contents;
-  const isPartsArray = contents.every((c: any) => c.text || c.inlineData || c.inline_data);
+  if (contents.length > 0 && (contents[0] as LooseItem).parts) return contents as Content[];
+  const isPartsArray = (contents as LooseItem[]).every((c) => c.text || c.inlineData || c.inline_data);
   if (isPartsArray) {
     return [{
       role: 'user',
-      parts: contents.map((c: any) => {
-        if (c.text) return { text: c.text };
-        const data = c.inlineData || c.inline_data;
-        if (data) return { inlineData: { mimeType: data.mimeType || data.mime_type, data: data.data } };
-        return c;
+      parts: (contents as LooseItem[]).map((c): Part => {
+        if (c.text) return { text: c.text as string };
+        const data = (c.inlineData || c.inline_data) as LooseItem | undefined;
+        if (data) return { inlineData: { mimeType: (data.mimeType || data.mime_type) as string, data: data.data as string } };
+        return c as Part;
       })
     }];
   }
-  return contents.map((c: any) => {
+  return (contents as (string | LooseItem)[]).map((c): Content => {
     if (typeof c === 'string') return { role: 'user', parts: [{ text: c }] };
-    if (c.role && c.parts) return c;
-    if (c.parts) return { role: 'user', parts: c.parts };
-    if (c.text) return { role: 'user', parts: [{ text: c.text }] };
+    if (c.role && c.parts) return c as unknown as Content;
+    if (c.parts) return { role: 'user', parts: c.parts as Part[] };
+    if (c.text) return { role: 'user', parts: [{ text: c.text as string }] };
     return { role: 'user', parts: [{ text: String(JSON.stringify(c)) }] };
   });
 }
@@ -63,14 +83,14 @@ function anySignalAborted(signals: AbortSignal[]): AbortSignal {
 
 async function callGeminiOnce(params: {
   model: string;
-  contents: any;
-  generationConfig?: any;
+  contents: unknown;
+  generationConfig?: Record<string, unknown>;
   systemInstruction?: string;
-  safetySettings?: any;
+  safetySettings?: SafetySetting[];
   userTier?: string;
   skipTierOverride?: boolean;
   tools?: unknown[];
-}, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
+}, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
   const effectiveSignal = signal ? anySignalAborted([signal, timeoutController.signal]) : timeoutController.signal;
@@ -117,10 +137,10 @@ async function callGeminiOnce(params: {
         .catch(() => {});
     }
     return result;
-  } catch (err: any) {
-    if (err.name === 'AbortError') throw err;
+  } catch (err: unknown) {
+    if (isAbortError(err)) throw err;
     if (err instanceof ApiError) throw err;
-    logger.error("Gemini Proxy Error:", err.message || err);
+    logger.error("Gemini Proxy Error:", errMessage(err));
     throw err;
   } finally {
     clearTimeout(timeoutId);
@@ -129,14 +149,14 @@ async function callGeminiOnce(params: {
 
 export async function callGeminiProxy(params: {
   model: string;
-  contents: any;
-  generationConfig?: any;
+  contents: unknown;
+  generationConfig?: Record<string, unknown>;
   systemInstruction?: string;
-  safetySettings?: any;
+  safetySettings?: SafetySetting[];
   userTier?: string;
   skipTierOverride?: boolean;
   tools?: unknown[];
-}, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
+}, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
   return queueRequest(() =>
     circuitBreakerCall('gemini', () =>
       retryWithBackoff(
@@ -169,9 +189,9 @@ export async function callImagenProxy(params: { model?: string; prompt: string }
         throw new AppError(errorData.error || `Server error: ${response.status}`, ErrorCode.AI_UNAVAILABLE, 'AI сервисот моментално не е достапен. Обидете се повторно.', true);
       }
       return await response.json();
-    } catch (err: any) {
-      if (err.name === 'AbortError') throw err;
-      logger.error("Imagen Proxy Error:", err.message || err);
+    } catch (err: unknown) {
+      if (isAbortError(err)) throw err;
+      logger.error("Imagen Proxy Error:", errMessage(err));
       throw err;
     }
   });
@@ -208,15 +228,15 @@ export async function callEmbeddingProxy(
       }
       const data = await response.json();
       return data.embedding.values;
-    } catch (err: any) {
-      if (err.name === 'AbortError') throw err;
-      logger.error("Embedding Proxy Error:", err.message || err);
+    } catch (err: unknown) {
+      if (isAbortError(err)) throw err;
+      logger.error("Embedding Proxy Error:", errMessage(err));
       throw err;
     }
   });
 }
 
-export async function callGeminiEmbed(params: { model?: string; contents: any }): Promise<{ embeddings: { values: number[] } }> {
+export async function callGeminiEmbed(params: { model?: string; contents: unknown }): Promise<{ embeddings: { values: number[] } }> {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
@@ -230,15 +250,15 @@ export async function callGeminiEmbed(params: { model?: string; contents: any })
         throw new AppError(errorData.error || `Server error: ${response.status}`, ErrorCode.AI_UNAVAILABLE, 'AI сервисот моментално не е достапен. Обидете се повторно.', true);
       }
       return await response.json();
-    } catch (err: any) {
-      logger.error("Gemini Embedding Error:", err.message || err);
+    } catch (err: unknown) {
+      logger.error("Gemini Embedding Error:", errMessage(err));
       throw err;
     }
   });
 }
 
 export async function* streamGeminiProxy(params: {
-  model: string; contents: any; generationConfig?: any; systemInstruction?: string; safetySettings?: any; userTier?: string;
+  model: string; contents: unknown; generationConfig?: Record<string, unknown>; systemInstruction?: string; safetySettings?: SafetySetting[]; userTier?: string;
 }, signal?: AbortSignal): AsyncGenerator<string, void, unknown> {
   const STREAM_TIMEOUT_MS = 120_000;
   const timeoutController = new AbortController();
@@ -293,7 +313,7 @@ export async function* streamGeminiProxy(params: {
 }
 
 export async function* streamGeminiProxyRich(params: {
-  model: string; contents: any; generationConfig?: any; systemInstruction?: string; safetySettings?: any; userTier?: string;
+  model: string; contents: unknown; generationConfig?: Record<string, unknown>; systemInstruction?: string; safetySettings?: SafetySetting[]; userTier?: string;
 }): AsyncGenerator<StreamChunk, void, unknown> {
   const token = await getAuthToken();
   let modelToUse = params.model;
