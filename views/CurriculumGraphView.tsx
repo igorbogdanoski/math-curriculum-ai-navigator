@@ -23,8 +23,17 @@ import { GraphLegend } from './curriculumGraph/GraphLegend';
 import { GraphContextMenu } from './curriculumGraph/GraphContextMenu';
 import { GraphAiPanel } from './curriculumGraph/GraphAiPanel';
 
-declare global {
-  interface Window { vis: any; }
+import type { VisNetworkInstance } from '../types/visNetwork';
+
+/** Internal node shape this view constructs — vis-network passes it back through unchanged. */
+interface GraphNode {
+  id: string;
+  label: string;
+  _topicId?: string;
+  _topicTitle?: string;
+  _fullLabel?: string;
+  _gradeLevel?: number;
+  [key: string]: unknown;
 }
 
 const CANVAS_BG       = '#ffffff';
@@ -33,8 +42,8 @@ const EDGE_GLOBAL_COLOR  = '#BDBDBD';
 
 export const CurriculumGraphView: React.FC = () => {
   const graphRef   = useRef<HTMLDivElement>(null);
-  const networkRef = useRef<any>(null);
-  const nodesRef   = useRef<any[]>([]);
+  const networkRef = useRef<VisNetworkInstance | null>(null);
+  const nodesRef   = useRef<GraphNode[]>([]);
 
   const { navigate }          = useNavigation();
   const { openGeneratorPanel }= useGeneratorPanel();
@@ -240,18 +249,18 @@ export const CurriculumGraphView: React.FC = () => {
     const network = networkRef.current;
     network.setData({ nodes, edges });
     if (isClustered) {
-      const topicsInView = new Set(nodes.map((n: any) => n._topicId));
+      const topicsInView = new Set(nodes.map((n) => n._topicId));
       topicsInView.forEach(topicId => {
-        const topicNodes = nodes.filter((n: any) => n._topicId === topicId);
+        const topicNodes = nodes.filter((n) => n._topicId === topicId);
         if (!topicNodes?.length) return;
         const { _topicTitle: topicTitle = 'Тема', _gradeLevel: gradeLevel = 0 } = topicNodes[0];
         const romanGrade    = getRomanGrade(gradeLevel);
         const color         = GRADE_COLORS[gradeLevel];
-        const conceptLabels = topicNodes.map((n: any) => n._fullLabel || n.label);
+        const conceptLabels = topicNodes.map((n) => n._fullLabel || n.label);
         const previewItems  = conceptLabels.slice(0, 10);
         const titleLabel    = `[${romanGrade}] ${topicTitle}`;
         network.cluster({
-          joinCondition: (nodeOptions: any) => nodeOptions._topicId === topicId,
+          joinCondition: (nodeOptions) => nodeOptions._topicId === topicId,
           clusterNodeProperties: {
             id: `cluster:${topicId}`,
             label: `[${romanGrade}] ${topicTitle}\n(${topicNodes.length} поими)`,
@@ -282,7 +291,7 @@ export const CurriculumGraphView: React.FC = () => {
         minVelocity: 0.75, stabilization: { enabled: true, iterations: 1000 },
       },
     });
-    setTimeout(() => networkRef.current.fit({ animation: true }), 500);
+    setTimeout(() => networkRef.current?.fit({ animation: true }), 500);
   }, [layoutMode]);
 
   // vis.js initialization
@@ -290,7 +299,7 @@ export const CurriculumGraphView: React.FC = () => {
     if (!graphRef.current || isLoading) return;
     loadScript('https://unpkg.com/vis-network/standalone/umd/vis-network.min.js').then(() => {
       if (!graphRef.current || networkRef.current) return;
-      let network: any;
+      let network: VisNetworkInstance;
       try {
         network = new window.vis.Network(graphRef.current, { nodes, edges }, {
           nodes:  { shape: 'box', margin: 12, widthConstraint: { maximum: 220 } },
@@ -305,15 +314,15 @@ export const CurriculumGraphView: React.FC = () => {
       }
       networkRef.current = network;
 
-      network.on('click', (params: any) => {
+      network.on('click', (params) => {
         if (params.nodes.length > 0) {
           const nodeId = params.nodes[0];
           if (network.isCluster(nodeId)) { network.openCluster(nodeId); return; }
           setFocusNodeId(nodeId);
           setIsClustered(false);
-          const nodeData = nodesRef.current.find((n: any) => n.id === nodeId);
+          const nodeData = nodesRef.current.find((n) => n.id === nodeId);
           if (nodeData) {
-            setMenuState({ x: params.pointer.DOM.x, y: params.pointer.DOM.y, nodeId, label: nodeData._fullLabel || nodeData.label, gradeLevel: nodeData._gradeLevel, topicId: nodeData._topicId, visible: true, isCluster: false });
+            setMenuState({ x: params.pointer.DOM.x, y: params.pointer.DOM.y, nodeId, label: nodeData._fullLabel || nodeData.label, gradeLevel: nodeData._gradeLevel ?? 0, topicId: nodeData._topicId ?? '', visible: true, isCluster: false });
           }
         } else {
           setMenuState(prev => ({ ...prev, visible: false }));
@@ -322,7 +331,7 @@ export const CurriculumGraphView: React.FC = () => {
       network.on('dragStart', () => setMenuState(prev => ({ ...prev, visible: false })));
       network.on('hoverNode', () => { if (graphRef.current) graphRef.current.style.cursor = 'pointer'; });
       network.on('blurNode',  () => { if (graphRef.current) graphRef.current.style.cursor = 'default'; });
-      network.on('doubleClick', (params: any) => {
+      network.on('doubleClick', (params) => {
         if (params.nodes.length > 0) {
           const nodeId = params.nodes[0];
           if (network.isCluster(nodeId)) { network.openCluster(nodeId); }

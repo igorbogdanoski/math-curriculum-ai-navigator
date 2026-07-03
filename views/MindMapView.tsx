@@ -7,11 +7,13 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import type { Concept, NationalStandard } from '../types';
+import type { VisNetworkInstance } from '../types/visNetwork';
 
-declare global {
-  interface Window {
-    vis: any;
-  }
+/** Internal node shape this view constructs — vis-network passes it back through unchanged. */
+interface MindMapNode {
+  id: string;
+  _realId?: string;
+  [key: string]: unknown;
 }
 
 interface MindMapViewProps {
@@ -66,7 +68,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
   const graphRef = useRef<HTMLDivElement>(null);
   const { navigate } = useNavigation();
   const { getTopic, getConceptDetails, getStandardsByIds, isLoading } = useCurriculum();
-  const networkRef = useRef<any>(null);
+  const networkRef = useRef<VisNetworkInstance | null>(null);
 
   const { topic } = useMemo(() => getTopic(topicId), [getTopic, topicId]);
 
@@ -78,8 +80,8 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
   const { nodes, edges } = useMemo(() => {
     if (!topic) return { nodes: [], edges: [] };
 
-    const nodes: any[] = [];
-    const edges: any[] = [];
+    const nodes: MindMapNode[] = [];
+    const edges: unknown[] = [];
     
     // 1. Central Topic Node
     const topicTooltip = (() => {
@@ -216,7 +218,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
   useEffect(() => {
     if (!graphRef.current || isLoading || nodes.length === 0) return;
-    let network: any;
+    let network: VisNetworkInstance;
     loadScript('https://unpkg.com/vis-network/standalone/umd/vis-network.min.js').then(() => {
       if (!graphRef.current) return;
       const data = { nodes, edges };
@@ -251,10 +253,10 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
       network = new window.vis.Network(graphRef.current, data, options);
       networkRef.current = network;
 
-      network.on('doubleClick', (params: any) => {
+      network.on('doubleClick', (params) => {
         const nodeId = params.nodes[0];
         if (!nodeId) return;
-        const nodeObj = nodes.find((n: any) => n.id === nodeId);
+        const nodeObj = nodes.find((n) => n.id === nodeId);
         const targetId = nodeObj?._realId || nodeId;
         if (targetId) {
             const safeId = String(targetId).trim();

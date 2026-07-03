@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import type { IncomingMessage, NextFunction } from 'connect';
+import type { ServerResponse } from 'http';
+
+/** Extracts a safe display message from an unknown caught error. */
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 /**
  * Vite plugin: Dev middleware for Gemini API proxy.
@@ -16,7 +23,7 @@ function geminiDevProxy(apiKey: string): Plugin {
     name: 'gemini-dev-proxy',
     configureServer(server) {
       // Helper to read POST body
-      const readBody = (req: any): Promise<any> => new Promise((resolve, reject) => {
+      const readBody = (req: IncomingMessage): Promise<Record<string, unknown>> => new Promise((resolve, reject) => {
         let body = '';
         req.on('data', (chunk: string) => body += chunk);
         req.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('Invalid JSON')); } });
@@ -24,14 +31,16 @@ function geminiDevProxy(apiKey: string): Plugin {
       });
 
       // Non-streaming proxy
-      server.middlewares.use('/api/gemini-stream', async (req: any, res: any, next: any) => {
+      server.middlewares.use('/api/gemini-stream', async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
         try {
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(apiKey);
-          const { model, contents, config } = await readBody(req);
+          const { model, contents, config } = await readBody(req) as {
+            model: string; contents: unknown; config?: Record<string, unknown>;
+          };
 
           res.writeHead(200, {
             'Content-Type': 'text/event-stream',
@@ -43,8 +52,8 @@ function geminiDevProxy(apiKey: string): Plugin {
           const result = await modelInstance.generateContentStream({
             contents,
             ...config,
-          });
-          
+          } as Parameters<typeof modelInstance.generateContentStream>[0]);
+
           for await (const chunk of result.stream) {
             const text = chunk.text();
             if (text) {
@@ -53,25 +62,26 @@ function geminiDevProxy(apiKey: string): Plugin {
           }
           res.write('data: [DONE]\n\n');
           res.end();
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const message = errMessage(error);
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: error.message }));
+            res.end(JSON.stringify({ error: message }));
           } else {
-            res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+            res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
             res.end();
           }
         }
       });
 
-      server.middlewares.use('/api/embed', async (req: any, res: any, next: any) => {
+      server.middlewares.use('/api/embed', async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
         try {
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(apiKey);
-          const { model, contents } = await readBody(req);
+          const { model, contents } = await readBody(req) as { model?: string; contents: unknown };
 
           const modelInstance = genAI.getGenerativeModel({ model: model || 'gemini-embedding-2-preview' });
           const embedText = typeof contents === 'string' ? contents : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text ?? '';
@@ -80,40 +90,42 @@ function geminiDevProxy(apiKey: string): Plugin {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           const responseShape = req.url?.includes('responseShape=embeddings') ? 'embeddings' : 'embedding';
           res.end(JSON.stringify(responseShape === 'embeddings' ? { embeddings: result.embedding } : { embedding: result.embedding }));
-        } catch (error: any) {
+        } catch (error: unknown) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: error.message }));
+          res.end(JSON.stringify({ error: errMessage(error) }));
         }
       });
 
-      server.middlewares.use('/api/gemini', async (req: any, res: any, next: any) => {
+      server.middlewares.use('/api/gemini', async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
         try {
           const { GoogleGenerativeAI } = await import('@google/generative-ai');
           const genAI = new GoogleGenerativeAI(apiKey);
-          const { model, contents, config } = await readBody(req);
+          const { model, contents, config } = await readBody(req) as {
+            model: string; contents: unknown; config?: Record<string, unknown>;
+          };
 
           const modelInstance = genAI.getGenerativeModel({ model }, { apiVersion: 'v1beta' });
           const result = await modelInstance.generateContent({
             contents,
             ...config,
-          });
+          } as Parameters<typeof modelInstance.generateContent>[0]);
           const response = await result.response;
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            text: response.text() || '', 
-            candidates: response.candidates 
+          res.end(JSON.stringify({
+            text: response.text() || '',
+            candidates: response.candidates
           }));
-        } catch (error: any) {
+        } catch (error: unknown) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: error.message }));
+          res.end(JSON.stringify({ error: errMessage(error) }));
         }
       });
 
-      server.middlewares.use('/api/imagen', async (req: any, res: any, next: any) => {
+      server.middlewares.use('/api/imagen', async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
@@ -123,7 +135,7 @@ function geminiDevProxy(apiKey: string): Plugin {
         };
 
         try {
-          const { contents } = await readBody(req);
+          const { contents } = await readBody(req) as { contents: unknown };
           const prompt = typeof contents === 'string' ? contents : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text || '';
 
           if (!prompt) { sendJson(400, { error: 'Missing prompt' }); return; }
@@ -149,7 +161,7 @@ function geminiDevProxy(apiKey: string): Plugin {
               const errBody = await predictRes.text().catch(() => '');
               console.error(`[dev-imagen] Strategy 1 failed [${predictRes.status}]:`, errBody);
             }
-          } catch (e: any) { console.error('[dev-imagen] Strategy 1 error:', e.message); }
+          } catch (e: unknown) { console.error('[dev-imagen] Strategy 1 error:', errMessage(e)); }
 
           // Strategy 2: Gemini Flash image generation (tries two model aliases)
           if (!imageResult) {
@@ -163,14 +175,15 @@ function geminiDevProxy(apiKey: string): Plugin {
                   contents: [{ role: 'user', parts: [{ text: prompt }] }],
                   generationConfig: { responseModalities: ['IMAGE'] },
                 } as ImageGenRequest);
-                const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
-                const imgPart = parts.find((p: any) => p.inlineData?.data);
+                type ImagePart = { inlineData?: { mimeType?: string; data: string } };
+                const parts: ImagePart[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
+                const imgPart = parts.find((p) => p.inlineData?.data);
                 if (imgPart?.inlineData) {
                   imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
                   console.log(`[dev-imagen] Strategy 2 succeeded with: ${modelName}`);
                   break;
                 }
-              } catch (e: any) { console.error(`[dev-imagen] Strategy 2 (${modelName}) error:`, e.message); }
+              } catch (e: unknown) { console.error(`[dev-imagen] Strategy 2 (${modelName}) error:`, errMessage(e)); }
             }
           }
 
@@ -179,8 +192,8 @@ function geminiDevProxy(apiKey: string): Plugin {
           } else {
             sendJson(500, { error: 'AI did not return image data from any strategy (see dev server logs)' });
           }
-        } catch (error: any) {
-          sendJson(500, { error: error.message });
+        } catch (error: unknown) {
+          sendJson(500, { error: errMessage(error) });
         }
       });
     }
