@@ -135,12 +135,13 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
   difficulty?: 1 | 2 | 3;
   onDifficultyChange?: (d: 1 | 2 | 3) => void;
 }) {
-  const { score, exercises, hintsUsed, saving, saveError, saveSession, resetSession } = session;
+  const { score, exercises, hintsUsed, saving, saveError, saveSession, resetSession, correctHistory } = session;
   const [name, setName] = useState(getStoredName);
   const [saved, setSaved] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const pct = exercises.length > 0 ? Math.round((score / exercises.length) * 100) : 0;
   const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '📚';
+  const weakQuestions = exercises.filter((_, i) => correctHistory[i] === false);
 
   const handleSave = async () => {
     setRetrying(false);
@@ -160,6 +161,15 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
           {pct >= 90 && <span className="ml-2 text-emerald-600 font-bold">Одличен резултат!</span>}
         </p>
       </div>
+
+      {weakQuestions.length > 0 && (
+        <div className="w-full max-w-sm bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs">
+          <p className="font-bold text-amber-800 mb-1">Области за понатамошна работа:</p>
+          {weakQuestions.slice(0, 3).map((q, i) => (
+            <p key={i} className="text-amber-700 truncate">· {q.question}</p>
+          ))}
+        </div>
+      )}
 
       {!saved ? (
         <div className="w-full max-w-sm space-y-2">
@@ -274,6 +284,9 @@ export function LabExercisePanel({
 
   if (!currentEx) return null;
 
+  const canUpgrade = difficultyStreak.correct >= 2 && difficulty < 3;
+  const canDowngrade = difficultyStreak.wrong >= 2 && difficulty > 1;
+
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
@@ -350,6 +363,24 @@ export function LabExercisePanel({
           </div>
         )}
       </div>
+
+      {/* Adaptive difficulty suggestion */}
+      {submitted && onDifficultyChange && (
+        <>
+          {canUpgrade && correct && (
+            <button type="button" onClick={() => onDifficultyChange((difficulty + 1) as 1 | 2 | 3)}
+              className="w-full py-2 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-300">
+              ⬆ 2 точни по ред — оди на ниво {difficulty + 1}?
+            </button>
+          )}
+          {canDowngrade && !correct && (
+            <button type="button" onClick={() => onDifficultyChange((difficulty - 1) as 1 | 2 | 3)}
+              className="w-full py-2 rounded-xl bg-amber-100 text-amber-700 text-xs font-bold border border-amber-300">
+              ⬇ Пробај на ниво {difficulty - 1} прво
+            </button>
+          )}
+        </>
+      )}
 
       {/* Action row */}
       <div className="flex gap-3 justify-between">

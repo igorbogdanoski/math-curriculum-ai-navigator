@@ -19,6 +19,7 @@ interface UseLabSessionReturn {
   saving: boolean;
   saveError: boolean;
   difficultyStreak: { correct: number; wrong: number };
+  correctHistory: boolean[];
   // Actions
   setUserAnswer: (v: string) => void;
   loadExercises: (exs: LabExercise[]) => void;
@@ -42,6 +43,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
   const [saving,      setSaving]      = useState(false);
   const [saveError,   setSaveError]   = useState(false);
   const [difficultyStreak, setDifficultyStreak] = useState({ correct: 0, wrong: 0 });
+  const [correctHistory, setCorrectHistory] = useState<boolean[]>([]);
 
   const startedAt = useRef<number>(Date.now());
 
@@ -58,6 +60,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
     setUserAnswer('');
     setShowHint(false);
     setDifficultyStreak({ correct: 0, wrong: 0 });
+    setCorrectHistory([]);
     startedAt.current = Date.now();
   }, []);
 
@@ -67,6 +70,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
     setCorrect(isCorrect);
     setSubmitted(true);
     setShowHint(false);
+    setCorrectHistory(h => [...h, isCorrect]);
     if (isCorrect) {
       setScore(s => s + 1);
       setDifficultyStreak(d => ({ correct: d.correct + 1, wrong: 0 }));
@@ -130,7 +134,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
   return {
     exercises, currentIdx, currentEx,
     userAnswer, submitted, correct, showHint, hintsUsed, score, sessionDone, saving, saveError,
-    difficultyStreak,
+    difficultyStreak, correctHistory,
     setUserAnswer, loadExercises, submitAnswer, useHint, nextExercise, resetSession, saveSession,
   };
 }
