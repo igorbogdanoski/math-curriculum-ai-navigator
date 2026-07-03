@@ -1,12 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@google/generative-ai";
-import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
+import { recordLatency } from './_lib/sloTracker.js';
+import { recordTokens } from './_lib/costTracker.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const handlerStart = Date.now();
   setCorsHeaders(res);
 
   const validated = await authenticateAndValidate(req, res);
-  if (!validated) return; // Response already sent
+  if (!validated) { recordLatency('gemini-stream-proxy', Date.now() - handlerStart); return; } // Response already sent
+
+  if (!(await requireSufficientCredits(req, res))) { recordLatency('gemini-stream-proxy', Date.now() - handlerStart); return; } // Response already sent
 
   const apiKeys = [
     process.env.GEMINI_API_KEY,
@@ -18,11 +23,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ].filter((k): k is string => !!k && k.trim().length > 10);
 
   if (apiKeys.length === 0) {
-    const envKeys = Object.keys(process.env).filter(k => k.includes('GEMINI'));
-    return res.status(500).json({
-      error: 'GEMINI_API_KEY not configured on server.',
-      diagnostics: { foundKeys: envKeys, nodeEnv: process.env.NODE_ENV }
-    });
+    recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
+    return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
   }
 
   const { model, contents, config } = validated;
@@ -104,6 +106,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
+      try {
+        const finalResponse = await result.response;
+        const usage = (finalResponse as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }).usageMetadata;
+        if (usage) {
+          recordTokens({
+            userId: getRequestPrincipal(req),
+            model: modelName,
+            tokensIn: usage.promptTokenCount ?? 0,
+            tokensOut: usage.candidatesTokenCount ?? 0,
+          });
+        }
+      } catch {
+        // best-effort — never break the response path
+      }
+      recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
+
       res.write('data: [DONE]\n\n');
       res.end();
       return;
@@ -124,6 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
   console.error('[/api/gemini-stream] Error:', lastError);
   const message = lastError?.message ?? 'Internal server error';
   if (!res.headersSent) {

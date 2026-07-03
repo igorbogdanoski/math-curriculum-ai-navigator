@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
+import { recordLatency } from './_lib/sloTracker.js';
+import { recordTokens } from './_lib/costTracker.js';
 
 type GeminiPart = { text?: string };
 type GeminiContent = { parts?: GeminiPart[] };
@@ -29,10 +31,13 @@ function extractEmbeddingText(contents: unknown): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const handlerStart = Date.now();
   setCorsHeaders(res);
 
   const validated = await authenticateAndValidate(req, res);
-  if (!validated) return;
+  if (!validated) { recordLatency('embed-proxy', Date.now() - handlerStart); return; }
+
+  if (!(await requireSufficientCredits(req, res))) { recordLatency('embed-proxy', Date.now() - handlerStart); return; }
 
   const apiKeys = [
     process.env.GEMINI_API_KEY,
@@ -69,6 +74,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await modelInstance.embedContent(embedRequest as unknown as Parameters<typeof modelInstance.embedContent>[0]);
       const embedding = result.embedding;
 
+      // embedContent responses don't include usageMetadata — approximate cost via input
+      // character count (~4 chars/token) so this call is at least visible to the cost guard.
+      try {
+        recordTokens({
+          userId: getRequestPrincipal(req),
+          model: model || 'gemini-embedding-2',
+          tokensIn: Math.ceil(text.length / 4),
+          tokensOut: 0,
+        });
+      } catch {
+        // best-effort — never break the response path
+      }
+      recordLatency('embed-proxy', Date.now() - handlerStart);
+
       if (responseShape === 'embeddings') {
         return res.status(200).json({ embeddings: embedding });
       }
@@ -79,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const msg = lastError.message;
       const isQuota = msg.includes('429');
       const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired');
-      
+
       if ((isQuota || isInvalidKey) && i < apiKeys.length - 1) {
         continue;
       }
@@ -87,6 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  recordLatency('embed-proxy', Date.now() - handlerStart);
   console.error('[/api/embed] Error:', lastError);
   res.status(500).json({ error: lastError?.message || 'Internal server error' });
 }

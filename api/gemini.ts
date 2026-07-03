@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
-import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
 
@@ -23,6 +23,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  if (!(await requireSufficientCredits(req, res))) {
+    recordLatency('gemini-proxy', Date.now() - handlerStart);
+    return;
+  }
+
   // Collect all configured API keys (supports up to 6 keys for rotation)
   const apiKeys = [
     process.env.GEMINI_API_KEY,
@@ -34,11 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ].filter((k): k is string => !!k && k.trim().length > 10);
 
   if (apiKeys.length === 0) {
-    const envKeys = Object.keys(process.env).filter(k => k.includes('GEMINI'));
-    return res.status(500).json({
-      error: 'GEMINI_API_KEY not configured on server.',
-      diagnostics: { foundKeys: envKeys, nodeEnv: process.env.NODE_ENV }
-    });
+    console.error('[/api/gemini] No valid GEMINI API keys configured on server.');
+    return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
   }
 
   const { model, contents, config, tools } = validated;

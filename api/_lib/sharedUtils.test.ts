@@ -8,7 +8,7 @@
  * - Methods and headers allowlist are set.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setCorsHeaders } from './sharedUtils';
+import { setCorsHeaders, evaluateCreditGate } from './sharedUtils';
 
 type HeaderMap = Record<string, string>;
 
@@ -80,5 +80,61 @@ describe('setCorsHeaders — origin enforcement', () => {
     // Should be the fixed allowed origin regardless of where the request came from.
     expect(res.headers['Access-Control-Allow-Origin']).toBe('https://ai.mismath.net');
     expect(res.headers['Access-Control-Allow-Origin']).not.toBe('*');
+  });
+});
+
+describe('evaluateCreditGate — credit paywall decision logic', () => {
+  it('a fresh free-tier user (50 credits) is not bypassed and has a positive balance', () => {
+    const { bypassed, balance } = evaluateCreditGate({ role: 'teacher', tier: 'Free', aiCreditsBalance: 50 });
+    expect(bypassed).toBe(false);
+    expect(balance).toBe(50);
+  });
+
+  it('a user with 0 balance and no special tier is not bypassed', () => {
+    const { bypassed, balance } = evaluateCreditGate({ role: 'teacher', tier: 'Free', aiCreditsBalance: 0 });
+    expect(bypassed).toBe(false);
+    expect(balance).toBe(0);
+  });
+
+  it('missing aiCreditsBalance defaults to 0, not undefined/NaN', () => {
+    const { balance } = evaluateCreditGate({ role: 'teacher' });
+    expect(balance).toBe(0);
+  });
+
+  it('admin role bypasses regardless of balance', () => {
+    const { bypassed } = evaluateCreditGate({ role: 'admin', aiCreditsBalance: 0 });
+    expect(bypassed).toBe(true);
+  });
+
+  it('hasUnlimitedCredits bypasses regardless of balance', () => {
+    const { bypassed } = evaluateCreditGate({ role: 'teacher', hasUnlimitedCredits: true, aiCreditsBalance: 0 });
+    expect(bypassed).toBe(true);
+  });
+
+  it('School and Unlimited tiers bypass regardless of balance', () => {
+    expect(evaluateCreditGate({ tier: 'School', aiCreditsBalance: 0 }).bypassed).toBe(true);
+    expect(evaluateCreditGate({ tier: 'Unlimited', aiCreditsBalance: 0 }).bypassed).toBe(true);
+  });
+
+  it('active Pro tier (no expiry) bypasses regardless of balance', () => {
+    const { bypassed } = evaluateCreditGate({ tier: 'Pro', aiCreditsBalance: 0 });
+    expect(bypassed).toBe(true);
+  });
+
+  it('active Pro tier (future expiry) bypasses', () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    const { bypassed } = evaluateCreditGate({ tier: 'Pro', proExpiresAt: future, aiCreditsBalance: 0 });
+    expect(bypassed).toBe(true);
+  });
+
+  it('EXPIRED Pro tier does NOT bypass — must fall back to the real balance check', () => {
+    const past = new Date(Date.now() - 86_400_000).toISOString();
+    const { bypassed } = evaluateCreditGate({ tier: 'Pro', proExpiresAt: past, aiCreditsBalance: 0 });
+    expect(bypassed).toBe(false);
+  });
+
+  it('isPremium=true bypasses like an active Pro tier', () => {
+    const { bypassed } = evaluateCreditGate({ isPremium: true, aiCreditsBalance: 0 });
+    expect(bypassed).toBe(true);
   });
 });

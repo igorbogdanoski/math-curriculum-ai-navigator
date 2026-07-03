@@ -1,9 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
+import { recordLatency } from './_lib/sloTracker.js';
+import { recordTokens } from './_lib/costTracker.js';
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 
+interface ImageGenResult {
+  mimeType: string;
+  data: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+}
+
 // Vercel Hobby plan: 10s max — use Gemini Flash image generation only (Imagen 3/4 require Vertex AI and are too slow)
-async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
+async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<ImageGenResult | null> {
   const candidates = [
     'gemini-3.1-flash-image',              // recommended migration target (replaces Imagen 4)
     'gemini-2.5-flash-image',              // Tier 1 fallback
@@ -26,8 +36,15 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mime
 
       const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
       const imgPart = parts.find((p: any) => p.inlineData?.data);
+      const usage = (result?.response as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } } | undefined)?.usageMetadata;
       if (imgPart?.inlineData) {
-        return { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+        return {
+          mimeType: imgPart.inlineData.mimeType || 'image/png',
+          data: imgPart.inlineData.data,
+          model: modelName,
+          tokensIn: usage?.promptTokenCount ?? 0,
+          tokensOut: usage?.candidatesTokenCount ?? 0,
+        };
       }
       console.warn(`[imagen] ${modelName}: no image parts in response`);
     } catch (err: any) {
@@ -43,10 +60,13 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mime
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const handlerStart = Date.now();
   setCorsHeaders(res);
 
   const validated = await authenticateAndValidate(req, res);
-  if (!validated) return;
+  if (!validated) { recordLatency('imagen-proxy', Date.now() - handlerStart); return; }
+
+  if (!(await requireSufficientCredits(req, res))) { recordLatency('imagen-proxy', Date.now() - handlerStart); return; }
 
   const apiKeys = [
     process.env.GEMINI_API_KEY,
@@ -78,7 +98,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const s2result = await tryGeminiImageGen(apiKey, prompt);
       if (s2result) {
-        return res.status(200).json({ inlineData: s2result });
+        const { mimeType, data, model, tokensIn, tokensOut } = s2result;
+        try {
+          recordTokens({ userId: getRequestPrincipal(req), model, tokensIn, tokensOut });
+        } catch {
+          // best-effort — never break the response path
+        }
+        recordLatency('imagen-proxy', Date.now() - handlerStart);
+        return res.status(200).json({ inlineData: { mimeType, data } });
       }
 
       lastError = new Error('AI did not return image data from any strategy (check Vercel logs for details)');
@@ -98,6 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  recordLatency('imagen-proxy', Date.now() - handlerStart);
   console.error('[/api/imagen] Error:', lastError);
   res.status(500).json({ error: lastError?.message || 'Internal server error' });
 }

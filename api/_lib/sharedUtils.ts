@@ -338,3 +338,69 @@ export function getRequestPrincipal(req: VercelRequest): string {
   const r = req as VercelRequest & { __authUid?: string; __rateLimitId?: string };
   return r.__authUid || r.__rateLimitId || 'anonymous';
 }
+
+// ---------------------------------------------------------------------------
+// Credit paywall — read-only balance gate
+//
+// Previously these paid endpoints (gemini/gemini-stream/imagen/embed) had NO
+// server-side credit check at all: the client calls `deductCredits` (a Firebase
+// Callable) only AFTER a successful generation, so any authenticated caller —
+// including a free account with 0 credits — could call this endpoint directly
+// and get a full paid response for free, indefinitely.
+//
+// This does not replicate the client's nuanced per-material-type cost table
+// (services/gemini/core.constants.ts AI_COSTS) — that accounting stays where
+// it is, in `deductCredits`. This is a floor: once a user's balance is at or
+// below zero (and they aren't on an unlimited/admin/pro/school tier), further
+// calls are rejected here rather than silently allowed through.
+// ---------------------------------------------------------------------------
+/** Pure decision logic — mirrors functions/src/index.ts's deductCredits bypass rules exactly,
+ *  factored out so it's unit-testable without mocking the Firebase Admin SDK. */
+export function evaluateCreditGate(data: Record<string, unknown>): { bypassed: boolean; balance: number } {
+  const balance = typeof data.aiCreditsBalance === 'number' ? data.aiCreditsBalance : 0;
+  const tier = data.tier as string | undefined;
+  const proExpiresAt = data.proExpiresAt as string | undefined;
+  const proExpired = proExpiresAt ? new Date(proExpiresAt) < new Date() : false;
+  const isProActive = (tier === 'Pro' || data.isPremium === true) && !proExpired;
+  const bypassed = data.role === 'admin' || data.hasUnlimitedCredits === true || isProActive || tier === 'School' || tier === 'Unlimited';
+  return { bypassed, balance };
+}
+
+export async function requireSufficientCredits(req: VercelRequest, res: VercelResponse): Promise<boolean> {
+  const uid = getRequestPrincipal(req);
+  if (!uid || uid === 'anonymous') {
+    // authenticateAndValidate should already have rejected unauthenticated callers
+    // in production; fail closed if this is ever reached without a real uid.
+    res.status(401).json({ error: 'Authentication required' });
+    return false;
+  }
+
+  if (!getFirebaseAdmin()) {
+    // No service account configured (local dev) — don't block development.
+    if (process.env.NODE_ENV === 'production') {
+      res.status(500).json({ error: 'Server configuration error' });
+      return false;
+    }
+    return true;
+  }
+
+  try {
+    const { getFirestore } = await import('firebase-admin/firestore');
+    const snap = await getFirestore().collection('users').doc(uid).get();
+    if (!snap.exists) {
+      res.status(404).json({ error: 'User profile not found' });
+      return false;
+    }
+    const { bypassed, balance } = evaluateCreditGate(snap.data() ?? {});
+
+    if (!bypassed && balance <= 0) {
+      res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[credits] balance check failed:', err);
+    res.status(500).json({ error: 'Credit check failed' });
+    return false;
+  }
+}

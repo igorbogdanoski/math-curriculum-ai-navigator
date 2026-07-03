@@ -45,6 +45,24 @@ function generateJoinCode(): string {
     .toUpperCase();
 }
 
+// Same in-memory sliding-window pattern used by webpage-extract.ts / vimeo-captions.ts /
+// youtube-captions.ts — prevents mass school creation (write-cost + data pollution).
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+const requestBuckets = new Map<string, number[]>();
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const bucket = (requestBuckets.get(identifier) ?? []).filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (bucket.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestBuckets.set(identifier, bucket);
+    return true;
+  }
+  bucket.push(now);
+  requestBuckets.set(identifier, bucket);
+  return false;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
 
@@ -67,6 +85,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     uid = decoded.uid;
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  if (isRateLimited(uid)) {
+    return res.status(429).json({ error: 'Премногу обиди. Обидете се повторно за една минута.' });
+  }
+
+  // ── Authorization: only a brand-new account (no existing role/school) may
+  // self-provision a school + school_admin role. Without this, ANY authenticated
+  // user — including an existing student/teacher at a real school — could call
+  // this endpoint to grant themselves school_admin, which has platform-wide
+  // write access to shared curriculum collections (matura_exams/questions).
+  const existingUserSnap = await admin.db.collection('users').doc(uid).get();
+  const existingUserData = existingUserSnap.data();
+  if (existingUserData?.role && existingUserData.role !== 'teacher') {
+    return res.status(403).json({ error: 'Веќе имате улога во системот — контактирајте поддршка за промена на училиште.' });
+  }
+  if (existingUserData?.schoolId) {
+    return res.status(403).json({ error: 'Веќе сте поврзани со училиште.' });
   }
 
   // ── Validate body ─────────────────────────────────────────────────────────
