@@ -232,17 +232,23 @@ const CS_STROKE: Record<CSolid, string> = {
   sphere: '#6366f1', cube: '#10b981', pyramid: '#f59e0b', cone: '#f43f5e', cylinder: '#14b8a6',
 };
 
+// Cone half-angle α — derived from the unit cone drawn in the side-view (base r=1, height=2)
+const CONE_K = 0.5; // = tan(α)
+const CONE_ALPHA = Math.atan(CONE_K);
+const CONE_ALPHA_DEG = CONE_ALPHA * 180 / Math.PI;
+
 export function CrossSections() {
   const [solid, setSolid] = useState<CSolid>('sphere');
   const [h, setH] = useState(0);
+  const [theta, setTheta] = useState(0); // tilt angle of the cutting plane (cone only)
 
   const SV = 180, sv_cx = 90, sv_cy = 90, sv_r = 70;
   const planeY = sv_cy - h * sv_r;
   const CS_W = 200, cs_cx = 100, cs_cy = 100, cs_sc = 55;
 
   let csName = '', csArea = 0, csPerim = 0;
-  let csType: 'circle' | 'square' | 'point' = 'circle';
-  let csR = 0, csSide = 0;
+  let csType: 'circle' | 'square' | 'point' | 'ellipse' | 'parabola' | 'hyperbola' = 'circle';
+  let csR = 0, csSide = 0, csA = 0, csB = 0, csP = 0;
 
   switch (solid) {
     case 'sphere':
@@ -260,16 +266,80 @@ export function CrossSections() {
       csName = csSide < 0.02 ? 'Точка (теме)' : `Квадрат (стр. = ${csSide.toFixed(3)})`;
       csArea = csSide * csSide; csPerim = 4 * csSide; csType = csSide < 0.02 ? 'point' : 'square';
       break;
-    case 'cone':
-      csR = Math.max(0, (1 - h) / 2);
-      csName = csR < 0.02 ? 'Точка (теме)' : `Круг (r = ${csR.toFixed(3)})`;
-      csArea = Math.PI * csR * csR; csPerim = 2 * Math.PI * csR; csType = csR < 0.02 ? 'point' : 'circle';
+    case 'cone': {
+      // Real cone-plane intersection: apex at origin, cone x²+y²=k²z², cutting plane
+      // through z0 (along axis) tilted by θ. Eccentricity e = sinθ/sinα decides the shape.
+      const thetaRad = theta * Math.PI / 180;
+      const z0 = 1 - h; // depth from apex along axis (0=apex, 2=base)
+      const cosT = Math.cos(thetaRad), sinT = Math.sin(thetaRad);
+      const k = CONE_K;
+      const Bc = cosT * cosT - k * k * sinT * sinT;
+      const Cc = -2 * k * k * z0 * sinT;
+      const Dc = -k * k * z0 * z0;
+
+      if (Math.abs(Bc) < 1e-4) {
+        const p = Math.abs(Cc) > 1e-9 ? Math.abs(Cc) / 4 : 0;
+        csP = p;
+        csName = p < 0.01 ? 'Точка (врв)' : `Парабола (p = ${p.toFixed(3)})`;
+        csType = p < 0.01 ? 'point' : 'parabola';
+      } else {
+        const E = (Cc * Cc) / (4 * Bc) - Dc;
+        if (Bc > 0) {
+          if (E > 1e-4) {
+            csA = Math.sqrt(E); csB = Math.sqrt(E / Bc);
+            csName = (csA < 0.02 || csB < 0.02) ? 'Точка (врв)' : `Елипса (a=${csA.toFixed(3)}, b=${csB.toFixed(3)})`;
+            csArea = Math.PI * csA * csB;
+            csPerim = Math.PI * (3 * (csA + csB) - Math.sqrt((3 * csA + csB) * (csA + 3 * csB)));
+            csType = (csA < 0.02 || csB < 0.02) ? 'point' : 'ellipse';
+          } else {
+            csName = 'Точка (врв)'; csType = 'point';
+          }
+        } else {
+          const Bh = -Bc, absE = Math.abs(E);
+          if (absE > 1e-4) {
+            csA = E > 0 ? Math.sqrt(absE) : Math.sqrt(absE / Bh);
+            csB = E > 0 ? Math.sqrt(absE / Bh) : Math.sqrt(absE);
+            csName = `Хипербола (a=${csA.toFixed(3)}, b=${csB.toFixed(3)})`;
+            csType = 'hyperbola';
+          } else {
+            csName = 'Две прави (низ врвот)'; csType = 'point';
+          }
+        }
+      }
       break;
+    }
     case 'cylinder':
       csR = 1;
       csName = 'Круг (r = 1)';
       csArea = Math.PI; csPerim = 2 * Math.PI; csType = 'circle';
       break;
+  }
+
+  // Schematic path data for cone-only conics that aren't a plain circle
+  const conicScale = Math.min(cs_sc, 75 / Math.max(csA, csB, 0.3));
+  let parabolaPath = '';
+  if (csType === 'parabola') {
+    const U = 1.3, p = Math.max(csP, 0.05);
+    const vAtU = (U * U) / (4 * p);
+    const pScale = Math.min(cs_sc, 70 / Math.max(U, vAtU, 0.5));
+    const pts: string[] = [];
+    for (let u = -U; u <= U + 1e-9; u += 0.05) {
+      const v = (u * u) / (4 * p);
+      pts.push(`${(cs_cx + u * pScale).toFixed(1)},${(cs_cy - 30 + v * pScale).toFixed(1)}`);
+    }
+    parabolaPath = `M${pts.join(' L')}`;
+  }
+  let hypPath1 = '', hypPath2 = '';
+  if (csType === 'hyperbola') {
+    const V = 1.2;
+    const pts1: string[] = [], pts2: string[] = [];
+    for (let v = -V; v <= V + 1e-9; v += 0.05) {
+      const u = csA * Math.sqrt(1 + (v / Math.max(csB, 0.001)) ** 2);
+      pts1.push(`${(cs_cx + u * conicScale).toFixed(1)},${(cs_cy - v * conicScale).toFixed(1)}`);
+      pts2.push(`${(cs_cx - u * conicScale).toFixed(1)},${(cs_cy - v * conicScale).toFixed(1)}`);
+    }
+    hypPath1 = `M${pts1.join(' L')}`;
+    hypPath2 = `M${pts2.join(' L')}`;
   }
 
   const fill = CS_FILL[solid], stroke = CS_STROKE[solid];
@@ -300,6 +370,21 @@ export function CrossSections() {
         <span className="text-xs font-bold text-sky-700 w-14 text-right">{h.toFixed(2)}</span>
       </div>
 
+      {solid === 'cone' && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-semibold text-gray-500 w-28">Агол на рамнина θ</label>
+            <input type="range" min={0} max={75} step={1} value={theta}
+              onChange={e => setTheta(parseFloat(e.target.value))}
+              className="flex-1 accent-violet-600" aria-label="агол на пресечната рамнина" />
+            <span className="text-xs font-bold text-violet-700 w-14 text-right">{theta.toFixed(0)}°</span>
+          </div>
+          <p className="text-[10px] text-gray-400 pl-[7.5rem]">
+            Полу-агол на конус α ≈ {CONE_ALPHA_DEG.toFixed(1)}° · θ&lt;α → елипса · θ=α → парабола · θ&gt;α → хипербола
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <p className="text-xs font-bold text-gray-500 mb-1 text-center">Странски изглед + пресечна рамнина</p>
@@ -312,7 +397,15 @@ export function CrossSections() {
               {(solid === 'pyramid' || solid === 'cone') && (
                 <polygon points={`${sv_cx},${sv_cy-sv_r} ${sv_cx-sv_r},${sv_cy+sv_r} ${sv_cx+sv_r},${sv_cy+sv_r}`} fill={fill} stroke={stroke} strokeWidth={2}/>
               )}
-              <line x1={sv_cx-sv_r-10} y1={planeY} x2={sv_cx+sv_r+10} y2={planeY} stroke="#0ea5e9" strokeWidth={2.5}/>
+              {solid === 'cone' && theta > 0 ? (() => {
+                const thetaRad = theta * Math.PI / 180, L = sv_r + 10;
+                const dx = L * Math.cos(thetaRad), dy = L * Math.sin(thetaRad);
+                return (
+                  <line x1={sv_cx-dx} y1={planeY-dy} x2={sv_cx+dx} y2={planeY+dy} stroke="#7c3aed" strokeWidth={2.5}/>
+                );
+              })() : (
+                <line x1={sv_cx-sv_r-10} y1={planeY} x2={sv_cx+sv_r+10} y2={planeY} stroke="#0ea5e9" strokeWidth={2.5}/>
+              )}
               <circle cx={sv_cx+sv_r+12} cy={planeY} r={4} fill="#0ea5e9"/>
               <text x={sv_cx-sv_r-6} y={sv_cy-sv_r+3} fontSize={8} fill="#9ca3af" textAnchor="end">+1</text>
               <text x={sv_cx-sv_r-6} y={sv_cy+sv_r+3} fontSize={8} fill="#9ca3af" textAnchor="end">−1</text>
@@ -322,7 +415,7 @@ export function CrossSections() {
         </div>
 
         <div>
-          <p className="text-xs font-bold text-gray-500 mb-1 text-center">Добиен пресек (поглед одзгора)</p>
+          <p className="text-xs font-bold text-gray-500 mb-1 text-center">Добиен пресек (вистински облик)</p>
           <div className="bg-white rounded-2xl border-2 border-sky-200 overflow-hidden">
             <svg viewBox={`0 0 ${CS_W} ${CS_W}`} className="w-full" style={{ maxHeight: 190 }}>
               <line x1={cs_cx} y1={10} x2={cs_cx} y2={CS_W-10} stroke="#f1f5f9" strokeWidth={1}/>
@@ -336,6 +429,18 @@ export function CrossSections() {
                   width={csSide*cs_sc} height={csSide*cs_sc}
                   fill={fill} stroke={stroke} strokeWidth={2.5}/>
               )}
+              {csType === 'ellipse' && (
+                <ellipse cx={cs_cx} cy={cs_cy} rx={csA * conicScale} ry={csB * conicScale} fill={fill} stroke={stroke} strokeWidth={2.5}/>
+              )}
+              {csType === 'parabola' && (
+                <path d={parabolaPath} fill="none" stroke={stroke} strokeWidth={2.5}/>
+              )}
+              {csType === 'hyperbola' && (
+                <>
+                  <path d={hypPath1} fill="none" stroke={stroke} strokeWidth={2.5}/>
+                  <path d={hypPath2} fill="none" stroke={stroke} strokeWidth={2.5}/>
+                </>
+              )}
               {csType === 'point' && <circle cx={cs_cx} cy={cs_cy} r={5} fill={stroke}/>}
               <text x={cs_cx} y={CS_W-8} textAnchor="middle" fontSize={10} fill="#64748b" fontWeight="bold">{csName}</text>
             </svg>
@@ -343,16 +448,34 @@ export function CrossSections() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
-          <p className="text-[10px] text-gray-400 font-semibold">Плоштина на пресек</p>
-          <p className="text-lg font-extrabold text-sky-700">{csArea.toFixed(4)} ед²</p>
+      {(csType === 'circle' || csType === 'square' || csType === 'ellipse') ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
+            <p className="text-[10px] text-gray-400 font-semibold">Плоштина на пресек</p>
+            <p className="text-lg font-extrabold text-sky-700">{csArea.toFixed(4)} ед²</p>
+          </div>
+          <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
+            <p className="text-[10px] text-gray-400 font-semibold">{csType === 'square' ? 'Периметар' : 'Обиколка'}</p>
+            <p className="text-lg font-extrabold text-sky-700">{csPerim.toFixed(4)} ед</p>
+          </div>
         </div>
+      ) : csType === 'parabola' ? (
         <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
-          <p className="text-[10px] text-gray-400 font-semibold">{csType === 'circle' ? 'Обиколка' : 'Периметар'}</p>
-          <p className="text-lg font-extrabold text-sky-700">{csPerim.toFixed(4)} ед</p>
+          <p className="text-[10px] text-gray-400 font-semibold">Параметар на параболата</p>
+          <p className="text-lg font-extrabold text-sky-700">p = {csP.toFixed(4)} ед</p>
         </div>
-      </div>
+      ) : csType === 'hyperbola' ? (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
+            <p className="text-[10px] text-gray-400 font-semibold">Полу-оска a</p>
+            <p className="text-lg font-extrabold text-sky-700">{csA.toFixed(4)} ед</p>
+          </div>
+          <div className="rounded-xl p-3 text-center bg-sky-50 border border-sky-200">
+            <p className="text-[10px] text-gray-400 font-semibold">Полу-оска b</p>
+            <p className="text-lg font-extrabold text-sky-700">{csB.toFixed(4)} ед</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 text-xs text-sky-900 space-y-1">
         <p className="font-bold">Конични пресеци (Conic Sections):</p>
@@ -360,6 +483,15 @@ export function CrossSections() {
         <p>Паралелна на страна → <strong>Парабола</strong> · Вертикална → <strong>Хипербола</strong></p>
         <p>Основата на планетарните орбити (Кеплер, 1609) и аналитичката геометрија!</p>
       </div>
+
+      {solid === 'cone' && (
+        <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 text-xs text-violet-900">
+          <strong>Конусни пресеци → ConicSectionsLab!</strong><br/>
+          Пресекот на конус со рамнина дава: Круг · Елипса · Парабола · Хипербола
+          — истите криви кои ги проучуваш во{' '}
+          <a href="#/data-viz?tab=conic" className="underline font-bold ml-1">Конусни Пресеци →</a>
+        </div>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-xl p-3">
         <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Наставна програма</p>
