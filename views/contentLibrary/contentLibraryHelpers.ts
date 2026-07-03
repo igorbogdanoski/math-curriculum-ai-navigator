@@ -4,21 +4,38 @@ export type ScoredMaterial = CachedMaterial & { score: number };
 
 export type ExtractionSource = 'video' | 'image' | 'web';
 
+/**
+ * `CachedMaterial.content` is genuinely polymorphic — its shape differs per material
+ * type (quiz/assessment/rubric/ideas/...), and every helper below already
+ * defensively type-checks each field before use (typeof/Array.isArray). This interface
+ * just names that already-defensive shape instead of disabling type checking outright.
+ */
+interface MaterialContentShape {
+    dokLevel?: unknown;
+    questions?: unknown;
+    difficulty_level?: unknown;
+    difficulty?: unknown;
+    sourceMeta?: { sourceType?: unknown; extractionQuality?: { score?: unknown; label?: unknown } };
+    extractionBundle?: { formulas?: unknown; theories?: unknown; tasks?: unknown; rawSnippet?: unknown };
+}
+
 export const getAvgRating = (m: CachedMaterial): number | null => {
     const vals = m.ratingsByUid ? Object.values(m.ratingsByUid) : [];
     if (vals.length === 0) return null;
     return vals.reduce((a, b) => a + b, 0) / vals.length;
 };
 
-export const toDateValue = (value: any): number => {
+export const toDateValue = (value: unknown): number => {
     if (!value) return 0;
-    if (typeof value?.toDate === 'function') return value.toDate().getTime();
-    const d = new Date(value);
+    if (typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+        return (value.toDate() as Date).getTime();
+    }
+    const d = new Date(value as string | number | Date);
     return Number.isNaN(d.getTime()) ? 0 : d.getTime();
 };
 
 export const extractMaterialDokLevels = (m: CachedMaterial): number[] => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const values = new Set<number>();
     if (typeof c?.dokLevel === 'number') values.add(c.dokLevel);
     if (Array.isArray(c?.questions)) {
@@ -41,7 +58,7 @@ export const normalizeDifficulty = (raw: unknown): string | null => {
 };
 
 export const extractMaterialDifficulties = (m: CachedMaterial): string[] => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const values = new Set<string>();
     const top = normalizeDifficulty(c?.difficulty_level ?? c?.difficulty);
     if (top) values.add(top);
@@ -55,14 +72,14 @@ export const extractMaterialDifficulties = (m: CachedMaterial): string[] => {
 };
 
 export const getExtractionSource = (m: CachedMaterial): ExtractionSource | null => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const sourceType = c?.sourceMeta?.sourceType;
     if (sourceType === 'video' || sourceType === 'image' || sourceType === 'web') return sourceType;
     return null;
 };
 
 export const getExtractionBundleStats = (m: CachedMaterial): { formulas: number; theories: number; tasks: number } | null => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const bundle = c?.extractionBundle;
     if (!bundle) return null;
     return {
@@ -73,7 +90,7 @@ export const getExtractionBundleStats = (m: CachedMaterial): { formulas: number;
 };
 
 export const getExtractionQuality = (m: CachedMaterial): { score: number; label: string } | null => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const quality = c?.sourceMeta?.extractionQuality;
     if (!quality || typeof quality.score !== 'number') return null;
     return {
@@ -83,7 +100,7 @@ export const getExtractionQuality = (m: CachedMaterial): { score: number; label:
 };
 
 export const getExtractionSearchSnippet = (m: CachedMaterial): string => {
-    const c: any = m.content ?? {};
+    const c = (m.content ?? {}) as MaterialContentShape;
     const bundle = c?.extractionBundle;
     if (!bundle) return '';
     return [

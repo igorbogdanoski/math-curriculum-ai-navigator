@@ -26,16 +26,17 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
         logger.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
         throw new NotFoundError('curriculum/v1');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { code?: string; userMessage?: string; message?: string };
       // Re-throw AppErrors directly (NotFoundError, etc.)
-      if (error?.code && error?.userMessage) throw error;
+      if (err?.code && err?.userMessage) throw error;
       // Gracefully handle offline errors — the app has a local data fallback.
-      if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
+      if (err.code === 'unavailable' || (err.message && err.message.includes('offline'))) {
           logger.info("...Could not fetch from Firestore: client is offline and data is not cached. Using local data.");
           throw new OfflineError('Клиентот е офлајн — Firestore не е достапен.');
       }
       logger.error("...Error fetching document from Firestore:", error);
-      throw new FirestoreError('read', error.message);
+      throw new FirestoreError('read', err.message ?? String(error));
     }
   };
 
@@ -142,7 +143,7 @@ export const loadUserCurriculumEdits = async (userId: string): Promise<Record<st
     }
   };
 
-export const saveRemediaQuiz = async (content: any, meta: {
+export const saveRemediaQuiz = async (content: unknown, meta: {
     conceptId?: string;
     topicId?: string;
     gradeLevel?: number;
@@ -178,7 +179,7 @@ export const saveRemediaQuiz = async (content: any, meta: {
     }
   };
 
-export const saveExitTicketQuiz = async (content: any, meta: {
+export const saveExitTicketQuiz = async (content: unknown, meta: {
     lessonTitle: string;
     gradeLevel?: number;
     topicId?: string;
@@ -409,7 +410,7 @@ async function computeContentHash(parts: string[]): Promise<string> {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export const saveToLibrary = async (content: any, meta: {
+export const saveToLibrary = async (content: unknown, meta: {
     title: string;
     type: CachedMaterial['type'];
     teacherUid: string;
@@ -680,7 +681,7 @@ export const deleteAssignment = async (assignmentId: string): Promise<void> => {
     await deleteDoc(doc(db, 'assignments', assignmentId));
   };
 
-export const saveAssignmentMaterial = async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid: string; isPublic?: boolean; isRecoveryWorksheet?: boolean; reviewStatus?: 'draft' | 'approved' | 'rejected'; teacherNotes?: string; approvalRef?: string; removedQuestionIds?: number[] }): Promise<string> => {
+export const saveAssignmentMaterial = async (content: unknown, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid: string; isPublic?: boolean; isRecoveryWorksheet?: boolean; reviewStatus?: 'draft' | 'approved' | 'rejected'; teacherNotes?: string; approvalRef?: string; removedQuestionIds?: number[] }): Promise<string> => {
     const ref = await addDoc(collection(db, 'cached_ai_materials'), {
       content,
       type: meta.type.toLowerCase(),
