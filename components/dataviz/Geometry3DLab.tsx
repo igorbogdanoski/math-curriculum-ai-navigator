@@ -1,5 +1,5 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness } from './geometry3dMath';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness, DUAL_MAP } from './geometry3dMath';
 import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
 import { generateGeo3DSet } from './geometry3dExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
@@ -14,11 +14,25 @@ function PolyhedraExplorer() {
   const [angleX, setAngleX] = useState(0.5);
   const [angleY, setAngleY] = useState(-0.4);
   const [showWire, setShowWire] = useState(false);
+  const [autoSpin, setAutoSpin] = useState(false);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const svgRef  = useRef<SVGSVGElement>(null);
 
+  useEffect(() => {
+    if (!autoSpin) return;
+    let raf: number;
+    const tick = () => {
+      setAngleY(a => a + 0.008);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [autoSpin]);
+
   const solid = SOLIDS.find(s => s.id === selId) ?? SOLIDS[0];
   const filtered = cat === 'all' ? SOLIDS : SOLIDS.filter(s => s.category === cat);
+  const dualId = DUAL_MAP[solid.id];
+  const dualSolid = dualId ? SOLIDS.find(s => s.id === dualId) : undefined;
 
   const onMouseDown = useCallback((e: React.MouseEvent) => { dragRef.current = { x: e.clientX, y: e.clientY }; }, []);
   const onMouseMove = useCallback((e: React.MouseEvent) => {
@@ -107,6 +121,10 @@ function PolyhedraExplorer() {
               className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
               Ресетирај
             </button>
+            <button type="button" onClick={() => setAutoSpin(s => !s)}
+              className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${autoSpin ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+              {autoSpin ? '⏸ Пауза' : '▶ Ротирај'}
+            </button>
             <button type="button" onClick={() => setShowWire(w => !w)}
               className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${showWire ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
               {showWire ? 'Жичен модел ✓' : 'Жичен модел'}
@@ -129,6 +147,21 @@ function PolyhedraExplorer() {
               </div>
             ))}
           </div>
+
+          {dualSolid && (
+            <div className="bg-white rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase">Дуален на</p>
+                <p className="text-sm font-bold text-gray-700">
+                  {dualSolid.id === solid.id ? `${dualSolid.name} (само-дуален)` : dualSolid.name}
+                </p>
+              </div>
+              <button type="button" onClick={() => setSelId(dualSolid.id)}
+                className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold hover:bg-indigo-100 transition whitespace-nowrap">
+                Прикажи дуал →
+              </button>
+            </div>
+          )}
 
           <div className={`rounded-xl border p-3 text-center ${euler === 2 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <p className="text-xs font-semibold text-gray-500">Ојлерова формула</p>

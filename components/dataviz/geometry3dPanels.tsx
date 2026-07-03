@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import {
   type Vec3, type CurriculumRef,
   rotateX, rotateY, project, faceAvgZ, faceNormal, lightness, facesToEdges,
@@ -384,9 +384,21 @@ export function PrismPyramidCalculator() {
   const [R, setR] = useState(1.5);
   const [angX, setAngX] = useState(0.45);
   const [angY, setAngY] = useState(-0.4);
+  const [autoSpin, setAutoSpin] = useState(false);
   const dragRef  = useRef<{ x: number; y: number } | null>(null);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
   const svgRef   = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (!autoSpin) return;
+    let raf: number;
+    const tick = () => {
+      setAngY(a => a + 0.008);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [autoSpin]);
 
   const CX = 190, CY = 190;
   const SCALE = useMemo(() => Math.min(62, Math.floor(115 / Math.max(R, h * 0.5 + 0.4))), [R, h]);
@@ -508,11 +520,17 @@ export function PrismPyramidCalculator() {
               <text x={190} y={372} textAnchor="middle" fontSize={10} fill="#9ca3af">↕↔ влечи за ротација</text>
             </svg>
           </div>
-          <button type="button"
-            onClick={() => { setAngX(0.45); setAngY(-0.4); }}
-            className="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-            Ресетирај поглед
-          </button>
+          <div className="flex gap-2">
+            <button type="button"
+              onClick={() => { setAngX(0.45); setAngY(-0.4); }}
+              className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+              Ресетирај поглед
+            </button>
+            <button type="button" onClick={() => setAutoSpin(s => !s)}
+              className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${autoSpin ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+              {autoSpin ? '⏸ Пауза' : '▶ Ротирај'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">

@@ -291,6 +291,15 @@ export const SOLIDS: SolidDef[] = [
     { primary:['VII','VIII'], gymnasium:['I година'], vocational:['Стручно I год.','Стручно II год.'] }),
 ];
 
+// ─── Duality ───────────────────────────────────────────────────────────────────
+export const DUAL_MAP: Record<string, string> = {
+  cube: 'octa', octa: 'cube',
+  dodeca: 'icosa', icosa: 'dodeca',
+  tetra: 'tetra',
+  triprism: 'triantiprism', triantiprism: 'triprism',
+  quadprism: 'squareantiprism', squareantiprism: 'quadprism',
+};
+
 // ─── Category config ──────────────────────────────────────────────────────────
 export const CAT_CONFIG = {
   platonic:   { label: 'Платонски',   bg: 'bg-indigo-100',  text: 'text-indigo-700',  border: 'border-indigo-300',  rgb: '99,102,241'  },
