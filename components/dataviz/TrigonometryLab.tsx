@@ -5,6 +5,7 @@ import {
   TRIG_CURRICULUM, type CurriculumRef,
 } from './trigMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Curriculum badges ─────────────────────────────────────────────────────────
@@ -423,7 +424,7 @@ function TrigIdentitiesTab() {
 // ── Tab 4: Вежбај ─────────────────────────────────────────────────────────────
 function TrigExercisesTab() {
   const session = useLabSession('trigonometry', 'Тригонометрија');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('trigonometry');
   const { loadExercises } = session;
 
   const loadSet = useCallback((d?: 1 | 2 | 3) => {

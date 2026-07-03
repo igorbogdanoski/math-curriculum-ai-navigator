@@ -3,6 +3,7 @@ import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness, 
 import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, RoundSolidsPanel, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
 import { generateGeo3DSet } from './geometry3dExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── PolyhedraExplorer ────────────────────────────────────────────────────────
@@ -300,7 +301,7 @@ function PlansElevations() {
 // ─── Geo3DExercisesTab ─────────────────────────────────────────────────────────
 function Geo3DExercisesTab() {
   const session = useLabSession('geometry-3d', '3D Геометрија');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('geometry-3d');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

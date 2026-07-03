@@ -6,6 +6,7 @@ import {
 } from './placeValueMath';
 import type { Decomposition, GradeRange } from './placeValueMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── SVG Dienes block primitives ─────────────────────────────────────────────
@@ -280,7 +281,7 @@ export const PlaceValueLab: React.FC = () => {
 
   // Practice mode — connected to quiz_results via useLabSession
   const session = useLabSession('place-value', 'Дијенесови блокови');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('place-value');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

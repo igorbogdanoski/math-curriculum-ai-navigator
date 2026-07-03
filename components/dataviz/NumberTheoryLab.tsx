@@ -6,6 +6,7 @@ import {
   NUMTHEORY_CURRICULUM, type CurriculumRef,
 } from './numberTheoryMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Curriculum badges ──────────────────────────────────────────────────────────
@@ -545,7 +546,7 @@ function SequencesTab() {
 // ── Tab 5: Вежбај ────────────────────────────────────────────────────────────
 function ExercisesTab() {
   const session = useLabSession('number-theory', 'Теорија на броеви');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('number-theory');
   const { loadExercises } = session;
 
   const loadSet = useCallback((d?: 1 | 2 | 3) => {

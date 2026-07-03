@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { generateCalculusSet } from './calculusMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── Math helpers ─────────────────────────────────────────────────────────────
@@ -403,7 +404,7 @@ function LimitsLab() {
 // ─── Exercises sub-tab ────────────────────────────────────────────────────────
 function CalcExercisesTab() {
   const session = useLabSession('calculus', 'Диференцијално и интегрално сметање');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('calculus');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

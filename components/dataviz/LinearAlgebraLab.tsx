@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { type Mat2, type Mat3, det2, det3, inv2, mul2, add2, transpose2, mul3, fmt, EMPTY2, EMPTY3, generateLinearAlgebraSet } from './linearAlgebraMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 import { EigenLab } from './LinearAlgebraEigenLab';
 import { MatrixInput, MatrixDisplay } from './LinearAlgebraInputs';
@@ -481,7 +482,7 @@ function SystemsLab() {
 // ─── Exercises sub-tab ────────────────────────────────────────────────────────
 function LinAlgExercisesTab() {
   const session = useLabSession('linear-algebra', 'Линеарна алгебра');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('linear-algebra');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

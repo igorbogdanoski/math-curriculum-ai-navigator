@@ -11,6 +11,7 @@ import {
 } from './probabilityMath';
 import { ConditionalProbabilityVenn, ProbabilityTreeBuilder, BinomialDistributionChart } from './ProbabilityLabPanels';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 export interface ProbabilityLabProps {
@@ -21,7 +22,7 @@ export interface ProbabilityLabProps {
 // ── Exercises sub-panel ───────────────────────────────────────────────────────
 function ProbExercisesPanel() {
   const session = useLabSession('probability', 'Веројатност');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('probability');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

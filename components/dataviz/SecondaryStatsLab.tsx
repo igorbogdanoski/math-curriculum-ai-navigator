@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { generateStatsSet } from './statsExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ── Math Utilities ─────────────────────────────────────────────────────────────
@@ -67,7 +68,7 @@ const SUB_TABS: { id: SubTab; label: string; emoji: string }[] = [
 // ── Exercises sub-panel ───────────────────────────────────────────────────────
 function StatsExercisesTab() {
   const session = useLabSession('secondary-stats', 'Статистика и веројатност');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('secondary-stats');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;

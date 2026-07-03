@@ -11,6 +11,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { generateLogExpSet } from './logExpMath';
 import { useLabSession } from '../../hooks/useLabSession';
+import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 const W = 340, H = 240;
@@ -238,7 +239,7 @@ function ProbPresetsPanel({ base }: { base: number }) {
 
 function LogExpExercisesTab() {
   const session = useLabSession('log-exp', 'Логаритми и Експоненти');
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const [difficulty, setDifficulty] = useLabDifficulty('log-exp');
   const { loadExercises } = session;
   const loadSet = useCallback((d?: 1 | 2 | 3) => {
     const level = d ?? difficulty;
