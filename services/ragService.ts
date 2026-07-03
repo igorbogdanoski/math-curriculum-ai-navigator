@@ -21,11 +21,54 @@ const LATENCY_RING_SIZE = 50;
 interface ConceptEmbeddingDoc {
   vector: number[];
   text: string;
+  source?: string;
+  grade?: number | null;
 }
 
 interface EmbeddingCache {
   ts: number;
-  data: { id: string; vector: number[]; text: string }[];
+  data: { id: string; vector: number[]; text: string; source?: string; grade?: number | null }[];
+}
+
+export interface ScoredEmbedding {
+  conceptId: string;
+  context: string;
+  similarity: number;
+  source?: string;
+  grade?: number | null;
+}
+
+// Out of topK results, how many slots are reserved for scenario_bank hits so they
+// aren't crowded out by the much larger curriculum-concept pool on generic queries.
+const SCENARIO_SLOT_RESERVE = 2;
+
+/**
+ * Merges curriculum and scenario_bank hits with reserved slots. Without this, broad
+ * topic-title queries are dominated by the curriculum pool (one embedding per concept,
+ * far outnumbering scenario_bank entries) and scenario examples rarely make top-K even
+ * when they score above the similarity threshold. Reserves up to SCENARIO_SLOT_RESERVE
+ * slots for the highest-scoring scenario_bank hits (grade-filtered when gradeLevel is
+ * known — a grade-9 query shouldn't surface a grade-6 lesson scenario), then fills the
+ * remaining slots with the highest-scoring curriculum hits.
+ */
+export function federatedRank(
+  scored: ScoredEmbedding[],
+  topK: number,
+  gradeLevel?: number,
+): ScoredEmbedding[] {
+  const scenarioPool = scored
+    .filter(r => r.source === 'scenario_bank')
+    .filter(r => gradeLevel == null || r.grade == null || r.grade === gradeLevel)
+    .sort((a, b) => b.similarity - a.similarity);
+
+  const curriculumPool = scored
+    .filter(r => r.source !== 'scenario_bank')
+    .sort((a, b) => b.similarity - a.similarity);
+
+  const scenarioTake = scenarioPool.slice(0, Math.min(SCENARIO_SLOT_RESERVE, topK));
+  const curriculumTake = curriculumPool.slice(0, topK - scenarioTake.length);
+
+  return [...scenarioTake, ...curriculumTake].sort((a, b) => b.similarity - a.similarity);
 }
 
 interface LatencySample {
@@ -161,7 +204,7 @@ class RagService {
     const snap = await getDocs(query(collection(db, 'concept_embeddings'), limit(500)));
     const data = snap.docs.map(d => {
       const doc = d.data() as ConceptEmbeddingDoc;
-      return { id: d.id, vector: doc.vector, text: doc.text };
+      return { id: d.id, vector: doc.vector, text: doc.text, source: doc.source, grade: doc.grade ?? null };
     });
     this.setCache(data);
     return data;
@@ -171,10 +214,12 @@ class RagService {
    * Semantic vector search over concept_embeddings (Firestore).
    * Returns [] when feature flag VITE_ENABLE_VECTOR_RAG is not set.
    * Gracefully returns [] on any error so AI generation continues unaffected.
+   * `gradeLevel`, when known, grade-filters scenario_bank hits (see federatedRank).
    */
   public async searchSimilarContext(
     queryText: string,
     topK = 5,
+    gradeLevel?: number,
   ): Promise<{ context: string; similarity: number; conceptId?: string }[]> {
     if (localStorage.getItem('VITE_ENABLE_VECTOR_RAG') !== 'true') return [];
 
@@ -186,15 +231,18 @@ class RagService {
       const tFetch = Date.now();
       const threshold = getEffectiveSimilarityThreshold();
 
-      const results = embeddings
+      const scored: ScoredEmbedding[] = embeddings
         .map(item => ({
           context: item.text,
           conceptId: item.id,
           similarity: cosineSimilarity(queryVector, item.vector),
+          source: item.source,
+          grade: item.grade,
         }))
-        .filter(r => r.similarity > threshold)
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, topK);
+        .filter(r => r.similarity > threshold);
+
+      const results = federatedRank(scored, topK, gradeLevel)
+        .map(({ context, conceptId, similarity }) => ({ context, conceptId, similarity }));
 
       pushLatency({
         embedMs: tEmbed - t0,

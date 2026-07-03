@@ -11,6 +11,8 @@ import {
   getEffectiveSimilarityThreshold,
   getRagStats,
   _resetRagStatsForTests,
+  federatedRank,
+  type ScoredEmbedding,
 } from '../services/ragService';
 
 // ── cosineSimilarity ──────────────────────────────────────────────────────────
@@ -175,6 +177,95 @@ describe('vectorRagQuery construction', () => {
       ? `${context.topic?.title ?? ''} ${context.concepts.map((c: { title: string }) => c.title).join(' ')}`.trim()
       : undefined;
     expect(query).toBeUndefined();
+  });
+});
+
+// ── federatedRank — reserved scenario_bank slots + grade prefilter ───────────
+
+describe('federatedRank', () => {
+  function mk(overrides: Partial<ScoredEmbedding>): ScoredEmbedding {
+    return { conceptId: 'x', context: 'ctx', similarity: 0.8, ...overrides };
+  }
+
+  it('reserves up to 2 slots for scenario_bank even when curriculum dominates by score', () => {
+    const curriculum = Array.from({ length: 10 }, (_, i) =>
+      mk({ conceptId: `c${i}`, source: 'curriculum', similarity: 0.95 - i * 0.01 }));
+    const scenarios = [
+      mk({ conceptId: 's1', source: 'scenario_bank', similarity: 0.75 }),
+      mk({ conceptId: 's2', source: 'scenario_bank', similarity: 0.72 }),
+    ];
+    const results = federatedRank([...curriculum, ...scenarios], 5);
+    expect(results.filter(r => r.source === 'scenario_bank')).toHaveLength(2);
+    expect(results.map(r => r.conceptId)).toEqual(expect.arrayContaining(['s1', 's2']));
+  });
+
+  it('fills all slots from curriculum when no scenario_bank hits exist', () => {
+    const curriculum = Array.from({ length: 5 }, (_, i) =>
+      mk({ conceptId: `c${i}`, source: 'curriculum', similarity: 0.9 - i * 0.01 }));
+    const results = federatedRank(curriculum, 5);
+    expect(results).toHaveLength(5);
+    expect(results.every(r => r.source === 'curriculum')).toBe(true);
+  });
+
+  it('takes fewer than 2 scenario slots when only 1 scenario hit is above threshold', () => {
+    const curriculum = Array.from({ length: 5 }, (_, i) =>
+      mk({ conceptId: `c${i}`, source: 'curriculum', similarity: 0.9 - i * 0.01 }));
+    const scenarios = [mk({ conceptId: 's1', source: 'scenario_bank', similarity: 0.8 })];
+    const results = federatedRank([...curriculum, ...scenarios], 5);
+    expect(results.filter(r => r.source === 'scenario_bank')).toHaveLength(1);
+    expect(results).toHaveLength(5);
+  });
+
+  it('excludes scenario_bank hits from a different grade when gradeLevel is known', () => {
+    const scenarios = [
+      mk({ conceptId: 's-g7', source: 'scenario_bank', grade: 7, similarity: 0.85 }),
+      mk({ conceptId: 's-g9', source: 'scenario_bank', grade: 9, similarity: 0.9 }),
+    ];
+    const results = federatedRank(scenarios, 5, 7);
+    expect(results.map(r => r.conceptId)).toEqual(['s-g7']);
+  });
+
+  it('permits scenario_bank hits with no grade set through the grade filter', () => {
+    const scenarios = [mk({ conceptId: 's-nograde', source: 'scenario_bank', grade: null, similarity: 0.85 })];
+    const results = federatedRank(scenarios, 5, 7);
+    expect(results.map(r => r.conceptId)).toEqual(['s-nograde']);
+  });
+
+  it('passes all scenario_bank hits through unfiltered when gradeLevel is not provided', () => {
+    const scenarios = [
+      mk({ conceptId: 's-g7', source: 'scenario_bank', grade: 7, similarity: 0.85 }),
+      mk({ conceptId: 's-g9', source: 'scenario_bank', grade: 9, similarity: 0.9 }),
+    ];
+    const results = federatedRank(scenarios, 5);
+    expect(results).toHaveLength(2);
+  });
+
+  it('respects topK smaller than the scenario reserve (topK=1)', () => {
+    const scenarios = [
+      mk({ conceptId: 's1', source: 'scenario_bank', similarity: 0.9 }),
+      mk({ conceptId: 's2', source: 'scenario_bank', similarity: 0.85 }),
+    ];
+    const results = federatedRank(scenarios, 1);
+    expect(results).toHaveLength(1);
+    expect(results[0].conceptId).toBe('s1');
+  });
+
+  it('returns the merged result sorted by similarity descending', () => {
+    const items = [
+      mk({ conceptId: 'a', source: 'curriculum', similarity: 0.72 }),
+      mk({ conceptId: 'b', source: 'scenario_bank', similarity: 0.95 }),
+      mk({ conceptId: 'c', source: 'curriculum', similarity: 0.88 }),
+    ];
+    const results = federatedRank(items, 5);
+    const similarities = results.map(r => r.similarity);
+    expect(similarities).toEqual([...similarities].sort((x, y) => y - x));
+  });
+
+  it('treats undefined source as non-scenario (curriculum bucket)', () => {
+    const items = [mk({ conceptId: 'legacy', source: undefined, similarity: 0.9 })];
+    const results = federatedRank(items, 5);
+    expect(results).toHaveLength(1);
+    expect(results[0].conceptId).toBe('legacy');
   });
 });
 

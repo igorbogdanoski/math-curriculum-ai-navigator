@@ -144,7 +144,7 @@ export async function buildDynamicSystemInstruction(
 
     if (vectorRagQuery) {
         const t0 = Date.now();
-        const ragResults = await ragService.searchSimilarContext(vectorRagQuery, 5);
+        const ragResults = await ragService.searchSimilarContext(vectorRagQuery, 5, gradeLevel);
         const filtered = ragResults.filter((r: { conceptId?: string }) => r.conceptId !== conceptId).slice(0, 4);
         if (filtered.length > 0) {
             instruction += '\n--- СЕМАНТИЧКИ СЛИЧНИ КОНЦЕПТИ (ДОПОЛНИТЕЛЕН КОНТЕКСТ) ---\n';
