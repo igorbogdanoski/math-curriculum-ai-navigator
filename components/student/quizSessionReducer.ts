@@ -48,6 +48,8 @@ export type QuizSessionState = {
   remediaQuizId: string | null;
   isGeneratingRemedia: boolean;
   quizResultDocId: string | null;
+  /** True when saveQuizResult failed — the score shown was never persisted. */
+  quizResultSaveError: boolean;
   confidence: number | null;
   aiFeedback: string | null;
   isFeedbackLoading: boolean;
@@ -61,7 +63,7 @@ export type QuizSessionState = {
 };
 
 export type QuizSessionAction =
-  | { type: 'QUIZ_COMPLETE'; quizResult: QuizResult; docId: string; mastery: ConceptMastery | null; metacognitivePrompt: string }
+  | { type: 'QUIZ_COMPLETE'; quizResult: QuizResult; docId: string; saveError: boolean; mastery: ConceptMastery | null; metacognitivePrompt: string }
   | { type: 'SET_CONFIDENCE'; confidence: number }
   | { type: 'SET_AI_FEEDBACK'; feedback: string }
   | { type: 'SET_FEEDBACK_LOADING'; loading: boolean }
@@ -84,6 +86,7 @@ export const QUIZ_SESSION_INITIAL: QuizSessionState = {
   remediaQuizId: null,
   isGeneratingRemedia: false,
   quizResultDocId: null,
+  quizResultSaveError: false,
   confidence: null,
   aiFeedback: null,
   isFeedbackLoading: false,
@@ -99,7 +102,7 @@ export const QUIZ_SESSION_INITIAL: QuizSessionState = {
 export function quizSessionReducer(state: QuizSessionState, action: QuizSessionAction): QuizSessionState {
   switch (action.type) {
     case 'QUIZ_COMPLETE':
-      return { ...QUIZ_SESSION_INITIAL, quizResult: action.quizResult, quizResultDocId: action.docId, masteryUpdate: action.mastery, metacognitivePrompt: action.metacognitivePrompt, isFeedbackLoading: true };
+      return { ...QUIZ_SESSION_INITIAL, quizResult: action.quizResult, quizResultDocId: action.docId, quizResultSaveError: action.saveError, masteryUpdate: action.mastery, metacognitivePrompt: action.metacognitivePrompt, isFeedbackLoading: true };
     case 'SET_CONFIDENCE':
       return { ...state, confidence: action.confidence };
     case 'SET_AI_FEEDBACK':

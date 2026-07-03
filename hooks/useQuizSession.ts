@@ -111,6 +111,7 @@ export function useQuizSession({
 
     // 1. Save quiz result
     let savedDocId = '';
+    let saveError = false;
     if (isE2E) {
       savedDocId = 'mock-doc-id';
     } else {
@@ -134,6 +135,7 @@ export function useQuizSession({
         });
       } catch (err) {
         logger.error('[Quiz] saveQuizResult failed:', err);
+        saveError = true;
       }
     }
 
@@ -191,6 +193,7 @@ export function useQuizSession({
       type: 'QUIZ_COMPLETE',
       quizResult: { percentage, correctCount, totalQuestions, misconceptions },
       docId: savedDocId,
+      saveError,
       mastery: freshMastery,
       metacognitivePrompt: chosenPrompt,
     });
@@ -223,7 +226,8 @@ export function useQuizSession({
 
     // Mark assignment completed
     if (!isE2E && assignId && studentName) {
-      firestoreService.markAssignmentCompleted(assignId, studentName).catch(() => {});
+      firestoreService.markAssignmentCompleted(assignId, studentName)
+        .catch(err => logger.warn('[Quiz] markAssignmentCompleted failed — teacher may not see this as done:', err));
     }
 
     // Mark daily quest complete

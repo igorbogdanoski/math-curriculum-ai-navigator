@@ -48,7 +48,7 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
   const { t } = useLanguage();
   const {
     quizResult, masteryUpdate, gamificationUpdate, remediaQuizId, isGeneratingRemedia,
-    quizResultDocId, confidence, aiFeedback, isFeedbackLoading,
+    quizResultDocId, quizResultSaveError, confidence, aiFeedback, isFeedbackLoading,
     metacognitivePrompt, metacognitiveNote, metacognitiveSaved,
     peerSuggestions, homework, isHomeworkLoading, homeworkError,
   } = session;
@@ -75,6 +75,17 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
 
   return (
     <>
+      {/* Result save failure — the score above was never persisted to the teacher's records */}
+      {quizResultSaveError && (
+        <div className="w-full max-w-4xl mt-4 bg-red-50 border-2 border-red-300 rounded-2xl p-4 flex items-center gap-3 animate-fade-in">
+          <span className="text-2xl flex-shrink-0" aria-hidden="true">⚠️</span>
+          <div>
+            <p className="font-black text-red-800 text-sm">Резултатот не е зачуван</p>
+            <p className="text-red-700 text-xs">Твојот резултат не успеа да се зачува поради проблем со врската. Наставникот нема да го види овој резултат. Провери ја интернет врската и одиграј го квизот повторно.</p>
+          </div>
+        </div>
+      )}
+
       {/* Mastery milestone banner */}
       {justMastered && (
         <div className="w-full max-w-4xl mt-4 bg-yellow-400 rounded-2xl p-4 flex items-center gap-3 animate-fade-in shadow-lg">

@@ -159,6 +159,16 @@ export function captureException(
   Sentry.captureException(error, { tags, extra });
 }
 
+/** Manually report a non-exception message (e.g. `logger.warn`). No-op when DSN is not configured. */
+export function captureMessage(
+  message: string,
+  level: 'info' | 'warning' | 'error' = 'info',
+  context?: Record<string, unknown>,
+): void {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  Sentry.captureMessage(message, { level, extra: context });
+}
+
 /**
  * Best-effort device-type detection (S40-M1) for Web Vitals bucketing.
  * Uses User-Agent Client Hints when available; otherwise a UA + viewport

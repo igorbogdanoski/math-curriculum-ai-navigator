@@ -79,6 +79,7 @@ describe('quizSessionReducer', () => {
         type: 'QUIZ_COMPLETE',
         quizResult: result,
         docId: 'doc-abc',
+        saveError: false,
         mastery: null,
         metacognitivePrompt: 'Како се чувствуваш?',
       });
@@ -93,10 +94,39 @@ describe('quizSessionReducer', () => {
         type: 'QUIZ_COMPLETE',
         quizResult: makeQuizResult(),
         docId: 'doc-abc',
+        saveError: false,
         mastery: null,
         metacognitivePrompt: '',
       });
       expect(next.isFeedbackLoading).toBe(true);
+    });
+
+    it('quizResultSaveError is false when the save succeeded', () => {
+      const next = quizSessionReducer(QUIZ_SESSION_INITIAL, {
+        type: 'QUIZ_COMPLETE',
+        quizResult: makeQuizResult(),
+        docId: 'doc-abc',
+        saveError: false,
+        mastery: null,
+        metacognitivePrompt: '',
+      });
+      expect(next.quizResultSaveError).toBe(false);
+    });
+
+    it('sets quizResultSaveError when saveQuizResult failed (regression: student must see the failure, not a silent success)', () => {
+      const next = quizSessionReducer(QUIZ_SESSION_INITIAL, {
+        type: 'QUIZ_COMPLETE',
+        quizResult: makeQuizResult(),
+        docId: '', // saveQuizResult failed — no doc was ever created
+        saveError: true,
+        mastery: null,
+        metacognitivePrompt: '',
+      });
+      expect(next.quizResultSaveError).toBe(true);
+      expect(next.quizResultDocId).toBe('');
+      // The score is still shown to the student even though it wasn't persisted —
+      // the UI must separately surface quizResultSaveError as a warning.
+      expect(next.quizResult).toEqual(makeQuizResult());
     });
 
     it('resets all other session fields to initial on new quiz completion', () => {
@@ -113,6 +143,7 @@ describe('quizSessionReducer', () => {
         type: 'QUIZ_COMPLETE',
         quizResult: makeQuizResult(),
         docId: 'new-doc',
+        saveError: false,
         mastery: null,
         metacognitivePrompt: '',
       });
@@ -235,6 +266,7 @@ describe('quizSessionReducer', () => {
       type: 'QUIZ_COMPLETE',
       quizResult: result,
       docId: 'doc-zero',
+      saveError: false,
       mastery: null,
       metacognitivePrompt: '',
     });

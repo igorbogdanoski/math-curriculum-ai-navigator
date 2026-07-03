@@ -13,20 +13,21 @@
 
 const isDev = import.meta.env.DEV;
 
-function captureSentry(level: 'warning' | 'error', msg: string, err?: Error, ctx?: object): void {
-  try {
-    // Sentry is optional — only used if loaded via CDN or npm in the future.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Sentry = (globalThis as any).Sentry;
-    if (!Sentry) return;
-    if (level === 'error' && err) {
-      Sentry.captureException(err, { extra: ctx });
-    } else {
-      Sentry.captureMessage(msg, level, { extra: ctx });
-    }
-  } catch {
-    // Never let the logger itself throw
-  }
+/** Exported for direct unit testing of the Sentry bridge, independent of the isDev gate below. */
+export function captureSentry(level: 'warning' | 'error', msg: string, err?: Error, ctx?: Record<string, unknown>): void {
+  // Dynamic import: avoids pulling the Sentry SDK into every module that
+  // imports the logger (nearly the whole app) when nothing has errored yet.
+  // Fire-and-forget with a swallowed .catch — never let the logger itself throw,
+  // including asynchronously (a rejected import() would otherwise escape a sync try/catch).
+  import('../services/sentryService')
+    .then(({ captureException, captureMessage }) => {
+      if (level === 'error' && err) {
+        captureException(err, ctx);
+      } else {
+        captureMessage(msg, level, ctx);
+      }
+    })
+    .catch(() => { /* best-effort — never let the logger throw */ });
 }
 
 export const logger = {
@@ -50,7 +51,7 @@ export const logger = {
   warn(msg: string, ctx?: unknown): void {
     // eslint-disable-next-line no-console
     console.warn(`[WARN] ${msg}`, ctx ?? '');
-    if (!isDev) captureSentry('warning', msg, undefined, ctx instanceof Object ? ctx as object : undefined);
+    if (!isDev) captureSentry('warning', msg, undefined, ctx instanceof Object ? ctx as Record<string, unknown> : undefined);
   },
 
   /** Logged in all envs; Sentry exception in production */
@@ -58,6 +59,6 @@ export const logger = {
     const e = err instanceof Error ? err : err !== undefined ? new Error(String(err)) : undefined;
     // eslint-disable-next-line no-console
     console.error(`[ERROR] ${msg}`, e ?? '', ctx ?? '');
-    if (!isDev) captureSentry('error', msg, e, ctx instanceof Object ? ctx as object : undefined);
+    if (!isDev) captureSentry('error', msg, e, ctx instanceof Object ? ctx as Record<string, unknown> : undefined);
   },
 };
