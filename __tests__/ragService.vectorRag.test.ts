@@ -12,6 +12,7 @@ import {
   getRagStats,
   _resetRagStatsForTests,
   federatedRank,
+  getScenarioSlotReserve,
   type ScoredEmbedding,
 } from '../services/ragService';
 
@@ -177,6 +178,60 @@ describe('vectorRagQuery construction', () => {
       ? `${context.topic?.title ?? ''} ${context.concepts.map((c: { title: string }) => c.title).join(' ')}`.trim()
       : undefined;
     expect(query).toBeUndefined();
+  });
+});
+
+// ── getScenarioSlotReserve — ratio-based, runtime-overridable ────────────────
+
+describe('getScenarioSlotReserve', () => {
+  beforeEach(() => { localStorage.clear(); });
+  afterEach(() => { localStorage.clear(); });
+
+  it('reserves 2 slots at the default topK=5 (0.4 ratio)', () => {
+    expect(getScenarioSlotReserve(5)).toBe(2);
+  });
+
+  it('scales proportionally with topK instead of staying a fixed absolute count', () => {
+    expect(getScenarioSlotReserve(10)).toBe(4);
+    expect(getScenarioSlotReserve(3)).toBe(1);
+  });
+
+  it('reserves at least 1 slot for any topK > 0, even when the ratio rounds to 0', () => {
+    expect(getScenarioSlotReserve(1)).toBe(1);
+    expect(getScenarioSlotReserve(2)).toBe(1);
+  });
+
+  it('returns 0 for topK=0', () => {
+    expect(getScenarioSlotReserve(0)).toBe(0);
+  });
+
+  it('never exceeds topK', () => {
+    expect(getScenarioSlotReserve(1)).toBeLessThanOrEqual(1);
+  });
+
+  it('honours a runtime override via localStorage without a redeploy', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', '3');
+    expect(getScenarioSlotReserve(5)).toBe(3);
+  });
+
+  it('caps an override larger than topK', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', '10');
+    expect(getScenarioSlotReserve(5)).toBe(5);
+  });
+
+  it('falls back to the default ratio when the override is not a number', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', 'abc');
+    expect(getScenarioSlotReserve(5)).toBe(2);
+  });
+
+  it('falls back to the default ratio when the override is negative', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', '-1');
+    expect(getScenarioSlotReserve(5)).toBe(2);
+  });
+
+  it('honours an override of 0 (opt out of reserving scenario slots entirely)', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', '0');
+    expect(getScenarioSlotReserve(5)).toBe(0);
   });
 });
 

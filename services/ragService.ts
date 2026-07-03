@@ -16,6 +16,7 @@ const SIMILARITY_THRESHOLD = 0.7;
 const CACHE_KEY = 'rag_concept_embeddings_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const THRESHOLD_OVERRIDE_KEY = 'VITE_VECTOR_RAG_THRESHOLD';
+const SCENARIO_SLOT_RATIO_OVERRIDE_KEY = 'VITE_VECTOR_RAG_SCENARIO_SLOTS';
 const LATENCY_RING_SIZE = 50;
 
 interface ConceptEmbeddingDoc {
@@ -38,18 +39,41 @@ export interface ScoredEmbedding {
   grade?: number | null;
 }
 
-// Out of topK results, how many slots are reserved for scenario_bank hits so they
-// aren't crowded out by the much larger curriculum-concept pool on generic queries.
-const SCENARIO_SLOT_RESERVE = 2;
+// Fraction of topK reserved for scenario_bank hits by default (0.4 × topK=5 → 2 slots).
+// Expressed as a ratio rather than an absolute count so it scales automatically if a
+// caller passes a different topK, instead of silently under/over-reserving. Not
+// empirically tuned against real usage (no click-through data exists yet) — it's a
+// principled default, not a measured optimum. Override at runtime without a redeploy via
+// `localStorage.setItem('VITE_VECTOR_RAG_SCENARIO_SLOTS', '3')` (interpreted as an
+// absolute slot count, capped to topK) once real usage signal is available to tune it.
+const SCENARIO_SLOT_RESERVE_RATIO = 0.4;
+
+/**
+ * Resolves how many of `topK` results are reserved for scenario_bank hits. Always at
+ * least 1 (when topK > 0) so scenario examples are never entirely excluded by rounding.
+ */
+export function getScenarioSlotReserve(topK: number): number {
+  if (topK <= 0) return 0;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(SCENARIO_SLOT_RATIO_OVERRIDE_KEY);
+      if (raw != null) {
+        const n = Number(raw);
+        if (Number.isFinite(n) && n >= 0) return Math.min(Math.round(n), topK);
+      }
+    }
+  } catch { /* ignore — fall through to default */ }
+  return Math.min(Math.max(1, Math.round(topK * SCENARIO_SLOT_RESERVE_RATIO)), topK);
+}
 
 /**
  * Merges curriculum and scenario_bank hits with reserved slots. Without this, broad
  * topic-title queries are dominated by the curriculum pool (one embedding per concept,
  * far outnumbering scenario_bank entries) and scenario examples rarely make top-K even
- * when they score above the similarity threshold. Reserves up to SCENARIO_SLOT_RESERVE
- * slots for the highest-scoring scenario_bank hits (grade-filtered when gradeLevel is
- * known — a grade-9 query shouldn't surface a grade-6 lesson scenario), then fills the
- * remaining slots with the highest-scoring curriculum hits.
+ * when they score above the similarity threshold. Reserves slots (see
+ * getScenarioSlotReserve) for the highest-scoring scenario_bank hits (grade-filtered
+ * when gradeLevel is known — a grade-9 query shouldn't surface a grade-6 lesson
+ * scenario), then fills the remaining slots with the highest-scoring curriculum hits.
  */
 export function federatedRank(
   scored: ScoredEmbedding[],
@@ -65,7 +89,7 @@ export function federatedRank(
     .filter(r => r.source !== 'scenario_bank')
     .sort((a, b) => b.similarity - a.similarity);
 
-  const scenarioTake = scenarioPool.slice(0, Math.min(SCENARIO_SLOT_RESERVE, topK));
+  const scenarioTake = scenarioPool.slice(0, getScenarioSlotReserve(topK));
   const curriculumTake = curriculumPool.slice(0, topK - scenarioTake.length);
 
   return [...scenarioTake, ...curriculumTake].sort((a, b) => b.similarity - a.similarity);
