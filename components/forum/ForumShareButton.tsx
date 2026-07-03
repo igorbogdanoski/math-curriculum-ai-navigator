@@ -147,8 +147,9 @@ export const ForumShareButton: React.FC<Props> = ({
 
               {/* Title */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Наслов *</label>
+                <label htmlFor="forum-share-title" className="block text-xs font-semibold text-gray-600 mb-1">Наслов *</label>
                 <input
+                  id="forum-share-title"
                   type="text"
                   required
                   value={title}
@@ -161,8 +162,9 @@ export const ForumShareButton: React.FC<Props> = ({
 
               {/* Body */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Опис / порака *</label>
+                <label htmlFor="forum-share-body" className="block text-xs font-semibold text-gray-600 mb-1">Опис / порака *</label>
                 <textarea
+                  id="forum-share-body"
                   required
                   rows={4}
                   value={body}
