@@ -1,6 +1,9 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness } from './geometry3dMath';
 import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
+import { generateGeo3DSet } from './geometry3dExerciseMath';
+import { useLabSession } from '../../hooks/useLabSession';
+import { LabExercisePanel } from '../labs/LabExercisePanel';
 
 // ─── PolyhedraExplorer ────────────────────────────────────────────────────────
 type Category = 'all' | 'platonic' | 'archimedean' | 'prism' | 'antiprism' | 'pyramid';
@@ -261,8 +264,21 @@ function PlansElevations() {
   );
 }
 
+// ─── Geo3DExercisesTab ─────────────────────────────────────────────────────────
+function Geo3DExercisesTab() {
+  const session = useLabSession('geometry-3d', '3D Геометрија');
+  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
+  const { loadExercises } = session;
+  const loadSet = useCallback((d?: 1 | 2 | 3) => {
+    const level = d ?? difficulty;
+    if (d !== undefined) setDifficulty(d);
+    loadExercises(generateGeo3DSet(level));
+  }, [difficulty, loadExercises]);
+  return <LabExercisePanel session={session} onNewSet={loadSet} difficulty={difficulty} onDifficultyChange={setDifficulty} />;
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
-type GeoTab = 'explorer' | 'plans' | 'nets' | 'cross' | 'prispyram';
+type GeoTab = 'explorer' | 'plans' | 'nets' | 'cross' | 'prispyram' | 'exercises';
 
 export function Geometry3DLab() {
   const [tab, setTab] = useState<GeoTab>('explorer');
@@ -273,6 +289,7 @@ export function Geometry3DLab() {
     { id: 'nets',      label: '📄 Мрежи (Nets)' },
     { id: 'cross',     label: '✂️ Пресечни рамнини' },
     { id: 'prispyram', label: '⬡ Призма / Пирамида' },
+    { id: 'exercises', label: '✏️ Вежбај' },
   ];
 
   return (
@@ -291,6 +308,7 @@ export function Geometry3DLab() {
       {tab === 'nets'      && <NetsExplorer />}
       {tab === 'cross'     && <CrossSections />}
       {tab === 'prispyram' && <PrismPyramidCalculator />}
+      {tab === 'exercises' && <Geo3DExercisesTab />}
     </div>
   );
 }
