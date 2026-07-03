@@ -852,6 +852,67 @@
                                        { "fieldPath": "verifiedByBRO",   "order": "ASCENDING" },
                                        { "fieldPath": "usageCount",      "order": "DESCENDING" }
                                    ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "conceptId",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "gradeLevel",  "order": "ASCENDING" },
+                                       { "fieldPath": "conceptId",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "gradeLevel",  "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "gradeLevel",  "order": "ASCENDING" },
+                                       { "fieldPath": "type",        "order": "ASCENDING" },
+                                       { "fieldPath": "conceptId",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "gradeLevel",  "order": "ASCENDING" },
+                                       { "fieldPath": "type",        "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "type",        "order": "ASCENDING" },
+                                       { "fieldPath": "conceptId",   "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "type",        "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+                                   ]
                     }
                 ],
     "fieldOverrides":  [
