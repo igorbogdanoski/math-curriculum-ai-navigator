@@ -291,6 +291,69 @@ export const SOLIDS: SolidDef[] = [
     { primary:['VII','VIII'], gymnasium:['I година'], vocational:['Стручно I год.','Стручно II год.'] }),
 ];
 
+// ─── Cone cross-sections (real cone-plane intersection) ────────────────────────
+// Cone half-angle α — derived from the unit cone drawn in the side-view (base r=1, height=2)
+export const CONE_K = 0.5; // = tan(α)
+export const CONE_ALPHA = Math.atan(CONE_K);
+export const CONE_ALPHA_DEG = CONE_ALPHA * 180 / Math.PI;
+// θ is measured from the horizontal (perpendicular-to-axis) plane, so the plane
+// turns parallel to a generator — the parabola boundary — at 90°−α, not at α.
+export const CONE_CRITICAL_THETA_DEG = 90 - CONE_ALPHA_DEG;
+
+export interface ConeCrossSection {
+  type: 'point' | 'circle' | 'ellipse' | 'parabola' | 'hyperbola';
+  name: string;
+  area: number;
+  perim: number;
+  r: number;
+  a: number;
+  b: number;
+  p: number;
+}
+
+const CS_POINT: ConeCrossSection = { type: 'point', name: 'Точка (врв)', area: 0, perim: 0, r: 0, a: 0, b: 0, p: 0 };
+
+/**
+ * Real cone-plane intersection: apex at origin, cone x²+y²=k²z², cutting plane
+ * through z0 (along the axis, derived from h) tilted by thetaDeg. Eccentricity
+ * e = sinθ/sinα (α = atan(k)) decides circle/ellipse/parabola/hyperbola —
+ * see the closed-form derivation via the plane's (u,v) basis and completing
+ * the square, matching θ<α → ellipse, θ=α → parabola, θ>α → hyperbola.
+ */
+export function computeConeCrossSection(h: number, thetaDeg: number, k: number = CONE_K): ConeCrossSection {
+  const thetaRad = thetaDeg * Math.PI / 180;
+  const z0 = 1 - h; // depth from apex along axis (0=apex, 2=base)
+  const cosT = Math.cos(thetaRad), sinT = Math.sin(thetaRad);
+  const Bc = cosT * cosT - k * k * sinT * sinT;
+  const Cc = -2 * k * k * z0 * sinT;
+  const Dc = -k * k * z0 * z0;
+
+  if (Math.abs(Bc) < 1e-4) {
+    const p = Math.abs(Cc) > 1e-9 ? Math.abs(Cc) / 4 : 0;
+    if (p < 0.01) return CS_POINT;
+    return { type: 'parabola', name: `Парабола (p = ${p.toFixed(3)})`, area: 0, perim: 0, r: 0, a: 0, b: 0, p };
+  }
+
+  const E = (Cc * Cc) / (4 * Bc) - Dc;
+  if (Bc > 0) {
+    if (E <= 1e-4) return CS_POINT;
+    const a = Math.sqrt(E), b = Math.sqrt(E / Bc);
+    if (a < 0.02 || b < 0.02) return CS_POINT;
+    const area = Math.PI * a * b;
+    const perim = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+    if (Math.abs(a - b) < 1e-3) {
+      return { type: 'circle', name: `Круг (r = ${a.toFixed(3)})`, area, perim, r: a, a, b, p: 0 };
+    }
+    return { type: 'ellipse', name: `Елипса (a=${a.toFixed(3)}, b=${b.toFixed(3)})`, area, perim, r: 0, a, b, p: 0 };
+  }
+
+  const Bh = -Bc, absE = Math.abs(E);
+  if (absE <= 1e-4) return { ...CS_POINT, name: 'Две прави (низ врвот)' };
+  const a = E > 0 ? Math.sqrt(absE) : Math.sqrt(absE / Bh);
+  const b = E > 0 ? Math.sqrt(absE / Bh) : Math.sqrt(absE);
+  return { type: 'hyperbola', name: `Хипербола (a=${a.toFixed(3)}, b=${b.toFixed(3)})`, area: 0, perim: 0, r: 0, a, b, p: 0 };
+}
+
 // ─── Duality ───────────────────────────────────────────────────────────────────
 export const DUAL_MAP: Record<string, string> = {
   cube: 'octa', octa: 'cube',

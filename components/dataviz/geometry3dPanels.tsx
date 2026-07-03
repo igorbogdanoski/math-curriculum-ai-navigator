@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type CurriculumRef, SOLIDS, CAT_CONFIG } from './geometry3dMath';
+import { type CurriculumRef, SOLIDS, CAT_CONFIG, CONE_CRITICAL_THETA_DEG, computeConeCrossSection } from './geometry3dMath';
 
 // ─── Shared: CurriculumBadges ─────────────────────────────────────────────────
 export function CurriculumBadges({ cur }: { cur: CurriculumRef }) {
@@ -227,11 +227,6 @@ const CS_STROKE: Record<CSolid, string> = {
   sphere: '#6366f1', cube: '#10b981', pyramid: '#f59e0b', cone: '#f43f5e', cylinder: '#14b8a6',
 };
 
-// Cone half-angle α — derived from the unit cone drawn in the side-view (base r=1, height=2)
-const CONE_K = 0.5; // = tan(α)
-const CONE_ALPHA = Math.atan(CONE_K);
-const CONE_ALPHA_DEG = CONE_ALPHA * 180 / Math.PI;
-
 export function CrossSections() {
   const [solid, setSolid] = useState<CSolid>('sphere');
   const [h, setH] = useState(0);
@@ -262,45 +257,9 @@ export function CrossSections() {
       csArea = csSide * csSide; csPerim = 4 * csSide; csType = csSide < 0.02 ? 'point' : 'square';
       break;
     case 'cone': {
-      // Real cone-plane intersection: apex at origin, cone x²+y²=k²z², cutting plane
-      // through z0 (along axis) tilted by θ. Eccentricity e = sinθ/sinα decides the shape.
-      const thetaRad = theta * Math.PI / 180;
-      const z0 = 1 - h; // depth from apex along axis (0=apex, 2=base)
-      const cosT = Math.cos(thetaRad), sinT = Math.sin(thetaRad);
-      const k = CONE_K;
-      const Bc = cosT * cosT - k * k * sinT * sinT;
-      const Cc = -2 * k * k * z0 * sinT;
-      const Dc = -k * k * z0 * z0;
-
-      if (Math.abs(Bc) < 1e-4) {
-        const p = Math.abs(Cc) > 1e-9 ? Math.abs(Cc) / 4 : 0;
-        csP = p;
-        csName = p < 0.01 ? 'Точка (врв)' : `Парабола (p = ${p.toFixed(3)})`;
-        csType = p < 0.01 ? 'point' : 'parabola';
-      } else {
-        const E = (Cc * Cc) / (4 * Bc) - Dc;
-        if (Bc > 0) {
-          if (E > 1e-4) {
-            csA = Math.sqrt(E); csB = Math.sqrt(E / Bc);
-            csName = (csA < 0.02 || csB < 0.02) ? 'Точка (врв)' : `Елипса (a=${csA.toFixed(3)}, b=${csB.toFixed(3)})`;
-            csArea = Math.PI * csA * csB;
-            csPerim = Math.PI * (3 * (csA + csB) - Math.sqrt((3 * csA + csB) * (csA + 3 * csB)));
-            csType = (csA < 0.02 || csB < 0.02) ? 'point' : 'ellipse';
-          } else {
-            csName = 'Точка (врв)'; csType = 'point';
-          }
-        } else {
-          const Bh = -Bc, absE = Math.abs(E);
-          if (absE > 1e-4) {
-            csA = E > 0 ? Math.sqrt(absE) : Math.sqrt(absE / Bh);
-            csB = E > 0 ? Math.sqrt(absE / Bh) : Math.sqrt(absE);
-            csName = `Хипербола (a=${csA.toFixed(3)}, b=${csB.toFixed(3)})`;
-            csType = 'hyperbola';
-          } else {
-            csName = 'Две прави (низ врвот)'; csType = 'point';
-          }
-        }
-      }
+      const cs = computeConeCrossSection(h, theta);
+      csName = cs.name; csArea = cs.area; csPerim = cs.perim;
+      csType = cs.type; csR = cs.r; csA = cs.a; csB = cs.b; csP = cs.p;
       break;
     }
     case 'cylinder':
@@ -375,7 +334,7 @@ export function CrossSections() {
             <span className="text-xs font-bold text-violet-700 w-14 text-right">{theta.toFixed(0)}°</span>
           </div>
           <p className="text-[10px] text-gray-400 pl-[7.5rem]">
-            Полу-агол на конус α ≈ {CONE_ALPHA_DEG.toFixed(1)}° · θ&lt;α → елипса · θ=α → парабола · θ&gt;α → хипербола
+            Критичен агол ≈ {CONE_CRITICAL_THETA_DEG.toFixed(1)}° (рамнина ∥ со изводница) · θ помал → елипса · θ еднаков → парабола · θ поголем → хипербола
           </p>
         </div>
       )}
