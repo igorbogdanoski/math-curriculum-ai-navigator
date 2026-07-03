@@ -181,6 +181,9 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
     }
     catch (error) {
         console.error('Error deducting credits:', error);
+        if (error instanceof functions.https.HttpsError) {
+            throw error;
+        }
         throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
     }
 });

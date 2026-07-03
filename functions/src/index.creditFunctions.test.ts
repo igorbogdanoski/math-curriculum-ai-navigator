@@ -120,16 +120,13 @@ describe('deductCredits', () => {
 
   it('rejects when balance is insufficient for the requested amount', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 3, role: 'teacher', tier: 'Free' });
-    // Note: the outer try/catch in deductCredits re-wraps ANY thrown HttpsError
-    // (including this one) as code 'internal' with a "Transaction failed: ..." message —
-    // this test documents that actual (slightly surprising) behavior, not idealized behavior.
     await expect(deductCredits({ amount: 5 }, { auth: { uid: 'u1' } }))
-      .rejects.toMatchObject({ code: 'internal', message: expect.stringContaining('Insufficient AI credits') });
+      .rejects.toMatchObject({ code: 'resource-exhausted', message: expect.stringContaining('Insufficient AI credits') });
   });
 
   it('rejects when the user profile does not exist', async () => {
     await expect(deductCredits({ amount: 1 }, { auth: { uid: 'ghost' } }))
-      .rejects.toMatchObject({ code: 'internal', message: expect.stringContaining('User profile not found') });
+      .rejects.toMatchObject({ code: 'not-found', message: expect.stringContaining('User profile not found') });
   });
 
   it('bypasses deduction for admin role regardless of balance', async () => {
@@ -155,7 +152,7 @@ describe('deductCredits', () => {
     const past = new Date(Date.now() - 86_400_000).toISOString();
     fakeDb._store.set('users/u1', { aiCreditsBalance: 0, role: 'teacher', tier: 'Pro', proExpiresAt: past });
     await expect(deductCredits({ amount: 1 }, { auth: { uid: 'u1' } }))
-      .rejects.toMatchObject({ code: 'internal', message: expect.stringContaining('Insufficient AI credits') });
+      .rejects.toMatchObject({ code: 'resource-exhausted', message: expect.stringContaining('Insufficient AI credits') });
   });
 });
 
