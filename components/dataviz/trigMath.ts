@@ -342,11 +342,13 @@ export function generateTrigSet(difficulty: 1 | 2 | 3, count = 6): LabExercise[]
         const ev = EXACT[deg];
         const dbl = EXACT[(deg * 2) as ExactDeg];
         const result = dbl ? dbl.sin : `${(2 * Math.sin(toRad(deg)) * Math.cos(toRad(deg))).toFixed(3)}`;
+        const dblOpts = ['0', '1/2', '√2/2', '√3/2', '1'].sort(() => Math.random() - 0.5).slice(0, 4);
+        if (!dblOpts.includes(result)) dblOpts[0] = result;
         exs.push({
           id,
           question: `sin(2×${deg}°) = 2·sin(${deg}°)·cos(${deg}°). Колку е тоа?`,
           type: 'multiple_choice',
-          options: ['0', '1/2', '√2/2', '√3/2', '1'].sort(() => Math.random() - 0.5).slice(0, 4),
+          options: dblOpts,
           correctAnswer: result,
           hint: `sin(${deg}°)=${ev.sin}, cos(${deg}°)=${ev.cos}. Множи.`,
           explanation: `2·${ev.sin}·${ev.cos} = sin(${deg * 2}°) = ${result}`,
