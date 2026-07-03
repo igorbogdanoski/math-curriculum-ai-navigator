@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness, DUAL_MAP } from './geometry3dMath';
-import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, RoundSolidsPanel, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
+import { CurriculumBadges, NetsExplorer, CrossSections, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
+import { PrismPyramidCalculator, RoundSolidsPanel } from './geometry3dSolidPanels';
 import { generateGeo3DSet } from './geometry3dExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
