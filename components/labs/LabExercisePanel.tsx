@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Lightbulb, ChevronRight, RotateCcw, Shuffle, Trophy, Save, TrendingUp, TrendingDown } from 'lucide-react';
 import type { useLabSession } from '../../hooks/useLabSession';
+import { CURRICULUM_STANDARD_MAP } from '../../types/labTypes';
 
 type LabSession = ReturnType<typeof useLabSession>;
 
@@ -168,6 +169,7 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
   const pct = exercises.length > 0 ? Math.round((score / exercises.length) * 100) : 0;
   const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '📚';
   const weakQuestions = exercises.filter((_, i) => correctHistory[i] === false);
+  const coveredStandards = [...new Set(exercises.map(e => e.curriculumRef))];
 
   const handleSave = async () => {
     setRetrying(false);
@@ -194,6 +196,19 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
           {weakQuestions.slice(0, 3).map((q, i) => (
             <p key={i} className="text-amber-700 truncate">· {q.question}</p>
           ))}
+        </div>
+      )}
+
+      {coveredStandards.length > 0 && (
+        <div className="w-full max-w-sm bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs">
+          <p className="font-bold text-indigo-700 mb-1">Покриени наставни единици:</p>
+          <div className="flex flex-wrap gap-1">
+            {coveredStandards.map(s => (
+              <span key={s} className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full font-semibold">
+                {CURRICULUM_STANDARD_MAP[s] ?? s}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
