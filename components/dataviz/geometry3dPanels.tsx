@@ -376,6 +376,158 @@ export function CrossSections() {
   );
 }
 
+// ─── RoundSolidsPanel (Сфера · Конус · Цилиндар) ──────────────────────────────
+type RoundKind = 'sphere' | 'cone' | 'cylinder';
+
+const ROUND_CONFIG: Record<RoundKind, { label: string; color: string; hex: string }> = {
+  sphere:   { label: '⚪ Сфера',     color: 'sky',     hex: '#0ea5e9' },
+  cone:     { label: '🔺 Конус',     color: 'amber',   hex: '#f59e0b' },
+  cylinder: { label: '🥫 Цилиндар',  color: 'emerald', hex: '#10b981' },
+};
+
+const ROUND_FACTS: Record<RoundKind, string> = {
+  sphere: 'Земјата е приближно сфера со полупречник ≈ 6371 km. Топки, глобуси и меурчиња од сапуница се природно сферични — сферата има најмала површина за дадениот волумен.',
+  cone: 'Сообраќајните конуси, сладоледните рожчиња и вулканите имаат конусна форма. Египетските пирамиди го делат истиот принцип на стеснување кон врв.',
+  cylinder: 'Конзервите за храна и пијалоци се цилиндрична форма — најефикасен однос волумен/материјал меѓу сите обични садови. Столбовите во архитектурата исто се цилиндри.',
+};
+
+const ROUND_CURRICULUM: Record<RoundKind, CurriculumRef> = {
+  sphere:   { primary: ['IX'], gymnasium: ['I година'], vocational: ['Стручно I год.'] },
+  cone:     { primary: ['IX'], gymnasium: ['I година'], vocational: ['Стручно I год.'] },
+  cylinder: { primary: ['IX'], gymnasium: ['I година'], vocational: ['Стручно I год.', 'Стручно II год.'] },
+};
+
+export function RoundSolidsPanel() {
+  const [kind, setKind] = useState<RoundKind>('sphere');
+  const [r, setR] = useState(3);
+  const [h, setH] = useState(4);
+
+  const l = Math.sqrt(r * r + h * h);
+  let volume = 0, surface = 0, volFormula = '', surfFormula = '';
+  switch (kind) {
+    case 'sphere':
+      volume = (4 / 3) * Math.PI * r ** 3;
+      surface = 4 * Math.PI * r ** 2;
+      volFormula = 'V = (4/3)πr³'; surfFormula = 'S = 4πr²';
+      break;
+    case 'cone':
+      volume = (1 / 3) * Math.PI * r * r * h;
+      surface = Math.PI * r * (r + l);
+      volFormula = 'V = (1/3)πr²h'; surfFormula = 'S = πr(r + l)';
+      break;
+    case 'cylinder':
+      volume = Math.PI * r * r * h;
+      surface = 2 * Math.PI * r * (r + h);
+      volFormula = 'V = πr²h'; surfFormula = 'S = 2πr(r + h)';
+      break;
+  }
+
+  const cfg = ROUND_CONFIG[kind];
+  const W = 220, cx = 110, cy = 110;
+  const maxDim = kind === 'sphere' ? r : Math.max(r, h);
+  const scale = 85 / Math.max(maxDim, 1);
+  const rs = r * scale, hs = h * scale;
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-sky-50 border border-sky-100 rounded-xl p-3">
+        <p className="text-xs text-sky-800">
+          <span className="font-bold">МОН програма:</span> Заоблени тела (сфера, конус, цилиндар) — IX одд. ·
+          Стереометрија — Гимн. I год.
+        </p>
+      </div>
+
+      <div className="flex gap-2">
+        {(Object.keys(ROUND_CONFIG) as RoundKind[]).map(k => (
+          <button key={k} type="button" onClick={() => setKind(k)}
+            className={`flex-1 px-3 py-2 text-sm font-bold rounded-xl border-2 transition ${
+              kind === k
+                ? `border-${cfg.color}-500 bg-${cfg.color}-50 text-${cfg.color}-700`
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            }`}>
+            {ROUND_CONFIG[k].label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs font-bold text-gray-500 mb-1 text-center">Страничен профил</p>
+          <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+            <svg viewBox={`0 0 ${W} ${W}`} className="w-full" style={{ maxHeight: 220 }}>
+              {kind === 'sphere' && (
+                <circle cx={cx} cy={cy} r={rs} fill={`${cfg.hex}22`} stroke={cfg.hex} strokeWidth={2.5} />
+              )}
+              {kind === 'cone' && (
+                <polygon
+                  points={`${cx},${cy - hs / 2} ${cx - rs},${cy + hs / 2} ${cx + rs},${cy + hs / 2}`}
+                  fill={`${cfg.hex}22`} stroke={cfg.hex} strokeWidth={2.5} />
+              )}
+              {kind === 'cylinder' && (
+                <>
+                  <rect x={cx - rs} y={cy - hs / 2} width={rs * 2} height={hs} fill={`${cfg.hex}22`} stroke={cfg.hex} strokeWidth={2.5} />
+                  <ellipse cx={cx} cy={cy - hs / 2} rx={rs} ry={rs * 0.22} fill={`${cfg.hex}33`} stroke={cfg.hex} strokeWidth={1.5} />
+                  <ellipse cx={cx} cy={cy + hs / 2} rx={rs} ry={rs * 0.22} fill={`${cfg.hex}33`} stroke={cfg.hex} strokeWidth={1.5} />
+                </>
+              )}
+              {/* r dimension line */}
+              <line x1={cx} y1={cy} x2={cx + rs} y2={kind === 'sphere' ? cy : cy + hs / 2} stroke="#64748b" strokeWidth={1} strokeDasharray="3,2" />
+              <text x={cx + rs / 2} y={(kind === 'sphere' ? cy : cy + hs / 2) - 4} fontSize={10} fill="#334155" fontWeight="bold" textAnchor="middle">r</text>
+              {/* h dimension line (cone/cylinder only) */}
+              {kind !== 'sphere' && (
+                <>
+                  <line x1={cx + rs + 14} y1={cy - hs / 2} x2={cx + rs + 14} y2={cy + hs / 2} stroke="#64748b" strokeWidth={1} />
+                  <text x={cx + rs + 20} y={cy + 3} fontSize={10} fill="#334155" fontWeight="bold">h</text>
+                </>
+              )}
+            </svg>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <label className="flex flex-col text-xs font-semibold text-gray-600">
+            Полупречник r = {r.toFixed(1)} ед.
+            <input type="range" min={1} max={6} step={0.1} value={r}
+              onChange={e => setR(+e.target.value)} className={`mt-1 accent-${cfg.color}-600`} />
+          </label>
+          {kind !== 'sphere' && (
+            <label className="flex flex-col text-xs font-semibold text-gray-600">
+              Висина h = {h.toFixed(1)} ед.
+              <input type="range" min={1} max={8} step={0.1} value={h}
+                onChange={e => setH(+e.target.value)} className={`mt-1 accent-${cfg.color}-600`} />
+            </label>
+          )}
+          {kind === 'cone' && (
+            <p className="text-xs text-gray-500">Изводница l = √(r²+h²) = <strong className="text-gray-700">{l.toFixed(3)}</strong> ед.</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className={`rounded-xl border-2 p-3 text-center bg-${cfg.color}-50 border-${cfg.color}-200`}>
+              <p className={`text-xl font-black text-${cfg.color}-700`}>{volume.toFixed(3)}</p>
+              <p className="text-xs font-bold text-gray-600">Волумен</p>
+              <p className={`text-[11px] font-semibold mt-1 text-${cfg.color}-700`}>{volFormula}</p>
+            </div>
+            <div className={`rounded-xl border-2 p-3 text-center bg-${cfg.color}-50 border-${cfg.color}-200`}>
+              <p className={`text-xl font-black text-${cfg.color}-700`}>{surface.toFixed(3)}</p>
+              <p className="text-xs font-bold text-gray-600">Површина</p>
+              <p className={`text-[11px] font-semibold mt-1 text-${cfg.color}-700`}>{surfFormula}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+        <p className="text-xs text-amber-800"><span className="font-bold">Знаеш ли?</span> {ROUND_FACTS[kind]}</p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-3">
+        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Наставна програма</p>
+        <CurriculumBadges cur={ROUND_CURRICULUM[kind]} />
+      </div>
+    </div>
+  );
+}
+
 // ─── PrismPyramidCalculator ───────────────────────────────────────────────────
 export function PrismPyramidCalculator() {
   const [kind, setKind] = useState<'prism' | 'pyramid'>('prism');

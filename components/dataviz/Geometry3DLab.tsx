@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Vec3, rotateX, rotateY, project, faceAvgZ, faceNormal, lightness, DUAL_MAP } from './geometry3dMath';
-import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
+import { CurriculumBadges, NetsExplorer, CrossSections, PrismPyramidCalculator, RoundSolidsPanel, SOLIDS, CAT_CONFIG } from './geometry3dPanels';
 import { generateGeo3DSet } from './geometry3dExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
@@ -311,7 +311,7 @@ function Geo3DExercisesTab() {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-type GeoTab = 'explorer' | 'plans' | 'nets' | 'cross' | 'prispyram' | 'exercises';
+type GeoTab = 'explorer' | 'plans' | 'nets' | 'cross' | 'prispyram' | 'rounded' | 'exercises';
 
 export function Geometry3DLab() {
   const [tab, setTab] = useState<GeoTab>('explorer');
@@ -322,6 +322,7 @@ export function Geometry3DLab() {
     { id: 'nets',      label: '📄 Мрежи (Nets)' },
     { id: 'cross',     label: '✂️ Пресечни рамнини' },
     { id: 'prispyram', label: '⬡ Призма / Пирамида' },
+    { id: 'rounded',   label: '⚫ Заоблени тела' },
     { id: 'exercises', label: '✏️ Вежбај' },
   ];
 
@@ -341,6 +342,7 @@ export function Geometry3DLab() {
       {tab === 'nets'      && <NetsExplorer />}
       {tab === 'cross'     && <CrossSections />}
       {tab === 'prispyram' && <PrismPyramidCalculator />}
+      {tab === 'rounded'   && <RoundSolidsPanel />}
       {tab === 'exercises' && <Geo3DExercisesTab />}
     </div>
   );
