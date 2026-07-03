@@ -51,8 +51,10 @@ import type { ScenarioBankEntry } from '../services/firestoreService.scenarioBan
 import { UploadedScenarioBanner } from '../components/lesson-plan-editor/UploadedScenarioBanner';
 import { CulturalResponsivenessPanel } from '../components/lesson-plan-editor/CulturalResponsivenessPanel';
 import { DraftMergeDialog } from '../components/lesson-plan-editor/DraftMergeDialog';
+import { ConfirmScenarioGradeModal } from '../components/lesson-plan-editor/ConfirmScenarioGradeModal';
 import { loadAndClearUploadDraft } from '../services/uploadDraftService';
 import { resolveGradeByLabel } from '../utils/gradeMatch';
+import type { SecondaryTrack } from '../types';
 
 
 interface LessonPlanEditorViewProps {
@@ -93,6 +95,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   const [showUploadBanner, setShowUploadBanner] = useState(false);
   const [pendingUpload, setPendingUpload] = useState<{ parsed: Partial<LessonPlan>; fileName: string } | null>(null);
+  // Forces explicit grade + education-track confirmation before an uploaded scenario is
+  // ever applied to plan state — grade must never be silently defaulted (e.g. to initialPlanState's 6).
+  const [pendingGradeConfirm, setPendingGradeConfirm] = useState<{
+    initialGrade?: number;
+    initialTrack?: SecondaryTrack;
+    commit: (grade: number, track?: SecondaryTrack) => void;
+  } | null>(null);
   const [showReflection, setShowReflection] = useState(false);
   const [reflection, setReflection] = useState({ wentWell: '', challenges: '', nextSteps: '' });
   const [postSaveNav, setPostSaveNav] = useState<{ plan: Partial<LessonPlan>; key: string; navigateTo: string } | null>(null);
@@ -184,8 +193,14 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               });
               if (matchedTopic) autoTopicId = matchedTopic.id;
             }
-            setPlan({ ...initialPlanState, ...parsed, ...(autoTopicId ? { topicId: autoTopicId } : {}) });
-            setShowUploadBanner(true);
+            setPendingGradeConfirm({
+              initialGrade: parsed.grade,
+              initialTrack: parsed.secondaryTrack,
+              commit: (grade, secondaryTrack) => {
+                setPlan({ ...initialPlanState, ...parsed, grade, secondaryTrack, ...(autoTopicId ? { topicId: autoTopicId } : {}) });
+                setShowUploadBanner(true);
+              },
+            });
           }
           // Notify about remaining queued scenarios
           if (draft.remaining > 0) {
@@ -377,32 +392,59 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           uploadedPlan={pendingUpload.parsed}
           fileName={pendingUpload.fileName}
           onReplace={() => {
-            setPlan({ ...initialPlanState, ...pendingUpload!.parsed });
-            setShowUploadBanner(true);
+            const up = pendingUpload!.parsed;
+            setPendingGradeConfirm({
+              initialGrade: up.grade,
+              initialTrack: up.secondaryTrack,
+              commit: (grade, secondaryTrack) => {
+                setPlan({ ...initialPlanState, ...up, grade, secondaryTrack });
+                setShowUploadBanner(true);
+              },
+            });
             setPendingUpload(null);
           }}
           onMerge={() => {
-            setPlan((prev: Partial<LessonPlan>) => {
-              const up = pendingUpload!.parsed;
-              return {
-                ...prev,
-                title: prev.title || up.title,
-                theme: prev.theme || up.theme,
-                grade: prev.grade || up.grade,
-                subject: prev.subject || up.subject,
-                objectives: (prev.objectives?.length ?? 0) > 0 ? prev.objectives : up.objectives,
-                scenario: {
-                  introductory: { text: prev.scenario?.introductory?.text || up.scenario?.introductory?.text || '' },
-                  main: (prev.scenario?.main?.length ?? 0) > 0 ? prev.scenario!.main! : (up.scenario?.main ?? []),
-                  concluding: { text: prev.scenario?.concluding?.text || up.scenario?.concluding?.text || '' },
-                },
-                materials: (prev.materials?.length ?? 0) > 0 ? prev.materials : up.materials,
-              };
+            const up = pendingUpload!.parsed;
+            setPendingGradeConfirm({
+              initialGrade: plan.grade || up.grade,
+              initialTrack: plan.secondaryTrack || up.secondaryTrack,
+              commit: (grade, secondaryTrack) => {
+                setPlan((prev: Partial<LessonPlan>) => ({
+                  ...prev,
+                  title: prev.title || up.title,
+                  theme: prev.theme || up.theme,
+                  grade,
+                  secondaryTrack,
+                  subject: prev.subject || up.subject,
+                  objectives: (prev.objectives?.length ?? 0) > 0 ? prev.objectives : up.objectives,
+                  scenario: {
+                    introductory: { text: prev.scenario?.introductory?.text || up.scenario?.introductory?.text || '' },
+                    main: (prev.scenario?.main?.length ?? 0) > 0 ? prev.scenario!.main! : (up.scenario?.main ?? []),
+                    concluding: { text: prev.scenario?.concluding?.text || up.scenario?.concluding?.text || '' },
+                  },
+                  materials: (prev.materials?.length ?? 0) > 0 ? prev.materials : up.materials,
+                }));
+                setShowUploadBanner(true);
+              },
             });
-            setShowUploadBanner(true);
             setPendingUpload(null);
           }}
           onKeepDraft={() => setPendingUpload(null)}
+        />
+      )}
+
+      {/* Force explicit grade + education-track confirmation before any uploaded scenario is applied */}
+      {pendingGradeConfirm && curriculum && (
+        <ConfirmScenarioGradeModal
+          curriculum={curriculum}
+          initialGrade={pendingGradeConfirm.initialGrade}
+          initialTrack={pendingGradeConfirm.initialTrack}
+          profileDefaultTrack={user?.secondaryTrack}
+          onConfirm={(grade, secondaryTrack) => {
+            pendingGradeConfirm.commit(grade, secondaryTrack);
+            setPendingGradeConfirm(null);
+          }}
+          onCancel={() => setPendingGradeConfirm(null)}
         />
       )}
 

@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
+exports.onScenarioPublishedEmbed = exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 admin.initializeApp();
 // ── О1: Push notification when teacher assigns a quiz ─────────────────────
 /**
@@ -558,5 +559,105 @@ exports.grantDemoCredits = functions.https.onCall(async (data, context) => {
         tx.update(userRef, { aiCreditsBalance: current + amount });
         return { success: true, newBalance: current + amount };
     });
+});
+// ── RAG: embed published scenarios into concept_embeddings ────────────────
+/**
+ * Whenever a `scenario_bank` entry becomes public (e.g. after a teacher publishes
+ * an uploaded-and-audited scenario, or any manually authored plan), embed its
+ * denormalised scenario text via the Gemini embedding API and write it to
+ * `concept_embeddings`, so future lesson-plan generation (services/gemini/plans.ts
+ * fetchScenarioBankContext / searchSimilarContext) can retrieve it semantically —
+ * not just via the existing grade/topic Firestore filter.
+ *
+ * Runs server-side (Admin SDK) specifically because `concept_embeddings` write
+ * access is admin-only in firestore.rules — this keeps that restriction intact
+ * instead of loosening it for client writes.
+ *
+ * Requires GEMINI_API_KEY to be configured for the functions runtime (e.g. via
+ * `functions/.env` or `firebase functions:secrets:set GEMINI_API_KEY`).
+ */
+const EMBED_MODEL = 'gemini-embedding-2';
+const EMBEDDABLE_ENTRY_TYPES = new Set([undefined, 'lesson_plan']);
+function hashText(text) {
+    return crypto.createHash('sha256').update(text).digest('hex');
+}
+function buildScenarioEmbedText(entry) {
+    return [
+        entry.title,
+        entry.topicTitle,
+        entry.scenarioIntro,
+        ...(Array.isArray(entry.scenarioMain) ? entry.scenarioMain : []),
+        entry.scenarioConcluding,
+    ].filter((v) => typeof v === 'string' && v.trim().length > 0)
+        .join('\n\n')
+        .slice(0, 8000); // cap — embedding APIs have input token limits
+}
+exports.onScenarioPublishedEmbed = functions.firestore
+    .document('scenario_bank/{entryId}')
+    .onWrite(async (change, context) => {
+    var _a, _b, _c, _d, _e;
+    const entryId = context.params.entryId;
+    const embedRef = admin.firestore().collection('concept_embeddings').doc(`scenario_${entryId}`);
+    const after = change.after.exists ? change.after.data() : null;
+    const before = change.before.exists ? change.before.data() : null;
+    // Deleted, unpublished, or not an embeddable entry type — clean up any stale embedding.
+    if (!after || !after.isPublic || after.deleted || !EMBEDDABLE_ENTRY_TYPES.has(after.entryType)) {
+        if (before === null || before === void 0 ? void 0 : before.isPublic) {
+            await embedRef.delete().catch(() => { });
+        }
+        return null;
+    }
+    const text = buildScenarioEmbedText(after);
+    if (!text.trim())
+        return null;
+    const contentHash = hashText(text);
+    const existing = await embedRef.get();
+    if (existing.exists && ((_a = existing.data()) === null || _a === void 0 ? void 0 : _a.contentHash) === contentHash) {
+        return null; // unchanged content — avoid paying for a redundant embedding call
+    }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error('[onScenarioPublishedEmbed] GEMINI_API_KEY not configured — skipping embed for', entryId);
+        return null;
+    }
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: `models/${EMBED_MODEL}`,
+                content: { parts: [{ text }] },
+                taskType: 'RETRIEVAL_DOCUMENT',
+                outputDimensionality: 768,
+            }),
+        });
+        if (!res.ok) {
+            console.error('[onScenarioPublishedEmbed] embed API error', res.status, await res.text());
+            return null;
+        }
+        const json = await res.json();
+        const vector = (_b = json.embedding) === null || _b === void 0 ? void 0 : _b.values;
+        if (!vector) {
+            console.error('[onScenarioPublishedEmbed] no embedding vector returned for', entryId);
+            return null;
+        }
+        await embedRef.set({
+            vector,
+            text,
+            grade: (_c = after.grade) !== null && _c !== void 0 ? _c : null,
+            secondaryTrack: (_d = after.secondaryTrack) !== null && _d !== void 0 ? _d : null,
+            topicTitle: (_e = after.topicTitle) !== null && _e !== void 0 ? _e : '',
+            source: 'scenario_bank',
+            sourceScenarioId: entryId,
+            contentHash,
+            model: EMBED_MODEL,
+            indexedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return null;
+    }
+    catch (err) {
+        console.error('[onScenarioPublishedEmbed] embedding failed for', entryId, err);
+        return null;
+    }
 });
 //# sourceMappingURL=index.js.map

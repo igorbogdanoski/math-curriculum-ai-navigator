@@ -15,7 +15,7 @@ import {
   serverTimestamp, type Timestamp, type DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import type { LessonPlan, BloomsLevel } from '../types';
+import type { LessonPlan, BloomsLevel, SecondaryTrack } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +29,8 @@ export interface ScenarioBankEntry {
   // Core content (denormalised for fast browse without loading fullPlan)
   title: string;
   grade: number;
+  /** Required context for grade > 9 (гимназиско vs стручно) — undefined for primary grades */
+  secondaryTrack?: SecondaryTrack | null;
   subject: string;
   topicTitle: string;
   objectives: string[];
@@ -193,6 +195,7 @@ export const publishScenario = async (p: PublishScenarioPayload): Promise<string
   const ref = await addDoc(collection(db, 'scenario_bank'), {
     title: p.plan.title,
     grade: p.plan.grade,
+    secondaryTrack: p.plan.secondaryTrack ?? null,
     subject: p.plan.subject || 'Математика',
     topicTitle: p.plan.theme || '',
     objectives: p.plan.objectives.map(o => o.text),

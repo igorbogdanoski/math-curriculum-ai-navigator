@@ -234,6 +234,7 @@ export interface LessonPlan {
   id: string;
   title: string;
   grade: number;
+  secondaryTrack?: SecondaryTrack; // required context for grade > 9 (гимназиско vs стручно)
   topicId: string;
   conceptIds: string[];
   objectives: Array<{
