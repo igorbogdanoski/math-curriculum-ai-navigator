@@ -6,6 +6,7 @@ export type { LabExercise };
 
 interface UseLabSessionReturn {
   // State
+  labId: string;
   exercises: LabExercise[];
   currentIdx: number;
   currentEx: LabExercise | null;
@@ -121,6 +122,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
         percentage:      pct,
         hintsUsed,
         durationSeconds: duration,
+        difficulty:      exercises[0]?.difficulty,
       });
       try { localStorage.setItem('studentName', studentName.trim()); } catch { /* incognito */ }
     } catch (err) {
@@ -129,9 +131,10 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
     } finally {
       setSaving(false);
     }
-  }, [saving, exercises.length, score, labId, labTitle, hintsUsed]);
+  }, [saving, exercises, score, labId, labTitle, hintsUsed]);
 
   return {
+    labId,
     exercises, currentIdx, currentEx,
     userAnswer, submitted, correct, showHint, hintsUsed, score, sessionDone, saving, saveError,
     difficultyStreak, correctHistory,

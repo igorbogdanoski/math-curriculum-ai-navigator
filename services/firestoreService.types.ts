@@ -149,6 +149,7 @@ export interface QuizResult {
   quizType?: 'lab' | string;  // S116: 'lab' for lab exercise sessions; undefined = regular quiz
   hintsUsed?: number;         // S116: lab sessions track hint usage
   durationSeconds?: number;   // S116: lab session duration
+  difficulty?: 1 | 2 | 3;     // S117: lab session difficulty level
 }
 
 export interface Announcement {

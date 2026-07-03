@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Lightbulb, ChevronRight, RotateCcw, Shuffle, Trophy, Save, TrendingUp, TrendingDown } from 'lucide-react';
 import type { useLabSession } from '../../hooks/useLabSession';
 
@@ -29,6 +30,31 @@ const DIFF_COLORS: Record<1 | 2 | 3, string> = {
 // ─── Stored name ──────────────────────────────────────────────────────────────
 function getStoredName(): string {
   try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
+}
+
+function getScoreColor(pct: number): string {
+  return pct >= 90 ? 'text-emerald-700' : pct >= 70 ? 'text-indigo-700' : pct >= 50 ? 'text-amber-700' : 'text-red-600';
+}
+
+// ─── Continue banner — "Продолжи" ──────────────────────────────────────────────
+function ContinueBanner({ labId }: { labId: string }) {
+  const { data: lastSession } = useQuery({
+    queryKey: ['lastLabSession', labId],
+    queryFn: async () => {
+      const { firestoreService } = await import('../../services/firestoreService');
+      return firestoreService.fetchLastLabSession(labId);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (!lastSession) return null;
+  return (
+    <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 text-xs text-teal-800 mb-3">
+      Минатиот пат: <strong>{lastSession.score}/{lastSession.totalQuestions}</strong>
+      {lastSession.difficulty && <> на ниво <strong>{lastSession.difficulty}</strong></>} ·
+      <span className={`font-bold ${getScoreColor(lastSession.percentage)}`}> {lastSession.percentage}%</span>
+    </div>
+  );
 }
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
@@ -254,7 +280,7 @@ export function LabExercisePanel({
   headerSlot,
 }: LabExercisePanelProps) {
   const {
-    exercises, currentIdx, currentEx,
+    labId, exercises, currentIdx, currentEx,
     userAnswer, submitted, correct, showHint,
     hintsUsed, score, sessionDone,
     submitAnswer, useHint, nextExercise, difficultyStreak,
@@ -266,6 +292,7 @@ export function LabExercisePanel({
       <div className="flex flex-col items-center gap-4 py-10 text-gray-400">
         <Trophy className="w-10 h-10 opacity-30" />
         <p className="text-sm">Избери тежина и притисни „Нов сет" за да почнеш.</p>
+        <div className="w-full max-w-sm"><ContinueBanner labId={labId} /></div>
         {headerSlot}
       </div>
     );

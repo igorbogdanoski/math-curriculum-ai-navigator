@@ -291,6 +291,20 @@ export const quizService = {
     }
   },
 
+  /** Most recent lab-exercise session for a lab (optionally scoped to a student). Reuses the conceptId+playedAt index. */
+  fetchLastLabSession: async (labId: string, studentName?: string): Promise<QuizResult | null> => {
+    try {
+      const q = query(collection(db, 'quiz_results'), where('conceptId', '==', labId), orderBy('playedAt', 'desc'), limit(30));
+      const snap = await getDocs(q);
+      const docs = snap.docs.map(d => d.data() as QuizResult).filter(d => d.quizType === 'lab');
+      const match = studentName ? docs.find(d => d.studentName === studentName) : docs[0];
+      return match ?? null;
+    } catch (error) {
+      logger.warn('fetchLastLabSession failed (non-critical):', error);
+      return null;
+    }
+  },
+
   // -- Concept Mastery -----------------------------------------------------------
 
   updateConceptMastery: async (
