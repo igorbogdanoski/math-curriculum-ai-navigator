@@ -209,7 +209,7 @@ export const ExtractionHubView: React.FC = () => {
       e.preventDefault();
       setSourceMode('document');
       await loadFile(cls.file);
-    } else if (cls.kind === 'text' && sourceMode === 'url') {
+    } else if (cls.kind === 'text' && (sourceMode === 'url' || sourceMode === 'youtube')) {
       e.preventDefault();
       setManualTranscript(cls.text);
       setShowAdvanced(true);
@@ -626,6 +626,7 @@ export const ExtractionHubView: React.FC = () => {
         showAdvanced={showAdvanced} timeRange={timeRange} setTimeRange={setTimeRange}
         specificInstructions={specificInstructions} setSpecificInstructions={setSpecificInstructions}
         progressLabel={progressLabel} progressPct={progressPct}
+        onPaste={onPaste}
       />
 
 

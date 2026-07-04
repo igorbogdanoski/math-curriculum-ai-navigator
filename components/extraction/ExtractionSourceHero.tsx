@@ -103,6 +103,8 @@ interface ExtractionSourceHeroProps {
 
   progressLabel: string;
   progressPct: number;
+
+  onPaste?: (e: React.ClipboardEvent<HTMLDivElement>) => void;
 }
 
 export const ExtractionSourceHero: React.FC<ExtractionSourceHeroProps> = ({
@@ -114,6 +116,7 @@ export const ExtractionSourceHero: React.FC<ExtractionSourceHeroProps> = ({
   cameraInputRef, onCameraCapture, extractFromDocument,
   selectedModel, setSelectedModel, showAdvanced, timeRange, setTimeRange, specificInstructions, setSpecificInstructions,
   progressLabel, progressPct,
+  onPaste,
 }) => {
   return (
     <div
@@ -182,7 +185,7 @@ export const ExtractionSourceHero: React.FC<ExtractionSourceHeroProps> = ({
         </div>
 
         {/* Input card */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm" onPaste={onPaste}>
 
           {/* ── URL mode ── */}
           {sourceMode === 'url' && (
