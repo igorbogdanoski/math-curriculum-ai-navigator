@@ -56,6 +56,9 @@ export interface ScenarioBankEntry {
   schoolName: string;
   originalId: string | null;
   forkDepth: number;
+  /** Denormalised name/uid of the root author in the fork chain — set once at first fork, threaded through unchanged on re-forks */
+  originalAuthorName?: string;
+  originalAuthorUid?: string;
   // Community
   publishedAt: Timestamp | null;
   forkCount: number;
@@ -185,6 +188,8 @@ export interface PublishScenarioPayload {
   dokLevel?: 1 | 2 | 3 | 4 | null;
   originalId?: string;
   forkDepth?: number;
+  originalAuthorName?: string;
+  originalAuthorUid?: string;
   verifiedByBRO?: boolean;
   isPublic?: boolean;
   authorNotes?: string;
@@ -214,6 +219,8 @@ export const publishScenario = async (p: PublishScenarioPayload): Promise<string
     schoolName: p.schoolName ?? '',
     originalId: p.originalId ?? null,
     forkDepth: p.forkDepth ?? 0,
+    originalAuthorName: p.originalAuthorName,
+    originalAuthorUid: p.originalAuthorUid,
     publishedAt: serverTimestamp(),
     forkCount: 0,
     usageCount: 0,
@@ -389,6 +396,10 @@ export interface PublishThematicPlanPayload {
   schoolName?: string;
   isPublic?: boolean;
   authorNotes?: string;
+  originalId?: string;
+  forkDepth?: number;
+  originalAuthorName?: string;
+  originalAuthorUid?: string;
 }
 
 /** Publish a thematic plan to the Scenario Bank — reuses its existing public gallery, rules, and fork/rate mechanics instead of a parallel collection. */
@@ -415,8 +426,10 @@ export const publishThematicPlanToBank = async (p: PublishThematicPlanPayload): 
     authorUid: p.authorUid,
     authorName: p.authorName,
     schoolName: p.schoolName ?? '',
-    originalId: null,
-    forkDepth: 0,
+    originalId: p.originalId ?? null,
+    forkDepth: p.forkDepth ?? 0,
+    originalAuthorName: p.originalAuthorName,
+    originalAuthorUid: p.originalAuthorUid,
     publishedAt: serverTimestamp(),
     forkCount: 0,
     usageCount: 0,
@@ -439,6 +452,8 @@ export const forkScenario = async (
   schoolName?: string,
 ): Promise<string> => {
   let newId: string;
+  const originalAuthorName = original.originalAuthorName ?? original.authorName;
+  const originalAuthorUid = original.originalAuthorUid ?? original.authorUid;
   if (original.entryType === 'thematic_plan' && original.generatedContent) {
     newId = await publishThematicPlanToBank({
       title: original.title,
@@ -449,6 +464,10 @@ export const forkScenario = async (
       authorUid,
       authorName,
       schoolName,
+      originalId: original.originalId ?? original.id,
+      forkDepth: (original.forkDepth ?? 0) + 1,
+      originalAuthorName,
+      originalAuthorUid,
     });
   } else {
     newId = await publishScenario({
@@ -468,6 +487,8 @@ export const forkScenario = async (
       teachingModel: original.teachingModel ?? undefined,
       originalId: original.originalId ?? original.id,
       forkDepth: (original.forkDepth ?? 0) + 1,
+      originalAuthorName,
+      originalAuthorUid,
     });
   }
   // Increment forkCount on original (or root if this is already a fork)

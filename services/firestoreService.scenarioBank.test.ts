@@ -129,6 +129,48 @@ describe('forkScenario — entryType branching', () => {
     expect(updateDoc).toHaveBeenCalledWith('doc-ref', { forkCount: ['increment', 1] });
   });
 
+  it('threads originalId/forkDepth/originalAuthor through a thematic_plan fork instead of dropping lineage', async () => {
+    const plan = makeThematicPlan();
+    const entry = makeEntry({
+      id: 'entry-1',
+      entryType: 'thematic_plan',
+      generatedContent: plan as unknown as Record<string, unknown>,
+      authorUid: 'author-uid',
+      authorName: 'Оригинален Автор',
+    });
+
+    await forkScenario(entry, 'forker-uid', 'Друг наставник');
+
+    const payload = lastAddDocPayload();
+    expect(payload.originalId).toBe('entry-1');
+    expect(payload.forkDepth).toBe(1);
+    expect(payload.originalAuthorName).toBe('Оригинален Автор');
+    expect(payload.originalAuthorUid).toBe('author-uid');
+  });
+
+  it('collapses the chain on a re-fork: keeps the root author, not the immediate parent', async () => {
+    const plan = makeThematicPlan();
+    const entry = makeEntry({
+      id: 'entry-2',
+      entryType: 'thematic_plan',
+      generatedContent: plan as unknown as Record<string, unknown>,
+      authorUid: 'forker-uid', // this entry's own author is the first forker
+      authorName: 'Друг наставник',
+      originalId: 'entry-1',
+      forkDepth: 1,
+      originalAuthorName: 'Оригинален Автор',
+      originalAuthorUid: 'author-uid',
+    });
+
+    await forkScenario(entry, 'second-forker-uid', 'Трет наставник');
+
+    const payload = lastAddDocPayload();
+    expect(payload.originalId).toBe('entry-1');
+    expect(payload.forkDepth).toBe(2);
+    expect(payload.originalAuthorName).toBe('Оригинален Автор');
+    expect(payload.originalAuthorUid).toBe('author-uid');
+  });
+
   it('falls back to the generic LessonPlan fork path for lesson_plan entries', async () => {
     const entry = makeEntry({
       entryType: 'lesson_plan',
@@ -144,5 +186,7 @@ describe('forkScenario — entryType branching', () => {
     expect(payload.scenarioIntro).toBe('Вовед');
     expect(payload.originalId).toBe('entry-1');
     expect(payload.forkDepth).toBe(1);
+    expect(payload.originalAuthorName).toBe('Автор');
+    expect(payload.originalAuthorUid).toBe('author-uid');
   });
 });

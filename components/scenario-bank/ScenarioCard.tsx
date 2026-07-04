@@ -169,7 +169,11 @@ export const ScenarioCard: React.FC<Props> = ({
         {/* Author + stats */}
         <div className="flex items-center justify-between text-[10px] text-gray-400">
           <span className="truncate max-w-[60%]">
-            {entry.forkDepth > 0 && <span className="text-indigo-400 mr-1">↳ Ремикс</span>}
+            {entry.forkDepth > 0 && (
+              <span className="text-indigo-400 mr-1">
+                ↳ {entry.originalAuthorName ? `Оригинално од: ${entry.originalAuthorName}` : 'Ремикс'}
+              </span>
+            )}
             {entry.authorName}
             {entry.schoolName ? ` · ${entry.schoolName}` : ''}
           </span>

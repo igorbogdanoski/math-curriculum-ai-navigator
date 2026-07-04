@@ -4,7 +4,7 @@ import {
   Save, Zap, GitFork,
 } from 'lucide-react';
 import { MathRenderer } from '../components/common/MathRenderer';
-import { createDuggaTest, updateDuggaTest, getDuggaTest } from '../services/firestoreService.dugga';
+import { createDuggaTest, updateDuggaTest, getDuggaTest, incrementDuggaAdaptCount } from '../services/firestoreService.dugga';
 import type {
   DuggaQuestion, DuggaQuestionType, DuggaTestType,
 } from '../services/firestoreService.dugga';
@@ -169,6 +169,7 @@ export function DuggaBuilderView() {
         setSavedId(id);
         const saved = await getDuggaTest(id);
         if (saved) setSavedCode(saved.shareCode);
+        if (adaptProvenance) await incrementDuggaAdaptCount(adaptProvenance.fromId);
         addNotification('Тестот е зачуван!', 'success');
       }
     } catch {

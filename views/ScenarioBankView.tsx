@@ -822,7 +822,9 @@ export const ScenarioBankView: React.FC = () => {
                       <td className="px-3 py-2 max-w-[220px]">
                         <p className="font-semibold text-gray-800 truncate">{entry.title}</p>
                         {entry.forkDepth > 0 && (
-                          <span className="text-[10px] text-indigo-500">↳ Ремикс (ниво {entry.forkDepth})</span>
+                          <span className="text-[10px] text-indigo-500">
+                            ↳ Ремикс (ниво {entry.forkDepth}){entry.originalAuthorName ? ` — оригинално од: ${entry.originalAuthorName}` : ''}
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2">

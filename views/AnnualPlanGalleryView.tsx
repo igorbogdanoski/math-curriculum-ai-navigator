@@ -23,6 +23,9 @@ interface SavedPlan {
     planData: AIGeneratedAnnualPlan;
     likes?: number;
     forks?: number;
+    isForked?: boolean;
+    originalPlanId?: string;
+    originalAuthorName?: string;
     isPublic?: boolean;
     avgRating?: number;
     ratingCount?: number;
@@ -132,7 +135,11 @@ export const AnnualPlanGalleryView: React.FC = () => {
                     const newId = await createAnnualPlan(
                         firebaseUser.uid,
                         { ...plan.planData },
-                        { isForked: true, originalPlanId: plan.id }
+                        {
+                            isForked: true,
+                            originalPlanId: plan.originalPlanId ?? plan.id,
+                            originalAuthorName: plan.originalAuthorName ?? plan.authorName,
+                        }
                     );
 
                     // 2. Increment fork count on original
@@ -254,12 +261,17 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                     <span className="text-sm font-medium text-brand-primary bg-blue-50 px-2 py-0.5 rounded">
                                         {plan.grade}
                                     </span>
+                                    {plan.isForked && (
+                                        <div className="text-[10px] text-indigo-500 mt-1">
+                                            ↳ {plan.originalAuthorName ? `Оригинално од: ${plan.originalAuthorName}` : 'Форкнат план'}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-xl text-gray-300">
                                     <ICONS.calendar className="w-8 h-8 opacity-20" />
                                 </div>
                             </div>
-                            
+
                             <div className="text-sm text-gray-600 mb-4 line-clamp-3 h-16">
                                 {plan.planData.topics.slice(0, 3).map((t, i) => (
                                     <div key={i} className="truncate">• {t.title} ({t.durationWeeks} нед.)</div>

@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, where, serverTimestamp, Timestamp,
+  onSnapshot, query, orderBy, where, serverTimestamp, Timestamp, increment,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
@@ -248,6 +248,8 @@ export interface DuggaTest {
   lastEditedByUid?: string;
   /** Display name of the last editor. */
   lastEditedByName?: string;
+  /** Number of times other teachers adapted this test — incremented on the ORIGINAL test only. */
+  adaptCount?: number;
 
   // S61-E1 — Final exam mode (state-recognised exam) -------------------------
   /**
@@ -324,6 +326,11 @@ export const updateDuggaTest = async (
 
 export const deleteDuggaTest = async (testId: string): Promise<void> => {
   await deleteDoc(doc(db, 'dugga_tests', testId));
+};
+
+/** Increment the "times adapted" counter on the original test — call once, when a new adapted test is first created. */
+export const incrementDuggaAdaptCount = async (originalTestId: string): Promise<void> => {
+  await updateDoc(doc(db, 'dugga_tests', originalTestId), { adaptCount: increment(1) });
 };
 
 export const getDuggaTest = async (testId: string): Promise<DuggaTest | null> => {

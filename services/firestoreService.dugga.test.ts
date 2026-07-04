@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createDuggaTest, updateDuggaTest, deleteDuggaTest,
-  getDuggaTest, getDuggaTestByCode, submitDuggaTest,
+  getDuggaTest, getDuggaTestByCode, submitDuggaTest, incrementDuggaAdaptCount,
 } from './firestoreService.dugga';
 import type { DuggaTest } from './firestoreService.dugga';
 import {
@@ -24,6 +24,7 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   onSnapshot: vi.fn(),
   serverTimestamp: vi.fn(() => 'SERVER_TS'),
+  increment: vi.fn((n: number) => ['increment', n]),
 }));
 
 vi.mock('../firebaseConfig', () => ({ db: {} }));
@@ -120,6 +121,20 @@ describe('deleteDuggaTest', () => {
 
     expect(doc).toHaveBeenCalledWith({}, 'dugga_tests', 'test-456');
     expect(deleteDoc).toHaveBeenCalledWith('doc-ref');
+  });
+});
+
+// ─── incrementDuggaAdaptCount ──────────────────────────────────────────────────
+
+describe('incrementDuggaAdaptCount', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('increments adaptCount on the original test document', async () => {
+    (doc as ReturnType<typeof vi.fn>).mockReturnValue('doc-ref');
+    await incrementDuggaAdaptCount('original-test-id');
+
+    expect(doc).toHaveBeenCalledWith({}, 'dugga_tests', 'original-test-id');
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', { adaptCount: ['increment', 1] });
   });
 });
 
