@@ -15,12 +15,12 @@ import {
   serverTimestamp, type Timestamp, type DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import type { LessonPlan, BloomsLevel, SecondaryTrack } from '../types';
+import type { LessonPlan, BloomsLevel, SecondaryTrack, AIGeneratedThematicPlan } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type TeachingModel = '5E' | 'PBL' | 'ZPD' | 'Cooperative' | 'Traditional';
-export type EntryType = 'lesson_plan' | 'kahoot' | 'extracted_material' | 'generated_material';
+export type EntryType = 'lesson_plan' | 'kahoot' | 'extracted_material' | 'generated_material' | 'thematic_plan';
 
 export interface ScenarioBankEntry {
   /** Discriminates between lesson plans, kahoot quizzes, and extracted materials */
@@ -378,6 +378,59 @@ export const publishMaterialFromGenerator = async (p: PublishGeneratedMaterialPa
   return ref.id;
 };
 
+export interface PublishThematicPlanPayload {
+  title: string;
+  grade: number;
+  secondaryTrack?: SecondaryTrack | null;
+  topicTitle: string;
+  plan: AIGeneratedThematicPlan;
+  authorUid: string;
+  authorName: string;
+  schoolName?: string;
+  isPublic?: boolean;
+  authorNotes?: string;
+}
+
+/** Publish a thematic plan to the Scenario Bank — reuses its existing public gallery, rules, and fork/rate mechanics instead of a parallel collection. */
+export const publishThematicPlanToBank = async (p: PublishThematicPlanPayload): Promise<string> => {
+  const ref = await addDoc(collection(db, 'scenario_bank'), {
+    entryType: 'thematic_plan' as EntryType,
+    title: p.title,
+    grade: p.grade,
+    secondaryTrack: p.secondaryTrack ?? null,
+    subject: 'Математика',
+    topicTitle: p.topicTitle,
+    objectives: [],
+    scenarioIntro: '',
+    scenarioMain: [],
+    scenarioConcluding: '',
+    materials: [],
+    assessmentStandards: [],
+    generatedContent: p.plan as unknown as Record<string, unknown>,
+    generatedMaterialType: 'thematicplan',
+    bloomLevels: [],
+    dokLevel: null,
+    teachingModel: null,
+    duration: 0,
+    authorUid: p.authorUid,
+    authorName: p.authorName,
+    schoolName: p.schoolName ?? '',
+    originalId: null,
+    forkDepth: 0,
+    publishedAt: serverTimestamp(),
+    forkCount: 0,
+    usageCount: 0,
+    ratingsByUid: {},
+    savedByUids: [],
+    verifiedByBRO: false,
+    isFeatured: false,
+    deleted: false,
+    isPublic: p.isPublic ?? true,
+    authorNotes: p.authorNotes ?? '',
+  });
+  return ref.id;
+};
+
 /** Fork (remix) a scenario — creates a new entry, increments parent forkCount */
 export const forkScenario = async (
   original: ScenarioBankEntry,
@@ -385,24 +438,38 @@ export const forkScenario = async (
   authorName: string,
   schoolName?: string,
 ): Promise<string> => {
-  const newId = await publishScenario({
-    plan: original.fullPlan ?? ({
-      ...original,
-      id: '',
-      conceptIds: [],
-      scenario: {
-        introductory: { text: original.scenarioIntro },
-        main: original.scenarioMain.map(t => ({ text: t })),
-        concluding: { text: original.scenarioConcluding },
-      },
-    } as unknown as LessonPlan),
-    authorUid,
-    authorName,
-    schoolName,
-    teachingModel: original.teachingModel ?? undefined,
-    originalId: original.originalId ?? original.id,
-    forkDepth: (original.forkDepth ?? 0) + 1,
-  });
+  let newId: string;
+  if (original.entryType === 'thematic_plan' && original.generatedContent) {
+    newId = await publishThematicPlanToBank({
+      title: original.title,
+      grade: original.grade,
+      secondaryTrack: original.secondaryTrack,
+      topicTitle: original.topicTitle,
+      plan: original.generatedContent as unknown as AIGeneratedThematicPlan,
+      authorUid,
+      authorName,
+      schoolName,
+    });
+  } else {
+    newId = await publishScenario({
+      plan: original.fullPlan ?? ({
+        ...original,
+        id: '',
+        conceptIds: [],
+        scenario: {
+          introductory: { text: original.scenarioIntro },
+          main: original.scenarioMain.map(t => ({ text: t })),
+          concluding: { text: original.scenarioConcluding },
+        },
+      } as unknown as LessonPlan),
+      authorUid,
+      authorName,
+      schoolName,
+      teachingModel: original.teachingModel ?? undefined,
+      originalId: original.originalId ?? original.id,
+      forkDepth: (original.forkDepth ?? 0) + 1,
+    });
+  }
   // Increment forkCount on original (or root if this is already a fork)
   const rootId = original.originalId ?? original.id;
   await updateDoc(doc(db, 'scenario_bank', rootId), { forkCount: increment(1) });

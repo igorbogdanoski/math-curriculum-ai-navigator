@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2, ShieldCheck, Lock, Globe } from 'lucide-react';
+import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2, ShieldCheck, Lock, Globe, Layers } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
@@ -188,6 +188,14 @@ export const ScenarioBankView: React.FC = () => {
 
   const handleEdit = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (entry.entryType === 'thematic_plan') {
+      // Thematic plans are multi-lesson units, not a single LessonPlan — the lesson
+      // draft/editor path below doesn't fit them. No dedicated "open a bank thematic
+      // plan in the generator" flow exists yet, so surface it honestly instead of
+      // showing garbled content in the wrong editor.
+      addNotification('Тематскиот план е сочуван во Банката. Отвори „Тематски План" за да создадеш свој од истата тема.', 'info');
+      return;
+    }
     try {
       // Always go through draft path — fullPlan.id points to local storage which may not exist on other devices
       const draft = entry.fullPlan ?? entryToDraft(entry);
@@ -205,6 +213,10 @@ export const ScenarioBankView: React.FC = () => {
       setEntries(prev => prev.map(e =>
         (e.id === (entry.originalId ?? entry.id)) ? { ...e, forkCount: e.forkCount + 1 } : e
       ));
+      if (entry.entryType === 'thematic_plan') {
+        addNotification('✅ Тематскиот план е форкан во твоите материјали (Мои).', 'success');
+        return;
+      }
       const draft = entry.fullPlan ?? entryToDraft(entry);
       await saveUploadDraft(firebaseUser.uid, draft, `Ремикс: ${entry.title}`);
       addNotification('✅ Ремиксот е подготвен — отвора во Уредувач.', 'success');
@@ -216,6 +228,10 @@ export const ScenarioBankView: React.FC = () => {
 
   const handleUse = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (entry.entryType === 'thematic_plan') {
+      addNotification('Тематскиот план е сочуван во Банката. Отвори „Тематски План" за да создадеш свој од истата тема.', 'info');
+      return;
+    }
     try {
       await recordUsage(entry.id).catch(() => {});
       setEntries(prev => prev.map(e => e.id !== entry.id ? e : { ...e, usageCount: e.usageCount + 1 }));
@@ -596,6 +612,7 @@ export const ScenarioBankView: React.FC = () => {
                   { key: 'kahoot' as EntryType,     label: 'Kahoot', icon: <Gamepad2 className="w-3 h-3" /> },
                   { key: 'extracted_material' as EntryType, label: 'Извлечени', icon: <Search className="w-3 h-3" /> },
                   { key: 'generated_material' as EntryType, label: 'AI Генерирани', icon: <Sparkles className="w-3 h-3" /> },
+                  { key: 'thematic_plan' as EntryType, label: 'Тематски', icon: <Layers className="w-3 h-3" /> },
                 ] as const).map(opt => (
                   <button
                     key={String(opt.key)}

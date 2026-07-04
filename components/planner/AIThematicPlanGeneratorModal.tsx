@@ -15,6 +15,8 @@ import { CoachBubble } from '../common/CoachBubble';
 import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
 import { resolveGradeByLabel } from '../../utils/gradeMatch';
 import { detectMathDomain } from '../../utils/mathDomainDetector';
+import { publishThematicPlanToBank } from '../../services/firestoreService.scenarioBank';
+import { PublishScenarioDialog, type PublishScenarioOptions } from '../scenario-bank/PublishScenarioDialog';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -42,7 +44,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
 }) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
-    const { firebaseUser } = useAuth();
+    const { firebaseUser, user } = useAuth();
     const { navigate } = useNavigation();
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +71,8 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const [showOfficialForm, setShowOfficialForm] = useState(false);
     const [broAccordionOpen, setBroAccordionOpen] = useState(false);
     const [pedagAccordionOpen, setPedagAccordionOpen] = useState(false);
+    const [showPublishDialog, setShowPublishDialog] = useState(false);
+    const [isPublishingToBank, setIsPublishingToBank] = useState(false);
 
     const selectedGradeObj = useMemo(() =>
         curriculum?.grades.find(g => g.id === selectedGradeId),
@@ -288,6 +292,31 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             addNotification('Грешка при зачувување. Обидете се повторно.', 'error');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleConfirmPublish = async (opts: PublishScenarioOptions) => {
+        if (!editablePlan || !firebaseUser?.uid || !user || !selectedGradeObj) return;
+        setIsPublishingToBank(true);
+        try {
+            await publishThematicPlanToBank({
+                title: editablePlan.thematicUnit || selectedTopicObj?.title || 'Тематски план',
+                grade: selectedGradeObj.level,
+                secondaryTrack: user.secondaryTrack ?? null,
+                topicTitle: selectedTopicObj?.title ?? '',
+                plan: editablePlan,
+                authorUid: firebaseUser.uid,
+                authorName: authorName || user.name || 'Наставник',
+                schoolName: schoolName || user.schoolName,
+                isPublic: opts.isPublic,
+                authorNotes: opts.authorNotes,
+            });
+            setShowPublishDialog(false);
+            addNotification(opts.isPublic ? '✅ Тематскиот план е јавно споделен во Банката!' : '🔒 Тематскиот план е зачуван приватно.', 'success');
+        } catch {
+            addNotification('Грешка при споделување.', 'error');
+        } finally {
+            setIsPublishingToBank(false);
         }
     };
 
@@ -639,6 +668,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             📄 МОН Образец
                         </button>
                     )}
+                    {firebaseUser && editablePlan && (
+                        <button
+                            type="button"
+                            onClick={() => setShowPublishDialog(true)}
+                            disabled={isPublishingToBank}
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-2 text-sm disabled:opacity-60"
+                            title="Сподели го тематскиот план со колеги преку Банката на Сценарија"
+                        >
+                            {isPublishingToBank
+                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Споделувам...</>
+                                : <>🔗 Во Банката</>
+                            }
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handlePrint}
@@ -743,6 +786,18 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 period={period}
                 academicYear={new Date().getFullYear() + '/' + (new Date().getFullYear() + 1)}
                 onClose={() => setShowOfficialForm(false)}
+            />
+        )}
+
+        {/* Share to Scenario Bank */}
+        {showPublishDialog && editablePlan && (
+            <PublishScenarioDialog
+                item={{ title: editablePlan.thematicUnit }}
+                isPro={!!(user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited')}
+                showTeachingModel={false}
+                isLoading={isPublishingToBank}
+                onPublish={handleConfirmPublish}
+                onCancel={() => setShowPublishDialog(false)}
             />
         )}
         </>
