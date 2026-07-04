@@ -58,7 +58,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c1-2"
+        "gym10-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -136,7 +136,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c1-2"
+        "gym13-c1-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -188,7 +188,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c4-1"
+        "gym11-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -214,6 +214,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c5-1",
         "voc4-13-c5-2"
       ],
       "hints": [],
@@ -240,7 +241,9 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c4-1"
+        "voc4-13-c4-1",
+        "voc4-13-c4-2",
+        "voc4-13-c4-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -266,6 +269,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c6-1",
         "voc4-13-c6-2"
       ],
       "hints": [],
@@ -318,7 +322,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c4-2"
+        "gym10-c1-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -344,7 +348,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-2"
+        "gym10-c6-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -370,7 +374,9 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c4-2"
+        "voc4-13-c4-1",
+        "voc4-13-c4-2",
+        "voc4-13-c4-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -396,7 +402,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c5-1"
+        "gym10-c6-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -417,6 +423,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c5-1",
         "voc4-13-c5-2"
       ],
       "hints": [
@@ -441,7 +448,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-3"
+        "gym10-c6-2"
       ],
       "hints": [
         "s² = Σ(xᵢ − x̄)² / n",
@@ -465,6 +472,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c6-1",
         "voc4-13-c6-2"
       ],
       "hints": [
@@ -489,7 +497,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c8-2"
+        "gym10-c3-2"
       ],
       "hints": [
         "Нагибот (0.5) е промената по еден процес",
@@ -513,7 +521,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c8-3"
+        "gym11-c4-1"
       ],
       "hints": [
         "Теме: d = -b/(2a)",

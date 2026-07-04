@@ -58,7 +58,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c1-2"
+        "gym10-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -110,7 +110,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c8-2"
+        "gym10-c3-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -136,7 +136,8 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c1-1"
+        "gym13-c1-2",
+        "gym13-c1-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -188,7 +189,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c4-1"
+        "gym12-c2-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -214,7 +215,8 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c5-1"
+        "voc4-13-c5-1",
+        "voc4-13-c5-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -240,7 +242,9 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c4-2"
+        "voc4-13-c4-1",
+        "voc4-13-c4-2",
+        "voc4-13-c4-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -266,6 +270,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c6-1",
         "voc4-13-c6-2"
       ],
       "hints": [],
@@ -344,7 +349,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c3-1"
+        "gym11-c3-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -370,7 +375,9 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c4-1"
+        "voc4-13-c4-1",
+        "voc4-13-c4-2",
+        "voc4-13-c4-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -396,7 +403,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c5-2"
+        "gym10-c6-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -417,6 +424,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
+        "voc4-13-c5-1",
         "voc4-13-c5-2"
       ],
       "hints": [
@@ -465,7 +473,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c8-3"
+        "gym11-c4-1"
       ],
       "hints": [
         "Теме: b = -B/(2A)",
@@ -514,8 +522,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c8-3",
-        "voc4-10-c3-1"
+        "gym11-c4-1"
       ],
       "hints": [
         "Теме на парабола → максимум",

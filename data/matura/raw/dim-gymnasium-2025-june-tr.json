@@ -146,7 +146,7 @@
       "topic": "Polinomların EBOB'u",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c2-3"
+        "gym10-c2-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -285,7 +285,8 @@
       "topic": "Çemberde Açılar",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c2-1"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -431,6 +432,7 @@
       "topic": "Planimetri - Dörtgenler",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-1",
         "gym10-c4-3"
       ],
       "imageUrls": [],
@@ -450,7 +452,7 @@
       "topic": "Dik Üçgende Trigonometri",
       "topicArea": "trigonometrija",
       "conceptIds": [
-        "gym11-c1-1"
+        "gym10-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -488,7 +490,7 @@
       "topic": "Sayısal İfadeler ve Yüzdeler",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c1-2"
+        "gym10-c1-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -507,7 +509,8 @@
       "topic": "Rasyonel Eşitsizlikler",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-5"
+        "gym10-c2-3",
+        "gym11-c3-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -545,7 +548,7 @@
       "topic": "Basamak Kavramı ve Denklemler",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-3"
+        "gym10-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,

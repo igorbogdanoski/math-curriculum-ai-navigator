@@ -58,7 +58,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c1-2"
+        "gym10-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -84,7 +84,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c2-1"
+        "gym10-c1-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -110,7 +110,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c2-3"
+        "gym10-c1-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -136,7 +136,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c5-1"
+        "gym11-c3-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -162,7 +162,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c1-1"
+        "gym13-c1-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -266,7 +266,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-1"
+        "gym10-c6-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -292,7 +292,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-2"
+        "gym10-c6-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -318,7 +318,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c4-2"
+        "gym10-c1-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -344,7 +344,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c3-1"
+        "gym12-c3-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -370,7 +370,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c4-1"
+        "gym11-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -396,7 +396,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c2-2"
+        "gym11-c4-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -417,7 +417,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c4-2"
+        "gym10-c1-3"
       ],
       "hints": [
         "Маржа = (продажна − набавна) / набавна × 100",
@@ -441,7 +441,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c1-1"
+        "gym13-c1-2"
       ],
       "hints": [
         "d = (a_n − a_1) / (n − 1)",
@@ -465,7 +465,8 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-13-c5-1"
+        "voc4-13-c5-1",
+        "voc4-13-c5-2"
       ],
       "hints": [
         "Множење матрици: редови по колони",

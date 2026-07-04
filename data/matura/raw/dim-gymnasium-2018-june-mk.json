@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -201,7 +213,9 @@
         "/matura/images/2018/june/q08-fig1.png"
       ],
       "imageDescription": "Триаголник со висина. Означени се аглите \\alpha, \\alpha/2, \\beta и 108^\\circ.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -225,7 +239,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -249,7 +266,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -273,7 +293,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -297,7 +320,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -321,7 +346,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -345,7 +372,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -369,7 +398,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -393,7 +424,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -417,7 +450,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -441,7 +476,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -465,7 +502,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -489,7 +528,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -508,7 +549,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -527,7 +570,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -546,7 +591,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -565,7 +613,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -584,7 +634,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -603,7 +655,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -622,7 +676,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -641,7 +697,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -660,7 +718,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -679,7 +740,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -698,7 +761,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -717,7 +782,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3",
+        "gym11-c3-2"
+      ],
       "hints": [],
       "aiSolution": "А) Го разложува триномот $x^2 - 3x + 2 = (x - 1)(x - 2)$. Наоѓа НЗС $(x - 2, x - 1, 2 - x, x^2 - 3x + 2) = (x - 1)(x - 2)$ или $-(x - 1)(x - 2)$ или $x^2 - 3x + 2$. Б) Запишува дефиниционата област $x \\neq 2$ и $x \\neq 1$, $x \\in \\mathbb{R} \\setminus \\{1,2\\}$. В) Ја средува равенката и ја добива квадратната равенка $x^2 - x - 2 = 0$. Добива $x_1 = 2$ и $x_2 = -1$ и заклучува дека решение на равенката е само $x = -1$.",
       "successRatePercent": null
@@ -736,7 +804,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "Ја решава неравенката $\\frac{1}{6} - \\frac{4x+1}{12} \\le \\frac{6x-1}{4} - \\frac{5x}{4}$ и добива $x \\ge \\frac{4}{7}$. Ја решава неравенката $\\frac{2x-1}{5} - \\frac{2-x}{3} < 1$ и добива $x < 28/11$. Го запишува решението на системот како интервал $x \\in [4/7, 28/11)$.",
       "successRatePercent": null
@@ -757,7 +827,10 @@
         "/matura/images/2018/june/q34-fig1.png"
       ],
       "imageDescription": "Триаголна пирамида со основа триаголник со страни a, b, c. Еден бочен раб H е нормален на основата.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Ја пресметува плоштината на основата на пирамидата со Херонова формула: $s = \\frac{13+14+15}{2} = 21$, $B = \\sqrt{21 \\cdot 7 \\cdot 8 \\cdot 6} = 84\\text{ cm}^2$. Ја пресметува должината на средната по големина висина на основата $h_b$: $84 = \\frac{14h_b}{2} \\Rightarrow h_b = 12\\text{ cm}$. Ја пресметува апотемата $h$ кон страната $b$: $h^2 = H^2 + h_b^2 = 16^2 + 12^2 = 400 \\Rightarrow h = 20\\text{ cm}$. Ја пресметува плоштината на пирамидата: $P = B + \\frac{a \\cdot H}{2} + \\frac{c \\cdot H}{2} + \\frac{b \\cdot h}{2} = 84 + \\frac{13 \\cdot 16}{2} + \\frac{15 \\cdot 16}{2} + \\frac{14 \\cdot 20}{2} = 448\\text{ cm}^2$. За волуменот се добива $V = \\frac{BH}{3} = \\frac{84 \\cdot 16}{3} = 448\\text{ cm}^3$.",
       "successRatePercent": null
@@ -776,7 +849,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Ја одредува висината на цилиндарот $h = H - r = 7,5 - 4 = 3,5\\text{ m}$. Базата на силосот е со радиус $r = 4\\text{ m}$. Го пресметува волуменот на цилиндарот $V_1 = r^2\\pi h = 56\\pi\\text{ m}^3$. Го пресметува волуменот на полутопката: $V_2 = \\frac{1}{2}\\left(\\frac{4}{3}r^3\\pi\\right) = \\frac{128}{3}\\pi\\text{ m}^3$. Наоѓа волумен на силосот $V = V_1 + V_2 = \\frac{296}{3}\\pi\\text{ m}^3$.",
       "successRatePercent": null
@@ -797,7 +873,9 @@
         "/matura/images/2018/june/q36-fig1.png"
       ],
       "imageDescription": "Квадрат ABCD со впишан квадрат MNPQ.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-4"
+      ],
       "hints": [],
       "aiSolution": "Од условот на задачата наоѓа дека $AM : MB = 2 : 3$, од каде што $AM = 2k, MB = 3k, AB = a = 5k$. Констатира дека $AM = \\frac{2a}{5}$ and $MB = \\frac{3a}{5}$ и ја применува Питагорина теорема $MN^2 = \\left(\\frac{2a}{5}\\right)^2 + \\left(\\frac{3a}{5}\\right)^2 = \\frac{13a^2}{25}$. Го пресметува односот на плоштините: $P/P_1 = \\frac{a^2}{13a^2/25} = \\frac{25}{13}$.",
       "successRatePercent": null
@@ -816,7 +894,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "А) $d = \\frac{|1+1-5|}{\\sqrt{2}} = \\frac{3}{\\sqrt{2}} = \\frac{3\\sqrt{2}}{2}$. Б) За $x=0$ добива $y=5$, значи $C(0,5)$. За $y=0$ добива $x=5$, значи $B(5,0)$. В) Наоѓа растојание меѓу двете точки $BC = \\sqrt{5^2+5^2} = \\sqrt{50} = 5\\sqrt{2}$. Пресметува $P = \\frac{ah}{2} = \\frac{5\\sqrt{2} \\cdot \\frac{3\\sqrt{2}}{2}}{2} = \\frac{15}{2}$.",
       "successRatePercent": null
@@ -835,7 +915,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "Го наоѓа коефициентот на правец на дадената права $k_1 = \\frac{2}{3}$ и од условот за нормалност наоѓа $k_2 = -\\frac{3}{2}$. Наоѓа равенка на права која поминува низ точката $M(-2, 9)$ и е нормална на дадената права: $y - 9 = -\\frac{3}{2}(x + 2)$, или $3x + 2y - 12 = 0$. Го поставува системот $2x - 3y + 18 = 0$ и $3x + 2y - 12 = 0$ и ги наоѓа координатите на ортогоналната проекција $x=0, y=6$ или $S(0, 6)$.",
       "successRatePercent": null
@@ -854,7 +936,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": "$\\Omega = \\{12,13,14,15,21,23,24,25,31,32,34,35,41,42,43,45,51,52,53,54\\}$. $A = \\{12,14,24,32,34,42,52,54\\}$. B- запишан е непарен двоцифрен број. $P(B) = \\frac{m}{n}$, каде $n = 20$ (вкупен број на елементарни настани), $m = 12$ (вкупен број на непарни двоцифрени броеви). $P(B) = \\frac{12}{20} = \\frac{3}{5}$.",
       "successRatePercent": null
@@ -873,7 +957,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": "Заклучува дека првиот природен број делив со три поголем од 1000 е 1002, а последниот природен број делив со три помал од 2000 е 1998. Значи $a_1 = 1002, a_n = 1998, d = 3$. Од формулата $a_n = a_1 + (n-1)d$ одредува $n = 333$. Ја одредува сумата по формулата $S_n = \\frac{n}{2}(a_1 + a_n) = \\frac{333}{2}(1002 + 1998) = \\frac{333}{2} \\cdot 3000 = 499500$.",
       "successRatePercent": null

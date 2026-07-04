@@ -394,7 +394,7 @@
       "topic": "Doğrusal Denklemler ve Sistemler",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-3"
+        "gym10-c3-4"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -452,8 +452,7 @@
       "topic": "Planimetri ve Dik Üçgende Trigonometri",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-2",
-        "gym10-c5-1"
+        "gym10-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,

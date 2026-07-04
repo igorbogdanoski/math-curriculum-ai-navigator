@@ -407,8 +407,7 @@
       "topic": "Döğruların Dikliği",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-3",
-        "gym12-c4-2"
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -520,8 +519,7 @@
       "topic": "Aritmetik Ortalama",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c6-2",
-        "gym11-c8-1"
+        "gym10-c6-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -609,7 +607,7 @@
       "topic": "Analitik Geometri - Doğru",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c4-1"
+        "gym12-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -626,8 +624,7 @@
       "topic": "Aritmetik ve Geometrik Dizi",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym13-c1-2",
-        "gym13-c1-3"
+        "gym13-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -766,7 +763,8 @@
       "topic": "Analitik Geometri - Uzaklık",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c4-1"
+        "gym12-c4-1",
+        "gym12-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -783,8 +781,7 @@
       "topic": "Analitik Geometri - Üçgen",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c5-1",
-        "gym10-c4-3"
+        "gym12-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,

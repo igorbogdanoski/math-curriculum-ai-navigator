@@ -58,7 +58,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c1-2"
+        "gym10-c1-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -84,7 +84,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c2-1"
+        "gym10-c1-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -110,7 +110,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c2-2"
+        "gym10-c1-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -136,7 +136,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c3-1"
+        "gym10-c3-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -162,7 +162,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c2-4"
+        "gym10-c2-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -188,7 +188,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c2-1"
+        "gym10-c2-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -214,7 +214,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c4-1"
+        "gym10-c3-2"
       ],
       "hints": [],
       "aiSolution": null,
@@ -240,7 +240,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c5-1"
+        "gym11-c3-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -292,7 +292,8 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c6-2"
+        "gym11-c6-1",
+        "gym10-c5-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -318,7 +319,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c6-3"
+        "gym10-c4-3"
       ],
       "hints": [],
       "aiSolution": null,
@@ -370,7 +371,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-2"
+        "gym10-c6-1"
       ],
       "hints": [],
       "aiSolution": null,
@@ -417,7 +418,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c3-2"
+        "gym10-c3-4"
       ],
       "hints": [
         "Изрази една непозната преку другата",
@@ -441,7 +442,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-10-c4-2"
+        "gym10-c3-2"
       ],
       "hints": [
         "Приход = цена × количина",
@@ -489,7 +490,7 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-12-c4-1"
+        "gym10-c6-2"
       ],
       "hints": [
         "Аритметичка средина: Σ(f·x) / Σf",
@@ -513,7 +514,8 @@
       "imageUrls": [],
       "imageDescription": null,
       "conceptIds": [
-        "voc4-11-c1-2"
+        "gym13-c1-2",
+        "gym13-c1-3"
       ],
       "hints": [
         "Геометриска прогресија: a_n = a_1 · q^(n-1)",

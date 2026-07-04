@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +266,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +293,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +320,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +346,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +372,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +398,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -391,7 +424,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -415,7 +450,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -439,7 +476,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -463,7 +503,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -487,7 +530,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -506,7 +552,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "hints": [],
       "aiSolution": "Ters orantı vardır. $8 \\cdot 12 = 4 \\cdot x \\implies 96 = 4x \\implies x = 24$.",
       "successRatePercent": null
@@ -525,7 +573,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": "Polinomun derecesi, çarpanların derecelerinin toplamıdır: $2 + 2 + 3 = 7$.",
       "successRatePercent": null
@@ -546,7 +596,9 @@
         "/matura/images/2019/june/q23-fig1.png"
       ],
       "imageDescription": "İki paralel doğruyu kesen iki kesen doğru. Verilen açılar 44 derece ve 130 derece. İstenen açı beta.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "Paralel doğrular arasında oluşan üçgende dış açı kendisine komşu olmayan iki iç açının toplamına eşittir. $\\beta + 44^\\circ = 130^\\circ \\implies \\beta = 130^\\circ - 44^\\circ = 86^\\circ$.",
       "successRatePercent": null
@@ -565,7 +617,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": "İlk bilyenin kırmızı olma olasılığı $\\frac{6}{12}$. İkinci bilyenin kırmızı olma olasılığı $\\frac{5}{11}$. İkisinin de kırmızı olma olasılığı $\\frac{6}{12} \\cdot \\frac{5}{11} = \\frac{30}{132} = \\frac{5}{22}$.",
       "successRatePercent": null
@@ -584,7 +638,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": "Sonsuz geometrik dizi toplam formülü $S = \\frac{a_1}{1-q}$. $-\\frac{10}{4} = \\frac{-2}{1-q} \\implies 1-q = \\frac{-2}{-10/4} = \\frac{8}{10} = \\frac{4}{5} \\implies q = 1 - \\frac{4}{5} = \\frac{1}{5}$.",
       "successRatePercent": null
@@ -603,7 +660,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": "A. $y = 25700 + 0.04x$. B. $x = 127000 \\implies y = 25700 + 0.04 \\cdot 127000 = 25700 + 5080 = 30780$.",
       "successRatePercent": null
@@ -622,7 +681,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "A. Paydalar: $3(x-y)(x+y)$ ve $(x-y)^2$. EKOK = $3(x+y)(x-y)^2$. B. $\\frac{x+y}{3(x-y)(x+y)} : \\frac{2}{(x-y)^2} = \\frac{1}{3(x-y)} \\cdot \\frac{(x-y)^2}{2} = \\frac{x-y}{6}$.",
       "successRatePercent": null
@@ -641,7 +702,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "Diğer katet $b = \\sqrt{20^2 - 12^2} = \\sqrt{400 - 144} = \\sqrt{256} = 16$. A. Alan = $\\frac{12 \\cdot 16}{2} = 96$. B. Çevrel çemberin yarıçapı hipotenüsün yarısıdır: $R = \\frac{20}{2} = 10$.",
       "successRatePercent": null
@@ -660,7 +724,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "A. Yanal alan $M = C \\cdot H = 32 \\cdot 20 = 640$. B. Hacim $V = B \\cdot H = 24 \\cdot 20 = 480$.",
       "successRatePercent": null
@@ -679,7 +746,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "A. $y = -\\frac{1}{2}x + 5 \\implies x + 2y - 10 = 0$. B. y-eksenini kestiği nokta için $x=0 \\implies y=5$. Uzunluk 5'tir.",
       "successRatePercent": null
@@ -698,7 +767,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "A. Payda sıfır olamaz: $5-x \\neq 0 \\implies x \\neq 5$. B. İfadenin pozitif olması için paydanın pozitif olması gerekir: $5-x > 0 \\implies x < 5$.",
       "successRatePercent": null
@@ -717,7 +788,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "Öğrenci sayısı $x$ olsun. Her birinin ödemesi gereken miktar $\\frac{6000}{x}$. İki kişi çıkınca kişi başı miktar $\\frac{6000}{x-2}$ olur. Denklem: $\\frac{6000}{x} + 150 = \\frac{6000}{x-2}$. Her iki tarafı $x(x-2)$ ile çarpalım: $6000(x-2) + 150x(x-2) = 6000x \\implies 6000x - 12000 + 150x^2 - 300x = 6000x \\implies 150x^2 - 300x - 12000 = 0 \\implies x^2 - 2x - 80 = 0$. Kökler $x=10$ ve $x=-8$. Öğrenci sayısı pozitif olacağından $x=10$.",
       "successRatePercent": null
@@ -736,7 +809,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "A. Paydalar $x-2, x+2, x^2-4$. EKOK = $x^2-4$. Tanım kümesi $x \\neq 2, x \\neq -2$. B. Denklemi $x^2-4$ ile çarpalım: $(x-a)(x+2) + 10(x-2) + 44 = 0 \\implies x^2 + 2x - ax - 2a + 10x - 20 + 44 = 0 \\implies x^2 + (12-a)x + 24 - 2a = 0$. C. İki eşit reel çözüm için diskriminant sıfır olmalıdır: $D = (12-a)^2 - 4(24-2a) = 0 \\implies 144 - 24a + a^2 - 96 + 8a = 0 \\implies a^2 - 16a + 48 = 0$. Kökler $a=4$ ve $a=12$.",
       "successRatePercent": null
@@ -757,7 +832,10 @@
         "/matura/images/2019/june/q34-fig1.png"
       ],
       "imageDescription": "Kenarları a, b, c olan bir üçgen c kenarı etrafında dönüyor. Oluşan iki koninin ortak taban yarıçapı üçgenin yüksekliğidir.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "A. Üçgen en büyük kenarı (51) etrafında döndüğünde tabanları ortak iki koni oluşur. Konilerin ortak taban yarıçapı üçgenin 51 cm'lik kenarına ait yüksekliğidir ($R = h_c$). Konilerin ana doğruları üçgenin diğer iki kenarıdır ($s_1 = 20, s_2 = 37$). B. Üçgenin alanı Heron formülü ile: $s = (20+37+51)/2 = 54$. $Alan = \\sqrt{54(54-20)(54-37)(54-51)} = \\sqrt{54 \\cdot 34 \\cdot 17 \\cdot 3} = 306$. Yükseklik $h_c = 2 \\cdot 306 / 51 = 12$. Yarıçap $R = 12$. Cismin alanı iki koninin yanal alanları toplamıdır: $P = \\pi R s_1 + \\pi R s_2 = \\pi \\cdot 12 \\cdot 20 + \\pi \\cdot 12 \\cdot 37 = 240\\pi + 444\\pi = 684\\pi$.",
       "successRatePercent": null
@@ -778,7 +856,10 @@
         "/matura/images/2019/june/q35-fig1.png"
       ],
       "imageDescription": "Dik üçgen içine çizilmiş bir kare. Karenin bir kenarı üçgenin dik açısındadır.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "A. Üçgen ikizkenar dik üçgendir ($AC=BC=8$). Karenin kenarı $x$ olsun. Küçük üçgenler de ikizkenar dik üçgen olur. $x + x = 8 \\implies 2x = 8 \\implies x = 4$. B. Alan = $4^2 = 16$. C. Üçgenin alanı = $8 \\cdot 8 / 2 = 32$. Boyalı kısım (üçgen - kare) = $32 - 16 = 16$.",
       "successRatePercent": null
@@ -797,7 +878,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Taban alanı $B = a^2 = (12\\sqrt{2})^2 = 288$. Taban köşegeni $d = a\\sqrt{2} = 12\\sqrt{2} \\cdot \\sqrt{2} = 24$. Piramidin yüksekliği $H^2 = s^2 - (d/2)^2 = 20^2 - 12^2 = 400 - 144 = 256 \\implies H = 16$. Hacim $V = \\frac{B \\cdot H}{3} = \\frac{288 \\cdot 16}{3} = 96 \\cdot 16 = 1536$.",
       "successRatePercent": null
@@ -816,7 +900,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "A. $A(2,y) \\in p \\implies 3(2) - 7y + 8 = 0 \\implies 14 = 7y \\implies y = 2$. $A(2,2)$. $B(x,-3) \\in q \\implies 3x - 7(-3) - 6 = 0 \\implies 3x + 15 = 0 \\implies x = -5$. $B(-5,-3)$. B. Orta nokta $S = \\left(\\frac{2-5}{2}, \\frac{2-3}{2}\\right) = (-1.5, -0.5)$. C. Paralel doğrunun eğimi $m = \\frac{3}{7}$. $S$ noktasından geçen doğru: $y - (-0.5) = \\frac{3}{7}(x - (-1.5)) \\implies y + \\frac{1}{2} = \\frac{3}{7}\\left(x + \\frac{3}{2}\\right) \\implies 14y + 7 = 6x + 9 \\implies 6x - 14y + 2 = 0 \\implies 3x - 7y + 1 = 0$.",
       "successRatePercent": null
@@ -835,7 +921,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "Kesişim noktası M: $2x+y=2$ ve $x-5y=23$. $y = 2-2x \\implies x - 5(2-2x) = 23 \\implies x - 10 + 10x = 23 \\implies 11x = 33 \\implies x = 3$. $y = 2 - 6 = -4$. $M(3,-4)$. AB'nin orta noktası S: $x_s = \\frac{5-1}{2} = 2$, $y_s = \\frac{-6-4}{2} = -5$. $S(2,-5)$. M ve S'den geçen doğru: eğim $m = \\frac{-5 - (-4)}{2 - 3} = \\frac{-1}{-1} = 1$. Denklem: $y - (-4) = 1(x - 3) \\implies y + 4 = x - 3 \\implies y = x - 7$.",
       "successRatePercent": null
@@ -854,7 +942,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c6-1"
+      ],
       "hints": [],
       "aiSolution": "A. $A = \\{(1,4), (2,3), (3,2), (4,1)\\}$. $P(A) = \\frac{4}{36} = \\frac{1}{9}$. B. $B = \\{(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)\\}$. $P(B) = \\frac{6}{36} = \\frac{1}{6}$. C. Hediye elde etme olayı $A \\cup B$'dir. $P(A \\cup B) = P(A) + P(B) = \\frac{4}{36} + \\frac{6}{36} = \\frac{10}{36} = \\frac{5}{18}$.",
       "successRatePercent": null
@@ -873,7 +963,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": "A. Şubat 2. aydır ($a_2 = 1200$). Haziran 6. aydır ($a_6 = 2200$). $a_6 = a_2 + 4d \\implies 2200 = 1200 + 4d \\implies 4d = 1000 \\implies d = 250$. B. Aralık 12. aydır. $a_1 = a_2 - d = 1200 - 250 = 950$. $a_{12} = a_1 + 11d = 950 + 11(250) = 950 + 2750 = 3700$. C. Bütün yıl toplamı $S_{12} = \\frac{12}{2}(a_1 + a_{12}) = 6(950 + 3700) = 6(4650) = 27900$.",
       "successRatePercent": null
