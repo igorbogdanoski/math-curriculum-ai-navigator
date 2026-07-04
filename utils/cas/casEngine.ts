@@ -98,3 +98,72 @@ export function verifyEquationSolution(
     return { verdict: 'inconclusive', detail: `exception:${err instanceof Error ? err.message : String(err)}` };
   }
 }
+
+/** Symbolically differentiates a parsed expression w.r.t. variable, or returns null on failure. */
+function differentiate(
+  expr: ReturnType<ComputeEngine['parse']>,
+  variable: string,
+): ReturnType<ComputeEngine['parse']> | null {
+  try {
+    const derivative = ce.box(['D', expr, variable]).evaluate();
+    if (derivative.errors.length > 0) return null;
+    return derivative;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks whether a claimed derivative matches a function's real symbolic derivative —
+ * e.g. is "2x*sin(x)+x^2*cos(x)" the derivative of "x^2*sin(x)"? Real symbolic
+ * differentiation via ComputeEngine's D operator, not a numeric approximation.
+ */
+export function verifyDerivative(
+  functionLatex: string,
+  claimedDerivativeLatex: string,
+  variable = 'x',
+): CasVerifyResult {
+  if (!functionLatex.trim() || !claimedDerivativeLatex.trim()) return { verdict: 'inconclusive', detail: 'empty_input' };
+  try {
+    const fn = parseOrNull(functionLatex);
+    if (fn.error) return { verdict: 'inconclusive', detail: `parse_error:function:${fn.error}` };
+
+    const claimed = parseOrNull(claimedDerivativeLatex);
+    if (claimed.error) return { verdict: 'inconclusive', detail: `parse_error:claimed:${claimed.error}` };
+
+    const actualDerivative = differentiate(fn.expr, variable);
+    if (!actualDerivative) return { verdict: 'inconclusive', detail: 'differentiation_failed' };
+
+    return { verdict: toVerdict(actualDerivative.isEqual(claimed.expr)) };
+  } catch (err) {
+    return { verdict: 'inconclusive', detail: `exception:${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
+/**
+ * Checks whether a claimed antiderivative is correct for a given integrand, by
+ * differentiating the CLAIMED answer and comparing it to the original integrand —
+ * this sidesteps symbolic integration entirely (ComputeEngine never has to
+ * integrate, only differentiate + compare, exactly like verifyDerivative).
+ */
+export function verifyAntiderivative(
+  integrandLatex: string,
+  claimedAntiderivativeLatex: string,
+  variable = 'x',
+): CasVerifyResult {
+  if (!integrandLatex.trim() || !claimedAntiderivativeLatex.trim()) return { verdict: 'inconclusive', detail: 'empty_input' };
+  try {
+    const integrand = parseOrNull(integrandLatex);
+    if (integrand.error) return { verdict: 'inconclusive', detail: `parse_error:integrand:${integrand.error}` };
+
+    const claimed = parseOrNull(claimedAntiderivativeLatex);
+    if (claimed.error) return { verdict: 'inconclusive', detail: `parse_error:claimed:${claimed.error}` };
+
+    const derivativeOfClaimed = differentiate(claimed.expr, variable);
+    if (!derivativeOfClaimed) return { verdict: 'inconclusive', detail: 'differentiation_failed' };
+
+    return { verdict: toVerdict(derivativeOfClaimed.isEqual(integrand.expr)) };
+  } catch (err) {
+    return { verdict: 'inconclusive', detail: `exception:${err instanceof Error ? err.message : String(err)}` };
+  }
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verifyExpressionEquivalence, verifyEquationSolution } from './casEngine';
+import { verifyExpressionEquivalence, verifyEquationSolution, verifyDerivative, verifyAntiderivative } from './casEngine';
 
 describe('verifyExpressionEquivalence — core algebra cases', () => {
   it('recognises the exact Dugga string-equality bug this feature fixes', () => {
@@ -104,6 +104,54 @@ describe('verifyEquationSolution', () => {
   it('never throws on empty input', () => {
     expect(() => verifyEquationSolution('', 'x', '')).not.toThrow();
     expect(verifyEquationSolution('', 'x', '').verdict).toBe('inconclusive');
+  });
+});
+
+describe('verifyDerivative', () => {
+  it('confirms a correct claimed derivative of a product', () => {
+    expect(verifyDerivative('x^2\\sin(x)', '2x\\sin(x)+x^2\\cos(x)').verdict).toBe('equivalent');
+  });
+
+  it('confirms a correct derivative of a simple polynomial', () => {
+    expect(verifyDerivative('x^2+3x', '2x+3').verdict).toBe('equivalent');
+  });
+
+  it('rejects an incorrect claimed derivative', () => {
+    expect(verifyDerivative('x^2', '3x').verdict).toBe('not_equivalent');
+  });
+
+  it('returns inconclusive on a parse failure in either input', () => {
+    expect(verifyDerivative('\\notarealcommand', 'x').verdict).toBe('inconclusive');
+    expect(verifyDerivative('x^2', '\\notarealcommand').verdict).toBe('inconclusive');
+  });
+
+  it('never throws on empty input', () => {
+    expect(() => verifyDerivative('', '')).not.toThrow();
+    expect(verifyDerivative('', '').verdict).toBe('inconclusive');
+  });
+});
+
+describe('verifyAntiderivative', () => {
+  it('confirms a correct claimed antiderivative by differentiating the claim, sidestepping symbolic integration', () => {
+    expect(verifyAntiderivative('2x', 'x^2').verdict).toBe('equivalent');
+  });
+
+  it('correctly handles a free +C constant in the claimed antiderivative (no special-casing needed)', () => {
+    expect(verifyAntiderivative('2x', 'x^2+C').verdict).toBe('equivalent');
+  });
+
+  it('rejects an incorrect claimed antiderivative', () => {
+    expect(verifyAntiderivative('2x', 'x^3').verdict).toBe('not_equivalent');
+  });
+
+  it('returns inconclusive on a parse failure in either input', () => {
+    expect(verifyAntiderivative('\\notarealcommand', 'x^2').verdict).toBe('inconclusive');
+    expect(verifyAntiderivative('2x', '\\notarealcommand').verdict).toBe('inconclusive');
+  });
+
+  it('never throws on empty input', () => {
+    expect(() => verifyAntiderivative('', '')).not.toThrow();
+    expect(verifyAntiderivative('', '').verdict).toBe('inconclusive');
   });
 });
 
