@@ -36,6 +36,7 @@ export const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactN
   { id: 'geometry_construct', label: 'Геометриска конструкција', icon: <Compass className="w-4 h-4"/>,      desc: 'GeoGebra конструкција + AI оценување',      aiSupported: false },
   { id: 'function_match',   label: 'Трансформација на функција', icon: <Sigma className="w-4 h-4"/>,        desc: 'Совпадни ги a,b,c,d со слајдери',            aiSupported: false },
   { id: 'unit_circle_pick', label: 'Единечна кружница',         icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'Избери агол/точка на единечна кружница',    aiSupported: false },
+  { id: 'student_chart',   label: 'Нацртај дијаграм',           icon: <Table2 className="w-4 h-4"/>,        desc: 'Ученикот внесува податоци и цртa дијаграм', aiSupported: false },
   { id: 'section_header',  label: 'Дел / Секција',              icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
 ];
 
@@ -569,6 +570,50 @@ export function QuestionEditor({
                 </select>
               </div>
               <p className="text-[10px] text-gray-400">Ученикот ја влече точката на единечна кружница (или користи слајдер) додека не го погоди целниот агол/точка.</p>
+            </div>
+          )}
+
+          {q.type === 'student_chart' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Тип на дијаграм</label>
+                <select
+                  title="Тип на дијаграм"
+                  value={q.expectedChart?.kind ?? 'bar'}
+                  onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { data: [] }), kind: e.target.value as 'bar' | 'line' | 'scatter' | 'pie' } })}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                  <option value="bar">Стапчест</option>
+                  <option value="line">Линиски</option>
+                  <option value="scatter">Точки</option>
+                  <option value="pie">Кружен</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input type="text" value={q.expectedChart?.xLabel ?? ''}
+                  onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar', data: [] }), xLabel: e.target.value } })}
+                  placeholder="Ознака X-оска" className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <input type="text" value={q.expectedChart?.yLabel ?? ''}
+                  onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar', data: [] }), yLabel: e.target.value } })}
+                  placeholder="Ознака Y-оска" className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Точни (x, y) парови (еден по ред: x, y)</label>
+                <textarea
+                  rows={4}
+                  value={(q.expectedChart?.data ?? []).map(p => `${p.x}, ${p.y}`).join('\n')}
+                  onChange={e => {
+                    const data = e.target.value.split('\n').map(line => {
+                      const [x, y] = line.split(',').map(s => s.trim());
+                      return { x: x ?? '', y: Number(y) || 0 };
+                    }).filter(p => p.x !== '');
+                    upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar' }), data } });
+                  }}
+                  placeholder={"Јануари, 10\nФевруари, 15\nМарт, 8"}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот ги внесува податоците и го избира типот на дијаграм; се оценува тип (20%) + ознаки (20%) + точност на податоците (60%).</p>
             </div>
           )}
 

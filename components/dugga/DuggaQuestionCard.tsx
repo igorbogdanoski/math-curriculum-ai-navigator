@@ -9,6 +9,7 @@ import { QRSolutionUpload } from '../common/QRSolutionUpload';
 import { EmbeddedMathTool } from '../math/EmbeddedMathTool';
 import { FunctionTransformer } from '../math/FunctionTransformer';
 import { UnitCirclePicker } from '../dataviz/UnitCirclePicker';
+import { StudentChartInput } from './StudentChartInput';
 import type { DuggaQuestion } from '../../services/firestoreService.dugga';
 import type { QResult } from '../../utils/duggaScoring';
 
@@ -569,6 +570,9 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           />
         </div>
       );
+    }
+    case 'student_chart': {
+      return <StudentChartInput answer={answer} onChange={onChange} disabled={disabled} />;
     }
     default:
       return (
