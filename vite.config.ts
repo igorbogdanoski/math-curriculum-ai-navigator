@@ -398,6 +398,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('mammoth')) return 'vendor-mammoth';   // 884KB, only used in docx-upload views
               if (id.includes('pptxgenjs')) return 'vendor-pptx';
               if (id.includes('mathjs')) return 'vendor-mathjs';
+              if (id.includes('@cortex-js/compute-engine')) return 'vendor-compute-engine';
               if (id.includes('mathlive')) return 'vendor-mathlive';
               if (id.includes('docx')) return 'vendor-docx';
               if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
