@@ -11,6 +11,8 @@ export interface AIGrade {
   feedback: string;
   correct?: boolean;
   comment?: string;
+  /** true when this grade was confirmed by deterministic CAS verification, skipping the Gemini call entirely. */
+  verifiedByCas?: boolean;
 }
 
 export interface QuestionState {

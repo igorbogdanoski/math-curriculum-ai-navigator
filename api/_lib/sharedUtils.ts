@@ -58,7 +58,7 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 let firebaseAuthAvailable = true;
 
-function getFirebaseAdmin() {
+export function getFirebaseAdmin() {
   if (getApps().length === 0) {
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
     if (serviceAccount) {

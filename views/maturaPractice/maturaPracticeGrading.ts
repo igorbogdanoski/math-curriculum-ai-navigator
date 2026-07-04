@@ -7,6 +7,7 @@ import {
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
 import { recordMaturaSpacedReview } from '../../services/firestoreService.maturaSpacedRep';
 import { safeParseJSON, type AIGrade } from './maturaPracticeHelpers';
+import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
 
 function pushSpacedReview(
   uid: string | undefined,
@@ -52,6 +53,32 @@ export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: s
   }
 
   const hasImage = Boolean(imageUrl);
+
+  // CAS pre-gate: a photo answer can't be verified this way (no extracted expression
+  // to compare), and a question with no stored correctAnswer has nothing to check
+  // against — both fall straight through to the unchanged Gemini path below. Only an
+  // 'equivalent' verdict short-circuits past Gemini entirely; anything else (including
+  // a CAS outage, which degrades to 'inconclusive') leaves today's behavior untouched.
+  if (!hasImage && answer.trim() && q.correctAnswer) {
+    const casResult = await verifyExpressionEquivalenceRemote(answer, q.correctAnswer);
+    if (casResult.verdict === 'equivalent') {
+      const grade: AIGrade = {
+        score: maxScore,
+        maxScore,
+        correct: true,
+        feedback: 'Проверено со CAS — одговорот е математички еквивалентен на точниот.',
+        comment: 'Проверено со CAS',
+        verifiedByCas: true,
+      };
+      saveAIGrade(cacheKey, {
+        examId: q.examId, questionNumber: q.questionNumber,
+        inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
+      });
+      pushSpacedReview(uid, q, grade.score, maxScore);
+      return grade;
+    }
+  }
+
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
 Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}

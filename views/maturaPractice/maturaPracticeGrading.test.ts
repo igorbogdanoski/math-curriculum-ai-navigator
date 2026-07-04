@@ -22,12 +22,17 @@ vi.mock('../../services/firestoreService.matura', async () => {
   };
 });
 
+vi.mock('../../services/casVerificationClient', () => ({
+  verifyExpressionEquivalenceRemote: vi.fn(),
+}));
+
 import { callGeminiProxy } from '../../services/gemini/core';
 import {
   getCachedAIGrade,
   saveAIGrade,
   type MaturaQuestion,
 } from '../../services/firestoreService.matura';
+import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
 import { gradePart2, gradePart3, explainWrongAnswer } from './maturaPracticeGrading';
 
 function makeQ(over: Partial<MaturaQuestion> = {}): MaturaQuestion {
@@ -49,6 +54,9 @@ function makeQ(over: Partial<MaturaQuestion> = {}): MaturaQuestion {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getCachedAIGrade).mockResolvedValue(null);
+  // Default: CAS can't confirm anything, so every existing test falls through to
+  // the unchanged Gemini path exactly as before this feature was added.
+  vi.mocked(verifyExpressionEquivalenceRemote).mockResolvedValue({ verdict: 'inconclusive' });
 });
 
 // ─── gradePart2 ───────────────────────────────────────────────────────────────
@@ -119,6 +127,62 @@ describe('gradePart2', () => {
     } finally {
       globalThis.fetch = origFetch;
     }
+  });
+});
+
+// ─── gradePart2 — CAS pre-gate ─────────────────────────────────────────────────
+
+describe('gradePart2 — CAS pre-gate', () => {
+  it('skips Gemini entirely and returns a full-credit grade when CAS confirms equivalence', async () => {
+    vi.mocked(verifyExpressionEquivalenceRemote).mockResolvedValueOnce({ verdict: 'equivalent' });
+    const out = await gradePart2(makeQ({ points: 4, correctAnswer: '2+2x' }), '2x+2');
+    expect(out.score).toBe(4);
+    expect(out.correct).toBe(true);
+    expect(out.verifiedByCas).toBe(true);
+    expect(callGeminiProxy).not.toHaveBeenCalled();
+    expect(saveAIGrade).toHaveBeenCalled();
+  });
+
+  it('falls through to Gemini unchanged when CAS says not_equivalent', async () => {
+    vi.mocked(verifyExpressionEquivalenceRemote).mockResolvedValueOnce({ verdict: 'not_equivalent' });
+    vi.mocked(callGeminiProxy).mockResolvedValueOnce({
+      text: '{"score":0,"correct":false,"feedback":"погрешно"}',
+    } as any);
+    const out = await gradePart2(makeQ(), 'wrong answer');
+    expect(callGeminiProxy).toHaveBeenCalled();
+    expect(out.verifiedByCas).toBeUndefined();
+  });
+
+  it('falls through to Gemini unchanged when CAS is inconclusive (e.g. unparseable or a CAS outage)', async () => {
+    vi.mocked(verifyExpressionEquivalenceRemote).mockResolvedValueOnce({ verdict: 'inconclusive', detail: 'network_error' });
+    vi.mocked(callGeminiProxy).mockResolvedValueOnce({
+      text: '{"score":2,"correct":false,"feedback":"делумно"}',
+    } as any);
+    const out = await gradePart2(makeQ(), 'some prose answer');
+    expect(callGeminiProxy).toHaveBeenCalled();
+    expect(out.score).toBe(2);
+  });
+
+  it('never attempts CAS for a photo-only answer (no image field for the endpoint to parse)', async () => {
+    vi.mocked(callGeminiProxy).mockResolvedValueOnce({
+      text: '{"score":3,"correct":true,"feedback":"img"}',
+    } as any);
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async () => { throw new Error('no network'); }) as any;
+    try {
+      await gradePart2(makeQ(), '', 'http://example.com/img.png');
+      expect(verifyExpressionEquivalenceRemote).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it('never attempts CAS when the question has no stored correctAnswer', async () => {
+    vi.mocked(callGeminiProxy).mockResolvedValueOnce({
+      text: '{"score":1,"correct":false,"feedback":"x"}',
+    } as any);
+    await gradePart2(makeQ({ correctAnswer: undefined as unknown as string }), 'an answer');
+    expect(verifyExpressionEquivalenceRemote).not.toHaveBeenCalled();
   });
 });
 
