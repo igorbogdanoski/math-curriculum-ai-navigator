@@ -4,6 +4,7 @@ import {
   Play, FileText, Upload, Link, Camera, X,
 } from 'lucide-react';
 import { ExtractionProgress } from './ExtractionTaskCard';
+import { CloudImportMenu } from '../common/CloudImportMenu';
 import {
   OCR_SUPPORTED_LANGUAGES,
   type OcrLanguage,
@@ -86,6 +87,7 @@ interface ExtractionSourceHeroProps {
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onCloudFileSelected: (file: File) => void;
 
   // Camera mode
   cameraInputRef: React.RefObject<HTMLInputElement | null>;
@@ -113,6 +115,7 @@ export const ExtractionSourceHero: React.FC<ExtractionSourceHeroProps> = ({
   ytUrl, setYtUrl, ytTimeStart, setYtTimeStart, ytTimeEnd, setYtTimeEnd, ytLang, setYtLang,
   videoPreview, setVideoPreview, captions,
   uploadedDoc, setUploadedDoc, ocrLanguage, setOcrLanguage, isDragging, setIsDragging, onDrop, onFileChange, fileInputRef,
+  onCloudFileSelected,
   cameraInputRef, onCameraCapture, extractFromDocument,
   selectedModel, setSelectedModel, showAdvanced, timeRange, setTimeRange, specificInstructions, setSpecificInstructions,
   progressLabel, progressPct,
@@ -423,6 +426,16 @@ export const ExtractionSourceHero: React.FC<ExtractionSourceHeroProps> = ({
                     <p className="text-xs text-white/30">Максимум 20 MB · Ctrl+V за залепување слика</p>
                   </>
                 )}
+              </div>
+
+              {/* Cloud storage import */}
+              <div className="flex justify-center">
+                <CloudImportMenu
+                  variant="dark"
+                  disabled={isLoading}
+                  onFileSelected={onCloudFileSelected}
+                  onError={setError}
+                />
               </div>
 
               {/* Extract button */}

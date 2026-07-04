@@ -8,6 +8,7 @@ import { geminiService } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../utils/logger';
+import { CloudImportMenu } from '../components/common/CloudImportMenu';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -438,6 +439,9 @@ export const WrittenTestReviewView: React.FC = () => {
                       <p className="text-sm text-gray-400">JPG, PNG, WebP, PDF · Максимум 10MB</p>
                     </div>
                   )}
+                </div>
+                <div className="flex justify-center mt-3">
+                  <CloudImportMenu variant="light" onFileSelected={handleSingleFile} onError={setError} />
                 </div>
               </div>
             )}

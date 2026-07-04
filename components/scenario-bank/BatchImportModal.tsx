@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, X, Loader2, Sparkles, CheckSquare, Square, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { parseUploadedFile } from '../../services/documentParser';
+import { CloudImportMenu } from '../common/CloudImportMenu';
 
 interface ParseResult {
   name: string;
@@ -59,6 +60,16 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
     e.preventDefault();
     await handleFiles(e.dataTransfer.files);
   }, [handleFiles]);
+
+  const handleCloudFile = useCallback(async (file: File) => {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    await handleFiles(dt.files);
+  }, [handleFiles]);
+
+  const handleCloudError = useCallback((message: string) => {
+    setResults(prev => [...prev, { name: 'Облак увоз', text: '', error: message }]);
+  }, []);
 
   const toggle = (idx: number) => {
     setSelected(prev => {
@@ -126,6 +137,10 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
                 <p className="text-xs text-gray-400 mt-1">PDF, DOCX, TXT, PNG, JPG — до 20 MB по датотека</p>
               </>
             )}
+          </div>
+
+          <div className="flex justify-center">
+            <CloudImportMenu variant="light" disabled={isParsing || isImporting} onFileSelected={handleCloudFile} onError={handleCloudError} />
           </div>
 
           {/* Results */}

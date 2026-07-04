@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, X, FileText, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { parseUploadedFile, type ParsedDocument } from '../../services/documentParser';
+import { CloudImportMenu } from '../common/CloudImportMenu';
 
 interface Props {
   onClose: () => void;
@@ -104,6 +105,10 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
                 <span className="text-xs">PDF, DOCX, TXT, PNG, JPG — до 20 MB</span>
               </div>
             )}
+          </div>
+
+          <div className="flex justify-center">
+            <CloudImportMenu variant="light" disabled={isBusy} onFileSelected={handleFile} onError={setError} />
           </div>
 
           {doc && (

@@ -627,6 +627,7 @@ export const ExtractionHubView: React.FC = () => {
         specificInstructions={specificInstructions} setSpecificInstructions={setSpecificInstructions}
         progressLabel={progressLabel} progressPct={progressPct}
         onPaste={onPaste}
+        onCloudFileSelected={loadFile}
       />
 
 

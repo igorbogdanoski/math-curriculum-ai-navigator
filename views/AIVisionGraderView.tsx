@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Camera, Upload, X, CheckCircle, Loader2, RefreshCw, Sparkles, Printer, AlertTriangle, FileText } from 'lucide-react';
 import { Card } from '../components/common/Card';
+import { CloudImportMenu } from '../components/common/CloudImportMenu';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
@@ -77,6 +78,10 @@ export const AIVisionGraderView: React.FC = () => {
     const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        await processFile(file);
+    };
+
+    const processFile = async (file: File) => {
         setResult(null);
         setError(null);
 
@@ -292,6 +297,7 @@ export const AIVisionGraderView: React.FC = () => {
                                     <Camera className="w-4 h-4" />
                                     Камера
                                 </button>
+                                <CloudImportMenu variant="light" onFileSelected={processFile} onError={setError} />
                             </div>
                         </div>
                     ) : (
