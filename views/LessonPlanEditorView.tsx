@@ -19,42 +19,29 @@ import type { PublishScenarioOptions } from '../components/scenario-bank/Publish
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
 import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/AIPedagogicalAnalysisDisplay';
 import { MathToolsPanel, type MathToolTab } from '../components/common/MathToolsPanel';
-import { detectMathDomain } from '../utils/mathDomainDetector';
 import { LessonPlanFormFields } from '../components/lesson-plan-editor/LessonPlanFormFields';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
 import { usePersistentState } from '../hooks/usePersistentState';
-import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
-import { AILessonAssistant } from '../components/lesson-plan-editor/AILessonAssistant';
 import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
 import { initialPlanState } from '../components/lesson-plan-editor/lessonPlanEditorHelpers';
 import { LessonExecutionOverlay } from '../components/classroom/LessonExecutionOverlay';
 import { useLessonPlanAIActions } from '../components/lesson-plan-editor/useLessonPlanAIActions';
 import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonPlanExport';
 import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
-import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
-import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
-import { BROLessonScenarioForm } from '../components/planner/BROLessonScenarioForm';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { CoachBubble } from '../components/common/CoachBubble';
-import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
-import { ClassInsightsBanner } from '../components/classroom/ClassInsightsBanner';
-import { VerticalProgressionPanel } from '../components/lesson-plan-editor/VerticalProgressionPanel';
-import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
-import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
-import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
-import { LessonResourceHub } from '../components/lesson-plan-editor/LessonResourceHub';
-import { ContextualMathTools } from '../components/lesson-plan-editor/ContextualMathTools';
-import { StudentCognitiveProfilePanel } from '../components/lesson-plan-editor/StudentCognitiveProfilePanel';
 import type { ScenarioBankEntry } from '../services/firestoreService.scenarioBank';
 import { UploadedScenarioBanner } from '../components/lesson-plan-editor/UploadedScenarioBanner';
-import { CulturalResponsivenessPanel } from '../components/lesson-plan-editor/CulturalResponsivenessPanel';
 import { DraftMergeDialog } from '../components/lesson-plan-editor/DraftMergeDialog';
 import { ConfirmScenarioGradeModal } from '../components/lesson-plan-editor/ConfirmScenarioGradeModal';
 import { loadAndClearUploadDraft } from '../services/uploadDraftService';
 import { resolveGradeByLabel } from '../utils/gradeMatch';
 import type { SecondaryTrack } from '../types';
+import { ReflectionModal, type ReflectionState } from '../components/lesson-plan-editor/ReflectionModal';
+import { OfficialLessonFormModal } from '../components/lesson-plan-editor/OfficialLessonFormModal';
+import { LessonPlanSidebar } from '../components/lesson-plan-editor/LessonPlanSidebar';
 
 
 interface LessonPlanEditorViewProps {
@@ -103,7 +90,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     commit: (grade: number, track?: SecondaryTrack) => void;
   } | null>(null);
   const [showReflection, setShowReflection] = useState(false);
-  const [reflection, setReflection] = useState({ wentWell: '', challenges: '', nextSteps: '' });
+  const [reflection, setReflection] = useState<ReflectionState>({ wentWell: '', challenges: '', nextSteps: '' });
   const [postSaveNav, setPostSaveNav] = useState<{ plan: Partial<LessonPlan>; key: string; navigateTo: string } | null>(null);
 
   const isMounted = useRef(true);
@@ -450,61 +437,24 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
       {/* B3 — Metacognitive Reflection Prompt (appears after save) */}
       {showReflection && postSaveNav && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">🪞</span>
-              </div>
-              <div>
-                <p className="font-black text-gray-900 text-sm">Метакогнитивна рефлексија</p>
-                <p className="text-xs text-gray-500">2 минути — опционо, останува со подготовката</p>
-              </div>
-            </div>
-            {(['wentWell', 'challenges', 'nextSteps'] as const).map((field, i) => (
-              <div key={field}>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  {i === 0 ? '💚 Што успеа во часот?' : i === 1 ? '🔶 Каде беше предизвик?' : '➡️ Следни чекори / поддршка'}
-                </label>
-                <textarea
-                  value={reflection[field]}
-                  onChange={e => setReflection(prev => ({ ...prev, [field]: e.target.value }))}
-                  rows={2}
-                  placeholder={i === 0 ? 'Пр. Учениците беа многу ангажирани при...' : i === 1 ? 'Пр. Временото управување со...' : 'Пр. Иван и Марија имаат потреба од...'}
-                  className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 outline-none"
-                />
-              </div>
-            ))}
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReflection(false);
-                  setSavedPlanForCoach(postSaveNav);
-                  setPostSaveNav(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 hover:border-gray-300 font-semibold text-sm transition-colors"
-              >
-                Прескокни
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (reflection.wentWell || reflection.challenges || reflection.nextSteps) {
-                    const planWithRef = { ...postSaveNav.plan, teacherReflection: reflection } as LessonPlan;
-                    await updateLessonPlan(planWithRef).catch(() => {});
-                  }
-                  setShowReflection(false);
-                  setSavedPlanForCoach(postSaveNav);
-                  setPostSaveNav(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-colors"
-              >
-                Зачувај рефлексија
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReflectionModal
+          reflection={reflection}
+          onChange={(field, value) => setReflection(prev => ({ ...prev, [field]: value }))}
+          onSkip={() => {
+            setShowReflection(false);
+            setSavedPlanForCoach(postSaveNav);
+            setPostSaveNav(null);
+          }}
+          onSaveAndContinue={async () => {
+            if (reflection.wentWell || reflection.challenges || reflection.nextSteps) {
+              const planWithRef = { ...postSaveNav.plan, teacherReflection: reflection } as LessonPlan;
+              await updateLessonPlan(planWithRef).catch(() => {});
+            }
+            setShowReflection(false);
+            setSavedPlanForCoach(postSaveNav);
+            setPostSaveNav(null);
+          }}
+        />
       )}
 
       {savedPlanForCoach && (
@@ -712,157 +662,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             </Card>
           </div>
 
-          <aside className="w-full lg:w-80 space-y-4">
-            <VerticalProgressionPanel
-              topicTitle={plan.theme || plan.title || ''}
-              gradeLevel={plan.grade ?? 6}
-            />
-
-            <PriorKnowledgeConnector
-              conceptIds={plan.conceptIds ?? []}
-              currentGrade={plan.grade ?? 6}
-            />
-
-            <ClassInsightsBanner
-              conceptIds={plan.conceptIds ?? []}
-              teacherUid={firebaseUser?.uid}
-              onOpenLab={(conceptId) => {
-                const base = `${window.location.origin}${window.location.pathname}`;
-                window.open(`${base}#/data-viz?lab=${conceptId}&tab=exercises`, '_blank');
-              }}
-            />
-
-            <PedagogicalDashboard activities={plan.scenario?.main || []} />
-
-            <AILessonAssistant
-              onApply={(suggestion) => {
-                setPlan(prev => ({
-                  ...prev,
-                  differentiation: prev.differentiation
-                    ? `${prev.differentiation}\n\n--- AI Assistant ---\n${suggestion}`
-                    : suggestion,
-                }));
-              }}
-            />
-
-            <LessonPlanDifferentiationPanel
-              diffActivities={ai.diffActivities}
-              isGenerating={ai.isGeneratingDiff}
-              canGenerate={!!(plan.title || plan.theme)}
-              onGenerate={ai.handleGenerateDifferentiation}
-            />
-
-            <RichTaskPanel
-              richTask={ai.richTask}
-              isGenerating={ai.isGeneratingRichTask}
-              canGenerate={!!(plan.title || plan.theme)}
-              onGenerate={ai.handleGenerateRichTask}
-            />
-
-            <PedagogicalEnrichPanel
-              planType="lesson"
-              planSummary={{
-                grade: String(plan.grade ?? ''),
-                title: plan.title,
-                objectives: plan.objectives?.map(o => o.text),
-                activities: [
-                  ...(plan.scenario?.main?.map(m => m.text) ?? []),
-                  plan.scenario?.introductory?.text ?? '',
-                ].filter(Boolean),
-              }}
-            />
-
-            <CulturalResponsivenessPanel plan={plan} />
-
-            <PedagogicalModelsPanel />
-
-            {/* S99.3 — Student Cognitive Profile */}
-            {firebaseUser?.uid && plan.grade && (
-              <StudentCognitiveProfilePanel
-                grade={plan.grade}
-                teacherUid={firebaseUser.uid}
-              />
-            )}
-
-            {/* S97.1 — Contextual Math Tools */}
-            {(plan.theme || plan.title) && (
-              <ContextualMathTools
-                topicTitle={plan.theme || plan.title}
-                onNavigate={(path) => {
-                  const tabMatch = path.match(/\/math-tools\?tab=(.+)/);
-                  if (tabMatch) {
-                    setMathToolsTab(tabMatch[1] as MathToolTab);
-                    setShowMathTools(true);
-                  } else {
-                    navigate(path);
-                  }
-                }}
-              />
-            )}
-
-            {/* S96.1 — Resource Hub */}
-            <Card className="p-3">
-              <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-                <span>📚</span> Ресурси за оваа тема
-              </h3>
-              <LessonResourceHub
-                grade={plan.grade}
-                topicId={plan.topicId}
-                theme={plan.theme || plan.title}
-                uid={firebaseUser?.uid}
-                onNavigate={navigate}
-                onImportScenario={handleImportScenario}
-              />
-            </Card>
-
-            {/* S96.4 — Quick-Launch */}
-            {(plan.title || plan.theme) && plan.grade && (
-              <Card className="p-3">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Брзо создади
-                </h3>
-                <div className="grid grid-cols-1 gap-2">
-                  {detectMathDomain(plan.theme || plan.title || '') === 'algebra' && (
-                    <button
-                      type="button"
-                      onClick={() => { setMathToolsTab('algebra-tiles'); setShowMathTools(true); }}
-                      className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-colors border border-indigo-200"
-                    >
-                      <span>🔲</span> Алгебарски Плочки за оваа тема
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/dugga/build?topic=${encodeURIComponent(plan.theme || plan.title || '')}&grade=${plan.grade}`)}
-                    className="flex items-center gap-2 px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg text-xs font-medium transition-colors border border-violet-200"
-                  >
-                    <span>📊</span> Dugga тест за оваа тема
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/kahoot/make?prefillTopic=${encodeURIComponent(plan.theme || plan.title || '')}&prefillGrade=${plan.grade}`)}
-                    className="flex items-center gap-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium transition-colors border border-rose-200"
-                  >
-                    <span>🎮</span> Kahoot за оваа тема
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/gamma?prefillTopic=${encodeURIComponent(plan.theme || plan.title || '')}&prefillGrade=${plan.grade}`)}
-                    className="flex items-center gap-2 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition-colors border border-amber-200"
-                  >
-                    <span>🎬</span> Gamma презентација
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/extraction-hub')}
-                    className="flex items-center gap-2 px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-xs font-medium transition-colors border border-sky-200"
-                  >
-                    <span>📄</span> Извлечи задачи (PDF/веб)
-                  </button>
-                </div>
-              </Card>
-            )}
-          </aside>
+          <LessonPlanSidebar
+            plan={plan}
+            ai={ai}
+            setPlan={setPlan}
+            firebaseUser={firebaseUser}
+            navigate={navigate}
+            onOpenMathTools={(tab) => { setMathToolsTab(tab); setShowMathTools(true); }}
+            onImportScenario={handleImportScenario}
+          />
         </div>
       </div>
 
@@ -943,131 +751,18 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
       {/* ── Official MoN Lesson Plan Form Modal ──────────────────────────── */}
       {showOfficialLessonForm && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in no-print"
-          onClick={() => setShowOfficialLessonForm(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Официјален образец за Подготовка за час"
-        >
-          <div
-            className={`bg-white rounded-lg shadow-xl w-full overflow-hidden flex flex-col max-h-[95vh] ${officialLessonTemplate === 'bro' || officialLessonOrientation === 'landscape' ? 'max-w-6xl' : 'max-w-4xl'}`}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-3 border-b flex-shrink-0 flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="text-base font-bold text-brand-primary flex items-center gap-2">
-                <ICONS.printer className="w-5 h-5" />
-                Подготовка за наставен час — МОН образец
-              </h2>
-              <div className="flex items-center gap-2 flex-wrap">
-
-                {/* Template switcher */}
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setOfficialLessonTemplate('mon')}
-                    title="МОН Цели (когнитивни, психомоторни, афективни)"
-                    className={`px-3 py-1.5 transition-colors ${officialLessonTemplate === 'mon' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    📋 МОН Образец
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOfficialLessonTemplate('bro')}
-                    title="БРО табела — Содржина / Стандарди / Сценарио / Средства / Следење"
-                    className={`px-3 py-1.5 border-l border-gray-300 transition-colors ${officialLessonTemplate === 'bro' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    📊 БРО Табела
-                  </button>
-                </div>
-
-                {/* Orientation toggle — hidden for BRO (always landscape) */}
-                {officialLessonTemplate === 'mon' && (
-                  <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setOfficialLessonOrientation('portrait')}
-                      title="A4 Portrait (вертикален)"
-                      className={`px-2.5 py-1.5 transition-colors ${officialLessonOrientation === 'portrait' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-                    >
-                      ▯ Portrait
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOfficialLessonOrientation('landscape')}
-                      title="A4 Landscape (хоризонтален) — препорачано"
-                      className={`px-2.5 py-1.5 border-l border-gray-200 transition-colors ${officialLessonOrientation === 'landscape' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-                    >
-                      ▭ Landscape
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setOfficialLessonEditing(v => !v)}
-                  className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition-colors ${
-                    officialLessonEditing
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <ICONS.edit className="w-4 h-4" />
-                  {officialLessonEditing ? 'Прегледај' : 'Уреди'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLessonOfficialPrint()}
-                  className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
-                >
-                  <ICONS.printer className="w-4 h-4" />
-                  Испечати
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowOfficialLessonForm(false)}
-                  className="p-1 rounded-full hover:bg-gray-200"
-                  aria-label="Затвори"
-                >
-                  <ICONS.close className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            {officialLessonEditing && (
-              <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center gap-2 text-sm text-blue-700 flex-shrink-0">
-                <ICONS.edit className="w-4 h-4 flex-shrink-0" />
-                <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
-              </div>
-            )}
-
-            {/* Scrollable form */}
-            <div className="overflow-auto flex-1 p-4 bg-gray-100">
-              <div
-                ref={lessonOfficialFormRef}
-                className={`bg-white shadow-sm mx-auto ${
-                  officialLessonTemplate === 'bro'
-                    ? 'max-w-5xl p-6'
-                    : officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'
-                }`}
-              >
-                {officialLessonTemplate === 'mon' ? (
-                  <LessonPlanOfficialForm
-                    plan={plan}
-                    orientation={officialLessonOrientation}
-                    isEditable={officialLessonEditing}
-                  />
-                ) : (
-                  <BROLessonScenarioForm
-                    plan={plan}
-                    isEditable={officialLessonEditing}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <OfficialLessonFormModal
+          plan={plan}
+          template={officialLessonTemplate}
+          setTemplate={setOfficialLessonTemplate}
+          orientation={officialLessonOrientation}
+          setOrientation={setOfficialLessonOrientation}
+          isEditable={officialLessonEditing}
+          setIsEditable={setOfficialLessonEditing}
+          onPrint={() => handleLessonOfficialPrint()}
+          onClose={() => setShowOfficialLessonForm(false)}
+          formRef={lessonOfficialFormRef}
+        />
       )}
       {/* C.3 — AI Lesson Execution overlay (inline, no navigation) */}
       {execOpen && plan && (plan as LessonPlan).id && (
