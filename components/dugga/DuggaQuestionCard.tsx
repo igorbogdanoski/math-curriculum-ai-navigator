@@ -7,6 +7,8 @@ import { MathRenderer } from '../common/MathRenderer';
 import { MathInput } from '../common/MathInput';
 import { QRSolutionUpload } from '../common/QRSolutionUpload';
 import { EmbeddedMathTool } from '../math/EmbeddedMathTool';
+import { FunctionTransformer } from '../math/FunctionTransformer';
+import { UnitCirclePicker } from '../dataviz/UnitCirclePicker';
 import type { DuggaQuestion } from '../../services/firestoreService.dugga';
 import type { QResult } from '../../utils/duggaScoring';
 
@@ -528,6 +530,43 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
             placeholder="Опиши ги чекорите на конструкцијата што ги направи (користи ја GeoGebra алатката подолу како скица, ако е достапна)..."
             className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent disabled:bg-gray-50" />
+        </div>
+      );
+    }
+    case 'function_match': {
+      if (!q.expectedTransform) {
+        return <p className="mt-3 text-xs text-red-500">Прашањето нема поставена цел (expectedTransform).</p>;
+      }
+      let initialParams: { a: number; b: number; c: number; d: number } | undefined;
+      try { initialParams = answer ? JSON.parse(answer) : undefined; } catch { /* */ }
+      return (
+        <div className="mt-3">
+          <FunctionTransformer
+            initialFunction={q.expectedTransform.fnKey}
+            initialParams={initialParams}
+            lockFunction
+            targetParams={q.expectedTransform.target}
+            onParamsChange={(params) => { if (!disabled) onChange(JSON.stringify(params)); }}
+          />
+        </div>
+      );
+    }
+    case 'unit_circle_pick': {
+      let current: { angle?: number; x?: number; y?: number } = {};
+      try { current = answer ? JSON.parse(answer) : {}; } catch { /* */ }
+      const angleDeg = typeof current.angle === 'number'
+        ? (q.expectedUnitCircle?.unit === 'rad' ? current.angle * 180 / Math.PI : current.angle)
+        : 0;
+      return (
+        <div className="mt-3">
+          <UnitCirclePicker
+            angleDeg={angleDeg}
+            disabled={disabled}
+            onChange={({ angle, x, y }) => {
+              const emittedAngle = q.expectedUnitCircle?.unit === 'rad' ? (angle * Math.PI) / 180 : angle;
+              onChange(JSON.stringify({ angle: emittedAngle, x, y }));
+            }}
+          />
         </div>
       );
     }

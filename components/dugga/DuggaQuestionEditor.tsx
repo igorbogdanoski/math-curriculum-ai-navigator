@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Plus, Trash2, ChevronDown, ChevronUp, Sparkles, Loader2, GripVertical,
   CheckSquare, AlignLeft, List, ToggleLeft, Table2, Shuffle,
-  ArrowUpDown, Layers, Hash, Compass,
+  ArrowUpDown, Layers, Hash, Compass, Sigma,
 } from 'lucide-react';
 import { MathInput } from '../common/MathInput';
 import { MathRenderer } from '../common/MathRenderer';
@@ -11,6 +11,7 @@ import type {
   DuggaQuestion, DuggaQuestionType, DuggaTestType, DuggaDok,
 } from '../../services/firestoreService.dugga';
 import { S61TeacherControls, isOpenEndedType } from './S61TeacherControls';
+import { BASE_FUNCTIONS, type BaseFunctionKey } from '../math/functionTransformerHelpers';
 
 // ─── Question type metadata ───────────────────────────────────────────────────
 export const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactNode; desc: string; aiSupported: boolean }[] = [
@@ -33,6 +34,8 @@ export const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactN
   { id: 'proof_critique',  label: 'Критика на доказ',           icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Намерно погрешен доказ — ученикот го наоѓа грешката', aiSupported: false },
   { id: 'proof_steps',      label: 'Редослед на доказ (со стапки)', icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'Подреди чекори на доказ, вклучува дистрактори', aiSupported: false },
   { id: 'geometry_construct', label: 'Геометриска конструкција', icon: <Compass className="w-4 h-4"/>,      desc: 'GeoGebra конструкција + AI оценување',      aiSupported: false },
+  { id: 'function_match',   label: 'Трансформација на функција', icon: <Sigma className="w-4 h-4"/>,        desc: 'Совпадни ги a,b,c,d со слајдери',            aiSupported: false },
+  { id: 'unit_circle_pick', label: 'Единечна кружница',         icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'Избери агол/точка на единечна кружница',    aiSupported: false },
   { id: 'section_header',  label: 'Дел / Секција',              icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
 ];
 
@@ -482,6 +485,90 @@ export function QuestionEditor({
                 />
               </div>
               <p className="text-[10px] text-gray-400">Ученикот пишува белешки за конструкцијата (опционално со GeoGebra алатка како скица — вклучи ја преку „🛠 Алатки за ученикот" подолу). AI оценува врз основа на белешките и описот.</p>
+            </div>
+          )}
+
+          {q.type === 'function_match' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Базна функција</label>
+                <select
+                  title="Базна функција"
+                  value={q.expectedTransform?.fnKey ?? 'sin'}
+                  onChange={e => upd({ expectedTransform: { ...(q.expectedTransform ?? { target: { a: 1, b: 1, c: 0, d: 0 } }), fnKey: e.target.value as BaseFunctionKey } })}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                  {Object.values(BASE_FUNCTIONS).map(f => (
+                    <option key={f.key} value={f.key}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  Цел: y = a·f(b·x + c) + d
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['a', 'b', 'c', 'd'] as const).map(k => (
+                    <div key={k}>
+                      <label className="text-[10px] font-bold text-gray-500 block mb-0.5">{k}</label>
+                      <input
+                        type="number" step={0.1}
+                        title={`Целна вредност на ${k}`}
+                        value={q.expectedTransform?.target[k] ?? (k === 'a' || k === 'b' ? 1 : 0)}
+                        onChange={e => {
+                          const base = q.expectedTransform ?? { fnKey: 'sin' as BaseFunctionKey, target: { a: 1, b: 1, c: 0, d: 0 } };
+                          upd({ expectedTransform: { ...base, target: { ...base.target, [k]: Number(e.target.value) } } });
+                        }}
+                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 text-xs text-center focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот ги подесува a, b, c, d со слајдери додека кривата не се совпадне со целната крива.</p>
+            </div>
+          )}
+
+          {q.type === 'unit_circle_pick' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Целен агол</label>
+                  <input
+                    type="number" step={1}
+                    title="Целен агол"
+                    value={q.expectedUnitCircle?.angle ?? 0}
+                    onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), angle: Number(e.target.value) } })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-center focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Единица</label>
+                  <select
+                    title="Единица за агол"
+                    value={q.expectedUnitCircle?.unit ?? 'deg'}
+                    onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), unit: e.target.value as 'deg' | 'rad' } })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  >
+                    <option value="deg">Степени (°)</option>
+                    <option value="rad">Радијани</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Што се проверува</label>
+                <select
+                  title="Што се проверува"
+                  value={q.expectedUnitCircle?.match ?? 'either'}
+                  onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), match: e.target.value as 'angle' | 'point' | 'either' } })}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                  <option value="either">Или агол или точка (пофлексибилно)</option>
+                  <option value="angle">Само агол</option>
+                  <option value="point">Само (x, y) точка</option>
+                </select>
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот ја влече точката на единечна кружница (или користи слајдер) додека не го погоди целниот агол/точка.</p>
             </div>
           )}
 

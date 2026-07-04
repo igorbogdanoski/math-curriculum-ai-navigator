@@ -23,6 +23,10 @@ export interface FunctionTransformerProps {
   yMin?: number;
   yMax?: number;
   onParamsChange?: (params: TransformParams, fn: BaseFunctionKey) => void;
+  /** When set, draws a second dashed target curve the student must match (e.g. Dugga `function_match`). */
+  targetParams?: TransformParams;
+  /** When true, hides the base-function selector so the student can only adjust a/b/c/d, not switch function families. */
+  lockFunction?: boolean;
 }
 
 const SLIDER_RANGES = {
@@ -49,6 +53,8 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
   yMin = -4,
   yMax = 4,
   onParamsChange,
+  targetParams,
+  lockFunction = false,
 }) => {
   const [fnKey, setFnKey] = useState<BaseFunctionKey>(initialFunction);
   const [params, setParams] = useState<TransformParams>({
@@ -94,6 +100,10 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
     () => sampleCurve(fn, IDENTITY_PARAMS, { xMin, xMax, samples: 400 }, extra),
     [fn, xMin, xMax, extra],
   );
+  const targetSamples = useMemo(
+    () => targetParams ? sampleCurve(fn, targetParams, { xMin, xMax, samples: 400 }, extra) : null,
+    [fn, targetParams, xMin, xMax, extra],
+  );
 
   const pad = 24;
   const plotW = width - pad * 2;
@@ -105,7 +115,13 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
 
   const dCurve = buildPathD(samples, toScreen, { yMin, yMax });
   const dBase  = buildPathD(baseSamples, toScreen, { yMin, yMax });
+  const dTarget = targetSamples ? buildPathD(targetSamples, toScreen, { yMin, yMax }) : null;
   const x0 = toScreen(0, 0);
+  const isMatched = !!targetParams
+    && Math.abs(params.a - targetParams.a) < 0.05
+    && Math.abs(params.b - targetParams.b) < 0.05
+    && Math.abs(params.c - targetParams.c) < 0.05
+    && Math.abs(params.d - targetParams.d) < 0.05;
 
   return (
     <div
@@ -125,19 +141,25 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
-        <label className="text-xs font-semibold text-gray-700">
-          Базна функција:
-          <select
-            value={fnKey}
-            onChange={onFnChange}
-            className="ml-2 px-2 py-1 text-xs border border-gray-200 rounded-md bg-white"
-            data-testid="function-transformer-select"
-          >
-            {Object.values(BASE_FUNCTIONS).map((f) => (
-              <option key={f.key} value={f.key}>{f.label}</option>
-            ))}
-          </select>
-        </label>
+        {lockFunction ? (
+          <span className="text-xs font-semibold text-gray-700">
+            Базна функција: <span className="font-mono text-indigo-700">{fn.label}</span>
+          </span>
+        ) : (
+          <label className="text-xs font-semibold text-gray-700">
+            Базна функција:
+            <select
+              value={fnKey}
+              onChange={onFnChange}
+              className="ml-2 px-2 py-1 text-xs border border-gray-200 rounded-md bg-white"
+              data-testid="function-transformer-select"
+            >
+              {Object.values(BASE_FUNCTIONS).map((f) => (
+                <option key={f.key} value={f.key}>{f.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <code
           className="px-2 py-1 text-xs font-mono bg-indigo-50 text-indigo-800 rounded-md border border-indigo-100"
           data-testid="function-transformer-formula"
@@ -168,9 +190,18 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
           );
         })}
         <path d={dBase}  fill="none" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="4 3" />
+        {dTarget && (
+          <path d={dTarget} fill="none" stroke="#f97316" strokeWidth={2} strokeDasharray="7 4" data-testid="function-transformer-target" />
+        )}
         <path d={dCurve} fill="none" stroke="#4f46e5" strokeWidth={2} />
         <circle cx={x0.sx} cy={x0.sy} r={2.5} fill="#6b7280" />
       </svg>
+
+      {targetParams && (
+        <p className={`text-xs font-bold ${isMatched ? 'text-emerald-600' : 'text-orange-600'}`} data-testid="function-transformer-match-status">
+          {isMatched ? '✓ Ја погоди целната крива!' : '🎯 Совпадни ја сината крива со портокаловата (целна) крива.'}
+        </p>
+      )}
 
       {/* a, b, c, d sliders */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
