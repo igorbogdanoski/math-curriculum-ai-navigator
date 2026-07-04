@@ -143,16 +143,18 @@ $${latex}$
 - **Тема(и):** ${params.topics.join(', ')}
 - **DoK распределба:** DoK1=${params.dokDistribution[1]} · DoK2=${params.dokDistribution[2]} · DoK3=${params.dokDistribution[3]} · DoK4=${params.dokDistribution[4]}${depthNote}
 
-**Типови прашања** — искористи разновидност (MC, Точно/Неточно, пополни, краток одговор, есеј):
+**Типови прашања** — искористи разновидност (MC, повеќе точни, Точно/Неточно, оцени тврдење, пополни, краток одговор, есеј, пополни табела):
 
 За секое прашање врати JSON:
 {
-  "type": "multiple_choice" | "true_false" | "fill_blanks" | "short_answer" | "essay" | "ordering" | "multi_match",
+  "type": "multiple_choice" | "checklist" | "true_false" | "statement_eval" | "fill_blanks" | "short_answer" | "essay" | "ordering" | "multi_match" | "table_completion",
   "dok": 1 | 2 | 3 | 4,
   "points": number,
-  "text": "...",
-  "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  // само за MC
-  "correctAnswer": "...",
+  "text": "...",  // за table_completion: наведи го правилото/формулата јасно (пр. "f(x) = 2x - 1")
+  "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  // за multiple_choice/checklist
+  "correctAnswer": "...",  // за statement_eval: "Точно" | "Неточно" | "Делумно точно"
+  "tableHeaders": ["x", "f(x)"],  // само за table_completion
+  "tableRows": [["1", "1"], ["2", ""], ["3", ""]],  // само за table_completion — остави "" во ќелиите што ученикот треба да ги пополни
   "solution": "...",  // кратко решение за наставникот
   "hint": "..."       // насока за ученик
 }
@@ -199,8 +201,8 @@ $${latex}$
     };
 
     const allowed = params.allowedTypes ?? [
-      'multiple_choice', 'true_false', 'fill_blanks',
-      'short_answer', 'essay', 'ordering', 'multi_match',
+      'multiple_choice', 'checklist', 'true_false', 'statement_eval', 'fill_blanks',
+      'short_answer', 'essay', 'ordering', 'multi_match', 'table_completion',
     ];
 
     const trackLine = params.track ? `\n- **Насока:** ${params.track}` : '';
@@ -225,9 +227,11 @@ $${latex}$
   "type": <еден од: ${allowed.join(' | ')}>,
   "dok": 1 | 2 | 3 | 4,
   "points": number,
-  "text": "...",
+  "text": "...",  // за table_completion: наведи го правилото/формулата јасно
   "options": [{"id":"a","text":"...","isCorrect":true|false}],   // само за multiple_choice/checklist
-  "correctAnswer": "...",
+  "correctAnswer": "...",  // за statement_eval: "Точно" | "Неточно" | "Делумно точно"
+  "tableHeaders": ["x", "f(x)"],   // само за table_completion
+  "tableRows": [["1", "1"], ["2", ""]],   // само за table_completion — "" за ќелиите за пополнување
   "solution": "...",
   "hint": "..."
 }
