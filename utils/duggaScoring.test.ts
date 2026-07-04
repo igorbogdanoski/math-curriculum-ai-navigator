@@ -148,6 +148,38 @@ describe('autoScore — fill_blanks', () => {
   });
 });
 
+describe('autoScore — fill_blanks/short_answer CAS fallback (the "2x+2 vs 2+2x" bug this closes)', () => {
+  it('flips a literal-mismatch to correct when the answer is a differently-written equivalent expression', () => {
+    const q = makeQ({ type: 'short_answer', points: 4, correctAnswer: '2+2x' });
+    const r = autoScore(q, '2x+2');
+    expect(r?.correct).toBe(true);
+    expect(r?.earned).toBe(4);
+    expect(r?.viaCas).toBe(true);
+  });
+
+  it('does not mark viaCas on a plain literal match', () => {
+    const q = makeQ({ type: 'short_answer', points: 4, correctAnswer: '2+2x' });
+    const r = autoScore(q, '2+2x');
+    expect(r?.correct).toBe(true);
+    expect(r?.viaCas).toBeUndefined();
+  });
+
+  it('stays wrong when the answer is genuinely a different value, not just differently written', () => {
+    const q = makeQ({ type: 'fill_blanks', points: 3, correctAnswer: 'x=5' });
+    const r = autoScore(q, 'x=4');
+    expect(r?.correct).toBe(false);
+    expect(r?.earned).toBe(0);
+    expect(r?.viaCas).toBeUndefined();
+  });
+
+  it('stays wrong (not falsely flipped) when the answer is non-mathematical prose CAS cannot parse', () => {
+    const q = makeQ({ type: 'short_answer', points: 2, correctAnswer: '42' });
+    const r = autoScore(q, 'the answer is forty-two');
+    expect(r?.correct).toBe(false);
+    expect(r?.earned).toBe(0);
+  });
+});
+
 // ─── ordering ────────────────────────────────────────────────────────────────
 
 describe('autoScore — ordering', () => {

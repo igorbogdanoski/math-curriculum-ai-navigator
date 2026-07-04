@@ -69,3 +69,32 @@ export function verifyExpressionEquivalence(latexA: string, latexB: string): Cas
     return { verdict: 'inconclusive', detail: `exception:${err instanceof Error ? err.message : String(err)}` };
   }
 }
+
+/**
+ * Checks whether a claimed value solves an equation, by substitution — e.g. does
+ * x=2 solve "2x+3=7"? Never solves the equation itself, only verifies a claimed root.
+ */
+export function verifyEquationSolution(
+  equationLatex: string,
+  variable: string,
+  claimedValueLatex: string,
+): CasVerifyResult {
+  if (!equationLatex.trim() || !claimedValueLatex.trim()) return { verdict: 'inconclusive', detail: 'empty_input' };
+  try {
+    const equation = parseOrNull(equationLatex);
+    if (equation.error) return { verdict: 'inconclusive', detail: `parse_error:equation:${equation.error}` };
+    if (equation.expr.operator !== 'Equal') {
+      return { verdict: 'inconclusive', detail: 'not_an_equation' };
+    }
+
+    const claimedValue = parseOrNull(claimedValueLatex);
+    if (claimedValue.error) return { verdict: 'inconclusive', detail: `parse_error:value:${claimedValue.error}` };
+
+    const result = equation.expr.subs({ [variable]: claimedValue.expr }).evaluate();
+    if (result.symbol === 'True') return { verdict: 'equivalent' };
+    if (result.symbol === 'False') return { verdict: 'not_equivalent' };
+    return { verdict: 'inconclusive', detail: `unresolved_substitution:${result.toString()}` };
+  } catch (err) {
+    return { verdict: 'inconclusive', detail: `exception:${err instanceof Error ? err.message : String(err)}` };
+  }
+}

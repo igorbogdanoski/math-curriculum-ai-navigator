@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verifyExpressionEquivalence } from './casEngine';
+import { verifyExpressionEquivalence, verifyEquationSolution } from './casEngine';
 
 describe('verifyExpressionEquivalence — core algebra cases', () => {
   it('recognises the exact Dugga string-equality bug this feature fixes', () => {
@@ -72,6 +72,38 @@ describe('verifyExpressionEquivalence — normalization fixes confirmed against 
 
   it('strips wrapping $...$ delimiters some stored answers still carry', () => {
     expect(verifyExpressionEquivalence('$36\\pi$', '36\\pi').verdict).toBe('equivalent');
+  });
+});
+
+describe('verifyEquationSolution', () => {
+  it('confirms a correct claimed root by substitution', () => {
+    expect(verifyEquationSolution('2x+3=7', 'x', '2').verdict).toBe('equivalent');
+  });
+
+  it('rejects an incorrect claimed root', () => {
+    expect(verifyEquationSolution('2x+3=7', 'x', '3').verdict).toBe('not_equivalent');
+  });
+
+  it('handles a fraction as the claimed root', () => {
+    expect(verifyEquationSolution('2x=1', 'x', '\\frac{1}{2}').verdict).toBe('equivalent');
+  });
+
+  it('handles an irrational claimed root', () => {
+    expect(verifyEquationSolution('x^2=2', 'x', '\\sqrt{2}').verdict).toBe('equivalent');
+  });
+
+  it('returns inconclusive when the input is not an equation (no top-level =)', () => {
+    expect(verifyEquationSolution('2x+3', 'x', '2').verdict).toBe('inconclusive');
+  });
+
+  it('returns inconclusive on a parse failure in either the equation or the claimed value', () => {
+    expect(verifyEquationSolution('\\notarealcommand=7', 'x', '2').verdict).toBe('inconclusive');
+    expect(verifyEquationSolution('2x+3=7', 'x', '\\notarealcommand').verdict).toBe('inconclusive');
+  });
+
+  it('never throws on empty input', () => {
+    expect(() => verifyEquationSolution('', 'x', '')).not.toThrow();
+    expect(verifyEquationSolution('', 'x', '').verdict).toBe('inconclusive');
   });
 });
 

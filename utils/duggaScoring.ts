@@ -3,6 +3,7 @@ import { gradeStudentChart, parseStudentChart } from './duggaChartGrading';
 import { gradeFunctionMatch, parseFunctionMatch } from './duggaFunctionMatchGrading';
 import { gradeUnitCirclePick, parseUnitCirclePick } from './duggaUnitCirclePickGrading';
 import { gradeProofSteps, parseProofSteps } from './duggaProofStepsGrading';
+import { verifyExpressionEquivalence } from './cas/casEngine';
 
 export interface QResult {
   earned: number;
@@ -10,6 +11,8 @@ export interface QResult {
   correct: boolean | null; // null = AI / manual review needed
   feedback: string;
   aiGrade?: string;
+  /** true if this result was flipped from an initial literal-match failure to correct via CAS verification. */
+  viaCas?: boolean;
 }
 
 // Returns a scored result for auto-gradeable question types.
@@ -43,8 +46,20 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
     case 'fill_blanks':
     case 'short_answer': {
       if (!q.correctAnswer) return null;
-      const correct = answer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-      return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
+      const literalMatch = answer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+      if (literalMatch) {
+        return { ...base, earned: q.points, correct: true, feedback: '' };
+      }
+      // Literal mismatch doesn't necessarily mean wrong — e.g. "2x+2" vs the stored "2+2x" are
+      // the same answer written differently. Only an 'equivalent' CAS verdict flips this to
+      // correct; anything else (not_equivalent, inconclusive, unparseable) keeps today's result.
+      const casResult = verifyExpressionEquivalence(answer, q.correctAnswer);
+      const correct = casResult.verdict === 'equivalent';
+      return {
+        ...base, earned: correct ? q.points : 0, correct,
+        feedback: correct ? '' : `Точен: ${q.correctAnswer}`,
+        viaCas: correct || undefined,
+      };
     }
     case 'ordering': {
       if (!q.orderItems?.length) return null;
