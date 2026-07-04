@@ -26,6 +26,7 @@ interface SavedPlan {
     isForked?: boolean;
     originalPlanId?: string;
     originalAuthorName?: string;
+    originalAuthorUid?: string;
     isPublic?: boolean;
     avgRating?: number;
     ratingCount?: number;
@@ -139,6 +140,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
                             isForked: true,
                             originalPlanId: plan.originalPlanId ?? plan.id,
                             originalAuthorName: plan.originalAuthorName ?? plan.authorName,
+                            originalAuthorUid: plan.originalAuthorUid ?? plan.userId,
                         }
                     );
 

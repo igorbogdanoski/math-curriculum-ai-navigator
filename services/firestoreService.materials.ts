@@ -749,8 +749,9 @@ export interface AnnualPlanDoc {
   forks?: number;
   isForked?: boolean;
   originalPlanId?: string;
-  /** Denormalised name of the plan's original author — set at fork time */
+  /** Denormalised name/uid of the plan's original author — set at fork time */
   originalAuthorName?: string;
+  originalAuthorUid?: string;
   /** S77: shared to the community library */
   isPublic?: boolean;
   /** S77: per-user star ratings (1–5) keyed by UID */

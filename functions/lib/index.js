@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onScenarioPublishedEmbed = exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
+exports.onAnnualPlanForked = exports.onDuggaTestAdapted = exports.onScenarioForkedOrRated = exports.onScenarioPublishedEmbed = exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
@@ -660,6 +660,156 @@ exports.onScenarioPublishedEmbed = functions.firestore
     }
     catch (err) {
         console.error('[onScenarioPublishedEmbed] embedding failed for', entryId, err);
+        return null;
+    }
+});
+// ── Fork / rate / adapt notifications ──────────────────────────────────────
+/**
+ * Notifies a teacher via FCM when someone forks, adapts, or rates their
+ * shared content (Scenario Bank entries, Dugga tests, Annual Plans).
+ * Reuses the single-token-lookup + sendEachForMulticast + stale-token-pruning
+ * pattern from deliverForumReplyNotification, scoped down to one recipient.
+ */
+const notifyUid = async (uid, notification) => {
+    var _a, _b, _c;
+    if (!uid)
+        return;
+    const db = admin.firestore();
+    const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
+    const token = (_a = tokenSnap.data()) === null || _a === void 0 ? void 0 : _a.token;
+    if (typeof token !== 'string' || !token)
+        return;
+    try {
+        const result = await admin.messaging().sendEachForMulticast({
+            tokens: [token],
+            notification: { title: notification.title, body: notification.body },
+            webpush: {
+                notification: { icon: '/icon-192.svg', badge: '/icon-192.svg' },
+                fcmOptions: { link: notification.link },
+                headers: { TTL: '86400' },
+            },
+            data: notification.data,
+        });
+        const failure = result.responses[0];
+        if (!failure.success) {
+            const code = (_c = (_b = failure.error) === null || _b === void 0 ? void 0 : _b.code) !== null && _c !== void 0 ? _c : '';
+            const isStale = code === 'messaging/registration-token-not-registered' ||
+                code === 'messaging/invalid-registration-token' ||
+                code === 'messaging/invalid-argument';
+            if (isStale) {
+                await db.collection('user_tokens').doc(`${uid}_web`).delete().catch(() => undefined);
+            }
+        }
+    }
+    catch (err) {
+        console.error('[notifyUid] send failed for', uid, err);
+    }
+};
+const getUserName = async (uid) => {
+    var _a;
+    const snap = await admin.firestore().collection('users').doc(uid).get();
+    const name = (_a = snap.data()) === null || _a === void 0 ? void 0 : _a.name;
+    return typeof name === 'string' && name ? name : 'Наставник';
+};
+/** Notifies the original author when their Scenario Bank entry is forked, and when it's rated. */
+exports.onScenarioForkedOrRated = functions.firestore
+    .document('scenario_bank/{entryId}')
+    .onWrite(async (change, context) => {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    try {
+        const entryId = context.params.entryId;
+        const after = change.after.exists ? change.after.data() : null;
+        const before = change.before.exists ? change.before.data() : null;
+        if (!after)
+            return null;
+        // New fork/adapt — notify the original author.
+        if (!before) {
+            const originalAuthorUid = (_a = after.originalAuthorUid) !== null && _a !== void 0 ? _a : '';
+            if (originalAuthorUid && originalAuthorUid !== after.authorUid) {
+                const forkerName = await getUserName((_b = after.authorUid) !== null && _b !== void 0 ? _b : '');
+                await notifyUid(originalAuthorUid, {
+                    title: `🍴 ${forkerName} го форкна твоето сценарио`,
+                    body: (_c = after.title) !== null && _c !== void 0 ? _c : 'Сценарио',
+                    link: `/#/scenario-bank`,
+                    data: { type: 'scenario_forked', entryId, actorUid: (_d = after.authorUid) !== null && _d !== void 0 ? _d : '' },
+                });
+            }
+            return null;
+        }
+        // Rating change — notify the entry's own author.
+        const beforeRatings = (_e = before.ratingsByUid) !== null && _e !== void 0 ? _e : {};
+        const afterRatings = (_f = after.ratingsByUid) !== null && _f !== void 0 ? _f : {};
+        const authorUid = (_g = after.authorUid) !== null && _g !== void 0 ? _g : '';
+        for (const [raterUid, rating] of Object.entries(afterRatings)) {
+            if (beforeRatings[raterUid] === rating)
+                continue; // unchanged
+            if (raterUid === authorUid)
+                continue; // self-rating — no notification needed
+            const raterName = await getUserName(raterUid);
+            await notifyUid(authorUid, {
+                title: `⭐ ${raterName} го оцени твоето сценарио`,
+                body: `${(_h = after.title) !== null && _h !== void 0 ? _h : 'Сценарио'} — ${rating}★`,
+                link: `/#/scenario-bank`,
+                data: { type: 'scenario_rated', entryId, actorUid: raterUid },
+            });
+        }
+        return null;
+    }
+    catch (err) {
+        console.error('[onScenarioForkedOrRated]', err);
+        return null;
+    }
+});
+/** Notifies the original author when their Dugga test is adapted by another teacher. */
+exports.onDuggaTestAdapted = functions.firestore
+    .document('dugga_tests/{testId}')
+    .onCreate(async (snap) => {
+    var _a, _b, _c, _d, _e;
+    try {
+        const test = snap.data();
+        if (!test)
+            return null;
+        const originalAuthorUid = (_a = test.originalAuthorUid) !== null && _a !== void 0 ? _a : '';
+        if (!originalAuthorUid || originalAuthorUid === test.teacherUid)
+            return null;
+        await notifyUid(originalAuthorUid, {
+            title: `🍴 ${(_b = test.teacherName) !== null && _b !== void 0 ? _b : 'Наставник'} го адаптираше твојот тест`,
+            body: (_d = (_c = test.adaptedFromTitle) !== null && _c !== void 0 ? _c : test.title) !== null && _d !== void 0 ? _d : 'Дига тест',
+            link: `/#/dugga/library`,
+            data: { type: 'dugga_adapted', testId: snap.id, actorUid: (_e = test.teacherUid) !== null && _e !== void 0 ? _e : '' },
+        });
+        return null;
+    }
+    catch (err) {
+        console.error('[onDuggaTestAdapted]', err);
+        return null;
+    }
+});
+/** Notifies the original author when their Annual Plan is forked by another teacher. */
+exports.onAnnualPlanForked = functions.firestore
+    .document('academic_annual_plans/{planId}')
+    .onCreate(async (snap) => {
+    var _a, _b, _c, _d, _e;
+    try {
+        const plan = snap.data();
+        if (!plan)
+            return null;
+        if (!plan.isForked)
+            return null;
+        const originalAuthorUid = (_a = plan.originalAuthorUid) !== null && _a !== void 0 ? _a : '';
+        if (!originalAuthorUid || originalAuthorUid === plan.userId)
+            return null;
+        const forkerName = await getUserName((_b = plan.userId) !== null && _b !== void 0 ? _b : '');
+        await notifyUid(originalAuthorUid, {
+            title: `🍴 ${forkerName} го форкна твојот годишен план`,
+            body: `${(_c = plan.subject) !== null && _c !== void 0 ? _c : ''} — ${(_d = plan.grade) !== null && _d !== void 0 ? _d : ''}`.trim(),
+            link: `/#/annual-plans`,
+            data: { type: 'annual_plan_forked', planId: snap.id, actorUid: (_e = plan.userId) !== null && _e !== void 0 ? _e : '' },
+        });
+        return null;
+    }
+    catch (err) {
+        console.error('[onAnnualPlanForked]', err);
         return null;
     }
 });
