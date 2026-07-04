@@ -95,6 +95,20 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
       const correct = result.score >= 0.999;
       return { ...base, earned, correct, feedback: result.feedback };
     }
+    case 'list_items': {
+      if (!q.correctAnswer) return null;
+      let submitted: string[] = [];
+      try { submitted = answer ? JSON.parse(answer) : []; } catch { /* */ }
+      const expected = q.correctAnswer.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const given = submitted.map(s => s.trim().toLowerCase()).filter(Boolean);
+      if (!expected.length) return null;
+      const hits = expected.filter(e => given.includes(e)).length;
+      const extra = given.filter(g => !expected.includes(g)).length;
+      const correct = hits === expected.length && extra === 0;
+      const ratio = hits / expected.length;
+      const earned = correct ? q.points : Math.floor(q.points * ratio * (extra > 0 ? 0.7 : 1));
+      return { ...base, earned, correct, feedback: correct ? '' : `Точни ставки: ${q.correctAnswer}` };
+    }
     case 'section_header':
       return { ...base, maxPoints: 0, earned: 0, correct: true, feedback: '' };
     default:
@@ -107,7 +121,40 @@ export function needsAIGrade(q: DuggaQuestion): boolean {
     || q.type === 'geometry_construct'
     || q.type === 'feynman_explain'
     || q.type === 'proof_critique'
+    || q.type === 'table_completion'
+    || q.type === 'inline_select'
+    || q.type === 'multi_part'
+    || q.type === 'interactive_table'
+    || q.type === 'diagram_annotate'
     || (q.type === 'short_answer' && !q.correctAnswer);
+}
+
+/**
+ * Folds structural context (table data, options, row/column labels) into the
+ * question text sent to AI grading, for types with no stored answer key
+ * (`table_completion`, `interactive_table`, `inline_select`, `diagram_annotate`)
+ * — without this, the AI grades blind against just `q.text`.
+ */
+export function buildAIGradingQuestionContext(q: DuggaQuestion): string {
+  const parts = [q.text];
+  if (q.type === 'table_completion' && q.tableHeaders?.length) {
+    parts.push(`Заглавја на табелата: ${q.tableHeaders.join(' | ')}.`);
+    if (q.tableRows?.length) {
+      const rows = q.tableRows.map(row => `[${row.map(c => c || '(празно поле за пополнување)').join(', ')}]`).join('; ');
+      parts.push(`Дадени редови на табелата (пресметај ги точните вредности за празните полиња од правилото искажано во прашањето): ${rows}.`);
+    }
+  }
+  if (q.type === 'interactive_table' && q.tableHeaders?.length && q.tableRows?.length) {
+    const rowLabels = q.tableRows.map(r => r[0] ?? '').join(', ');
+    parts.push(`Колони: ${q.tableHeaders.join(' | ')}. Редови: ${rowLabels}. Учeникот одбележал точно/неточно комбинации со checkbox-и — оцени ги врз основа на изјавата во прашањето.`);
+  }
+  if (q.type === 'inline_select' && q.options?.length) {
+    parts.push(`Достапни опции за избор: ${q.options.map(o => o.text).join(', ')}.`);
+  }
+  if (q.type === 'diagram_annotate' && q.imageUrl) {
+    parts.push('Прашањето вклучува дијаграм/слика (не е достапна за AI); оцени го одговорот врз основа на тоа колку добро писмениот опис на ученикот одговара на она што прашањето го бара, со разумна толеранција бидејќи сликата не може да се провери директно.');
+  }
+  return parts.join('\n');
 }
 
 // Parses AI grade response text to extract earned points (e.g. "3/5" → 3)

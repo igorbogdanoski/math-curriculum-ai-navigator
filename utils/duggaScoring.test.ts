@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { autoScore, needsAIGrade, parseAIEarnedPoints, percentageToMkGrade } from './duggaScoring';
+import { autoScore, needsAIGrade, buildAIGradingQuestionContext, parseAIEarnedPoints, percentageToMkGrade } from './duggaScoring';
 import type { DuggaQuestion } from '../services/firestoreService.dugga';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ describe('autoScore — section_header', () => {
 // ─── AI-graded types ──────────────────────────────────────────────────────────
 
 describe('autoScore — AI-only types return null', () => {
-  it.each(['essay', 'diagram_annotate', 'interactive_table', 'list_items', 'table_completion'] as const)(
+  it.each(['essay', 'diagram_annotate', 'interactive_table', 'table_completion', 'multi_part', 'inline_select'] as const)(
     '%s returns null',
     (type) => {
       expect(autoScore(makeQ({ type }), 'some answer')).toBeNull();
@@ -243,6 +243,47 @@ describe('autoScore — AI-only types return null', () => {
   it('short_answer without correctAnswer returns null (needs AI)', () => {
     const q = makeQ({ type: 'short_answer' });
     expect(autoScore(q, 'anything')).toBeNull();
+  });
+});
+
+// ─── list_items ───────────────────────────────────────────────────────────────
+
+describe('autoScore — list_items', () => {
+  const q = makeQ({ type: 'list_items', points: 4, correctAnswer: 'x=2, x=-3' });
+
+  it('awards full points for an exact set match (order-independent)', () => {
+    const r = autoScore(q, JSON.stringify(['x=-3', 'x=2']));
+    expect(r?.correct).toBe(true);
+    expect(r?.earned).toBe(4);
+  });
+
+  it('is case/whitespace-insensitive', () => {
+    const r = autoScore(q, JSON.stringify([' X=2 ', 'X=-3']));
+    expect(r?.correct).toBe(true);
+  });
+
+  it('awards partial credit for a subset of correct items', () => {
+    const r = autoScore(q, JSON.stringify(['x=2']));
+    expect(r?.correct).toBe(false);
+    expect(r?.earned).toBeGreaterThan(0);
+    expect(r?.earned).toBeLessThan(4);
+  });
+
+  it('penalizes extra incorrect items', () => {
+    const withExtra = autoScore(q, JSON.stringify(['x=2', 'x=-3', 'x=99']));
+    const clean = autoScore(q, JSON.stringify(['x=2', 'x=-3']));
+    expect(withExtra?.correct).toBe(false);
+    expect(clean?.correct).toBe(true);
+  });
+
+  it('returns 0 earned for an empty/unparseable answer', () => {
+    const r = autoScore(q, '');
+    expect(r?.correct).toBe(false);
+    expect(r?.earned).toBe(0);
+  });
+
+  it('returns null when correctAnswer is missing (needs AI/manual)', () => {
+    expect(autoScore(makeQ({ type: 'list_items' }), JSON.stringify(['x=2']))).toBeNull();
   });
 });
 
@@ -263,6 +304,60 @@ describe('needsAIGrade', () => {
 
   it('multiple_choice does not need AI', () => {
     expect(needsAIGrade(makeQ({ type: 'multiple_choice' }))).toBe(false);
+  });
+
+  it.each(['table_completion', 'inline_select', 'multi_part', 'interactive_table', 'diagram_annotate'] as const)(
+    '%s needs AI (no stored answer key)',
+    (type) => {
+      expect(needsAIGrade(makeQ({ type }))).toBe(true);
+    },
+  );
+
+  it('list_items does NOT need AI (auto-scored via correctAnswer)', () => {
+    expect(needsAIGrade(makeQ({ type: 'list_items', correctAnswer: 'a, b' }))).toBe(false);
+  });
+});
+
+// ─── buildAIGradingQuestionContext ─────────────────────────────────────────────
+
+describe('buildAIGradingQuestionContext', () => {
+  it('returns plain text unchanged for types with no special context', () => {
+    const q = makeQ({ type: 'essay', text: 'Објасни го Питагорината теорема.' });
+    expect(buildAIGradingQuestionContext(q)).toBe('Објасни го Питагорината теорема.');
+  });
+
+  it('folds table headers/rows into context for table_completion', () => {
+    const q = makeQ({
+      type: 'table_completion', text: 'f(x) = 2x',
+      tableHeaders: ['x', 'f(x)'], tableRows: [['1', '2'], ['2', '']],
+    });
+    const ctx = buildAIGradingQuestionContext(q);
+    expect(ctx).toContain('f(x) = 2x');
+    expect(ctx).toContain('x | f(x)');
+    expect(ctx).toContain('празно поле');
+  });
+
+  it('folds row labels and column headers for interactive_table', () => {
+    const q = makeQ({
+      type: 'interactive_table', text: 'Означи кои функции се непарни.',
+      tableHeaders: ['Непарна'], tableRows: [['f(x)=x^3'], ['f(x)=x^2']],
+    });
+    const ctx = buildAIGradingQuestionContext(q);
+    expect(ctx).toContain('f(x)=x^3');
+    expect(ctx).toContain('f(x)=x^2');
+  });
+
+  it('folds options for inline_select', () => {
+    const q = makeQ({
+      type: 'inline_select', text: 'Избери го точниот степен.',
+      options: [{ id: 'a', text: 'x^2' }, { id: 'b', text: 'x^3' }],
+    });
+    expect(buildAIGradingQuestionContext(q)).toContain('x^2, x^3');
+  });
+
+  it('adds a leniency note for diagram_annotate when an image is present', () => {
+    const q = makeQ({ type: 'diagram_annotate', text: 'Означи ги аглите.', imageUrl: 'https://x/y.png' });
+    expect(buildAIGradingQuestionContext(q)).toContain('не е достапна за AI');
   });
 });
 

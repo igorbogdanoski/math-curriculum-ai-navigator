@@ -8,7 +8,7 @@ import { QuestionCard } from '../components/dugga/DuggaQuestionCard';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
-import { autoScore, needsAIGrade, parseAIEarnedPoints, percentageToMkGrade } from '../utils/duggaScoring';
+import { autoScore, needsAIGrade, buildAIGradingQuestionContext, parseAIEarnedPoints, percentageToMkGrade } from '../utils/duggaScoring';
 import type { QResult } from '../utils/duggaScoring';
 import { gradeFeynmanAnswer, feynmanScoreToPoints } from '../utils/duggaFeynmanGrading';
 import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
@@ -154,7 +154,7 @@ export function DuggaPlayerView() {
       for (const q of aiQs) {
         try {
           const grade = await duggaAPI.gradeEssayAnswer({
-            question: q.text,
+            question: buildAIGradingQuestionContext(q),
             studentAnswer: answers[q.id] ?? '',
             maxPoints: q.points,
           });
