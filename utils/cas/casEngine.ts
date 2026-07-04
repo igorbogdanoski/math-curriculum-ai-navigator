@@ -37,7 +37,13 @@ function normalizeLatex(latex: string): string {
     .trim();
 }
 
-function parseOrNull(latex: string): { expr: ReturnType<ComputeEngine['parse']>; error: string | null } {
+export type BoxedExpr = ReturnType<ComputeEngine['parse']>;
+
+/** Shared ComputeEngine singleton + parse helper, exposed for casSteps.ts to build the
+ *  step-verification layer on top of without duplicating parsing/normalization logic. */
+export const casComputeEngine = ce;
+
+export function parseOrNull(latex: string): { expr: BoxedExpr; error: string | null } {
   const expr = ce.parse(normalizeLatex(latex));
   if (expr.errors.length > 0) {
     return { expr, error: expr.errors.map(e => e.toString()).join('; ') };
@@ -45,7 +51,7 @@ function parseOrNull(latex: string): { expr: ReturnType<ComputeEngine['parse']>;
   return { expr, error: null };
 }
 
-function toVerdict(isEqualResult: boolean | undefined): CasVerdict {
+export function toVerdict(isEqualResult: boolean | undefined): CasVerdict {
   if (isEqualResult === true) return 'equivalent';
   if (isEqualResult === false) return 'not_equivalent';
   return 'inconclusive';
