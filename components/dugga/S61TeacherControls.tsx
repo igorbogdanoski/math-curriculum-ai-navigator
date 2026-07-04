@@ -18,7 +18,7 @@ import type {
 } from '../../services/firestoreService.dugga';
 
 const OPEN_ENDED_TYPES: DuggaQuestionType[] = [
-  'essay', 'short_answer', 'fill_blanks', 'multi_part', 'list_items',
+  'essay', 'short_answer', 'fill_blanks', 'multi_part', 'list_items', 'geometry_construct',
 ];
 
 export function isOpenEndedType(t: DuggaQuestionType): boolean {

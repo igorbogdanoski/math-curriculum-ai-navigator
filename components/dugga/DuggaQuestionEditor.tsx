@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Plus, Trash2, ChevronDown, ChevronUp, Sparkles, Loader2, GripVertical,
   CheckSquare, AlignLeft, List, ToggleLeft, Table2, Shuffle,
-  ArrowUpDown, Layers, Hash,
+  ArrowUpDown, Layers, Hash, Compass,
 } from 'lucide-react';
 import { MathInput } from '../common/MathInput';
 import { MathRenderer } from '../common/MathRenderer';
@@ -31,6 +31,8 @@ export const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactN
   { id: 'diagram_annotate', label: 'Означи дијаграм',           icon: <Hash className="w-4 h-4"/>,          desc: 'Слика + label-и',                           aiSupported: false },
   { id: 'feynman_explain',  label: 'Феинман Предизвик',          icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Објасни концепт едноставно, AI рубрика',    aiSupported: false },
   { id: 'proof_critique',  label: 'Критика на доказ',           icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Намерно погрешен доказ — ученикот го наоѓа грешката', aiSupported: false },
+  { id: 'proof_steps',      label: 'Редослед на доказ (со стапки)', icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'Подреди чекори на доказ, вклучува дистрактори', aiSupported: false },
+  { id: 'geometry_construct', label: 'Геометриска конструкција', icon: <Compass className="w-4 h-4"/>,      desc: 'GeoGebra конструкција + AI оценување',      aiSupported: false },
   { id: 'section_header',  label: 'Дел / Секција',              icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
 ];
 
@@ -420,6 +422,66 @@ export function QuestionEditor({
                 </span>
               </div>
               <p className="text-[10px] text-gray-400">Ученикот кликнува на погрешниот чекор и пишува образложение. 50% поени за точен чекор + 50% AI оценка на образложението.</p>
+            </div>
+          )}
+
+          {q.type === 'proof_steps' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Точен редослед на чекори (еден чекор по ред)</label>
+                <textarea
+                  rows={4}
+                  value={(q.expectedProof?.steps ?? []).map(s => s.text).join('\n')}
+                  onChange={e => {
+                    const steps = e.target.value.split('\n').map((text: string) => text.trim()).filter(Boolean)
+                      .map(text => ({ id: newOptId(), text }));
+                    upd({ expectedProof: { ...(q.expectedProof ?? { steps: [] }), steps } });
+                  }}
+                  placeholder={"Чекор 1: ...\nЧекор 2: ...\nЧекор 3: ..."}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-400 resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Дистрактори (погрешни чекори — опционално, еден по ред)</label>
+                <textarea
+                  rows={2}
+                  value={(q.expectedProof?.distractors ?? []).map(s => s.text).join('\n')}
+                  onChange={e => {
+                    const distractors = e.target.value.split('\n').map((text: string) => text.trim()).filter(Boolean)
+                      .map(text => ({ id: newOptId(), text }));
+                    upd({ expectedProof: { steps: q.expectedProof?.steps ?? [], ...q.expectedProof, distractors } });
+                  }}
+                  placeholder={"Погрешен чекор кој не припаѓа во доказот..."}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-400 resize-y"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот ги подредува сите чекори (точни + дистрактори, измешани). Оценување: точна позиција на секој точен чекор, казна за вклучен дистрактор.</p>
+            </div>
+          )}
+
+          {q.type === 'geometry_construct' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Опис на бараната конструкција</label>
+                <textarea
+                  rows={3}
+                  value={q.expectedConstruction?.description ?? ''}
+                  onChange={e => upd({ expectedConstruction: { ...(q.expectedConstruction ?? { description: '' }), description: e.target.value } })}
+                  placeholder="пр. Конструирај симетрала на отсечка AB користејќи шестар и линијар."
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-400 resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Рубрика за AI оценување (опционално)</label>
+                <textarea
+                  rows={2}
+                  value={q.expectedConstruction?.rubric ?? ''}
+                  onChange={e => upd({ expectedConstruction: { description: q.expectedConstruction?.description ?? '', ...q.expectedConstruction, rubric: e.target.value } })}
+                  placeholder="пр. Бодувај: точност на конструкцијата (50%), објаснување на чекорите (30%), точна ознака (20%)"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-400 resize-y"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот пишува белешки за конструкцијата (опционално со GeoGebra алатка како скица — вклучи ја преку „🛠 Алатки за ученикот" подолу). AI оценува врз основа на белешките и описот.</p>
             </div>
           )}
 

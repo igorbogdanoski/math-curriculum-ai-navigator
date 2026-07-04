@@ -10,6 +10,23 @@ import { EmbeddedMathTool } from '../math/EmbeddedMathTool';
 import type { DuggaQuestion } from '../../services/firestoreService.dugga';
 import type { QResult } from '../../utils/duggaScoring';
 
+/**
+ * Deterministic shuffle seeded by a string (e.g. question id) — same seed
+ * always produces the same order, so a `proof_steps` pool doesn't re-shuffle
+ * on every re-render (no useState needed inside a switch-case component).
+ */
+function seededShuffle<T>(items: T[], seed: string): T[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const next = () => { h = (h * 1103515245 + 12345) >>> 0; return h / 0xFFFFFFFF; };
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // ─── Answer Input Components ──────────────────────────────────────────────────
 
 /**
@@ -451,6 +468,66 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
             />
           )}
           <p className="text-[10px] text-gray-400">50% поени за точниот чекор + 50% AI оценка на образложението.</p>
+        </div>
+      );
+    }
+    case 'proof_steps': {
+      const steps = q.expectedProof?.steps ?? [];
+      const distractors = q.expectedProof?.distractors ?? [];
+      const pool = [...steps, ...distractors];
+      let currentIds: string[];
+      try {
+        const parsed = answer ? JSON.parse(answer) : null;
+        currentIds = Array.isArray(parsed) && parsed.length === pool.length ? parsed : seededShuffle(pool.map(s => s.id), q.id);
+      } catch {
+        currentIds = seededShuffle(pool.map(s => s.id), q.id);
+      }
+      const byId = new Map(pool.map(s => [s.id, s.text]));
+      return (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-gray-500 mb-1">Постави ги чекорите во точен редослед (внимавај — некои може да не припаѓаат):</p>
+          {currentIds.map((id, idx) => (
+            <div key={id} className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-gray-200 bg-gray-50">
+              <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
+              <span className="flex-1 text-sm text-gray-800"><MathRenderer text={byId.get(id) ?? ''} /></span>
+              {!disabled && (
+                <div className="flex gap-0.5">
+                  <button type="button" disabled={idx === 0} aria-label="Помести нагоре"
+                    onClick={() => {
+                      const next = [...currentIds];
+                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                      onChange(JSON.stringify(next));
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded disabled:opacity-20 transition-colors">
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" disabled={idx === currentIds.length - 1} aria-label="Помести надолу"
+                    onClick={() => {
+                      const next = [...currentIds];
+                      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                      onChange(JSON.stringify(next));
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded disabled:opacity-20 transition-colors">
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case 'geometry_construct': {
+      return (
+        <div className="mt-3 space-y-2">
+          {q.expectedConstruction?.description && (
+            <div className="bg-teal-50 border border-teal-200 rounded-xl px-3 py-2 text-xs text-teal-800">
+              <strong>Барана конструкција:</strong> {q.expectedConstruction.description}
+            </div>
+          )}
+          <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
+            placeholder="Опиши ги чекорите на конструкцијата што ги направи (користи ја GeoGebra алатката подолу како скица, ако е достапна)..."
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent disabled:bg-gray-50" />
         </div>
       );
     }

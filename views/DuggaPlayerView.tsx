@@ -148,7 +148,7 @@ export function DuggaPlayerView() {
     }
 
     // 2a) AI-grade essay/open questions
-    const aiQs = gradeable.filter(q => needsAIGrade(q) && q.type !== 'feynman_explain' && q.type !== 'proof_critique');
+    const aiQs = gradeable.filter(q => needsAIGrade(q) && q.type !== 'feynman_explain' && q.type !== 'proof_critique' && q.type !== 'geometry_construct');
     if (aiQs.length > 0) {
       setSubmitStatus(`AI оценување (${aiQs.length} есеј одговори)...`);
       for (const q of aiQs) {
@@ -232,6 +232,29 @@ export function DuggaPlayerView() {
         } else {
           qResults[q.id] = { earned: stepPts, maxPoints: q.points, correct: stepPts > 0, feedback: stepPts > 0 ? 'Точен чекор!' : 'Погрешен чекор.' };
           earned += stepPts;
+        }
+      }
+    }
+
+    // 2d) geometry_construct — dedicated AI grader (description + rubric), not the generic essay grader
+    const geometryQs = gradeable.filter(q => q.type === 'geometry_construct');
+    if (geometryQs.length > 0) {
+      setSubmitStatus(`Оценување геометриски конструкции (${geometryQs.length} одговори)...`);
+      for (const q of geometryQs) {
+        try {
+          const grade = await duggaAPI.gradeGeometryConstruction({
+            question: q.text,
+            expectedDescription: q.expectedConstruction?.description ?? '',
+            studentNotes: answers[q.id] ?? '',
+            rubric: q.expectedConstruction?.rubric,
+            maxPoints: q.points,
+          });
+          const match = grade.match(/(\d+)\s*\/\s*\d+/);
+          const aiEarned = match ? Math.min(parseInt(match[1]), q.points) : 0;
+          qResults[q.id] = { earned: aiEarned, maxPoints: q.points, correct: aiEarned >= q.points * 0.7, feedback: '', aiGrade: grade };
+          earned += aiEarned;
+        } catch {
+          qResults[q.id] = { earned: 0, maxPoints: q.points, correct: null, feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
         }
       }
     }
