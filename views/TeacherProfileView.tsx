@@ -21,6 +21,7 @@ import { SPECIALIZATIONS } from '../data/academy/specializations';
 import { loadCards, isDueToday } from '../utils/sm2';
 import { geminiService } from '../services/geminiService';
 import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
+import { fetchTeacherImpactSummary, type ImpactSummary } from '../services/impactService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,32 +83,29 @@ export const TeacherProfileView: React.FC = () => {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [publishedCount, setPublishedCount] = useState<number | null>(null);
-  const [scenarioStats, setScenarioStats] = useState<{ shared: number; avgRating: number | null; totalForks: number } | null>(null);
+  const [impactSummary, setImpactSummary] = useState<ImpactSummary | null>(null);
 
-  // Fetch published materials count + scenario bank contribution stats
+  // Fetch published materials count + cross-surface sharing impact (Scenario Bank + Annual Plans + Dugga)
   useEffect(() => {
     if (!firebaseUser) return;
     const load = async () => {
       try {
         const { db } = await import('../firebaseConfig');
-        const { collection, query, where, getCountFromServer, getDocs } = await import('firebase/firestore');
+        const { collection, query, where, getCountFromServer } = await import('firebase/firestore');
         const q = query(collection(db, 'cached_ai_materials'), where('teacherUid', '==', firebaseUser.uid), where('isPublished', '==', true));
         const snap = await getCountFromServer(q);
         setPublishedCount(snap.data().count);
       } catch { setPublishedCount(0); }
       try {
-        const { db } = await import('../firebaseConfig');
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
-        const q = query(collection(db, 'scenario_bank'), where('authorUid', '==', firebaseUser.uid), where('deleted', '==', false), where('isPublic', '==', true));
-        const snap = await getDocs(q);
-        const docs = snap.docs.map(d => d.data());
-        const totalForks = docs.reduce((s, d) => s + (d.forkCount ?? 0), 0);
-        const allRatings = docs.flatMap(d => Object.values(d.ratingsByUid ?? {}) as number[]);
-        const avgRating = allRatings.length > 0
-          ? Math.round((allRatings.reduce((s: number, r: number) => s + r, 0) / allRatings.length) * 10) / 10
-          : null;
-        setScenarioStats({ shared: docs.length, avgRating, totalForks });
-      } catch { setScenarioStats({ shared: 0, avgRating: null, totalForks: 0 }); }
+        setImpactSummary(await fetchTeacherImpactSummary(firebaseUser.uid));
+      } catch {
+        setImpactSummary({
+          scenarioBank: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
+          annualPlans: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
+          duggaTests: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
+          totals: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
+        });
+      }
     };
     load();
   }, [firebaseUser]);
@@ -340,32 +338,32 @@ export const TeacherProfileView: React.FC = () => {
                 {dueToday > 0 ? dueToday : '✓ 0'}
               </span>
             </div>
-            {/* Scenario Bank contribution */}
-            {scenarioStats !== null && (
+            {/* Cross-surface sharing impact — Scenario Bank + Annual Plans + Dugga tests combined */}
+            {impactSummary !== null && (
               <>
                 <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Share2 className="w-5 h-5 text-emerald-500" />
-                    <span className="text-sm font-bold text-gray-700">Сценарија споделени</span>
+                    <span className="text-sm font-bold text-gray-700">Материјали споделени</span>
                   </div>
-                  <span className="font-black text-emerald-600">{scenarioStats.shared}</span>
+                  <span className="font-black text-emerald-600">{impactSummary.totals.totalShared}</span>
                 </div>
-                {scenarioStats.avgRating !== null && (
+                {impactSummary.totals.avgRating !== null && (
                   <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 text-amber-500" />
                       <span className="text-sm font-bold text-gray-700">Просечна оценка</span>
                     </div>
-                    <span className="font-black text-amber-600">⭐ {scenarioStats.avgRating}</span>
+                    <span className="font-black text-amber-600">⭐ {impactSummary.totals.avgRating}</span>
                   </div>
                 )}
-                {scenarioStats.totalForks > 0 && (
+                {impactSummary.totals.totalForksOrAdapts > 0 && (
                   <div className="flex items-center justify-between p-3 bg-sky-50 rounded-xl">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-sky-500" />
-                      <span className="text-sm font-bold text-gray-700">Пати ремиксирано</span>
+                      <span className="text-sm font-bold text-gray-700">Пати форкнато / адаптирано</span>
                     </div>
-                    <span className="font-black text-sky-600">{scenarioStats.totalForks}</span>
+                    <span className="font-black text-sky-600">{impactSummary.totals.totalForksOrAdapts}</span>
                   </div>
                 )}
               </>

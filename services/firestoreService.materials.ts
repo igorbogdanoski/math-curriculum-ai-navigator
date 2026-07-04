@@ -778,6 +778,14 @@ export const rateAnnualPlan = async (planId: string, uid: string, rating: number
   });
 };
 
+/** Fetches all annual plans owned by a teacher, newest first — centralises a query pattern otherwise inlined per-view. */
+export const fetchMyAnnualPlans = async (uid: string): Promise<AnnualPlanDoc[]> => {
+  const snap = await getDocs(
+    query(collection(db, 'academic_annual_plans'), where('userId', '==', uid), orderBy('createdAt', 'desc'))
+  );
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AnnualPlanDoc));
+};
+
 export const fetchAnnualPlanById = async (planId: string): Promise<AnnualPlanDoc | null> => {
   const snap = await getDoc(doc(db, 'academic_annual_plans', planId));
   if (!snap.exists()) return null;
