@@ -239,7 +239,7 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
           const { app } = await import('../firebaseConfig');
           const functions = getFunctions(app);
           const deductFn = httpsCallable(functions, 'deductCredits');
-          await deductFn({ amount: cost });
+          await deductFn({ costKeys: ['ANNUAL_PLAN'] });
           updateLocalProfile({ aiCreditsBalance: newBalance });
           trackCreditConsumed({
             uid: firebaseUser?.uid,

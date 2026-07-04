@@ -150,8 +150,27 @@ export const aggregateStudentProgress = functions.firestore
   });
 
 /**
+ * Server-authoritative mirror of services/gemini/core.constants.ts's AI_COSTS.
+ * Keep these two tables in sync when adding/changing a material type's price.
+ */
+const AI_COSTS: Record<string, number> = {
+  TEXT_BASIC: 1,
+  ILLUSTRATION: 5,
+  PRESENTATION: 10,
+  BULK: 5,
+  LEARNING_PATH: 3,
+  VARIANTS: 3,
+  ANNUAL_PLAN: 10,
+};
+
+/**
  * Cloud Function to securely deduct AI credits from a user's balance.
- * Protects against client-side tampering of the aiCreditsBalance field.
+ * Protects against client-side tampering of the aiCreditsBalance field —
+ * and, critically, against a tampered client under-reporting the deduction
+ * amount itself: the caller names which cost bucket(s) applied (e.g.
+ * ['TEXT_BASIC'] or ['TEXT_BASIC', 'ILLUSTRATION']), and the actual credit
+ * cost is looked up here from the server's own price table, never trusted
+ * as a raw number from the client.
  */
 export const deductCredits = functions.https.onCall(async (data, context) => {
   // Ensure the user is authenticated
@@ -160,10 +179,19 @@ export const deductCredits = functions.https.onCall(async (data, context) => {
   }
 
   const uid = context.auth.uid;
-  const amountToDeduct = typeof data.amount === 'number' ? data.amount : 1;
+  const costKeys: unknown = data.costKeys;
 
-  if (amountToDeduct <= 0) {
-    throw new functions.https.HttpsError('invalid-argument', 'Amount must be a positive number.');
+  if (!Array.isArray(costKeys) || costKeys.length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'costKeys must be a non-empty array of known cost identifiers.');
+  }
+
+  let amountToDeduct = 0;
+  for (const key of costKeys) {
+    const cost = typeof key === 'string' ? AI_COSTS[key] : undefined;
+    if (cost === undefined) {
+      throw new functions.https.HttpsError('invalid-argument', `Unknown cost key: ${String(key)}`);
+    }
+    amountToDeduct += cost;
   }
 
   const db = admin.firestore();

@@ -34,7 +34,7 @@ interface UseMainGenerateParams {
   addNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   setQuotaBannerFromStorage: () => void;
   setVariants: (v: null) => void;
-  deductCredits?: (amount?: number) => Promise<void>;
+  deductCredits?: (costKeys?: string[]) => Promise<void>;
   openUpgradeModal?: (reason: string) => void;
 }
 
@@ -73,11 +73,13 @@ export function useMainGenerate({
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
 
     const { materialType, includeIllustration } = state;
-    let cost = AI_COSTS.TEXT_BASIC;
-    if (materialType === 'ILLUSTRATION') cost = AI_COSTS.ILLUSTRATION;
-    else if (materialType === 'PRESENTATION') cost = AI_COSTS.PRESENTATION;
-    else if (materialType === 'LEARNING_PATH') cost = AI_COSTS.LEARNING_PATH;
-    if (includeIllustration && materialType !== 'ILLUSTRATION') cost += AI_COSTS.ILLUSTRATION;
+    const costKeys: string[] = [];
+    if (materialType === 'ILLUSTRATION') costKeys.push('ILLUSTRATION');
+    else if (materialType === 'PRESENTATION') costKeys.push('PRESENTATION');
+    else if (materialType === 'LEARNING_PATH') costKeys.push('LEARNING_PATH');
+    else costKeys.push('TEXT_BASIC');
+    if (includeIllustration && materialType !== 'ILLUSTRATION') costKeys.push('ILLUSTRATION');
+    const cost = costKeys.reduce((sum, key) => sum + (AI_COSTS[key as keyof typeof AI_COSTS] ?? 0), 0);
 
     if (user && user.role !== 'admin' && !isUnlimitedProfile(user)) {
       if ((user.aiCreditsBalance ?? 0) < cost) {
@@ -446,7 +448,7 @@ export function useMainGenerate({
         }
       }
 
-      if (deductCredits && result) await deductCredits(cost);
+      if (deductCredits && result) await deductCredits(costKeys);
 
       if (includeIllustration && result && materialType !== 'ILLUSTRATION') {
         try {
@@ -566,7 +568,7 @@ export function useMainGenerate({
           throw new Error(`Unsupported target type: ${targetType}`);
       }
 
-      if (deductCredits && result) await deductCredits(AI_COSTS.TEXT_BASIC);
+      if (deductCredits && result) await deductCredits(['TEXT_BASIC']);
       setGeneratedMaterial(result);
 
       if (result && firebaseUser?.uid) {

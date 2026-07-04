@@ -174,7 +174,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
           const { app } = await import('../../firebaseConfig');
           const functions = getFunctions(app);
           const deductFn = httpsCallable(functions, 'deductCredits');
-          await deductFn({ amount: cost });
+          await deductFn({ costKeys: ['ILLUSTRATION'] });
           updateLocalProfile({ aiCreditsBalance: newBalance });
           // S39-F2: telemetry
           trackCreditConsumed({

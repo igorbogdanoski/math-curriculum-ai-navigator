@@ -28,7 +28,7 @@ interface UseBulkGenerateParams {
   addNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   setGeneratedMaterial: (m: GeneratedMaterial) => void;
   setQuotaBannerFromStorage: () => void;
-  deductCredits?: (amount?: number) => Promise<void>;
+  deductCredits?: (costKeys?: string[]) => Promise<void>;
   openUpgradeModal?: (reason: string) => void;
 }
 
@@ -117,7 +117,7 @@ export function useBulkGenerate({
     setIsGeneratingBulk(false);
 
     if (typeof deductCredits === 'function' && Object.keys(acc).length > 0) {
-      try { await deductCredits(cost); } catch (e) { logger.error('[Bulk] deductCredits failed:', e); }
+      try { await deductCredits(['BULK']); } catch (e) { logger.error('[Bulk] deductCredits failed:', e); }
     }
   };
 

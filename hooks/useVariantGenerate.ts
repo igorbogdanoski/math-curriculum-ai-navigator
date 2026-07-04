@@ -19,7 +19,7 @@ interface UseVariantGenerateParams {
   buildAiPersonalizationSnippet: (state: any) => string;
   MACEDONIAN_CONTEXT_HINT: string;
     setGeneratedMaterial: (material: any) => void;
-    deductCredits?: (amount?: number) => Promise<void>;
+    deductCredits?: (costKeys?: string[]) => Promise<void>;
     openUpgradeModal?: (reason: string) => void;
 }
 
@@ -74,7 +74,7 @@ export function useVariantGenerate({
       );
       setVariants({ support: a, standard: b, advanced: c });
       if (typeof deductCredits === 'function') {
-        await deductCredits(cost);
+        await deductCredits(['VARIANTS']);
       }
     } catch (error) {
       if (error instanceof RateLimitError) {

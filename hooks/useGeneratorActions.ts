@@ -41,7 +41,7 @@ interface UseGeneratorActionsParams {
   hideModal: () => void;
   getConceptDetails: (id: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
   findConceptAcrossGrades: (id: string) => ConceptProgression | undefined;
-  deductCredits?: (amount?: number) => Promise<void>;
+  deductCredits?: (costKeys?: string[]) => Promise<void>;
   openUpgradeModal?: (reason: string) => void;
 }
 

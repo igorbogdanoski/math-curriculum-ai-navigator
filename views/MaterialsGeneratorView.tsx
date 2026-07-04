@@ -80,8 +80,11 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         }
     };
 
-    const deductCredits = async (amount = 1) => {
+    const deductCredits = async (costKeys: string[] = ['TEXT_BASIC']) => {
         if (!user || user.role === 'admin' || isUnlimitedProfile(user)) return;
+        // Client-side sum is only for optimistic UI/telemetry — the server independently
+        // looks up each cost key's price from its own table and never trusts a raw amount.
+        const amount = costKeys.reduce((sum, key) => sum + (AI_COSTS[key as keyof typeof AI_COSTS] ?? 0), 0);
         const originalBalance = user.aiCreditsBalance || 0;
         const newBalance = Math.max(0, originalBalance - amount);
         try {
@@ -89,7 +92,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
             const functions = getFunctions(app);
             const deductFn = httpsCallable(functions, 'deductCredits');
-            await deductFn({ amount });
+            await deductFn({ costKeys });
 
             trackCreditConsumed({
                 uid: firebaseUser?.uid,

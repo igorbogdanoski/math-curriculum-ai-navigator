@@ -98,60 +98,65 @@ describe('deductCredits', () => {
   beforeEach(() => { fakeDb = makeFakeFirestore(); });
 
   it('rejects unauthenticated calls', async () => {
-    await expect(deductCredits({ amount: 1 }, {})).rejects.toMatchObject({ code: 'unauthenticated' });
+    await expect(deductCredits({ costKeys: ['TEXT_BASIC'] }, {})).rejects.toMatchObject({ code: 'unauthenticated' });
   });
 
-  it('rejects a non-positive amount', async () => {
-    await expect(deductCredits({ amount: 0 }, { auth: { uid: 'u1' } })).rejects.toMatchObject({ code: 'invalid-argument' });
-    await expect(deductCredits({ amount: -5 }, { auth: { uid: 'u1' } })).rejects.toMatchObject({ code: 'invalid-argument' });
+  it('rejects a missing or empty costKeys array', async () => {
+    await expect(deductCredits({}, { auth: { uid: 'u1' } })).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(deductCredits({ costKeys: [] }, { auth: { uid: 'u1' } })).rejects.toMatchObject({ code: 'invalid-argument' });
   });
 
-  it('defaults to deducting 1 credit when amount is omitted', async () => {
+  it('rejects an unknown cost key — the server never trusts a raw client amount', async () => {
+    await expect(deductCredits({ costKeys: ['NOT_A_REAL_COST'] }, { auth: { uid: 'u1' } }))
+      .rejects.toMatchObject({ code: 'invalid-argument', message: expect.stringContaining('Unknown cost key') });
+  });
+
+  it('deducts the server-priced amount for a single cost key', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 10, role: 'teacher', tier: 'Free' });
-    const result = await deductCredits({}, { auth: { uid: 'u1' } });
-    expect(result).toEqual({ success: true, newBalance: 9 });
+    const result = await deductCredits({ costKeys: ['TEXT_BASIC'] }, { auth: { uid: 'u1' } });
+    expect(result).toEqual({ success: true, newBalance: 9 }); // TEXT_BASIC = 1
   });
 
-  it('deducts the requested amount when balance is sufficient', async () => {
+  it('sums the server-priced amounts across multiple cost keys (e.g. text + illustration add-on)', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 10, role: 'teacher', tier: 'Free' });
-    const result = await deductCredits({ amount: 4 }, { auth: { uid: 'u1' } });
-    expect(result).toEqual({ success: true, newBalance: 6 });
+    const result = await deductCredits({ costKeys: ['TEXT_BASIC', 'ILLUSTRATION'] }, { auth: { uid: 'u1' } });
+    expect(result).toEqual({ success: true, newBalance: 4 }); // 1 + 5 = 6 deducted
   });
 
-  it('rejects when balance is insufficient for the requested amount', async () => {
+  it('rejects when balance is insufficient for the requested cost', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 3, role: 'teacher', tier: 'Free' });
-    await expect(deductCredits({ amount: 5 }, { auth: { uid: 'u1' } }))
+    await expect(deductCredits({ costKeys: ['PRESENTATION'] }, { auth: { uid: 'u1' } })) // cost 10
       .rejects.toMatchObject({ code: 'resource-exhausted', message: expect.stringContaining('Insufficient AI credits') });
   });
 
   it('rejects when the user profile does not exist', async () => {
-    await expect(deductCredits({ amount: 1 }, { auth: { uid: 'ghost' } }))
+    await expect(deductCredits({ costKeys: ['TEXT_BASIC'] }, { auth: { uid: 'ghost' } }))
       .rejects.toMatchObject({ code: 'not-found', message: expect.stringContaining('User profile not found') });
   });
 
   it('bypasses deduction for admin role regardless of balance', async () => {
     fakeDb._store.set('users/admin1', { aiCreditsBalance: 0, role: 'admin' });
-    const result = await deductCredits({ amount: 100 }, { auth: { uid: 'admin1' } });
+    const result = await deductCredits({ costKeys: ['ANNUAL_PLAN'] }, { auth: { uid: 'admin1' } });
     expect(result).toEqual({ success: true, newBalance: 0, bypassed: true });
     expect(fakeDb._store.get('users/admin1')).toEqual({ aiCreditsBalance: 0, role: 'admin' }); // unchanged
   });
 
   it('bypasses deduction for hasUnlimitedCredits regardless of balance', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 0, role: 'teacher', hasUnlimitedCredits: true });
-    const result = await deductCredits({ amount: 100 }, { auth: { uid: 'u1' } });
+    const result = await deductCredits({ costKeys: ['ANNUAL_PLAN'] }, { auth: { uid: 'u1' } });
     expect(result).toMatchObject({ success: true, bypassed: true });
   });
 
   it('bypasses deduction for an active Pro tier', async () => {
     fakeDb._store.set('users/u1', { aiCreditsBalance: 0, role: 'teacher', tier: 'Pro' });
-    const result = await deductCredits({ amount: 100 }, { auth: { uid: 'u1' } });
+    const result = await deductCredits({ costKeys: ['ANNUAL_PLAN'] }, { auth: { uid: 'u1' } });
     expect(result).toMatchObject({ success: true, bypassed: true });
   });
 
   it('does NOT bypass an expired Pro tier — falls through to the real balance check', async () => {
     const past = new Date(Date.now() - 86_400_000).toISOString();
     fakeDb._store.set('users/u1', { aiCreditsBalance: 0, role: 'teacher', tier: 'Pro', proExpiresAt: past });
-    await expect(deductCredits({ amount: 1 }, { auth: { uid: 'u1' } }))
+    await expect(deductCredits({ costKeys: ['TEXT_BASIC'] }, { auth: { uid: 'u1' } }))
       .rejects.toMatchObject({ code: 'resource-exhausted', message: expect.stringContaining('Insufficient AI credits') });
   });
 });
