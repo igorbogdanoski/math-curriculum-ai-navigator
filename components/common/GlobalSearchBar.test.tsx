@@ -4,6 +4,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { GlobalSearchBar } from './GlobalSearchBar';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { fetchClassMembership, fetchHomeworkByClass } from '../../services/firestoreService.classroom';
 import { exampleLessonPlans } from '../../data/examples';
 import { NavigationContext } from '../../contexts/NavigationContext';
 import type { Concept, Topic, Curriculum, NationalStandard } from '../../types';
@@ -11,6 +13,23 @@ import type { Concept, Topic, Curriculum, NationalStandard } from '../../types';
 // Mock the hooks
 vi.mock('../../hooks/useCurriculum');
 vi.mock('../../contexts/PlannerContext');
+// All existing tests below exercise the teacher-facing result types (lesson plans,
+// standards) — mock useAuth as an authenticated teacher so that path is unchanged.
+vi.mock('../../contexts/AuthContext', () => ({
+    useAuth: vi.fn(),
+}));
+// Student-side search (homework/results) is gated behind `!firebaseUser` and short-circuits
+// immediately for this teacher-context test file — mock these to no-ops just in case.
+vi.mock('../../services/firestoreService.classroom', () => ({
+    fetchClassMembership: vi.fn().mockResolvedValue(null),
+    fetchHomeworkByClass: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('../../services/firestoreService', () => ({
+    firestoreService: { fetchQuizResultsByStudentName: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('../../utils/studentIdentity', () => ({
+    getOrCreateDeviceId: vi.fn(() => 'test-device-id'),
+}));
 
 // Mock data
 const mockConcepts = [
@@ -39,6 +58,10 @@ describe('GlobalSearchBar', () => {
     };
 
     beforeEach(() => {
+        vi.mocked(useAuth).mockReturnValue({
+            firebaseUser: { uid: 'test-teacher-uid' },
+        } as unknown as ReturnType<typeof useAuth>);
+
         vi.mocked(useCurriculum).mockReturnValue({
             allConcepts: mockConcepts as unknown as (Concept & { gradeLevel: number; topicId: string; })[],
             curriculum: {
@@ -178,6 +201,65 @@ describe('GlobalSearchBar', () => {
 
         await waitFor(() => {
             expect(screen.queryByText('Питагорова теорема')).toBeNull();
+        });
+    });
+});
+
+describe('GlobalSearchBar — student session (no firebaseUser)', () => {
+    const navigate = vi.fn();
+
+    const renderComponent = () => render(
+        <NavigationContext.Provider value={{ navigate }}>
+            <GlobalSearchBar />
+        </NavigationContext.Provider>
+    );
+
+    beforeEach(() => {
+        vi.mocked(useAuth).mockReturnValue({ firebaseUser: null } as unknown as ReturnType<typeof useAuth>);
+        vi.mocked(useCurriculum).mockReturnValue({
+            allConcepts: mockConcepts as unknown as (Concept & { gradeLevel: number; topicId: string; })[],
+            curriculum: {
+                grades: [{ id: 'grade-8', level: 8, title: 'VIII Одделение', topics: mockTopics as unknown as Topic[], transversalStandards: [] }],
+            } as unknown as Curriculum,
+            isLoading: false, error: null, verticalProgression: undefined,
+            allNationalStandards: mockNationalStandards as unknown as NationalStandard[],
+            getGrade: vi.fn(), getTopic: vi.fn(), getConceptDetails: vi.fn(), getStandardsByIds: vi.fn(), findConceptAcrossGrades: vi.fn(),
+        } as unknown as ReturnType<typeof useCurriculum>);
+        vi.mocked(usePlanner).mockReturnValue({ lessonPlans: mockLessonPlans, communityLessonPlans: [] } as unknown as ReturnType<typeof usePlanner>);
+        vi.mocked(fetchClassMembership).mockReset().mockResolvedValue(null);
+        vi.mocked(fetchHomeworkByClass).mockReset().mockResolvedValue([]);
+        navigate.mockClear();
+    });
+
+    it('still finds concepts (role-agnostic), but never shows lesson-plan results even though a matching plan exists', async () => {
+        renderComponent();
+        const input = screen.getByPlaceholderText(/Пребарај/i);
+        fireEvent.change(input, { target: { value: 'Питагорова' } });
+
+        await waitFor(() => {
+            expect(screen.getByText('Питагорова теорема')).not.toBeNull();
+        });
+        // "Вовед во Питагорова теорема" is the example lesson plan's title (teacher-only) — must not appear.
+        expect(screen.queryByText('Вовед во Питагорова теорема')).toBeNull();
+    });
+
+    it('surfaces homework assignments once class membership resolves', async () => {
+        vi.mocked(fetchClassMembership).mockResolvedValue({
+            deviceId: 'test-device-id', classId: 'class-1', className: 'VIII-1', gradeLevel: 8, teacherUid: 'teacher-1', studentName: 'Марко',
+        });
+        vi.mocked(fetchHomeworkByClass).mockResolvedValue([{
+            id: 'hw-1', title: 'Домашна за Питагорова теорема', materialType: 'QUIZ', teacherUid: 'teacher-1',
+            classId: 'class-1', classStudentNames: ['Марко'], dueDate: '2026-07-10', instructions: '', completedBy: [], createdAt: null,
+        }]);
+
+        renderComponent();
+        const input = screen.getByPlaceholderText(/Пребарај/i);
+
+        await waitFor(() => expect(fetchClassMembership).toHaveBeenCalled());
+        fireEvent.change(input, { target: { value: 'Питагорова' } });
+
+        await waitFor(() => {
+            expect(screen.getByText('Домашна за Питагорова теорема')).not.toBeNull();
         });
     });
 });

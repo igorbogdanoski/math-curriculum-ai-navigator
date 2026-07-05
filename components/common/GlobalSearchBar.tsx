@@ -3,8 +3,14 @@ import { X, Wand2 } from 'lucide-react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { ICONS } from '../../constants';
 import type { Topic, LessonPlan, NationalStandard, Grade, Concept } from '../../types';
+import type { HomeworkAssignment } from '../../services/firestoreService.classroom';
+import type { QuizResult } from '../../services/firestoreService.types';
+import { fetchClassMembership, fetchHomeworkByClass } from '../../services/firestoreService.classroom';
+import { firestoreService } from '../../services/firestoreService';
+import { getOrCreateDeviceId } from '../../utils/studentIdentity';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 const RECENT_KEY = 'gsb_recent';
@@ -20,7 +26,7 @@ function saveRecent(terms: string[]) {
 interface SearchResult {
     id: string;
     title: string;
-    type: 'concept' | 'topic' | 'lesson' | 'standard';
+    type: 'concept' | 'topic' | 'lesson' | 'standard' | 'homework' | 'result';
     path: string;
     description: string;
     // For quick-generate action
@@ -41,32 +47,65 @@ const typeLabels: Record<SearchResult['type'], string> = {
     concept: 'Поими',
     topic: 'Теми',
     lesson: 'Подготовки',
-    standard: 'Стандарди'
+    standard: 'Стандарди',
+    homework: 'Домашни',
+    result: 'Резултати',
 };
 
-const filterOptions: { id: SearchResult['type'] | 'all', label: string }[] = [
+const filterOptionsFor = (isTeacher: boolean): { id: SearchResult['type'] | 'all', label: string }[] => [
     { id: 'all', label: 'Сите' },
     { id: 'concept', label: 'Поими' },
     { id: 'topic', label: 'Теми' },
-    { id: 'lesson', label: 'Подготовки' },
-    { id: 'standard', label: 'Стандарди' },
+    ...(isTeacher
+        ? [{ id: 'lesson' as const, label: 'Подготовки' }, { id: 'standard' as const, label: 'Стандарди' }]
+        : [{ id: 'homework' as const, label: 'Домашни' }, { id: 'result' as const, label: 'Резултати' }]),
 ];
 
 export const GlobalSearchBar: React.FC = () => {
     const { navigate } = useNavigation();
     const { openGeneratorPanel } = useGeneratorPanel();
+    const { firebaseUser } = useAuth();
+    // Teachers are always Firebase-authenticated; anonymous students on a device are not —
+    // same distinction the rest of the app already relies on for student identity.
+    const isTeacher = !!firebaseUser;
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'all' | SearchResult['type']>('all');
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const [recentSearches, setRecentSearches] = useState<string[]>(loadRecent);
+    const [studentHomework, setStudentHomework] = useState<HomeworkAssignment[]>([]);
+    const [studentResults, setStudentResults] = useState<QuizResult[]>([]);
 
     const { allConcepts, curriculum, allNationalStandards } = useCurriculum();
     const { lessonPlans } = usePlanner();
     const searchRef = useRef<HTMLDivElement>(null);
     const inputRef   = useRef<HTMLInputElement>(null);
     const resultListRef = useRef<HTMLUListElement>(null);
+
+    // Student-side searchable pools: homework + past quiz/test results, resolved from the
+    // device's class membership — same lookup views/StudentHomeworkView.tsx already makes on
+    // mount. No membership (e.g. a teacher's device, or a student who hasn't joined a class)
+    // silently resolves to nothing — the bar just behaves as plain concept/topic search then.
+    useEffect(() => {
+        if (isTeacher) return;
+        let cancelled = false;
+        const deviceId = getOrCreateDeviceId();
+        fetchClassMembership(deviceId).then(membership => {
+            if (cancelled || !membership) return;
+            fetchHomeworkByClass(membership.classId)
+                .then(hw => { if (!cancelled) setStudentHomework(hw); })
+                .catch(() => { /* non-fatal — search just won't include homework */ });
+            if (membership.studentName) {
+                firestoreService.fetchQuizResultsByStudentName(membership.studentName, deviceId)
+                    .then(r => { if (!cancelled) setStudentResults(r); })
+                    .catch(() => { /* non-fatal — search just won't include past results */ });
+            }
+        }).catch(() => { /* non-fatal — no class membership found */ });
+        return () => { cancelled = true; };
+    }, [isTeacher]);
+
+    const filterOptions = useMemo(() => filterOptionsFor(isTeacher), [isTeacher]);
 
     // Grade ID lookup map: level → id
     const gradeLevelToId = useMemo(() => {
@@ -134,38 +173,65 @@ export const GlobalSearchBar: React.FC = () => {
                         topicId: t.id,
                     }));
 
-                const lessonResults: SearchResult[] = lessonPlans
-                    .filter((p: LessonPlan) => 
+                // Teacher-only pools — meaningless (or empty) for a student session, so skip
+                // computing them entirely rather than just hiding the results afterward.
+                const lessonResults: SearchResult[] = isTeacher ? lessonPlans
+                    .filter((p: LessonPlan) =>
                         p.title.toLowerCase().includes(lowerCaseQuery) ||
                         p.objectives?.map((o: any) => typeof o === 'string' ? o : o.text).join(' ').toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((p: LessonPlan) => ({
                         id: p.id,
                         title: p.title,
-                        type: 'lesson',
+                        type: 'lesson' as const,
                         path: `/planner/lesson/view/${p.id}`,
                         description: `Моја подготовка`
-                    }));
+                    })) : [];
 
-                const standardResults: SearchResult[] = (allNationalStandards || [])
-                    .filter((s: NationalStandard) => 
+                const standardResults: SearchResult[] = isTeacher ? (allNationalStandards || [])
+                    .filter((s: NationalStandard) =>
                         s.code.toLowerCase().includes(lowerCaseQuery) ||
                         s.description.toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((s: NationalStandard) => ({
                         id: s.id,
                         title: s.description,
-                        type: 'standard',
+                        type: 'standard' as const,
                         path: `/generator?contextType=STANDARD&standardId=${s.id}`,
                         description: `Национален стандард: ${s.code} (${s.gradeLevel}. одд)`
-                    }));
-                
-                const allResults = [...lessonResults, ...conceptResults, ...topicResults, ...standardResults];
+                    })) : [];
 
-                const filtered = activeFilter === 'all' 
+                // Student-only pools — the mirror of the teacher-only ones above.
+                const homeworkResults: SearchResult[] = isTeacher ? [] : studentHomework
+                    .filter(a => a.title.toLowerCase().includes(lowerCaseQuery))
+                    .map(a => ({
+                        id: a.id,
+                        title: a.title,
+                        type: 'homework' as const,
+                        path: a.materialLink || '/homework',
+                        description: `Домашна · рок ${a.dueDate}`,
+                    }));
+
+                const resultResults: SearchResult[] = isTeacher ? [] : studentResults
+                    .filter(r => r.quizTitle?.toLowerCase().includes(lowerCaseQuery))
+                    .map(r => ({
+                        id: `${r.quizId}-${r.playedAt?.toMillis?.() ?? r.quizTitle}`,
+                        title: r.quizTitle,
+                        type: 'result' as const,
+                        path: '/my-progress',
+                        description: `Резултат: ${r.percentage}%`,
+                    }));
+
+                const allResults = [
+                    ...conceptResults, ...topicResults,
+                    ...lessonResults, ...standardResults,
+                    ...homeworkResults, ...resultResults,
+                ];
+
+                const filtered = activeFilter === 'all'
                     ? allResults
                     : allResults.filter(r => r.type === activeFilter);
-                
+
                 setResults(filtered);
                 setIsOpen(true);
                 setFocusedIndex(-1); // Reset focus on new search
@@ -178,7 +244,7 @@ export const GlobalSearchBar: React.FC = () => {
         return () => {
             clearTimeout(handler);
         };
-    }, [query, allConcepts, allTopics, lessonPlans, allNationalStandards, activeFilter]);
+    }, [query, allConcepts, allTopics, lessonPlans, allNationalStandards, activeFilter, isTeacher, studentHomework, studentResults]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -381,7 +447,7 @@ export const GlobalSearchBar: React.FC = () => {
                                                         </p>
                                                         <p className="text-xs text-gray-500 pl-3.5">{result.description}</p>
                                                     </a>
-                                                    {(result.type === 'concept' || result.type === 'topic') && result.gradeId && result.topicId && (
+                                                    {isTeacher && (result.type === 'concept' || result.type === 'topic') && result.gradeId && result.topicId && (
                                                         <button
                                                             type="button"
                                                             title="Генерирај материјал за ова"
