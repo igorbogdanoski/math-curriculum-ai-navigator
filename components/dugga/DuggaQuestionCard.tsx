@@ -659,6 +659,14 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
       {/* Results feedback */}
       {showResults && result && (
         <div className="mt-3 pt-3 border-t border-gray-200 space-y-1.5">
+          {result.viaCas && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+              title="Одговорот е препознаен како точен со математички мотор за проверка на еквивалентност (не само буквално совпаѓање)."
+            >
+              <Sigma className="w-3 h-3" /> Проверено со математички мотор
+            </span>
+          )}
           {result.feedback && (
             <p className="text-xs text-gray-600">{result.feedback}</p>
           )}

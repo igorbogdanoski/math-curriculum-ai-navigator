@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Sigma } from 'lucide-react';
 import { MathRenderer }    from '../../components/common/MathRenderer';
 import { MathInput }       from '../../components/common/MathInput';
 import { QRSolutionUpload } from '../../components/common/QRSolutionUpload';
@@ -267,6 +268,14 @@ ${item.questionText}
               <p className={`text-xs mt-1 font-medium ${state.aiGrade.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {state.aiGrade.correct ? '✓' : '✗'} {state.aiGrade.comment}
               </p>
+            )}
+            {state.aiGrade?.verifiedByCas && (
+              <span
+                className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
+                title="Одговорот е препознаен како точен со математички мотор за проверка на еквивалентност (не само буквално совпаѓање)."
+              >
+                <Sigma className="w-3 h-3" /> Проверено со математички мотор
+              </span>
             )}
           </div>
           {!state.aiGrade && (
