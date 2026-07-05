@@ -9,13 +9,14 @@ import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread } from '../s
 import { type UserActivityRecord } from '../utils/cohortMetrics';
 
 import { AdminSchoolsTab } from './admin/AdminSchoolsTab';
+import { AdminSchoolRegistryTab } from './admin/AdminSchoolRegistryTab';
 import { AdminUsersTab } from './admin/AdminUsersTab';
 import { AdminStatsTab } from './admin/AdminStatsTab';
 import { AdminForumTab } from './admin/AdminForumTab';
 import { AdminContentTab } from './admin/AdminContentTab';
 import { CohortDashboard } from './admin/CohortDashboard';
 
-type Tab = 'schools' | 'users' | 'stats' | 'forum' | 'content' | 'cohort';
+type Tab = 'schools' | 'schoolRegistry' | 'users' | 'stats' | 'forum' | 'content' | 'cohort';
 
 export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
@@ -129,7 +130,7 @@ export const SystemAdminView: React.FC = () => {
     }, [user, navigate]);
 
     useEffect(() => {
-        if (activeTab === 'users' && users.length === 0) loadUsers();
+        if ((activeTab === 'users' || activeTab === 'schoolRegistry') && users.length === 0) loadUsers();
         if (activeTab === 'stats' && !nationalStats) loadNationalStats();
         if (activeTab === 'forum' && forumThreads.length === 0) loadForumThreads();
         if (activeTab === 'cohort' && cohortUsers === null) loadCohort();
@@ -307,7 +308,7 @@ export const SystemAdminView: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-1 border-b border-gray-200">
-                {([['schools', '🏫 Училишта'], ['users', '👥 Корисници'], ['stats', '📊 Статистики'], ['cohort', '📈 Cohort'], ['forum', '💬 Форум'], ['content', '📚 Содржина']] as [Tab, string][]).map(([id, label]) => (
+                {([['schools', '🏫 Училишта'], ['schoolRegistry', '🗂️ Регистар'], ['users', '👥 Корисници'], ['stats', '📊 Статистики'], ['cohort', '📈 Cohort'], ['forum', '💬 Форум'], ['content', '📚 Содржина']] as [Tab, string][]).map(([id, label]) => (
                     <button
                         key={id}
                         type="button"
@@ -331,6 +332,14 @@ export const SystemAdminView: React.FC = () => {
                     setNewSchoolName={setNewSchoolName}
                     setNewSchoolCity={setNewSchoolCity}
                     handleCreateSchool={handleCreateSchool}
+                />
+            )}
+
+            {activeTab === 'schoolRegistry' && (
+                <AdminSchoolRegistryTab
+                    users={users}
+                    isLoadingUsers={isLoadingUsers}
+                    adminUid={firebaseUser?.uid ?? ''}
                 />
             )}
 

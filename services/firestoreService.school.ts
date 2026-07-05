@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { School } from '../types';
 
@@ -174,15 +174,33 @@ export const schoolService = {
     }
   },
 
-  fetchAllUsers: async (): Promise<Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>> => {
+  fetchAllUsers: async (): Promise<Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; schoolName?: string; schoolRegistryId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>> => {
     try {
       // orderBy('createdAt') excluded legacy users who predate that field — use limit-only
       const snap = await getDocs(query(collection(db, 'users'), limit(2000)));
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>;
+      return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; schoolName?: string; schoolRegistryId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>;
     } catch (error) {
       logger.error('Error fetching all users:', error);
       return [];
     }
+  },
+
+  /** Outreach tracking for the admin "schools not yet on the platform" view — keyed by
+   *  data/schoolRegistry.ts's stable registry id, admin-only read/write (see firestore.rules). */
+  fetchSchoolOutreachLog: async (): Promise<Record<string, { contactedAt?: unknown; contactedByUid?: string }>> => {
+    try {
+      const snap = await getDocs(collection(db, 'school_outreach_log'));
+      const result: Record<string, { contactedAt?: unknown; contactedByUid?: string }> = {};
+      snap.docs.forEach(d => { result[d.id] = d.data() as { contactedAt?: unknown; contactedByUid?: string }; });
+      return result;
+    } catch (error) {
+      logger.error('Error fetching school outreach log:', error);
+      return {};
+    }
+  },
+
+  markSchoolContacted: async (registryId: string, adminUid: string): Promise<void> => {
+    await setDoc(doc(db, 'school_outreach_log', registryId), { contactedAt: serverTimestamp(), contactedByUid: adminUid });
   },
 
   updateUserRole: async (uid: string, role: 'teacher' | 'school_admin' | 'admin', schoolId?: string): Promise<void> => {

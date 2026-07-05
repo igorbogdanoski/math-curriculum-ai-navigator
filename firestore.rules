@@ -718,6 +718,12 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // ── School registry outreach log (admin tool tracking contacted schools from
+    // data/schoolRegistry.ts, keyed by registry id) — admin-only both ways. ──
+    match /school_outreach_log/{registryId} {
+      allow read, write: if isAdmin();
+    }
+
     // ── Grade books (saved gradebook snapshots) ──
     match /grade_books/{doc} {
       allow read, update, delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
