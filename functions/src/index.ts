@@ -1,6 +1,8 @@
 ﻿import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
+import { verifyDeterministicQuestions, type VerifQuestion } from './duggaVerification';
+import { verifySubmissionSeal } from './duggaSubmissionSeal';
 
 admin.initializeApp();
 
@@ -604,6 +606,14 @@ export const grantReferralBonus = functions.https.onCall(async (data, context) =
   if (newUserUid === refCode) {
     throw new functions.https.HttpsError('invalid-argument', 'Self-referral is not allowed.');
   }
+  // A caller may only claim a referral bonus for themselves — without this, any
+  // authenticated caller could pass two arbitrary existing UIDs and farm free
+  // credits into accounts they don't own (idempotency alone doesn't prevent this,
+  // since each {refCode}_{newUserUid} pair is only ever consumed once, not blocked
+  // from being claimed by a non-owner).
+  if (newUserUid !== context.auth.uid) {
+    throw new functions.https.HttpsError('permission-denied', 'You may only claim a referral bonus for your own account.');
+  }
 
   const db = admin.firestore();
 
@@ -931,6 +941,84 @@ export const onAnnualPlanForked = functions.firestore
       return null;
     } catch (err) {
       console.error('[onAnnualPlanForked]', err);
+      return null;
+    }
+  });
+
+// ── Dugga submission integrity check ─────────────────────────────────────────
+/**
+ * Re-derives the score for every deterministic-type question (see
+ * duggaVerification.ts for exactly which types) from the test's real answer key
+ * and the student's stored raw answers, instead of trusting the client-submitted
+ * score/percentage outright. Does NOT overwrite the trusted score automatically —
+ * a bug in this re-implementation could otherwise corrupt a legitimate result.
+ * Instead it stamps a `serverVerification` field a teacher can use to spot
+ * fabricated submissions; CAS/complex-grader question types are listed as
+ * unverified rather than guessed at.
+ */
+export const verifyDuggaSubmission = functions.firestore
+  .document('dugga_submissions/{subId}')
+  .onCreate(async (snap) => {
+    try {
+      const submission = snap.data();
+      if (!submission?.testId || !submission?.answers) return null;
+
+      const testSnap = await admin.firestore().collection('dugga_tests').doc(submission.testId).get();
+      if (!testSnap.exists) return null;
+      const test = testSnap.data();
+      const questions: VerifQuestion[] = (test?.questions ?? []).map((q: Record<string, unknown>) => ({
+        id: q.id,
+        type: q.type,
+        points: q.points,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        matchPairs: q.matchPairs,
+        orderItems: q.orderItems,
+      }));
+
+      const { verifiedEarned, verifiedMax, unverifiedQuestionIds } = verifyDeterministicQuestions(
+        questions,
+        submission.answers,
+      );
+
+      const clientScore = Number(submission.score ?? 0);
+      const clientTotal = Number(submission.totalPoints ?? 0);
+      // Only compare the portion of the test this function can actually verify —
+      // the unverified (CAS/complex-grader) questions' points are excluded from
+      // both sides so they don't produce a false-positive mismatch.
+      const unverifiedMax = clientTotal - verifiedMax >= 0 ? clientTotal - verifiedMax : 0;
+      const clientVerifiablePortion = Math.max(0, clientScore - unverifiedMax);
+      const discrepancy = verifiedMax > 0 ? Math.abs(clientVerifiablePortion - verifiedEarned) : 0;
+      const matches = verifiedMax === 0 || discrepancy <= 0.01;
+
+      let sealValid: boolean | null = null;
+      if (test?.finalExamMode && submission.submissionSeal) {
+        sealValid = verifySubmissionSeal(
+          { testId: submission.testId, studentUid: submission.studentUid ?? '', answers: submission.answers },
+          submission.submissionSeal,
+        );
+      }
+
+      await snap.ref.update({
+        serverVerification: {
+          checkedAt: admin.firestore.FieldValue.serverTimestamp(),
+          verifiedEarned,
+          verifiedMax,
+          matches,
+          unverifiedQuestionIds,
+          ...(sealValid !== null ? { sealValid } : {}),
+        },
+      });
+
+      if (!matches || sealValid === false) {
+        console.warn('[verifyDuggaSubmission] discrepancy or seal mismatch', {
+          subId: snap.id, testId: submission.testId, studentUid: submission.studentUid,
+          clientScore, verifiedEarned, verifiedMax, sealValid,
+        });
+      }
+      return null;
+    } catch (err) {
+      console.error('[verifyDuggaSubmission]', err);
       return null;
     }
   });

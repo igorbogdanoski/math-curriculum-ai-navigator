@@ -178,10 +178,23 @@ describe('grantReferralBonus', () => {
       .rejects.toMatchObject({ code: 'invalid-argument' });
   });
 
+  it('rejects a caller claiming a referral bonus for an account that is not their own', async () => {
+    // Security fix: without this check, any authenticated caller could pass two
+    // arbitrary existing UIDs and farm free credits into accounts they don't own.
+    fakeDb._store.set('users/referrer1', { aiCreditsBalance: 20 });
+    fakeDb._store.set('users/newUser2', { aiCreditsBalance: 50 });
+
+    await expect(grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'someone-else' } }))
+      .rejects.toMatchObject({ code: 'permission-denied' });
+    // Balances must be untouched.
+    expect(fakeDb._store.get('users/referrer1')).toMatchObject({ aiCreditsBalance: 20 });
+    expect(fakeDb._store.get('users/newUser2')).toMatchObject({ aiCreditsBalance: 50 });
+  });
+
   it('rejects when either user does not exist', async () => {
     fakeDb._store.set('users/referrer1', { aiCreditsBalance: 0 });
     // newUser2 missing from store
-    await expect(grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'x' } }))
+    await expect(grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'newUser2' } }))
       .rejects.toMatchObject({ code: 'not-found' });
   });
 
@@ -189,7 +202,7 @@ describe('grantReferralBonus', () => {
     fakeDb._store.set('users/referrer1', { aiCreditsBalance: 20 });
     fakeDb._store.set('users/newUser2', { aiCreditsBalance: 50 });
 
-    const result = await grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'x' } });
+    const result = await grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'newUser2' } });
 
     expect(result).toEqual({ success: true, alreadyGranted: false });
     expect(fakeDb._store.get('users/referrer1')).toMatchObject({ aiCreditsBalance: 30 });
@@ -201,7 +214,7 @@ describe('grantReferralBonus', () => {
     fakeDb._store.set('users/newUser2', { aiCreditsBalance: 50 });
     fakeDb._store.set('referrals/referrer1_newUser2', { bonusGranted: true });
 
-    const result = await grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'x' } });
+    const result = await grantReferralBonus({ newUserUid: 'newUser2', refCode: 'referrer1' }, { auth: { uid: 'newUser2' } });
 
     expect(result).toEqual({ success: true, alreadyGranted: true });
     // Balances must be untouched — this is the whole point of the idempotency guard
