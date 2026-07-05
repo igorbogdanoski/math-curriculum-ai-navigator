@@ -35,6 +35,7 @@ import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { OfflineBanner } from './components/common/OfflineBanner';
 import { QuotaBanner } from './components/common/QuotaBanner';
+import { CurriculumGapBanner } from './components/common/CurriculumGapBanner';
 import { BottomNavBar } from './components/common/BottomNavBar';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { UpgradeModal } from './components/common/UpgradeModal';
@@ -448,6 +449,7 @@ const AppContent: React.FC = () => {
                     </div>
                     <OfflineBanner />
                     <QuotaBanner />
+                    <CurriculumGapBanner />
                     <BottomNavBar currentPath={path} />
                 </main>
                 <SilentErrorBoundary name="ContextualFAB">
