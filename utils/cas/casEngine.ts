@@ -32,6 +32,9 @@ function normalizeLatex(latex: string): string {
     .replace(/\\dfrac/g, '\\frac')
     .replace(/\\tfrac/g, '\\frac')
     .replace(/\{,\}/g, '.')                     // European decimal comma written as LaTeX `{,}` (e.g. "0{,}5707")
+    .replace(/(\d),(\d)/g, '$1.$2')             // plain MK decimal comma, e.g. "0,5" or "3,14" typed directly (not LaTeX-wrapped).
+                                                 // Only fires with no space around the comma, so a spaced list/pair separator
+                                                 // like "-2, 2" or "(2, 3)" is left alone — that ambiguity is out of scope.
     .replace(/\\text\{[^}]*\}(\^\d+)?/g, '')     // strip unit annotations incl. their own exponent (e.g. "448\text{ cm}^3" — the ^3 belongs to the unit, not the number)
     .replace(/^\$+|\$+$/g, '')                  // strip wrapping $...$ / $$...$$ delimiters some stored answers still carry
     .trim();

@@ -73,6 +73,20 @@ describe('verifyExpressionEquivalence — normalization fixes confirmed against 
   it('strips wrapping $...$ delimiters some stored answers still carry', () => {
     expect(verifyExpressionEquivalence('$36\\pi$', '36\\pi').verdict).toBe('equivalent');
   });
+
+  it('normalizes a plain (non-LaTeX-wrapped) MK decimal comma, e.g. a Dugga fill-in typed as "0,5"', () => {
+    expect(verifyExpressionEquivalence('0,5', '0.5').verdict).toBe('equivalent');
+    expect(verifyExpressionEquivalence('3,14', '3.14').verdict).toBe('equivalent');
+  });
+
+  it('handles multiple plain decimal commas in one expression', () => {
+    expect(verifyExpressionEquivalence('0,5+1,2', '0.5+1.2').verdict).toBe('equivalent');
+  });
+
+  it('does not mangle a spaced comma (list/set separator, not a decimal)', () => {
+    // "-2, 2" has a space after the comma, so it must stay a two-element set, not become "-2.2".
+    expect(verifyExpressionEquivalence('R \\setminus \\{-2, 2\\}', '1').verdict).toBe('not_equivalent');
+  });
 });
 
 describe('verifyEquationSolution', () => {
