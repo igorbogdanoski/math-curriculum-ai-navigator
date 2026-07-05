@@ -104,6 +104,7 @@ export const TeacherProfileView: React.FC = () => {
           annualPlans: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
           duggaTests: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
           totals: { totalShared: 0, totalForksOrAdapts: 0, totalRatings: 0, avgRating: null },
+          retestImprovement: null,
         });
       }
     };
@@ -364,6 +365,20 @@ export const TeacherProfileView: React.FC = () => {
                       <span className="text-sm font-bold text-gray-700">Пати форкнато / адаптирано</span>
                     </div>
                     <span className="font-black text-sky-600">{impactSummary.totals.totalForksOrAdapts}</span>
+                  </div>
+                )}
+                {impactSummary.retestImprovement && (
+                  <div
+                    className="flex items-center justify-between p-3 bg-violet-50 rounded-xl"
+                    title={`Врз основа на ${impactSummary.retestImprovement.retestCount} повторени обиди на исти концепти кај ${impactSummary.retestImprovement.studentsWithRetest} ученици.`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-violet-500" />
+                      <span className="text-sm font-bold text-gray-700">Напредок при повторен обид</span>
+                    </div>
+                    <span className={`font-black ${impactSummary.retestImprovement.avgImprovementPct >= 0 ? 'text-violet-600' : 'text-gray-500'}`}>
+                      {impactSummary.retestImprovement.avgImprovementPct >= 0 ? '+' : ''}{impactSummary.retestImprovement.avgImprovementPct}%
+                    </span>
                   </div>
                 )}
               </>

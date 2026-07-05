@@ -3,6 +3,7 @@ import { fetchTeacherImpactSummary } from './impactService';
 import { fetchMyScenarios } from './firestoreService.scenarioBank';
 import { fetchMyAnnualPlans } from './firestoreService.materials';
 import { subscribeMyDuggaTests } from './firestoreService.dugga';
+import { getDocs } from 'firebase/firestore';
 import type { ScenarioBankEntry } from './firestoreService.scenarioBank';
 import type { AnnualPlanDoc } from './firestoreService.materials';
 import type { DuggaTest } from './firestoreService.dugga';
@@ -10,6 +11,22 @@ import type { DuggaTest } from './firestoreService.dugga';
 vi.mock('./firestoreService.scenarioBank', () => ({ fetchMyScenarios: vi.fn() }));
 vi.mock('./firestoreService.materials', () => ({ fetchMyAnnualPlans: vi.fn() }));
 vi.mock('./firestoreService.dugga', () => ({ subscribeMyDuggaTests: vi.fn() }));
+vi.mock('./firebaseConfig', () => ({ db: {} }));
+vi.mock('../firebaseConfig', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn(() => 'col-ref'),
+  query: vi.fn((...args) => ['query-ref', ...args]),
+  where: vi.fn((...args) => ['where', ...args]),
+  orderBy: vi.fn((...args) => ['orderBy', ...args]),
+  limit: vi.fn((...args) => ['limit', ...args]),
+  getDocs: vi.fn(),
+}));
+
+function mockQuizResultsDocs(rows: Record<string, unknown>[]) {
+  vi.mocked(getDocs).mockResolvedValue({
+    forEach: (cb: (d: { data: () => Record<string, unknown> }) => void) => rows.forEach(r => cb({ data: () => r })),
+  } as any);
+}
 
 function makeScenario(overrides: Partial<ScenarioBankEntry> = {}): ScenarioBankEntry {
   return {
@@ -121,9 +138,70 @@ describe('fetchTeacherImpactSummary', () => {
     vi.mocked(fetchMyScenarios).mockResolvedValue([makeScenario()]);
     vi.mocked(fetchMyAnnualPlans).mockResolvedValue([]);
     vi.mocked(subscribeMyDuggaTests).mockImplementation((_uid, onData) => { onData([]); return () => {}; });
+    mockQuizResultsDocs([]);
 
     const summary = await fetchTeacherImpactSummary('u1');
     expect(summary.totals.totalRatings).toBe(0);
     expect(summary.totals.avgRating).toBeNull();
+  });
+});
+
+describe('fetchTeacherImpactSummary — retestImprovement', () => {
+  const noSharing = () => {
+    vi.mocked(fetchMyScenarios).mockResolvedValue([]);
+    vi.mocked(fetchMyAnnualPlans).mockResolvedValue([]);
+    vi.mocked(subscribeMyDuggaTests).mockImplementation((_uid, onData) => { onData([]); return () => {}; });
+  };
+
+  it('is null when no student has attempted the same concept twice', async () => {
+    noSharing();
+    mockQuizResultsDocs([
+      { studentName: 'Ана', conceptId: 'c1', percentage: 60, playedAt: { toMillis: () => 1000 } },
+      { studentName: 'Марко', conceptId: 'c2', percentage: 80, playedAt: { toMillis: () => 1000 } },
+    ]);
+
+    const summary = await fetchTeacherImpactSummary('u1');
+    expect(summary.retestImprovement).toBeNull();
+  });
+
+  it('computes the average improvement from first to last attempt per student×concept', async () => {
+    noSharing();
+    mockQuizResultsDocs([
+      // Ана on c1: 40% -> 80% = +40
+      { studentName: 'Ана', conceptId: 'c1', percentage: 40, playedAt: { toMillis: () => 1000 } },
+      { studentName: 'Ана', conceptId: 'c1', percentage: 80, playedAt: { toMillis: () => 2000 } },
+      // Марко on c2: 90% -> 70% = -20
+      { studentName: 'Марко', conceptId: 'c2', percentage: 90, playedAt: { toMillis: () => 1000 } },
+      { studentName: 'Марко', conceptId: 'c2', percentage: 70, playedAt: { toMillis: () => 2000 } },
+    ]);
+
+    const summary = await fetchTeacherImpactSummary('u1');
+    expect(summary.retestImprovement).not.toBeNull();
+    expect(summary.retestImprovement!.studentsWithRetest).toBe(2);
+    expect(summary.retestImprovement!.retestCount).toBe(2);
+    expect(summary.retestImprovement!.avgImprovementPct).toBe(10); // (40 + -20) / 2
+  });
+
+  it('uses the oldest and newest attempts, not just the first two, when a concept has 3+ attempts', async () => {
+    noSharing();
+    mockQuizResultsDocs([
+      { studentName: 'Ана', conceptId: 'c1', percentage: 30, playedAt: { toMillis: () => 1000 } },
+      { studentName: 'Ана', conceptId: 'c1', percentage: 50, playedAt: { toMillis: () => 2000 } },
+      { studentName: 'Ана', conceptId: 'c1', percentage: 90, playedAt: { toMillis: () => 3000 } },
+    ]);
+
+    const summary = await fetchTeacherImpactSummary('u1');
+    expect(summary.retestImprovement!.avgImprovementPct).toBe(60); // 90 - 30, ignores the middle attempt
+  });
+
+  it('ignores quiz_results rows missing a conceptId or studentName', async () => {
+    noSharing();
+    mockQuizResultsDocs([
+      { studentName: 'Ана', percentage: 40, playedAt: { toMillis: () => 1000 } }, // no conceptId
+      { conceptId: 'c1', percentage: 80, playedAt: { toMillis: () => 2000 } }, // no studentName
+    ]);
+
+    const summary = await fetchTeacherImpactSummary('u1');
+    expect(summary.retestImprovement).toBeNull();
   });
 });
