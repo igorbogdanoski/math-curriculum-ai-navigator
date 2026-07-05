@@ -15,7 +15,7 @@ import { splitScenarios } from '../services/scenarioSplitter';
 import type { ScenarioSegment } from '../services/scenarioSplitter';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
-  fetchScenarios, fetchMyScenarios, rateScenario,
+  fetchScenarios, fetchScenariosForSearch, fetchMyScenarios, rateScenario,
   forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic, fetchAllAdmin,
 } from '../services/firestoreService.scenarioBank';
 import type { DocumentSnapshot } from 'firebase/firestore';
@@ -47,13 +47,25 @@ export const ScenarioBankView: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<EntryType | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('date');
 
-  // Semantic search state
+  // Browse pagination (all/bro tabs only — mine/admin have their own unbounded/paginated fetches)
+  const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Search state — a query re-fetches a much broader set directly from Firestore
+  // (fetchScenariosForSearch) instead of just filtering the paginated `entries` page,
+  // so search actually reaches the whole collection, not just whatever page is loaded.
+  const [searchResults, setSearchResults] = useState<ScenarioBankEntry[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTruncated, setSearchTruncated] = useState(false);
   const [semanticRanking, setSemanticRanking] = useState<ScenarioSearchResult[] | null>(null);
   const [isSemanticActive, setIsSemanticActive] = useState(false);
-  const semanticDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (mode: TabMode) => {
     setIsLoading(true);
+    setLastDoc(null);
+    setHasMore(false);
     try {
       if (mode === 'mine' && firebaseUser?.uid) {
         const data = await fetchMyScenarios(firebaseUser.uid);
@@ -66,8 +78,10 @@ export const ScenarioBankView: React.FC = () => {
           verifiedOnly: mode === 'bro',
           sortBy,
         };
-        const data = await fetchScenarios(filter, 48);
-        setEntries(data);
+        const page = await fetchScenarios(filter, 48);
+        setEntries(page.entries);
+        setLastDoc(page.lastDoc);
+        setHasMore(page.hasMore);
       }
     } catch {
       addNotification('Грешка при вчитување на сценаријата.', 'error');
@@ -79,34 +93,86 @@ export const ScenarioBankView: React.FC = () => {
 
   useEffect(() => { load(tab); }, [load, tab]);
 
-  // Debounced semantic search — triggers after 800ms of typing when query > 2 chars
+  const loadMoreScenarios = useCallback(async () => {
+    if (!lastDoc || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const filter: ScenarioBankFilter = {
+        grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter,
+        verifiedOnly: tab === 'bro', sortBy,
+      };
+      const page = await fetchScenarios(filter, 48, lastDoc);
+      setEntries(prev => [...prev, ...page.entries]);
+      setLastDoc(page.lastDoc);
+      setHasMore(page.hasMore);
+    } catch {
+      addNotification('Грешка при вчитување.', 'error');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [lastDoc, isLoadingMore, gradeFilter, dokFilter, modelFilter, tab, sortBy, addNotification]);
+
+  // Debounced search — triggers after 800ms of typing when query >= 3 chars. For the
+  // all/bro tabs (the ones with a paginated browse fetch) this also re-fetches a much
+  // broader set from Firestore so the search actually covers the whole collection;
+  // for mine/saved (already-unbounded per-teacher data) it just ranks the loaded `entries`.
   useEffect(() => {
-    if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     const q = search.trim();
 
     if (q.length < 3) {
+      setSearchResults(null);
+      setSearchTruncated(false);
       setSemanticRanking(null);
       setIsSemanticActive(false);
       return;
     }
 
-    semanticDebounceRef.current = setTimeout(async () => {
-      const { searchScenarioBankSemantic } = await import('../services/ragService');
-      const result = await searchScenarioBankSemantic(q, entries);
-      if (result !== null) {
-        setSemanticRanking(result);
-        setIsSemanticActive(true);
+    const needsBroaderFetch = tab === 'all' || tab === 'bro';
+
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(needsBroaderFetch);
+      try {
+        let poolForSemantic = entries;
+        if (needsBroaderFetch) {
+          const filter: ScenarioBankFilter = {
+            grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter,
+            verifiedOnly: tab === 'bro', sortBy,
+          };
+          const page = await fetchScenariosForSearch(filter);
+          setSearchResults(page.entries);
+          setSearchTruncated(page.truncated);
+          poolForSemantic = page.entries;
+        } else {
+          setSearchResults(null);
+          setSearchTruncated(false);
+        }
+
+        const { searchScenarioBankSemantic } = await import('../services/ragService');
+        const result = await searchScenarioBankSemantic(q, poolForSemantic);
+        if (result !== null) {
+          setSemanticRanking(result);
+          setIsSemanticActive(true);
+        } else {
+          setSemanticRanking(null);
+          setIsSemanticActive(false);
+        }
+      } catch {
+        if (needsBroaderFetch) setSearchResults(null);
+      } finally {
+        setIsSearching(false);
       }
     }, 800);
 
     return () => {
-      if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [search, entries]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, tab, entries, gradeFilter, dokFilter, modelFilter, sortBy]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let list = entries;
+    let list = (q.length >= 3 && searchResults !== null) ? searchResults : entries;
     if (tab === 'saved' && firebaseUser?.uid) {
       list = list.filter(e => (e.savedByUids ?? []).includes(firebaseUser.uid!));
     }
@@ -131,7 +197,7 @@ export const ScenarioBankView: React.FC = () => {
       e.authorName.toLowerCase().includes(q) ||
       e.objectives.some(o => o.toLowerCase().includes(q))
     );
-  }, [entries, search, tab, firebaseUser?.uid, semanticRanking]);
+  }, [entries, search, tab, firebaseUser?.uid, semanticRanking, searchResults, typeFilter]);
 
   const sorted = useMemo(() => {
     if (sortBy !== 'rating') return filtered;
@@ -504,6 +570,16 @@ export const ScenarioBankView: React.FC = () => {
             <Sparkles className="w-3 h-3" /> Семантичко
           </span>
         )}
+        {isSearching && (
+          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 text-gray-500 rounded-full">
+            <Loader2 className="w-3 h-3 animate-spin" /> Пребарувам низ сите сценарија...
+          </span>
+        )}
+        {searchTruncated && !isSearching && (
+          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-full" title="Прикажани се првите 500 совпаѓања. Прецизирај го пребарувањето (со филтри) за поточни резултати.">
+            Прикажани се првите 500 резултати
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setShowFilters(v => !v)}
@@ -697,6 +773,23 @@ export const ScenarioBankView: React.FC = () => {
               onPrint={handlePrint}
             />
           ))}
+        </div>
+      )}
+
+      {/* Load more — browse pagination for all/bro tabs. Hidden while a search query is
+          active (search already fetches a much broader set via fetchScenariosForSearch,
+          not the paginated `entries`), so there's nothing more for this button to add. */}
+      {(tab === 'all' || tab === 'bro') && hasMore && search.trim().length < 3 && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={loadMoreScenarios}
+            disabled={isLoadingMore}
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+          >
+            {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Вчитај уште →
+          </button>
         </div>
       )}
 

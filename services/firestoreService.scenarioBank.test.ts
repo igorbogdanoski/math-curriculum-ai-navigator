@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   publishThematicPlanToBank,
   forkScenario,
+  fetchScenarios,
+  fetchScenariosForSearch,
   type ScenarioBankEntry,
 } from './firestoreService.scenarioBank';
-import { addDoc, updateDoc } from 'firebase/firestore';
+import { addDoc, updateDoc, getDocs, startAfter } from 'firebase/firestore';
 import type { AIGeneratedThematicPlan } from '../types';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -188,5 +190,78 @@ describe('forkScenario — entryType branching', () => {
     expect(payload.forkDepth).toBe(1);
     expect(payload.originalAuthorName).toBe('Автор');
     expect(payload.originalAuthorUid).toBe('author-uid');
+  });
+});
+
+/** A fake Firestore QueryDocumentSnapshot — just enough shape for the code under test. */
+function makeDoc(id: string, overrides: Partial<ScenarioBankEntry> = {}) {
+  const { id: _ignored, ...entry } = makeEntry({ id, ...overrides });
+  return { id, data: () => entry };
+}
+
+function mockSnapshot(docs: ReturnType<typeof makeDoc>[]) {
+  vi.mocked(getDocs).mockResolvedValueOnce({ docs } as never);
+}
+
+describe('fetchScenarios — pagination', () => {
+  it('reports hasMore=false and lastDoc=null when fewer docs than the page size come back', async () => {
+    mockSnapshot([makeDoc('a'), makeDoc('b')]);
+    const page = await fetchScenarios({}, 5);
+    expect(page.entries).toHaveLength(2);
+    expect(page.hasMore).toBe(false);
+    expect(page.lastDoc).toBeNull();
+  });
+
+  it('reports hasMore=true and a lastDoc when the peek-ahead extra doc comes back', async () => {
+    // pageLimit=2 → fetch size 3 (peek-ahead); simulate 3 docs coming back
+    mockSnapshot([makeDoc('a'), makeDoc('b'), makeDoc('c')]);
+    const page = await fetchScenarios({}, 2);
+    expect(page.entries).toHaveLength(2);
+    expect(page.entries.map(e => e.id)).toEqual(['a', 'b']);
+    expect(page.hasMore).toBe(true);
+    expect(page.lastDoc).toEqual(expect.objectContaining({ id: 'b' }));
+  });
+
+  it('passes the cursor through to startAfter when fetching a subsequent page', async () => {
+    mockSnapshot([makeDoc('c')]);
+    const cursor = { id: 'b' } as never;
+    await fetchScenarios({}, 5, cursor);
+    expect(startAfter).toHaveBeenCalledWith(cursor);
+  });
+
+  it('applies client-side dokLevel filtering within a raw page without corrupting pagination boundaries', async () => {
+    // 3 raw docs, only 2 match dokLevel=2 — hasMore/lastDoc must still reflect the raw page, not the filtered count
+    mockSnapshot([
+      makeDoc('a', { dokLevel: 2 }),
+      makeDoc('b', { dokLevel: 3 }),
+      makeDoc('c', { dokLevel: 2 }),
+    ]);
+    const page = await fetchScenarios({ dokLevel: 2 }, 10);
+    expect(page.entries.map(e => e.id)).toEqual(['a', 'c']);
+  });
+});
+
+describe('fetchScenariosForSearch', () => {
+  it('reports truncated=false when fewer results than the cap come back', async () => {
+    mockSnapshot([makeDoc('a'), makeDoc('b')]);
+    const page = await fetchScenariosForSearch({}, 10);
+    expect(page.entries).toHaveLength(2);
+    expect(page.truncated).toBe(false);
+  });
+
+  it('reports truncated=true when the cap is hit, so the UI can show an honest notice', async () => {
+    mockSnapshot([makeDoc('a'), makeDoc('b'), makeDoc('c')]);
+    const page = await fetchScenariosForSearch({}, 3);
+    expect(page.entries).toHaveLength(3);
+    expect(page.truncated).toBe(true);
+  });
+
+  it('applies client-side teachingModel filtering after the fetch', async () => {
+    mockSnapshot([
+      makeDoc('a', { teachingModel: '5E' }),
+      makeDoc('b', { teachingModel: 'PBL' }),
+    ]);
+    const page = await fetchScenariosForSearch({ teachingModel: 'PBL' }, 10);
+    expect(page.entries.map(e => e.id)).toEqual(['b']);
   });
 });

@@ -107,11 +107,8 @@ export function extractBloomLevels(plan: LessonPlan): BloomsLevel[] {
 
 // ── Read ──────────────────────────────────────────────────────────────────────
 
-export const fetchScenarios = async (
-  filters: ScenarioBankFilter = {},
-  pageLimit = 24,
-): Promise<ScenarioBankEntry[]> => {
-  const hasClientFilters = filters.dokLevel != null || filters.teachingModel != null;
+/** Shared query-constraint builder for both fetchScenarios and fetchScenariosForSearch. */
+function buildScenarioConstraints(filters: ScenarioBankFilter) {
   const constraints: Parameters<typeof query>[1][] = [
     where('deleted', '==', false),
     where('isPublic', '==', true),
@@ -126,16 +123,83 @@ export const fetchScenarios = async (
     'publishedAt';
 
   constraints.push(orderBy(sortField, 'desc'));
-  // Over-fetch when client-side filters (dokLevel/teachingModel) are active
-  constraints.push(limit(hasClientFilters ? pageLimit + 40 : pageLimit));
+  return constraints;
+}
+
+function applyClientFilters(entries: ScenarioBankEntry[], filters: ScenarioBankFilter): ScenarioBankEntry[] {
+  let results = entries;
+  if (filters.dokLevel != null) results = results.filter(s => s.dokLevel === filters.dokLevel);
+  if (filters.teachingModel) results = results.filter(s => s.teachingModel === filters.teachingModel);
+  return results;
+}
+
+export interface ScenarioPage {
+  entries: ScenarioBankEntry[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+}
+
+/**
+ * Cursor-paginated browse fetch — one page at a time (default 48). Only ever searches
+ * within whichever pages have been loaded so far; for full-collection search use
+ * fetchScenariosForSearch instead (this function alone is what made scenarios beyond
+ * the first page structurally invisible to the old, non-paginated search box).
+ */
+export const fetchScenarios = async (
+  filters: ScenarioBankFilter = {},
+  pageLimit = 24,
+  cursor?: DocumentSnapshot,
+): Promise<ScenarioPage> => {
+  const hasClientFilters = filters.dokLevel != null || filters.teachingModel != null;
+  // Each "page" is a page of RAW Firestore docs; client-side filters (dokLevel/
+  // teachingModel, which Firestore can't query natively) are applied for display within
+  // that raw page, over-fetched by 40 to reduce how often a page under-fills after
+  // filtering. A filtered page may show fewer than pageLimit results — clicking "Load
+  // more" again fetches the next raw page, same as before pagination existed.
+  const rawPageSize = hasClientFilters ? pageLimit + 40 : pageLimit;
+  const constraints = buildScenarioConstraints(filters);
+  // Peek one doc ahead to detect hasMore without a second round-trip — same trick as fetchAllAdmin.
+  constraints.push(limit(rawPageSize + 1));
+  if (cursor) constraints.push(startAfter(cursor));
+
+  const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
+  const hasMore = snap.docs.length > rawPageSize;
+  const rawPage = snap.docs.slice(0, rawPageSize);
+  const entries = applyClientFilters(
+    rawPage.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry)),
+    filters,
+  );
+
+  return {
+    entries,
+    lastDoc: hasMore ? rawPage[rawPage.length - 1] : null,
+    hasMore,
+  };
+};
+
+export interface ScenarioSearchPage {
+  entries: ScenarioBankEntry[];
+  truncated: boolean;
+}
+
+/**
+ * One-shot, generously-capped fetch used only while an active search query exists —
+ * separate from fetchScenarios' cheap per-page browse fetch so that searching a query
+ * actually reaches the whole collection instead of whatever page happens to be loaded.
+ */
+export const fetchScenariosForSearch = async (
+  filters: ScenarioBankFilter = {},
+  cap = 500,
+): Promise<ScenarioSearchPage> => {
+  const constraints = buildScenarioConstraints(filters);
+  constraints.push(limit(cap));
 
   const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
   let results = snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry));
+  const truncated = results.length >= cap;
+  results = applyClientFilters(results, filters);
 
-  if (filters.dokLevel != null) results = results.filter(s => s.dokLevel === filters.dokLevel);
-  if (filters.teachingModel) results = results.filter(s => s.teachingModel === filters.teachingModel);
-
-  return results.slice(0, pageLimit);
+  return { entries: results, truncated };
 };
 
 export const fetchScenarioById = async (id: string): Promise<ScenarioBankEntry | null> => {
