@@ -248,7 +248,7 @@ const PrintExamView        = safeLazy(() => import('./views/PrintExamView').then
 const StudentTelemetryView = safeLazy(() => import('./views/StudentTelemetryView').then(module => ({ default: module.StudentTelemetryView })));
 const KahootMakerView = safeLazy(() => import('./views/KahootMakerView').then(module => ({ default: module.KahootMakerView })));
 const AIGeneratorPanel = safeLazy(() => import('./components/ai/AIGeneratorPanel').then(module => ({ default: module.AIGeneratorPanel })));
-const AIChatPanel = safeLazy(() => import('./components/ai/AIChatPanel').then(module => ({ default: module.AIChatPanel })));
+const TutorAvatarWidget = safeLazy(() => import('./components/common/TutorAvatarWidget').then(module => ({ default: module.TutorAvatarWidget })));
 const CommandPalette = safeLazy(() => import('./components/common/CommandPalette').then(module => ({ default: module.CommandPalette })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
@@ -458,8 +458,8 @@ const AppContent: React.FC = () => {
               <AIGeneratorPanelWithBoundary />
             </Suspense>
             <Suspense fallback={null}>
-              <SilentErrorBoundary name="AIChatPanel">
-                <AIChatPanel />
+              <SilentErrorBoundary name="TutorAvatarWidget">
+                <TutorAvatarWidget />
               </SilentErrorBoundary>
             </Suspense>
 
