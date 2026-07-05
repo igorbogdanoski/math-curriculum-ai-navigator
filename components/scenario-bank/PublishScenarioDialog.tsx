@@ -24,6 +24,10 @@ interface Props {
   isLoading?: boolean;
   /** Hide the teaching-model picker for non-lesson-plan materials (worksheets/quizzes/tests). Default: true */
   showTeachingModel?: boolean;
+  /** 'edit' relabels the dialog and prefills the fields to correct an already-published scenario's
+   *  metadata (e.g. one imported without a pedagogical model chosen) instead of publishing anew. */
+  mode?: 'publish' | 'edit';
+  initialValues?: Partial<PublishScenarioOptions>;
 }
 
 const MODELS: TeachingModel[] = ['5E', 'PBL', 'ZPD', 'Cooperative', 'Traditional'];
@@ -100,15 +104,17 @@ const I18N: Record<string, Record<string, string>> = {
 
 export const PublishScenarioDialog: React.FC<Props> = ({
   item, isPro, onPublish, onCancel, isLoading = false, showTeachingModel = true,
+  mode = 'publish', initialValues,
 }) => {
   const { language } = useLanguage();
   const lang = (language as string) in I18N ? (language as string) : 'mk';
   const s = I18N[lang];
+  const isEdit = mode === 'edit';
 
-  const [isPublic, setIsPublic] = useState(true);
-  const [teachingModel, setTeachingModel] = useState<TeachingModel | null>(null);
-  const [dokLevel, setDokLevel] = useState<1 | 2 | 3 | 4 | null>(null);
-  const [authorNotes, setAuthorNotes] = useState('');
+  const [isPublic, setIsPublic] = useState(initialValues?.isPublic ?? true);
+  const [teachingModel, setTeachingModel] = useState<TeachingModel | null>(initialValues?.teachingModel ?? null);
+  const [dokLevel, setDokLevel] = useState<1 | 2 | 3 | 4 | null>(initialValues?.dokLevel ?? null);
+  const [authorNotes, setAuthorNotes] = useState(initialValues?.authorNotes ?? '');
 
   const handlePublish = () => {
     onPublish({ isPublic: isPro ? isPublic : true, teachingModel, dokLevel, authorNotes });
@@ -120,8 +126,8 @@ export const PublishScenarioDialog: React.FC<Props> = ({
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b">
           <div>
-            <h2 className="text-lg font-black text-gray-900">{s.title}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{s.subtitle}</p>
+            <h2 className="text-lg font-black text-gray-900">{isEdit ? 'Уреди метаподатоци' : s.title}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">{isEdit ? 'Промени го наставниот модел, DoK нивото или белешките на веќе споделено сценарио.' : s.subtitle}</p>
             {item.title && (
               <p className="mt-1 text-sm font-bold text-indigo-700 truncate">「{item.title}」</p>
             )}
@@ -132,7 +138,8 @@ export const PublishScenarioDialog: React.FC<Props> = ({
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Visibility */}
+          {/* Visibility — not applicable when editing metadata on an already-published scenario */}
+          {!isEdit && (
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{s.visibility}</p>
             <div className="grid grid-cols-2 gap-2">
@@ -167,6 +174,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
               </button>
             </div>
           </div>
+          )}
 
           {/* Teaching model */}
           {showTeachingModel && (
@@ -257,7 +265,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
             ) : (
               <Star className="w-4 h-4" />
             )}
-            {s.publish}
+            {isEdit ? 'Зачувај промени' : s.publish}
           </button>
         </div>
       </div>

@@ -502,6 +502,22 @@ export const setScenarioPublic = async (entryId: string, isPublic: boolean): Pro
   await updateDoc(doc(db, 'scenario_bank', entryId), { isPublic });
 };
 
+/**
+ * Updates metadata (pedagogical model, DoK level, lesson-study notes) on an already-published
+ * scenario in place — for scenarios published without these set (e.g. imported without a chosen
+ * model) or that just need correcting. Unlike `publishScenario`, never creates a new document.
+ */
+export interface ScenarioMetadataPatch {
+  teachingModel?: TeachingModel | null;
+  dokLevel?: 1 | 2 | 3 | 4 | null;
+  authorNotes?: string;
+}
+export const updateScenarioMetadata = async (entryId: string, patch: ScenarioMetadataPatch): Promise<void> => {
+  // updateDoc's UpdateData<DocumentData> requires an index signature a named interface doesn't structurally carry.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await updateDoc(doc(db, 'scenario_bank', entryId), patch as any);
+};
+
 export const rateScenario = async (
   entryId: string,
   uid: string,

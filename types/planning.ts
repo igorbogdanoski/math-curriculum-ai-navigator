@@ -49,6 +49,8 @@ export interface LessonPlan {
   levelDescription?: string;
   differentiation?: string;
   differentiationTabs?: { support: string; standard: string; advanced: string };
+  /** AI-generated open-ended task with 3 ZPD tiers, accepted from the editor sidebar's "Богата задача" panel */
+  richTask?: { context: string; task: string; support: string; standard: string; advanced: string; discussionQuestion: string };
   reflectionPrompt?: string;
   selfAssessmentPrompt?: string;
   teacherReflection?: LessonReflection;
@@ -69,6 +71,9 @@ export interface LessonPlan {
   ratings?: number[];
   comments?: { authorName: string; text: string; date: string }[];
   originalId?: string; // To track where it was imported from
+  /** Set after this plan is published to the Scenario Bank — lets the editor target the same
+   *  entry for later metadata edits (pedagogical model etc.) instead of creating a duplicate. */
+  scenarioBankId?: string;
 }
 
 export interface LessonReflection {

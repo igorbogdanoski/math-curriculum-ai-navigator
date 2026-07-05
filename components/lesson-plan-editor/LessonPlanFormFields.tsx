@@ -381,6 +381,7 @@ const DifferentiationTabs: React.FC<{
 export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan, setPlan, onEnhanceField, onRegenerateSection, onGenerateIllustration, enhancingField, isRegenerating }) => {
     const { curriculum } = useCurriculum();
     const [newMaterial, setNewMaterial] = useState('');
+    const [showOriginalSourceFields, setShowOriginalSourceFields] = useState(false);
 
     const topicsForGrade = useMemo(() => {
         return curriculum?.grades.find((g: Grade) => g.level === Number(plan.grade))?.topics || [];
@@ -510,6 +511,28 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     <input type="number" id="lessonNumber" name="lessonNumber" value={plan.lessonNumber || ''} onChange={handleChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" />
                 </div>
             </div>
+
+            {(plan.originalAuthor || plan.originalSchool || showOriginalSourceFields) ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+                    <div>
+                        <label htmlFor="originalAuthor" className="block text-sm font-medium text-indigo-900">Оригинален автор (ако е прикачено од друг наставник)</label>
+                        <input type="text" id="originalAuthor" name="originalAuthor" value={plan.originalAuthor || ''} onChange={handleChange} className="mt-1 block w-full p-2 border-indigo-200 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" placeholder="пр. Име Презиме" />
+                    </div>
+                    <div>
+                        <label htmlFor="originalSchool" className="block text-sm font-medium text-indigo-900">Оригинално училиште</label>
+                        <input type="text" id="originalSchool" name="originalSchool" value={plan.originalSchool || ''} onChange={handleChange} className="mt-1 block w-full p-2 border-indigo-200 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" placeholder='пр. ООУ „...&quot;' />
+                    </div>
+                    <p className="sm:col-span-2 text-xs text-indigo-500">Овие полиња се прикажуваат како „Оригинално од“ во Банката на сценарија — исправи ги ако AI извлекувањето погрешило.</p>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setShowOriginalSourceFields(true)}
+                    className="text-xs text-indigo-500 hover:text-indigo-700 hover:underline"
+                >
+                    + Додади оригинален автор (ако подготовката е од друг наставник)
+                </button>
+            )}
 
             <div>
                 <label htmlFor="tags" className="block text-sm font-medium text-gray-700">Тагови (одделени со запирка)</label>
@@ -736,6 +759,14 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                 />
             </div>
              <DifferentiationTabs plan={plan} setPlan={setPlan} onEnhanceField={onEnhanceField} enhancingField={enhancingField} />
+            {plan.richTask && (
+                <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-4 space-y-2">
+                    <p className="text-sm font-medium text-purple-900">🎲 Богата задача (прифатена од AI предлог)</p>
+                    <p className="text-sm text-gray-700"><span className="font-semibold">Контекст:</span> {plan.richTask.context}</p>
+                    <p className="text-sm text-gray-700"><span className="font-semibold">Задача:</span> {plan.richTask.task}</p>
+                    <p className="text-xs text-gray-500">Уреди ги нивоата и прашањето за дискусија во страничната лента пред повторно прифаќање.</p>
+                </div>
+            )}
             <fieldset className="border p-4 rounded-md bg-gray-50/50">
                 <legend className="text-lg font-medium text-gray-900 px-2 bg-brand-bg rounded">Рефлексија и Оценување</legend>
                 <div className="space-y-4 mt-2">

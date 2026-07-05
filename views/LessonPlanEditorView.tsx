@@ -13,7 +13,7 @@ import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useNavigation } from '../contexts/NavigationContext';
-import { publishScenario } from '../services/firestoreService.scenarioBank';
+import { publishScenario, updateScenarioMetadata } from '../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog } from '../components/scenario-bank/PublishScenarioDialog';
 import type { PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
@@ -74,6 +74,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
   const [isPublishingToBank, setIsPublishingToBank] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [showEditMetadataDialog, setShowEditMetadataDialog] = useState(false);
   const [autoShareToBank, setAutoShareToBank] = useState(false);
   const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
   const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
@@ -277,8 +278,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               authorName: user.name ?? 'Наставник',
               schoolName: user.schoolName,
               isPublic: true,
-            }).then(() => addNotification('✅ Автоматски споделено во Банката!', 'success'))
-              .catch(() => {});
+              // Preserve the real author's name when this plan was uploaded from a
+              // colleague's document — otherwise the bank card would only ever show
+              // whoever clicked "publish", not who actually wrote it.
+              originalAuthorName: plan.originalAuthor || undefined,
+            }).then((bankId) => {
+              addNotification('✅ Автоматски споделено во Банката!', 'success');
+              // So a later "Уреди педагошки модел" edits this same entry instead of duplicating it.
+              setPlan(prev => ({ ...prev, scenarioBankId: bankId }));
+            }).catch(() => {});
           }
           setShowReflection(true);
           // navigate happens via postSaveNav after reflection dismissed
@@ -320,7 +328,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     if (!firebaseUser?.uid || !user) return;
     setIsPublishingToBank(true);
     try {
-      await publishScenario({
+      const bankId = await publishScenario({
         plan: plan as import('../types').LessonPlan,
         authorUid: firebaseUser.uid,
         authorName: user.name ?? 'Наставник',
@@ -329,12 +337,35 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         dokLevel: opts.dokLevel ?? undefined,
         isPublic: opts.isPublic,
         authorNotes: opts.authorNotes,
+        // Preserve the real author's name when this plan was uploaded from a
+        // colleague's document — otherwise the bank card would only ever show
+        // whoever clicked "publish", not who actually wrote it.
+        originalAuthorName: plan.originalAuthor || undefined,
       });
+      setPlan(prev => ({ ...prev, scenarioBankId: bankId }));
       setShowPublishDialog(false);
       addNotification(opts.isPublic ? '✅ Сценариото е јавно споделено во Банката!' : '🔒 Сценариото е зачувано приватно.', 'success');
       navigate('/scenario-bank');
     } catch {
       addNotification('Грешка при споделување.', 'error');
+    } finally {
+      setIsPublishingToBank(false);
+    }
+  };
+
+  const handleConfirmEditMetadata = async (opts: PublishScenarioOptions) => {
+    if (!plan.scenarioBankId) return;
+    setIsPublishingToBank(true);
+    try {
+      await updateScenarioMetadata(plan.scenarioBankId, {
+        teachingModel: opts.teachingModel,
+        dokLevel: opts.dokLevel,
+        authorNotes: opts.authorNotes,
+      });
+      setShowEditMetadataDialog(false);
+      addNotification('✅ Метаподатоците се ажурирани!', 'success');
+    } catch {
+      addNotification('Грешка при ажурирање.', 'error');
     } finally {
       setIsPublishingToBank(false);
     }
@@ -616,6 +647,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     )}
                     <span className="hidden sm:inline">Во Банката</span>
                   </button>
+                  {plan.scenarioBankId && (
+                    <button
+                      type="button"
+                      onClick={() => setShowEditMetadataDialog(true)}
+                      title="Промени педагошки модел / DoK ниво на веќе споделеното сценарио"
+                      className="flex items-center gap-2 bg-white border border-emerald-300 text-emerald-700 px-4 py-3 rounded-lg hover:bg-emerald-50 transition-colors font-semibold text-sm"
+                    >
+                      <ICONS.sparkles className="w-4 h-4" />
+                      <span className="hidden sm:inline">Уреди педагошки модел</span>
+                    </button>
+                  )}
                   {!isEditing && (
                     <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none shrink-0">
                       <input
@@ -745,6 +787,18 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           isPro={user?.role === 'admin'}
           onPublish={handleConfirmPublish}
           onCancel={() => setShowPublishDialog(false)}
+          isLoading={isPublishingToBank}
+        />
+      )}
+
+      {/* ── Edit Scenario Metadata Dialog (pedagogical model on an already-published scenario) ── */}
+      {showEditMetadataDialog && (
+        <PublishScenarioDialog
+          item={plan}
+          isPro={user?.role === 'admin'}
+          mode="edit"
+          onPublish={handleConfirmEditMetadata}
+          onCancel={() => setShowEditMetadataDialog(false)}
           isLoading={isPublishingToBank}
         />
       )}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import type { LessonPlan } from '../../types';
 import type { ScenarioBankEntry } from '../../services/firestoreService.scenarioBank';
@@ -33,6 +33,13 @@ interface LessonPlanSidebarProps {
 export const LessonPlanSidebar: React.FC<LessonPlanSidebarProps> = ({
   plan, ai, setPlan, firebaseUser, navigate, onOpenMathTools, onImportScenario,
 }) => {
+  // Tracks whether the *current* generation has been merged into the plan — resets only when a
+  // fresh generation replaces diffActivities/richTask, not when the plan is edited afterward.
+  const [diffAccepted, setDiffAccepted] = useState(false);
+  const [richTaskAccepted, setRichTaskAccepted] = useState(false);
+  useEffect(() => { setDiffAccepted(false); }, [ai.diffActivities]);
+  useEffect(() => { setRichTaskAccepted(false); }, [ai.richTask]);
+
   return (
     <aside className="w-full lg:w-80 space-y-4">
       <VerticalProgressionPanel
@@ -72,6 +79,19 @@ export const LessonPlanSidebar: React.FC<LessonPlanSidebarProps> = ({
         isGenerating={ai.isGeneratingDiff}
         canGenerate={!!(plan.title || plan.theme)}
         onGenerate={ai.handleGenerateDifferentiation}
+        accepted={diffAccepted}
+        onAccept={ai.diffActivities ? () => {
+          const d = ai.diffActivities!;
+          setPlan(prev => ({
+            ...prev,
+            differentiationTabs: {
+              support: d.support.join('\n'),
+              standard: d.standard.join('\n'),
+              advanced: d.advanced.join('\n'),
+            },
+          }));
+          setDiffAccepted(true);
+        } : undefined}
       />
 
       <RichTaskPanel
@@ -79,6 +99,11 @@ export const LessonPlanSidebar: React.FC<LessonPlanSidebarProps> = ({
         isGenerating={ai.isGeneratingRichTask}
         canGenerate={!!(plan.title || plan.theme)}
         onGenerate={ai.handleGenerateRichTask}
+        accepted={richTaskAccepted}
+        onAccept={ai.richTask ? () => {
+          setPlan(prev => ({ ...prev, richTask: ai.richTask! }));
+          setRichTaskAccepted(true);
+        } : undefined}
       />
 
       <PedagogicalEnrichPanel

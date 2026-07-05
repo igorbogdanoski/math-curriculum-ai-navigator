@@ -7,6 +7,9 @@ interface LessonPlanDifferentiationPanelProps {
   isGenerating: boolean;
   canGenerate: boolean;
   onGenerate: () => void;
+  /** Merges the suggestions into the plan's own (persisted) differentiationTabs field */
+  onAccept?: () => void;
+  accepted?: boolean;
 }
 
 const LEVELS = [
@@ -16,7 +19,7 @@ const LEVELS = [
 ] as const;
 
 export const LessonPlanDifferentiationPanel: React.FC<LessonPlanDifferentiationPanelProps> = ({
-  diffActivities, isGenerating, canGenerate, onGenerate,
+  diffActivities, isGenerating, canGenerate, onGenerate, onAccept, accepted,
 }) => (
   <Card className="p-4">
     <div className="flex items-center justify-between mb-3">
@@ -53,6 +56,16 @@ export const LessonPlanDifferentiationPanel: React.FC<LessonPlanDifferentiationP
             </ul>
           </div>
         ))}
+        {onAccept && (
+          <button
+            type="button"
+            onClick={onAccept}
+            disabled={accepted}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-40 disabled:cursor-default"
+          >
+            {accepted ? <><ICONS.check className="w-3.5 h-3.5" /> Додадено во подготовката</> : 'Прифати во подготовката'}
+          </button>
+        )}
       </div>
     ) : !isGenerating && (
       <p className="text-xs text-gray-400 text-center py-2">

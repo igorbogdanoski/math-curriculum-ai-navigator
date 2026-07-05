@@ -15,6 +15,9 @@ interface RichTaskPanelProps {
   isGenerating: boolean;
   canGenerate: boolean;
   onGenerate: () => void;
+  /** Saves the generated task onto the plan's own (persisted) richTask field */
+  onAccept?: () => void;
+  accepted?: boolean;
 }
 
 const LEVEL_CONFIG = [
@@ -49,6 +52,8 @@ export const RichTaskPanel: React.FC<RichTaskPanelProps> = ({
   isGenerating,
   canGenerate,
   onGenerate,
+  onAccept,
+  accepted,
 }) => {
   const [openLevel, setOpenLevel] = useState<string | null>('standard');
 
@@ -132,6 +137,19 @@ export const RichTaskPanel: React.FC<RichTaskPanelProps> = ({
             <p className="text-[10px] font-bold text-violet-600 mb-1">💬 Дискусија</p>
             <p className="text-[11px] text-gray-700 italic leading-relaxed">{richTask.discussionQuestion}</p>
           </div>
+
+          {onAccept && (
+            <button
+              type="button"
+              onClick={onAccept}
+              disabled={accepted}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition disabled:opacity-40 disabled:cursor-default"
+            >
+              {accepted
+                ? <><ICONS.check className="w-3.5 h-3.5" /> Додадена во подготовката</>
+                : 'Прифати во подготовката'}
+            </button>
+          )}
         </div>
       )}
     </div>

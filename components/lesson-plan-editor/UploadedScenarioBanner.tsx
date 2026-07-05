@@ -138,7 +138,7 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss, onEnr
         </button>
       </div>
 
-      {/* Original author attribution */}
+      {/* Original author attribution — editable in the main form below (persists across sessions, not just this banner) */}
       {(plan.originalAuthor || plan.originalSchool) && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white/60 border border-indigo-100 px-3 py-2">
           {plan.originalAuthor && (
@@ -153,7 +153,7 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss, onEnr
               {plan.originalSchool}
             </span>
           )}
-          <span className="text-[10px] text-indigo-400 ml-auto">Оригинален извор</span>
+          <span className="text-[10px] text-indigo-400 ml-auto">Оригинален извор — ќе се прикаже во Банката на сценарија</span>
         </div>
       )}
 
