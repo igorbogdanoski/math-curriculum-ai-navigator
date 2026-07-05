@@ -24,7 +24,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string) => Promise<void>;
+  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string, schoolAddress?: string, schoolRegistryId?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: TeachingProfile) => Promise<void>;    updateLocalProfile: (profileUpdate: Partial<TeachingProfile>) => void;  resendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -234,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth]);
 
-  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string): Promise<void> => {
+  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string, schoolAddress?: string, schoolRegistryId?: string): Promise<void> => {
     if (isDemoMode()) {
         throw new Error('МОН демо режим: креирањето нови сметки е оневозможено. Ве молиме најавете се со демо креденцијалите.');
     }
@@ -259,6 +259,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: role || 'teacher',
             schoolId: schoolId || '',
             schoolName: schoolName || '',
+            ...(schoolAddress ? { schoolAddress } : {}),
+            ...(schoolRegistryId ? { schoolRegistryId } : {}),
             style: 'Constructivist',
             experienceLevel: 'Beginner',
             studentProfiles: [],

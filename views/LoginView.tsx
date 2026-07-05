@@ -1,13 +1,13 @@
-import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
 import { trackEvent } from '../services/telemetryService';
 import { isDemoMode, getDemoCredentials } from '../services/demoMode';
 import { Zap, BarChart2, BookOpen, Languages, ShieldCheck, GraduationCap, Star } from 'lucide-react';
+import { SchoolRegistryPicker } from '../components/common/SchoolRegistryPicker';
+import type { SchoolRegistryEntry } from '../data/schoolRegistry';
 
 // Google logo SVG
 const GoogleIcon = () => (
@@ -202,15 +202,15 @@ const RegisterForm: React.FC<{
     email: string; setEmail: (v: string) => void;
     password: string; setPassword: (v: string) => void;
     repeatPassword: string; setRepeatPassword: (v: string) => void;
-    schoolId: string; setSchoolId: (v: string) => void;
-    schoolName: string; setSchoolName: (v: string) => void;
-    schools: any[]; schoolsLoading: boolean;
+    schoolQuery: string; setSchoolQuery: (v: string) => void;
+    onSelectSchool: (entry: SchoolRegistryEntry) => void;
+    isCustomSchool: boolean; setIsCustomSchool: (v: boolean) => void;
+    customSchoolName: string; setCustomSchoolName: (v: string) => void;
     photoPreview: string | null; handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent) => Promise<void>;
     isLoading: boolean; error: string; successMessage: string;
     onGoogleLogin: () => void; isGoogleLoading: boolean;
-}> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schoolName, setSchoolName, schools, schoolsLoading, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onGoogleLogin, isGoogleLoading }) => {
-    const isCustomSchool = schoolId === '__other__';
+}> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolQuery, setSchoolQuery, onSelectSchool, isCustomSchool, setIsCustomSchool, customSchoolName, setCustomSchoolName, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onGoogleLogin, isGoogleLoading }) => {
     return (
     <div className="space-y-4 animate-fade-in">
         <GoogleButton onClick={onGoogleLogin} isLoading={isGoogleLoading} disabled={isLoading} label="Регистрирај се со Google — веднаш 50 кредити" />
@@ -238,37 +238,41 @@ const RegisterForm: React.FC<{
             <InputField id="reg-name" label="Ime i prezime *" type="text" value={name} onChange={setName} required autoFocus />
             <InputField id="reg-email" label="Е-пошта *" type="email" value={email} onChange={setEmail} required placeholder="vashata@email.com" />
 
-            {/* School picker */}
+            {/* School picker — searches the official government school registry (data/schoolRegistry.ts) */}
             <div>
                 <label htmlFor="reg-school" className="text-sm font-semibold text-slate-700 mb-1 block">
                     Училиште <span className="text-slate-400 font-normal">(незадолжително)</span>
                 </label>
-                {schoolsLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-slate-500 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                        <ICONS.spinner className="animate-spin w-4 h-4" /> Се вчитуваат...
-                    </div>
-                ) : schools.length > 0 ? (
+                {!isCustomSchool ? (
                     <>
-                        <select
-                            id="reg-school" value={schoolId}
-                            onChange={(e) => { setSchoolId(e.target.value); if (e.target.value !== '__other__') setSchoolName(''); }}
-                            className="block w-full px-3.5 py-2.5 text-slate-900 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 focus:border-brand-secondary transition-all"
+                        <SchoolRegistryPicker
+                            id="reg-school"
+                            value={schoolQuery}
+                            onChange={setSchoolQuery}
+                            onSelect={onSelectSchool}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => { setIsCustomSchool(true); setSchoolQuery(''); }}
+                            className="mt-1.5 text-xs text-brand-secondary hover:underline"
                         >
-                            <option value="">-- Изберете училиште --</option>
-                            {schools.map(s => <option key={s.id} value={s.id}>{s.name}{s.city ? ` (${s.city})` : ''}</option>)}
-                            <option value="__other__">— Моето училиште не е во листата</option>
-                        </select>
-                        {isCustomSchool && (
-                            <input type="text" placeholder="Внесете го името на вашето училиште" value={schoolName}
-                                onChange={(e) => setSchoolName(e.target.value)}
-                                className="mt-2 block w-full px-3.5 py-2.5 text-slate-900 bg-slate-50 border border-brand-secondary/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 focus:border-brand-secondary transition-all"
-                                autoFocus />
-                        )}
+                            Моето училиште не е во листата
+                        </button>
                     </>
                 ) : (
-                    <input id="reg-school" type="text" placeholder="Внесете го името на вашето училиште" value={schoolName}
-                        onChange={(e) => setSchoolName(e.target.value)}
-                        className="block w-full px-3.5 py-2.5 text-slate-900 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 focus:border-brand-secondary transition-all" />
+                    <>
+                        <input type="text" placeholder="Внесете го името на вашето училиште" value={customSchoolName}
+                            onChange={(e) => setCustomSchoolName(e.target.value)}
+                            className="block w-full px-3.5 py-2.5 text-slate-900 bg-slate-50 border border-brand-secondary/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 focus:border-brand-secondary transition-all"
+                            autoFocus />
+                        <button
+                            type="button"
+                            onClick={() => { setIsCustomSchool(false); setCustomSchoolName(''); }}
+                            className="mt-1.5 text-xs text-brand-secondary hover:underline"
+                        >
+                            ← Пребарај во листата на училишта
+                        </button>
+                    </>
                 )}
                 <p className="mt-1 text-xs text-slate-400">Можете да го промените подоцна преку профилот.</p>
             </div>
@@ -424,17 +428,10 @@ const ModeTabs: React.FC<{ mode: 'login' | 'register'; onSwitch: (m: 'login' | '
 // ─── Main LoginView controller ────────────────────────────────────────────────
 
 export const LoginView: React.FC = () => {
-    const [schools, setSchools] = useState<any[]>([]);
-    const [schoolId, setSchoolId] = useState('');
-    const [schoolName, setSchoolName] = useState('');
-    const [schoolsLoading, setSchoolsLoading] = useState(true);
-
-    useEffect(() => {
-        firestoreService.fetchSchools()
-            .then(setSchools)
-            .catch(err => logger.error("Failed to load schools:", err))
-            .finally(() => setSchoolsLoading(false));
-    }, []);
+    const [schoolQuery, setSchoolQuery] = useState('');
+    const [selectedSchool, setSelectedSchool] = useState<SchoolRegistryEntry | null>(null);
+    const [isCustomSchool, setIsCustomSchool] = useState(false);
+    const [customSchoolName, setCustomSchoolName] = useState('');
 
     const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
     const [email, setEmail] = useState('');
@@ -505,13 +502,14 @@ export const LoginView: React.FC = () => {
         e.preventDefault(); setError(''); setSuccessMessage('');
         if (password !== repeatPassword) { setError('Лозинките не се совпаѓаат.'); return; }
         if (!name.trim()) { setError('Ве молиме внесете го вашето Ime i prezime.'); return; }
-        if (schoolId === '__other__' && !schoolName.trim()) { setError('Ве молиме внесете го името на вашето училиште.'); return; }
+        if (isCustomSchool && !customSchoolName.trim()) { setError('Ве молиме внесете го името на вашето училиште.'); return; }
         setIsLoading(true);
         try {
-            const finalSchoolId = schoolId === '__other__' ? '' : schoolId;
-            const finalSchoolName = schoolId === '__other__' ? schoolName.trim() : '';
-            await register(email, password, name, photoFile, finalSchoolId, undefined, finalSchoolName);
-            trackEvent('signup_completed', { method: 'email', hasSchool: Boolean(finalSchoolId || finalSchoolName) });
+            const finalSchoolName = isCustomSchool ? customSchoolName.trim() : (selectedSchool?.name ?? '');
+            const finalSchoolAddress = isCustomSchool ? undefined : selectedSchool?.address;
+            const finalSchoolRegistryId = isCustomSchool ? undefined : selectedSchool?.id;
+            await register(email, password, name, photoFile, '', undefined, finalSchoolName, finalSchoolAddress, finalSchoolRegistryId);
+            trackEvent('signup_completed', { method: 'email', hasSchool: Boolean(finalSchoolName) });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Настана непозната грешка.');
         } finally {
@@ -622,9 +620,10 @@ export const LoginView: React.FC = () => {
                                 email={email} setEmail={setEmail}
                                 password={password} setPassword={setPassword}
                                 repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword}
-                                schoolId={schoolId} setSchoolId={setSchoolId}
-                                schoolName={schoolName} setSchoolName={setSchoolName}
-                                schools={schools} schoolsLoading={schoolsLoading}
+                                schoolQuery={schoolQuery} setSchoolQuery={(q) => { setSchoolQuery(q); setSelectedSchool(null); }}
+                                onSelectSchool={(entry) => { setSelectedSchool(entry); setSchoolQuery(entry.name); }}
+                                isCustomSchool={isCustomSchool} setIsCustomSchool={setIsCustomSchool}
+                                customSchoolName={customSchoolName} setCustomSchoolName={setCustomSchoolName}
                                 photoPreview={photoPreview} handlePhotoChange={handlePhotoChange}
                                 handleSubmit={handleRegisterSubmit}
                                 isLoading={isLoading} error={error} successMessage={successMessage}

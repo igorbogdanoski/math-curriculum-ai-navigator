@@ -48,6 +48,10 @@ export interface TeachingProfile {
   schoolId?: string;
   schoolName?: string;
   municipality?: string;
+  /** Official address from the government school registry (data/schoolRegistry.ts), set when picked at registration. */
+  schoolAddress?: string;
+  /** Stable id into the government school registry (e.g. 'primary-042') — enables the admin "not yet on platform" view. */
+  schoolRegistryId?: string;
 
   aiCreditsBalance?: number;
   isPremium?: boolean;
