@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { Topic, Concept } from '../types';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, getDocs, query, limit, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 // Dynamic import of callEmbeddingProxy breaks circular dep:
@@ -221,15 +221,34 @@ class RagService {
     try { sessionStorage.removeItem(CACHE_KEY); } catch { /* noop */ }
   }
 
+  /**
+   * Fetches concept_embeddings in two parts and merges them, rather than one flat
+   * limit(500) query. Curriculum-concept docs (scripts/index-curriculum-embeddings.ts)
+   * never set a `source` field at all; scenario docs (functions/src/index.ts's
+   * onScenarioPublishedEmbed) always set source: 'scenario_bank'. A flat query with no
+   * orderBy has no guarantee scenario docs survive the cap once the collection grows —
+   * which ones get cut off is arbitrary. The dedicated scenario query below reserves a
+   * fixed budget for them regardless of how large the curriculum-concept side grows.
+   */
   private async fetchConceptEmbeddings(): Promise<EmbeddingCache['data']> {
     const cached = this.getCache();
     if (cached) return cached;
 
-    const snap = await getDocs(query(collection(db, 'concept_embeddings'), limit(500)));
-    const data = snap.docs.map(d => {
+    const mapDocs = (docs: { id: string; data: () => unknown }[]) => docs.map(d => {
       const doc = d.data() as ConceptEmbeddingDoc;
       return { id: d.id, vector: doc.vector, text: doc.text, source: doc.source, grade: doc.grade ?? null };
     });
+
+    const [generalSnap, scenarioSnap] = await Promise.all([
+      getDocs(query(collection(db, 'concept_embeddings'), limit(500))),
+      getDocs(query(collection(db, 'concept_embeddings'), where('source', '==', 'scenario_bank'), limit(300))),
+    ]);
+
+    const merged = new Map<string, EmbeddingCache['data'][number]>();
+    for (const item of mapDocs(generalSnap.docs)) merged.set(item.id, item);
+    for (const item of mapDocs(scenarioSnap.docs)) merged.set(item.id, item);
+
+    const data = [...merged.values()];
     this.setCache(data);
     return data;
   }
