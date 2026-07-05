@@ -319,6 +319,20 @@
                         "queryScope":  "COLLECTION",
                         "fields":  [
                                        {
+                                           "fieldPath":  "isApproved",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "savedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "saved_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
                                            "fieldPath":  "teacherUid",
                                            "order":  "ASCENDING"
                                        },

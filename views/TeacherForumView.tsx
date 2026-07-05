@@ -63,6 +63,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const { allConcepts } = useCurriculum();
 
   const [threads, setThreads] = useState<ForumThread[]>([]);
+  const [threadsTruncated, setThreadsTruncated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeThread, setActiveThread] = useState<ForumThread | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
@@ -164,8 +165,9 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     unsubRef.current?.();
     unsubRef.current = subscribeForumThreads(
       { conceptId: filterConceptId || undefined },
-      (updated) => {
+      (updated, hasMore) => {
         setThreads(updated);
+        setThreadsTruncated(hasMore);
         setLoading(false);
         setActiveThread(prev => {
           if (!prev) return prev;
@@ -556,6 +558,11 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                   onDelete={() => handleDelete(thread)}
                 />
               ))}
+              {threadsTruncated && (
+                <p className="text-center text-xs text-gray-400 py-3">
+                  Прикажани се само последните теми — постарите не се вчитани.
+                </p>
+              )}
             </div>
           )}
         </>

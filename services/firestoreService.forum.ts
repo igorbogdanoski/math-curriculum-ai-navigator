@@ -221,12 +221,13 @@ export const fetchForumThreads = async (opts?: {
  */
 export const subscribeForumThreads = (
   opts: { conceptId?: string; limitCount?: number },
-  onUpdate: (threads: ForumThread[]) => void,
+  onUpdate: (threads: ForumThread[], hasMore: boolean) => void,
 ): Unsubscribe => {
+  const rawLimit = opts.limitCount ?? 80;
   const constraints: QueryConstraint[] = [
     where('deleted', '==', false),
     orderBy('createdAt', 'desc'),
-    limit(opts.limitCount ?? 80),
+    limit(rawLimit),
   ];
   if (opts.conceptId) constraints.splice(0, 0, where('conceptId', '==', opts.conceptId));
   const q = query(collection(db, 'forum_threads'), ...constraints);
@@ -246,7 +247,10 @@ export const subscribeForumThreads = (
       } as unknown as ForumThread))
       // Client-side moderation filter: hide pending (legacy threads without field → visible)
       .filter(t => !t.moderationStatus || t.moderationStatus === 'approved');
-    onUpdate(threads);
+    // Signals truncation off the raw (pre-moderation-filter) doc count, so the caller
+    // can tell the user more threads exist beyond this window instead of silently
+    // capping at `rawLimit` with no indication older threads are missing.
+    onUpdate(threads, snap.docs.length >= rawLimit);
   }, () => { /* ignore permission errors — returns empty */ });
 };
 

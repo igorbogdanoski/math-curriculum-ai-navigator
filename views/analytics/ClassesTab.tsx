@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2, AlertCircle, Link2 } from 'lucide-react';
-import { QRCodeSVG as QRCode } from 'qrcode.react';
+import { School, Plus, FileText } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -9,6 +8,7 @@ import { SkeletonList } from '../../components/common/Skeleton';
 import { useNotification } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { ClassCard } from '../../components/analytics/ClassCard';
 
 interface ClassesTabProps {
     teacherUid: string;
@@ -30,33 +30,11 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const [newName, setNewName] = useState('');
     const [newGrade, setNewGrade] = useState<number>(1);
 
-    // Add student to class
-    const [addStudentClassId, setAddStudentClassId] = useState<string | null>(null);
-    const [studentInput, setStudentInput] = useState('');
-
-    // Rename class
-    const [renameId, setRenameId] = useState<string | null>(null);
-    const [renameValue, setRenameValue] = useState('');
-
-    // CSV bulk import
+    // CSV bulk import — shared modal/file-input, not per-card
     const csvInputRef = useRef<HTMLInputElement>(null);
     const [csvTargetClassId, setCsvTargetClassId] = useState<string | null>(null);
     const [csvPreview, setCsvPreview] = useState<{ classId: string; names: string[] } | null>(null);
     const [csvImporting, setCsvImporting] = useState(false);
-
-    // И2 — join code per class
-    const [generatingCodeId, setGeneratingCodeId] = useState<string | null>(null);
-    const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
-    const [codeGenError, setCodeGenError] = useState<string | null>(null);
-
-    // П-А — parent link panel per student
-    const [parentLinkKey, setParentLinkKey] = useState<string | null>(null); // "classId:studentName"
-    const [parentLinkCopied, setParentLinkCopied] = useState(false);
-
-    // И2 — per-class stats (lazy)
-    const [statsOpenId, setStatsOpenId] = useState<string | null>(null);
-    const [statsCache, setStatsCache] = useState<Record<string, { name: string; avgPct: number; count: number }[]>>({});
-    const [statsLoading, setStatsLoading] = useState(false);
 
     const handleCsvButtonClick = (classId: string) => {
         setCsvTargetClassId(classId);
@@ -70,9 +48,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         e.target.value = ''; // reset so same file can be re-selected
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const text = (ev.target?.result as string) ?? '';
+            const rawText = (ev.target?.result as string) ?? '';
             // Remove BOM, split lines
-            const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+            const withoutBom = rawText.charCodeAt(0) === 0xFEFF ? rawText.slice(1) : rawText;
+            const lines = withoutBom.split(/\r?\n/);
             const names: string[] = [];
             lines.forEach((line, idx) => {
                 // If first line looks like a header containing "name", skip it
@@ -98,7 +77,6 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         const uniqueImported = [...new Set(csvPreview.names)]; // dedupe within file
         const merged = Array.from(new Set([...cls.studentNames, ...uniqueImported]));
         await firestoreService.updateClass(csvPreview.classId, { studentNames: merged });
-        setStatsCache(prev => { const n = { ...prev }; delete n[csvPreview.classId]; return n; });
         setCsvPreview(null);
         setCsvTargetClassId(null);
         setCsvImporting(false);
@@ -143,16 +121,16 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         });
     };
 
-    const handleAddStudent = async (classId: string) => {
-        const name = studentInput.trim();
-        if (!name) return;
+    const handleRename = async (classId: string, name: string) => {
+        await firestoreService.updateClass(classId, { name });
+        await loadClasses();
+    };
+
+    const handleAddStudent = async (classId: string, name: string) => {
         const cls = classes.find(c => c.id === classId);
         if (!cls) return;
         const updated = Array.from(new Set([...cls.studentNames, name]));
         await firestoreService.updateClass(classId, { studentNames: updated });
-        setStatsCache(prev => { const n = { ...prev }; delete n[classId]; return n; });
-        setStudentInput('');
-        setAddStudentClassId(null);
         await loadClasses();
     };
 
@@ -161,15 +139,6 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         if (!cls) return;
         const updated = cls.studentNames.filter(n => n !== studentName);
         await firestoreService.updateClass(classId, { studentNames: updated });
-        setStatsCache(prev => { const n = { ...prev }; delete n[classId]; return n; });
-        await loadClasses();
-    };
-
-    const handleRename = async (classId: string) => {
-        const name = renameValue.trim();
-        if (!name) return;
-        await firestoreService.updateClass(classId, { name });
-        setRenameId(null);
         await loadClasses();
     };
 
@@ -181,41 +150,25 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         } catch { /* non-critical */ }
     };
 
-    const handleGenerateCode = async (classId: string) => {
-        setGeneratingCodeId(classId);
-        setCodeGenError(null);
+    const handleGenerateCode = async (classId: string): Promise<string | null> => {
         try {
             const code = await firestoreService.generateClassJoinCode(classId);
-            if (!code) {
-                setCodeGenError('Неможе да се генерира код. Обиди се повторно.');
-            } else {
-                setClasses(prev => prev.map(c => c.id === classId ? { ...c, joinCode: code } : c));
-            }
+            if (code) setClasses(prev => prev.map(c => c.id === classId ? { ...c, joinCode: code } : c));
+            return code ?? null;
         } catch {
-            setCodeGenError('Грешка при генерирање на код.');
-        } finally {
-            setGeneratingCodeId(null);
+            return null;
         }
     };
 
-    const handleCopyCode = (classId: string, code: string) => {
-        navigator.clipboard.writeText(code).then(() => {
-            setCopiedCodeId(classId);
-            setTimeout(() => setCopiedCodeId(null), 2000);
-        }).catch(() => {
-            // fallback for insecure contexts
-            window.prompt('Копирај го кодот:', code);
-        });
-    };
-
-    const handleToggleStats = async (cls: SchoolClass) => {
-        if (statsOpenId === cls.id) { setStatsOpenId(null); return; }
-        setStatsOpenId(cls.id);
-        if (statsCache[cls.id]) return; // already loaded
-        setStatsLoading(true);
-        const data = await firestoreService.fetchClassStats(teacherUid, cls.studentNames);
-        setStatsCache(prev => ({ ...prev, [cls.id]: data }));
-        setStatsLoading(false);
+    const handleVisualizeStats = (cls: SchoolClass, stats: { name: string; avgPct: number; count: number }[]) => {
+        sessionStorage.setItem('dataviz_import', JSON.stringify({
+            tableData: {
+                headers: ['Ученик', 'Просек %', 'Квизови'],
+                rows: stats.map(s => [s.name, s.avgPct, s.count]),
+            },
+            config: { title: `Резултати — ${cls.name}`, xLabel: 'Ученик', yLabel: 'Просек %', unit: '%', type: 'bar' },
+        }));
+        navigate('/data-viz');
     };
 
     if (loading) {
@@ -343,337 +296,19 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
 
                 {/* Class cards */}
                 {classes.map(cls => (
-                    <Card key={cls.id} className="border-slate-200">
-                        {/* Class header */}
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <School className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                                {renameId === cls.id ? (
-                                    <div className="flex items-center gap-1">
-                                        <input
-                                            type="text"
-                                            aria-label="Ново име на одделение"
-                                            value={renameValue}
-                                            onChange={e => setRenameValue(e.target.value)}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter') handleRename(cls.id);
-                                                if (e.key === 'Escape') setRenameId(null);
-                                            }}
-                                            autoFocus
-                                            className="border border-indigo-300 rounded px-2 py-0.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 w-32"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRename(cls.id)}
-                                            className="p-1 text-green-600 hover:text-green-700 transition"
-                                            aria-label="Зачувај"
-                                        >
-                                            <Check className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setRenameId(null)}
-                                            className="p-1 text-gray-400 hover:text-gray-600 transition"
-                                            aria-label="Откажи"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <h3 className="font-bold text-slate-800 truncate">{cls.name}</h3>
-                                )}
-                                <span className="text-xs font-semibold text-gray-500 flex-shrink-0">
-                                    {cls.gradeLevel}. одд.
-                                </span>
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex-shrink-0">
-                                    {cls.studentNames.length} уч.
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setRenameId(cls.id);
-                                        setRenameValue(cls.name);
-                                    }}
-                                    title="Преименувај класа"
-                                    className="p-1.5 text-gray-400 hover:text-indigo-600 transition"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setAddStudentClassId(addStudentClassId === cls.id ? null : cls.id)}
-                                    title="Додај ученик"
-                                    className="p-1.5 text-gray-400 hover:text-green-600 transition"
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleCsvButtonClick(cls.id)}
-                                    title="Увези ученици од CSV"
-                                    className="p-1.5 text-gray-400 hover:text-blue-600 transition"
-                                >
-                                    <Upload className="w-4 h-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleDelete(cls.id, cls.name)}
-                                    title="Избриши класа"
-                                    className="p-1.5 text-gray-400 hover:text-red-500 transition"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Add student inline form */}
-                        {addStudentClassId === cls.id && (
-                            <div className="flex gap-2 mb-3">
-                                <input
-                                    type="text"
-                                    placeholder="Ime и презиме на ученик..."
-                                    value={studentInput}
-                                    onChange={e => setStudentInput(e.target.value)}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') handleAddStudent(cls.id);
-                                        if (e.key === 'Escape') setAddStudentClassId(null);
-                                    }}
-                                    autoFocus
-                                    className="flex-1 border border-green-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => handleAddStudent(cls.id)}
-                                    disabled={!studentInput.trim()}
-                                    className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-40 transition"
-                                >
-                                    Додај
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setAddStudentClassId(null); setStudentInput(''); }}
-                                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition"
-                                >
-                                    Откажи
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Student list */}
-                        {cls.studentNames.length === 0 ? (
-                            <p className="text-xs text-gray-500 italic">
-                                Нема ученици — кликни <UserPlus className="w-3 h-3 inline" /> за да додадеш.
-                            </p>
-                        ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                                {cls.studentNames.sort().map(name => {
-                                    const isIEP = cls.iepStudents?.includes(name) ?? false;
-                                    const plKey = `${cls.id}:${name}`;
-                                    return (
-                                        <span
-                                            key={name}
-                                            className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition ${isIEP ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-700'}`}
-                                        >
-                                            {isIEP && <span title="Ученик со ИЕП">🧩</span>}
-                                            {name}
-                                            <button
-                                                type="button"
-                                                onClick={() => setParentLinkKey(parentLinkKey === plKey ? null : plKey)}
-                                                title="Родителски линк / QR код"
-                                                aria-label={`Родителски линк за ${name}`}
-                                                className="hover:opacity-60 transition text-indigo-400 hover:text-indigo-600"
-                                            >
-                                                <Link2 className="w-3 h-3" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleToggleIEP(cls.id, name, cls.iepStudents ?? [])}
-                                                aria-label={isIEP ? `Отстрани ИЕП за ${name}` : `Означи ${name} со ИЕП`}
-                                                title={isIEP ? 'Отстрани ИЕП флаг' : 'Означи ученик со ИЕП (поддршка)'}
-                                                className="hover:opacity-60 transition text-violet-400 hover:text-violet-600"
-                                            >
-                                                🧩
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveStudent(cls.id, name)}
-                                                aria-label={`Отстрани ${name} од класата`}
-                                                className="hover:opacity-60 transition"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* П-А: Parent link panel */}
-                        {parentLinkKey && parentLinkKey.startsWith(cls.id + ':') && (() => {
-                            const studentName = parentLinkKey.slice(cls.id.length + 1);
-                            const parentUrl = `${window.location.origin}${window.location.pathname}#/parent?name=${encodeURIComponent(studentName)}&teacher=${teacherUid}`;
-                            return (
-                                <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-bold text-indigo-700">👨‍👩‍👧 Родителски линк — {studentName}</p>
-                                        <button type="button" onClick={() => setParentLinkKey(null)} title="Затвори" aria-label="Затвори родителски линк" className="text-indigo-400 hover:text-indigo-600 transition">
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                    <div className="flex gap-4 items-start">
-                                        <div className="bg-white p-2 rounded-lg border border-indigo-100 flex-shrink-0">
-                                            <QRCode value={parentUrl} size={96} />
-                                        </div>
-                                        <div className="flex-1 space-y-2 min-w-0">
-                                            <p className="text-[10px] text-indigo-600 break-all font-mono bg-white border border-indigo-100 rounded-lg px-2 py-1.5 select-all">{parentUrl}</p>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(parentUrl).then(() => {
-                                                        setParentLinkCopied(true);
-                                                        setTimeout(() => setParentLinkCopied(false), 2000);
-                                                    }).catch(() => {
-                                                        window.prompt('Копирај го линкот:', parentUrl);
-                                                    });
-                                                }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition w-full justify-center"
-                                            >
-                                                {parentLinkCopied
-                                                    ? <><CheckCircle2 className="w-3.5 h-3.5" /> Копирано!</>
-                                                    : <><Copy className="w-3.5 h-3.5" /> Копирај линк</>}
-                                            </button>
-                                            <p className="text-[10px] text-indigo-500">Испрати го линкот или QR кодот до родителот. Родителот го отвора на телефон и го следи напредокот.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                        {/* П-Г: IEP summary */}
-                        {(cls.iepStudents?.length ?? 0) > 0 && (
-                            <p className="text-xs text-violet-600 mt-1.5 flex items-center gap-1">
-                                🧩 <span className="font-semibold">{cls.iepStudents!.length}</span> ученик{cls.iepStudents!.length === 1 ? '' : 'и'} со ИЕП — добиваат поедноставен интерфејс при играње квизови
-                            </p>
-                        )}
-
-                        {/* И2: Join Code panel */}
-                        <div className="mt-3 pt-3 border-t border-slate-100">
-                            {codeGenError && (
-                                <div className="flex items-center gap-1.5 mb-2 text-xs text-red-600">
-                                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                                    {codeGenError}
-                                </div>
-                            )}
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                <div className="flex items-center gap-2">
-                                    <Key className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
-                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Код за приклучување</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {cls.joinCode ? (
-                                        <>
-                                            <span className="font-mono font-black text-base tracking-widest text-indigo-800 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-lg select-all">
-                                                {cls.joinCode}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                title="Копирај код"
-                                                onClick={() => handleCopyCode(cls.id, cls.joinCode!)}
-                                                className="p-1.5 text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
-                                            >
-                                                {copiedCodeId === cls.id
-                                                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                                    : <Copy className="w-4 h-4" />}
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <span className="text-xs text-slate-400 italic">Нема активен код</span>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleGenerateCode(cls.id)}
-                                        disabled={generatingCodeId === cls.id}
-                                        title={cls.joinCode ? 'Генерирај нов код' : 'Генерирај код'}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50"
-                                    >
-                                        {generatingCodeId === cls.id
-                                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            : <RefreshCw className="w-3.5 h-3.5" />}
-                                        {cls.joinCode ? 'Нов' : 'Генерирај'}
-                                    </button>
-                                </div>
-                            </div>
-                            {cls.joinCode && (
-                                <p className="text-[10px] text-slate-400 mt-1">
-                                    Ученикот го внесува овој код при прв квиз за да се приклучи кон одделението.
-                                </p>
-                            )}
-                        </div>
-
-                        {/* И2: Class stats (lazy) */}
-                        {cls.studentNames.length > 0 && (
-                            <div className="mt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleToggleStats(cls)}
-                                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-indigo-600 transition"
-                                >
-                                    <BarChart2 className="w-3.5 h-3.5" />
-                                    Статистики
-                                    {statsOpenId === cls.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                </button>
-
-                                {statsOpenId === cls.id && (
-                                    <div className="mt-2 border border-slate-100 rounded-xl p-3 bg-slate-50">
-                                        {statsLoading && !statsCache[cls.id] ? (
-                                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Се вчитуваат статистики...
-                                            </div>
-                                        ) : (statsCache[cls.id] ?? []).length === 0 ? (
-                                            <p className="text-xs text-slate-400 italic">Нема квизови за овие ученици.</p>
-                                        ) : (
-                                            <div className="space-y-1.5">
-                                                {(statsCache[cls.id] ?? []).map(s => (
-                                                    <div key={s.name} className="flex items-center gap-2">
-                                                        <span className="text-xs text-slate-600 font-semibold w-36 truncate">{s.name}</span>
-                                                        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full rounded-full ${s.avgPct >= 75 ? 'bg-green-500' : s.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                                                                style={{ width: `${s.avgPct}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-xs font-bold text-slate-700 w-10 text-right">{s.avgPct}%</span>
-                                                        <span className="text-[10px] text-slate-400 w-10">({s.count})</span>
-                                                    </div>
-                                                ))}
-                                                <p className="text-[10px] text-slate-400 pt-1">
-                                                    Просек одд.: <strong>{Math.round((statsCache[cls.id] ?? []).reduce((a, s) => a + s.avgPct, 0) / ((statsCache[cls.id] ?? []).length || 1))}%</strong>
-                                                </p>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const stats = statsCache[cls.id] ?? [];
-                                                        sessionStorage.setItem('dataviz_import', JSON.stringify({
-                                                            tableData: {
-                                                                headers: ['Ученик', 'Просек %', 'Квизови'],
-                                                                rows: stats.map(s => [s.name, s.avgPct, s.count]),
-                                                            },
-                                                            config: { title: `Резултати — ${cls.name}`, xLabel: 'Ученик', yLabel: 'Просек %', unit: '%', type: 'bar' },
-                                                        }));
-                                                        navigate('/data-viz');
-                                                    }}
-                                                    className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition"
-                                                >
-                                                    <BarChart2 className="w-3 h-3" /> Визуализирај во DataViz
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </Card>
+                    <ClassCard
+                        key={cls.id}
+                        cls={cls}
+                        teacherUid={teacherUid}
+                        onRename={handleRename}
+                        onDelete={handleDelete}
+                        onAddStudent={handleAddStudent}
+                        onRemoveStudent={handleRemoveStudent}
+                        onToggleIEP={handleToggleIEP}
+                        onCsvImportClick={handleCsvButtonClick}
+                        onGenerateCode={handleGenerateCode}
+                        onVisualizeStats={handleVisualizeStats}
+                    />
                 ))}
             </div>
         </SilentErrorBoundary>

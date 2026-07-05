@@ -11,10 +11,11 @@
 
 import {
   collection, doc, addDoc, updateDoc, getDoc, getDocs,
-  query, where, orderBy, limit, increment, startAfter,
-  serverTimestamp, type Timestamp, type DocumentSnapshot,
+  query, where, orderBy, limit, increment,
+  serverTimestamp, type Timestamp, type DocumentSnapshot, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { firestorePage } from './firestorePagination';
 import type { LessonPlan, BloomsLevel, SecondaryTrack, AIGeneratedThematicPlan } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -126,11 +127,14 @@ function buildScenarioConstraints(filters: ScenarioBankFilter) {
   return constraints;
 }
 
+function matchesClientFilters(entry: ScenarioBankEntry, filters: ScenarioBankFilter): boolean {
+  if (filters.dokLevel != null && entry.dokLevel !== filters.dokLevel) return false;
+  if (filters.teachingModel && entry.teachingModel !== filters.teachingModel) return false;
+  return true;
+}
+
 function applyClientFilters(entries: ScenarioBankEntry[], filters: ScenarioBankFilter): ScenarioBankEntry[] {
-  let results = entries;
-  if (filters.dokLevel != null) results = results.filter(s => s.dokLevel === filters.dokLevel);
-  if (filters.teachingModel) results = results.filter(s => s.teachingModel === filters.teachingModel);
-  return results;
+  return entries.filter(s => matchesClientFilters(s, filters));
 }
 
 export interface ScenarioPage {
@@ -157,24 +161,21 @@ export const fetchScenarios = async (
   // filtering. A filtered page may show fewer than pageLimit results — clicking "Load
   // more" again fetches the next raw page, same as before pagination existed.
   const rawPageSize = hasClientFilters ? pageLimit + 40 : pageLimit;
-  const constraints = buildScenarioConstraints(filters);
-  // Peek one doc ahead to detect hasMore without a second round-trip — same trick as fetchAllAdmin.
-  constraints.push(limit(rawPageSize + 1));
-  if (cursor) constraints.push(startAfter(cursor));
+  const { items, hasMore, lastDoc } = await firestorePage<ScenarioBankEntry>({
+    collectionName: 'scenario_bank',
+    constraints: buildScenarioConstraints(filters),
+    pageSize: rawPageSize,
+    // `cursor` always originates from a previous page's own `lastDoc` (a real query
+    // result doc), so this narrowing is safe despite the public signature's wider type.
+    cursor: cursor as QueryDocumentSnapshot | undefined,
+    filter: hasClientFilters ? (s) => matchesClientFilters(s, filters) : undefined,
+    errorTag: 'scenario_bank (browse)',
+  });
 
-  const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
-  const hasMore = snap.docs.length > rawPageSize;
-  const rawPage = snap.docs.slice(0, rawPageSize);
-  const entries = applyClientFilters(
-    rawPage.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry)),
-    filters,
-  );
-
-  return {
-    entries,
-    lastDoc: hasMore ? rawPage[rawPage.length - 1] : null,
-    hasMore,
-  };
+  // Preserve this function's existing contract: `lastDoc: null` signals "no more
+  // pages" (unlike firestorePage's own `lastDoc`, which is the current page's last
+  // doc regardless of `hasMore`).
+  return { entries: items, lastDoc: hasMore ? lastDoc : null, hasMore };
 };
 
 export interface ScenarioSearchPage {
@@ -213,21 +214,15 @@ export const fetchAllAdmin = async (
   pageSize = 30,
   cursor?: DocumentSnapshot,
 ): Promise<{ entries: ScenarioBankEntry[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> => {
-  const constraints: Parameters<typeof query>[1][] = [
-    where('deleted', '==', false),
-    orderBy('publishedAt', 'desc'),
-    limit(pageSize + 1),
-  ];
-  if (cursor) constraints.push(startAfter(cursor));
-
-  const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
-  const hasMore = snap.docs.length > pageSize;
-  const sliced = snap.docs.slice(0, pageSize);
-  return {
-    entries: sliced.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry)),
-    lastDoc: hasMore ? sliced[sliced.length - 1] : null,
-    hasMore,
-  };
+  const { items, hasMore, lastDoc } = await firestorePage<ScenarioBankEntry>({
+    collectionName: 'scenario_bank',
+    constraints: [where('deleted', '==', false), orderBy('publishedAt', 'desc')],
+    pageSize,
+    cursor: cursor as QueryDocumentSnapshot | undefined,
+    errorTag: 'scenario_bank (admin)',
+  });
+  // Same null-when-no-more contract as fetchScenarios above.
+  return { entries: items, lastDoc: hasMore ? lastDoc : null, hasMore };
 };
 
 export const fetchMyScenarios = async (uid: string): Promise<ScenarioBankEntry[]> => {

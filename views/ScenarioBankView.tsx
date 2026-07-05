@@ -1,33 +1,29 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2, ShieldCheck, Lock, Globe, Layers } from 'lucide-react';
+import { Search, BookMarked, BadgeCheck, Shuffle, Plus, FileText, Upload, Loader2, ShieldCheck } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
-import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { Card } from '../components/common/Card';
 import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
 import { UploadScenarioModal } from '../components/scenario-bank/UploadScenarioModal';
 import { ScenarioSelectionModal } from '../components/scenario-bank/ScenarioSelectionModal';
 import { BatchImportModal } from '../components/scenario-bank/BatchImportModal';
+import { ScenarioFilterBar, type SortBy } from '../components/scenario-bank/ScenarioFilterBar';
+import { ScenarioBankAdminPanel } from '../components/scenario-bank/ScenarioBankAdminPanel';
+import { ScenarioPrintShell } from '../components/scenario-bank/ScenarioPrintShell';
 import { saveUploadDraft, saveUploadDraftBatch } from '../services/uploadDraftService';
 import { splitScenarios } from '../services/scenarioSplitter';
 import type { ScenarioSegment } from '../services/scenarioSplitter';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchScenariosForSearch, fetchMyScenarios, rateScenario,
-  forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic, fetchAllAdmin,
+  forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic,
 } from '../services/firestoreService.scenarioBank';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { ScenarioSearchResult } from '../services/ragService';
 import type { LessonPlan } from '../types';
 
 type TabMode = 'all' | 'mine' | 'saved' | 'bro' | 'admin';
-type SortBy = 'date' | 'rating' | 'forks' | 'usage';
-
-const GRADES = [1,2,3,4,5,6,7,8,9];
-const MODELS: TeachingModel[] = ['5E','PBL','ZPD','Cooperative','Traditional'];
-const DOK_LEVELS = [1,2,3,4];
 
 export const ScenarioBankView: React.FC = () => {
   const { user, firebaseUser } = useAuth();
@@ -455,34 +451,8 @@ export const ScenarioBankView: React.FC = () => {
     }));
   };
 
-  // ── Admin: all-entries view with pagination ──────────────────────────────
+  // ── Admin: all-entries view with pagination ── extracted to ScenarioBankAdminPanel
   const isAdmin = user?.role === 'admin';
-  const [adminEntries, setAdminEntries] = useState<ScenarioBankEntry[]>([]);
-  const [adminCursor, setAdminCursor] = useState<DocumentSnapshot | null>(null);
-  const [adminHasMore, setAdminHasMore] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(false);
-
-  const loadAdmin = useCallback(async (cursor?: DocumentSnapshot) => {
-    setAdminLoading(true);
-    try {
-      const res = await fetchAllAdmin(30, cursor);
-      setAdminEntries(prev => cursor ? [...prev, ...res.entries] : res.entries);
-      setAdminCursor(res.lastDoc);
-      setAdminHasMore(res.hasMore);
-    } catch {
-      addNotification('Грешка при вчитување (admin).', 'error');
-    } finally {
-      setAdminLoading(false);
-    }
-  }, [addNotification]);
-
-  useEffect(() => {
-    if (tab === 'admin' && isAdmin) {
-      setAdminEntries([]);
-      setAdminCursor(null);
-      loadAdmin();
-    }
-  }, [tab, isAdmin, loadAdmin]);
 
   const TABS: { key: TabMode; label: string; icon: React.ReactNode }[] = [
     { key: 'all',   label: 'Сите сценарија',   icon: <Search className="w-3.5 h-3.5" /> },
@@ -553,174 +523,26 @@ export const ScenarioBankView: React.FC = () => {
         ))}
       </div>
 
-      {/* Search + filter bar */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Барај по наслов, тема, автор..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setIsSemanticActive(false); setSemanticRanking(null); }}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
-          />
-        </div>
-        {isSemanticActive && (
-          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-violet-50 border border-violet-200 text-violet-700 rounded-full">
-            <Sparkles className="w-3 h-3" /> Семантичко
-          </span>
-        )}
-        {isSearching && (
-          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 text-gray-500 rounded-full">
-            <Loader2 className="w-3 h-3 animate-spin" /> Пребарувам низ сите сценарија...
-          </span>
-        )}
-        {searchTruncated && !isSearching && (
-          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-full" title="Прикажани се првите 500 совпаѓања. Прецизирај го пребарувањето (со филтри) за поточни резултати.">
-            Прикажани се првите 500 резултати
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => setShowFilters(v => !v)}
-          className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border transition-colors ${
-            showFilters || gradeFilter || dokFilter || modelFilter || typeFilter
-              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          Филтри
-          {(gradeFilter || dokFilter || modelFilter) && (
-            <span className="w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-              {[gradeFilter, dokFilter, modelFilter, typeFilter].filter(Boolean).length}
-            </span>
-          )}
-        </button>
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value as SortBy)}
-          aria-label="Сортирај сценарија"
-          title="Сортирај"
-          className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        >
-          <option value="date">Најнови</option>
-          <option value="rating">Највисока оценка</option>
-          <option value="forks">Најмногу ремикси</option>
-          <option value="usage">Најмногу употребено</option>
-        </select>
-      </div>
-
-      {/* Expanded filters */}
-      {showFilters && (
-        <Card>
-          <div className="flex flex-wrap gap-4 p-4">
-            {/* Grade */}
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Одделение</p>
-              <div className="flex flex-wrap gap-1">
-                {GRADES.map(g => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setGradeFilter(gradeFilter === g ? null : g)}
-                    className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${
-                      gradeFilter === g
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* DoK */}
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Webb's DoK</p>
-              <div className="flex gap-1">
-                {DOK_LEVELS.map(d => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDokFilter(dokFilter === d ? null : d)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
-                      dokFilter === d
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    DoK {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Teaching model */}
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Наставен модел</p>
-              <div className="flex flex-wrap gap-1">
-                {MODELS.map(m => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setModelFilter(modelFilter === m ? null : m)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
-                      modelFilter === m
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300'
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Entry type */}
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Тип</p>
-              <div className="flex flex-wrap gap-1">
-                {([
-                  { key: null,                  label: 'Сите',       icon: null },
-                  { key: 'lesson_plan' as EntryType, label: 'Час',  icon: <FileText className="w-3 h-3" /> },
-                  { key: 'kahoot' as EntryType,     label: 'Kahoot', icon: <Gamepad2 className="w-3 h-3" /> },
-                  { key: 'extracted_material' as EntryType, label: 'Извлечени', icon: <Search className="w-3 h-3" /> },
-                  { key: 'generated_material' as EntryType, label: 'AI Генерирани', icon: <Sparkles className="w-3 h-3" /> },
-                  { key: 'thematic_plan' as EntryType, label: 'Тематски', icon: <Layers className="w-3 h-3" /> },
-                ] as const).map(opt => (
-                  <button
-                    key={String(opt.key)}
-                    type="button"
-                    onClick={() => setTypeFilter(opt.key)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
-                      typeFilter === opt.key
-                        ? 'bg-sky-600 text-white border-sky-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-sky-300'
-                    }`}
-                  >
-                    {opt.icon} {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Clear */}
-            {(gradeFilter || dokFilter || modelFilter || typeFilter) && (
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); setTypeFilter(null); }}
-                  className="text-xs text-red-500 hover:text-red-700 font-semibold underline"
-                >
-                  Исчисти филтри
-                </button>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
+      <ScenarioFilterBar
+        search={search}
+        onSearchChange={(v) => { setSearch(v); setIsSemanticActive(false); setSemanticRanking(null); }}
+        isSemanticActive={isSemanticActive}
+        isSearching={isSearching}
+        searchTruncated={searchTruncated}
+        showFilters={showFilters}
+        onToggleFilters={() => setShowFilters(v => !v)}
+        gradeFilter={gradeFilter}
+        onGradeFilterChange={setGradeFilter}
+        dokFilter={dokFilter}
+        onDokFilterChange={setDokFilter}
+        modelFilter={modelFilter}
+        onModelFilterChange={setModelFilter}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        onClearFilters={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); setTypeFilter(null); }}
+      />
 
       {/* Results count */}
       {!isLoading && (
@@ -836,137 +658,7 @@ export const ScenarioBankView: React.FC = () => {
       })()}
 
       {/* ── Admin: all-entries panel ── */}
-      {tab === 'admin' && isAdmin && (
-        <div className="space-y-4">
-          {/* Stats header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-rose-600" />
-              <h2 className="text-base font-black text-gray-800">
-                Администраторски преглед — сите сценарија
-              </h2>
-              <span className="text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
-                {adminEntries.length}{adminHasMore ? '+' : ''} вкупно
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setAdminEntries([]); setAdminCursor(null); loadAdmin(); }}
-              className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
-              disabled={adminLoading}
-            >
-              {adminLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '↻'} Освежи
-            </button>
-          </div>
-
-          {/* Column breakdown */}
-          {adminEntries.length > 0 && (
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-xl border bg-white p-3">
-                <p className="text-xl font-black text-emerald-600">
-                  {adminEntries.filter(e => e.isPublic).length}
-                </p>
-                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-                  <Globe className="w-3 h-3" /> Јавни
-                </p>
-              </div>
-              <div className="rounded-xl border bg-white p-3">
-                <p className="text-xl font-black text-amber-600">
-                  {adminEntries.filter(e => !e.isPublic).length}
-                </p>
-                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-                  <Lock className="w-3 h-3" /> Приватни нацрти
-                </p>
-              </div>
-              <div className="rounded-xl border bg-white p-3">
-                <p className="text-xl font-black text-indigo-600">
-                  {adminEntries.filter(e => e.verifiedByBRO).length}
-                </p>
-                <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-                  <BadgeCheck className="w-3 h-3" /> БРО Верифиц.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {adminLoading && adminEntries.length === 0 && (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-            </div>
-          )}
-
-          {/* Admin table */}
-          {adminEntries.length > 0 && (
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Наслов</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Автор</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Одд.</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Тема</th>
-                    <th className="text-left px-3 py-2.5 font-bold text-gray-600">Статус</th>
-                    <th className="text-right px-3 py-2.5 font-bold text-gray-600">Употреби</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adminEntries.map((entry, i) => (
-                    <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/40'}`}>
-                      <td className="px-3 py-2 max-w-[220px]">
-                        <p className="font-semibold text-gray-800 truncate">{entry.title}</p>
-                        {entry.forkDepth > 0 && (
-                          <span className="text-[10px] text-indigo-500">
-                            ↳ Ремикс (ниво {entry.forkDepth}){entry.originalAuthorName ? ` — оригинално од: ${entry.originalAuthorName}` : ''}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <p className="font-medium text-gray-700 truncate max-w-[140px]">{entry.authorName}</p>
-                        {entry.schoolName && <p className="text-gray-400 truncate max-w-[140px]">{entry.schoolName}</p>}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full">
-                          {entry.grade}. одд.
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 max-w-[160px]">
-                        <span className="truncate text-gray-600 block">{entry.topicTitle}</span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-1">
-                          {entry.isPublic
-                            ? <span className="flex items-center gap-0.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold"><Globe className="w-2.5 h-2.5" /> Јавно</span>
-                            : <span className="flex items-center gap-0.5 text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold"><Lock className="w-2.5 h-2.5" /> Нацрт</span>
-                          }
-                          {entry.verifiedByBRO && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold">БРО</span>}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-500">
-                        {entry.usageCount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Load more */}
-          {adminHasMore && (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={() => adminCursor && loadAdmin(adminCursor)}
-                disabled={adminLoading}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
-              >
-                {adminLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                Вчитај уште 30 →
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {tab === 'admin' && isAdmin && <ScenarioBankAdminPanel />}
 
       {/* Footer hint */}
       {tab !== 'admin' && sorted.length > 0 && (
@@ -976,70 +668,7 @@ export const ScenarioBankView: React.FC = () => {
       )}
 
       {/* Hidden PrintShell — populated when user clicks print on a scenario card */}
-      <div className="absolute -left-[9999px] top-0">
-        <PrintShell
-          ref={scenarioPrintRef}
-          title={printEntry?.title ?? 'Сценарио за час'}
-          subtitle={printEntry ? `${printEntry.grade}. одд. · ${printEntry.topicTitle ?? ''}` : ''}
-          teacherName={printEntry?.authorName ?? ''}
-          grade={printEntry?.grade}
-          subject="Математика"
-        >
-          {printEntry && (
-            <div className="space-y-4 text-sm">
-              {/* Meta row */}
-              <div className="flex flex-wrap gap-4 text-[10pt] border-b border-gray-300 pb-3">
-                {printEntry.teachingModel && <span><strong>Модел:</strong> {printEntry.teachingModel}</span>}
-                {printEntry.bloomLevels?.length ? <span><strong>Bloom:</strong> {printEntry.bloomLevels.join(', ')}</span> : null}
-                {printEntry.dokLevel && <span><strong>DoK:</strong> {printEntry.dokLevel}</span>}
-                {printEntry.authorName && <span><strong>Автор:</strong> {printEntry.authorName}</span>}
-              </div>
-              {/* Scenario phases */}
-              {printEntry.objectives.length > 0 && (
-                <div>
-                  <p className="font-bold text-[10pt] mb-1">Цели на часот</p>
-                  <ul className="list-disc list-inside space-y-0.5">
-                    {printEntry.objectives.map((o, i) => <li key={i} className="text-[10pt]">{o}</li>)}
-                  </ul>
-                </div>
-              )}
-              <div>
-                <p className="font-bold text-[10pt] mb-1">Воведна активност</p>
-                <p className="text-[10pt]">{printEntry.scenarioIntro}</p>
-              </div>
-              {printEntry.scenarioMain.length > 0 && (
-                <div>
-                  <p className="font-bold text-[10pt] mb-1">Главни активности</p>
-                  <ol className="list-decimal list-inside space-y-0.5">
-                    {printEntry.scenarioMain.map((m, i) => <li key={i} className="text-[10pt]">{m}</li>)}
-                  </ol>
-                </div>
-              )}
-              <div>
-                <p className="font-bold text-[10pt] mb-1">Завршна активност</p>
-                <p className="text-[10pt]">{printEntry.scenarioConcluding}</p>
-              </div>
-              {printEntry.assessmentStandards.length > 0 && (
-                <div>
-                  <p className="font-bold text-[10pt] mb-1">БРО Стандарди</p>
-                  <p className="text-[10pt]">{printEntry.assessmentStandards.join(' · ')}</p>
-                </div>
-              )}
-              {/* Signature */}
-              <div className="mt-8 grid grid-cols-2 gap-8 text-[9pt]">
-                <div>
-                  <div className="border-b border-black w-48 mb-1" />
-                  <span>Наставник/-чка: {printEntry.authorName || '_________________'}</span>
-                </div>
-                <div>
-                  <div className="border-b border-black w-48 mb-1" />
-                  <span>Директор/-ка · Потпис и Печат</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </PrintShell>
-      </div>
+      <ScenarioPrintShell ref={scenarioPrintRef} entry={printEntry} />
 
       {showUploadModal && (
         <UploadScenarioModal

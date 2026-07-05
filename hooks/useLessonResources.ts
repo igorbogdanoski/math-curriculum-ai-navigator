@@ -25,6 +25,14 @@ export interface LessonResources {
   error: string | null;
 }
 
+/** Reads `.seconds` off a Firestore Timestamp-shaped value without an `as any` cast. */
+function timestampSeconds(value: unknown): number {
+  if (value && typeof value === 'object' && 'seconds' in value) {
+    return (value as { seconds: number }).seconds;
+  }
+  return 0;
+}
+
 /**
  * Fuzzy keyword match — checks if any word from `keywords` (≥3 chars) appears
  * in `text` (case-insensitive, substring).
@@ -119,11 +127,7 @@ export function useLessonResources({
       const scenarios: ScenarioBankEntry[] = scenarioRes.status === 'fulfilled'
         ? scenarioRes.value.docs
             .map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry))
-            .sort((a, b) => {
-              const ta = (a.publishedAt as any)?.seconds ?? 0;
-              const tb = (b.publishedAt as any)?.seconds ?? 0;
-              return tb - ta;
-            })
+            .sort((a, b) => timestampSeconds(b.publishedAt) - timestampSeconds(a.publishedAt))
             .filter(s =>
               !topicId
                 ? keywordMatch(s.topicTitle, keyword)
@@ -135,11 +139,7 @@ export function useLessonResources({
       const allMaterials: CachedMaterial[] = materialsRes.status === 'fulfilled'
         ? materialsRes.value.docs
             .map(d => ({ id: d.id, ...d.data() } as CachedMaterial))
-            .sort((a, b) => {
-              const ta = (a.createdAt as any)?.seconds ?? 0;
-              const tb = (b.createdAt as any)?.seconds ?? 0;
-              return tb - ta;
-            })
+            .sort((a, b) => timestampSeconds(b.createdAt) - timestampSeconds(a.createdAt))
         : [];
 
       const extractedTasks = allMaterials.filter(m => {
@@ -166,11 +166,7 @@ export function useLessonResources({
       const tests: DuggaTest[] = testsRes.status === 'fulfilled'
         ? testsRes.value.docs
             .map(d => ({ id: d.id, ...d.data() } as DuggaTest))
-            .sort((a, b) => {
-              const ta = (a.createdAt as any)?.seconds ?? 0;
-              const tb = (b.createdAt as any)?.seconds ?? 0;
-              return tb - ta;
-            })
+            .sort((a, b) => timestampSeconds(b.createdAt) - timestampSeconds(a.createdAt))
             .filter(t =>
               keyword
                 ? keywordMatch(t.title, keyword) ||

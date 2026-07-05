@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Card } from '../components/common/Card';
-import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useParentSharing } from '../hooks/useParentSharing';
 import { GradeModel, GradeEntry } from '../types';
 import { MobileGradeEntryModal } from '../components/gradebook/MobileGradeEntryModal';
 import { BROCoveragePanel } from '../components/gradebook/BROCoveragePanel';
 import { MaturaReadinessPanel } from '../components/gradebook/MaturaReadinessPanel';
-import { MATH_STANDARDS } from '../data/allNationalStandardsComplete';
+import { EarlyWarningPanel } from '../components/gradebook/EarlyWarningPanel';
+import { NewEntryForm } from '../components/gradebook/NewEntryForm';
+import { GradebookPrintShell } from '../components/gradebook/GradebookPrintShell';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
   Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle2,
-  Users, FileDown, Sparkles, Zap, X, ChevronDown, ChevronUp, Share2, Copy, MessageCircle, Smartphone,
+  Users, FileDown, Sparkles, Share2, Copy, MessageCircle, Smartphone,
 } from 'lucide-react';
 
 // ── Model metadata ────────────────────────────────────────────────────────────
@@ -84,15 +86,9 @@ export const GradeBookView: React.FC = () => {
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
-
-  // Early Warning
-  const [dismissedWarnings, setDismissedWarnings] = useState<string[]>([]);
-  const [warningIntervention, setWarningIntervention] = useState<Record<string, string>>({});
-  const [loadingIntervention, setLoadingIntervention] = useState<string | null>(null);
-  const [expandedWarning, setExpandedWarning] = useState<string | null>(null);
-  const [copiedParent, setCopiedParent] = useState<string | null>(null);
-  const [shareMenuStudent, setShareMenuStudent] = useState<string | null>(null);
   const [showMobileEntry, setShowMobileEntry] = useState(false);
+
+  const sharing = useParentSharing();
 
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
@@ -103,49 +99,6 @@ export const GradeBookView: React.FC = () => {
     documentTitle: `Тетратка_${className || 'класа'}_${gradeLevel}одд`,
     pageStyle: '@page { size: A4 landscape; margin: 1cm 1.2cm; }',
   });
-
-  // New entry form
-  const [newName, setNewName] = useState('');
-  const [newTestTitle, setNewTestTitle] = useState('');
-  const [newRaw, setNewRaw] = useState('');
-  const [newMax, setNewMax] = useState('100');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  // S99.1 SBG → БРО standard tagging
-  const [sbgStandardCode, setSbgStandardCode] = useState('');
-  const [sbgProficiency, setSbgProficiency] = useState<1 | 2 | 3 | 4>(3);
-
-  const addEntry = () => {
-    const errors: Record<string, string> = {};
-    if (!newName.trim()) errors.name = 'Внесете го името на ученикот.';
-    if (!newTestTitle.trim()) errors.testTitle = 'Внесете наслов на тестот.';
-    const raw = Number(newRaw);
-    const max = Number(newMax);
-    if (!newRaw) errors.raw = 'Внесете освоени поени.';
-    else if (raw < 0) errors.raw = 'Поените не можат да бидат негативни.';
-    else if (raw > max) errors.raw = 'Не може да надмине максимумот.';
-    if (!newMax || max <= 0) errors.max = 'Максимумот мора да биде > 0.';
-    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
-    setFormErrors({});
-    const pct = Math.round((raw / max) * 100);
-    const entry: GradeEntry = {
-      studentId: crypto.randomUUID(),
-      studentName: newName.trim(),
-      testId: crypto.randomUUID(),
-      testTitle: newTestTitle.trim(),
-      rawScore: raw,
-      maxScore: max,
-      percentage: pct,
-      masteryStatus: percentToMastery(pct),
-      gradedAt: new Date().toISOString(),
-      ...(activeModel === 'sbg' && sbgStandardCode
-        ? { standardScores: { [sbgStandardCode]: sbgProficiency } }
-        : {}),
-    };
-    setEntries(prev => [...prev, entry]);
-    setNewName('');
-    setNewRaw('');
-    setSbgStandardCode('');
-  };
 
   const removeEntry = (id: string) => setEntries(prev => prev.filter(e => e.studentId !== id));
 
@@ -202,97 +155,6 @@ export const GradeBookView: React.FC = () => {
   const avg = entries.length ? Math.round(entries.reduce((s, e) => s + e.percentage, 0) / entries.length) : 0;
   const mastered = entries.filter(e => e.percentage >= 80).length;
   const atRisk = entries.filter(e => e.percentage < 60).length;
-
-  // ── Early Warning: students with ≥3 results below 50% ──
-  const studentGroups = entries.reduce<Record<string, GradeEntry[]>>((acc, e) => {
-    if (!acc[e.studentName]) acc[e.studentName] = [];
-    acc[e.studentName].push(e);
-    return acc;
-  }, {});
-
-  const earlyWarningStudents = Object.entries(studentGroups)
-    .filter(([, se]) => se.filter(e => e.percentage < 50).length >= 3)
-    .map(([name, se]) => ({
-      name,
-      lowCount: se.filter(e => e.percentage < 50).length,
-      avgPct: Math.round(se.reduce((sum, e) => sum + e.percentage, 0) / se.length),
-      tests: se.map(e => `${e.testTitle}: ${e.percentage}%`),
-    }))
-    .filter(s => !dismissedWarnings.includes(s.name));
-
-  const getParentUrl = (studentName: string) =>
-    `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}`;
-
-  const handleCopyParentLink = (studentName: string) => {
-    navigator.clipboard.writeText(getParentUrl(studentName)).then(() => {
-      setCopiedParent(studentName);
-      setShareMenuStudent(null);
-      addNotification(`Линк за родител на ${studentName} е копиран!`, 'success');
-      setTimeout(() => setCopiedParent(null), 2500);
-    }).catch(() => addNotification('Не можевме да го копираме линкот.', 'error'));
-  };
-
-  const handleShareWhatsApp = (studentName: string, avgPct?: number, tests?: string[]) => {
-    const url = getParentUrl(studentName);
-    const lines = [
-      `📚 *MisMath — Извештај за ученик*`,
-      `Ученик: *${studentName}*`,
-      avgPct !== undefined ? `Просечен успех: *${avgPct}%*` : '',
-      tests && tests.length > 0
-        ? `Последни резултати:\n${tests.slice(0, 3).map(t => `  • ${t}`).join('\n')}`
-        : '',
-      `\n🔗 Прегледај го целосниот извештај:\n${url}`,
-    ].filter(Boolean).join('\n');
-    window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, '_blank', 'noopener');
-    setShareMenuStudent(null);
-  };
-
-  const handleShareViber = (studentName: string, avgPct?: number, tests?: string[]) => {
-    const url = getParentUrl(studentName);
-    const lines = [
-      `📚 MisMath — Извештај за ученик`,
-      `Ученик: ${studentName}`,
-      avgPct !== undefined ? `Просечен успех: ${avgPct}%` : '',
-      tests && tests.length > 0
-        ? `Последни резултати: ${tests.slice(0, 2).join(', ')}`
-        : '',
-      `Прегледај го извештајот: ${url}`,
-    ].filter(Boolean).join('\n');
-    window.open(`viber://forward?text=${encodeURIComponent(lines)}`, '_blank', 'noopener');
-    setShareMenuStudent(null);
-  };
-
-  // legacy alias kept for table-row icon
-  const handleShareParent = (studentName: string) => {
-    setShareMenuStudent(prev => prev === studentName ? null : studentName);
-  };
-
-  const handleIntervention = async (studentName: string, tests: string[]) => {
-    setLoadingIntervention(studentName);
-    setExpandedWarning(studentName);
-    try {
-      const { geminiService } = await import('../services/geminiService');
-      const prompt = `Наставник по математика, одделение ${gradeLevel} (${className || 'класа'}), пријавува ученик "${studentName}" со следниве резултати: ${tests.join(', ')}.
-
-Ученикот има ≥3 резултати под 50%. Генерирај конкретен план за интервенција (4-5 точки) на македонски јазик. Вклучи:
-1. Можни причини за слабиот успех
-2. Диференцирани стратегии за поддршка
-3. Препорака за родителска средба
-4. Конкретна активност за следниот час
-
-Биди практичен и охрабрувачки.`;
-
-      let text = '';
-      for await (const chunk of geminiService.getChatResponseStream([{ role: 'user', text: prompt }])) {
-        text += chunk;
-        if (isMounted.current) setWarningIntervention(prev => ({ ...prev, [studentName]: text }));
-      }
-    } catch {
-      if (isMounted.current) setWarningIntervention(prev => ({ ...prev, [studentName]: 'Грешка при генерирање на планот.' }));
-    } finally {
-      if (isMounted.current) setLoadingIntervention(null);
-    }
-  };
 
   const modelMeta = GRADE_MODELS.find(m => m.id === activeModel)!;
 
@@ -375,207 +237,18 @@ export const GradeBookView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Early Warning Panel ── */}
-      {earlyWarningStudents.length > 0 && (
-        <div className="rounded-2xl border-2 border-red-200 bg-red-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-red-100 bg-red-100/50">
-            <div className="w-9 h-9 bg-red-500 text-white rounded-xl flex items-center justify-center flex-shrink-0">
-              <Zap className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-black text-red-900 flex items-center gap-2">
-                Рано предупредување — {earlyWarningStudents.length} {earlyWarningStudents.length === 1 ? 'ученик' : 'ученици'} во ризик
-              </h3>
-              <p className="text-xs text-red-700 mt-0.5">≥3 резултати под 50% · препорачана педагошка интервенција</p>
-            </div>
-            <span className="text-[10px] bg-red-200 text-red-800 font-bold px-2 py-1 rounded-full uppercase tracking-wider flex-shrink-0">
-              AI Early Warning
-            </span>
-          </div>
-
-          <div className="p-4 space-y-3">
-            {earlyWarningStudents.map(student => {
-              const isExpanded = expandedWarning === student.name;
-              const intervention = warningIntervention[student.name];
-              const loading = loadingIntervention === student.name;
-              return (
-                <div key={student.name} className="bg-white rounded-xl border border-red-100 overflow-hidden">
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900">{student.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {student.lowCount} резултати под 50% · Просек: <span className="font-bold text-red-600">{student.avgPct}%</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleShareWhatsApp(student.name, student.avgPct, student.tests)}
-                        title="Сподели на WhatsApp"
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-all"
-                      >
-                        <MessageCircle className="w-3 h-3" />
-                        WA
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleShareViber(student.name, student.avgPct, student.tests)}
-                        title="Сподели на Viber"
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold rounded-lg hover:bg-violet-100 transition-all"
-                      >
-                        <Smartphone className="w-3 h-3" />
-                        Viber
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyParentLink(student.name)}
-                        title="Копирај линк"
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-all"
-                      >
-                        {copiedParent === student.name ? <Copy className="w-3 h-3 text-green-600" /> : <Share2 className="w-3 h-3" />}
-                        {copiedParent === student.name ? '✓' : 'Линк'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleIntervention(student.name, student.tests)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all"
-                      >
-                        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
-                        Интервенција
-                      </button>
-                      {intervention && (
-                        <button
-                          type="button"
-                          title={isExpanded ? 'Сокриј' : 'Прикажи'}
-                          aria-label={isExpanded ? 'Сокриј план за интервенција' : 'Прикажи план за интервенција'}
-                          onClick={() => setExpandedWarning(isExpanded ? null : student.name)}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        title="Отфрли предупредување"
-                        aria-label="Отфрли предупредување за ученик"
-                        onClick={() => setDismissedWarnings(prev => [...prev, student.name])}
-                        className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Intervention plan */}
-                  {(loading || intervention) && isExpanded && (
-                    <div className="px-4 pb-4">
-                      <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                        {loading && !intervention ? (
-                          <div className="flex items-center gap-2 text-red-600 text-sm">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            AI подготвува план за интервенција…
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-[10px] font-bold text-red-700 uppercase tracking-wider mb-2 flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-amber-500" /> AI План за педагошка интервенција
-                            </p>
-                            <p className="text-sm text-red-900 leading-relaxed whitespace-pre-wrap">{intervention}</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Test breakdown */}
-                  <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                    {student.tests.map((t) => (
-                      <span key={t} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">{t}</span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <EarlyWarningPanel entries={entries} gradeLevel={gradeLevel} className={className} sharing={sharing} />
 
       {/* Add entry form */}
       <Card className="p-5 space-y-3">
         <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
           <Plus className="w-4 h-4" /> Додај резултат
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="md:col-span-2 space-y-1">
-            <input type="text" value={newName} onChange={e => { setNewName(e.target.value); setFormErrors(p => ({ ...p, name: '' })); }}
-              placeholder="Име на ученик" aria-label="Име на ученик"
-              className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.name ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-            {formErrors.name && <p className="text-[11px] text-red-500 px-1">{formErrors.name}</p>}
-          </div>
-          <div className="space-y-1">
-            <input type="text" value={newTestTitle} onChange={e => { setNewTestTitle(e.target.value); setFormErrors(p => ({ ...p, testTitle: '' })); }}
-              placeholder="Наслов на тест" aria-label="Наслов на тест"
-              className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.testTitle ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-            {formErrors.testTitle && <p className="text-[11px] text-red-500 px-1">{formErrors.testTitle}</p>}
-          </div>
-          <div className="space-y-1">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <input type="number" value={newRaw} onChange={e => { setNewRaw(e.target.value); setFormErrors(p => ({ ...p, raw: '' })); }}
-                  placeholder="Поени" aria-label="Освоени поени" min={0}
-                  className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.raw ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-              </div>
-              <span className="self-center text-gray-400 font-bold">/</span>
-              <div className="flex-1">
-                <input type="number" value={newMax} onChange={e => { setNewMax(e.target.value); setFormErrors(p => ({ ...p, max: '' })); }}
-                  placeholder="Макс" aria-label="Максимум поени" min={1}
-                  className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.max ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-              </div>
-            </div>
-            {(formErrors.raw || formErrors.max) && <p className="text-[11px] text-red-500 px-1">{formErrors.raw || formErrors.max}</p>}
-          </div>
-          <button type="button" onClick={addEntry}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-all">
-            <Plus className="w-4 h-4" /> Додај
-          </button>
-        </div>
-        {/* S99.1 — SBG БРО standard tagging row */}
-        {activeModel === 'sbg' && gradeLevel <= 9 && (
-          <div className="flex flex-wrap gap-3 items-end border-t border-purple-100 pt-3">
-            <div className="flex-1 min-w-[180px] space-y-1">
-              <label className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">БРО Стандард (опц.)</label>
-              <select
-                value={sbgStandardCode}
-                onChange={e => setSbgStandardCode(e.target.value)}
-                aria-label="Избери БРО стандард"
-                className="w-full border border-purple-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-purple-400"
-              >
-                <option value="">— Избери стандард —</option>
-                {MATH_STANDARDS.map(s => (
-                  <option key={s.code} value={s.code}>{s.code}: {s.description.slice(0, 60)}…</option>
-                ))}
-              </select>
-            </div>
-            {sbgStandardCode && (
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">Профициенција (1–4)</label>
-                <div className="flex gap-1">
-                  {([1, 2, 3, 4] as const).map(n => (
-                    <button key={n} type="button"
-                      onClick={() => setSbgProficiency(n)}
-                      className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${sbgProficiency === n ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'}`}
-                    >{n}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <p className="hidden sm:block text-[10px] text-gray-400 self-end">4=Одличен · 3=Задоволителен · 2=Во напредок · 1=Под очекувањата</p>
-          </div>
-        )}
+        <NewEntryForm
+          activeModel={activeModel}
+          gradeLevel={gradeLevel}
+          onAdd={entry => setEntries(prev => [...prev, entry])}
+        />
       </Card>
 
       {/* Entries table */}
@@ -655,31 +328,31 @@ export const GradeBookView: React.FC = () => {
                         <div className="flex items-center gap-1 relative">
                           <button
                             type="button"
-                            onClick={() => setShareMenuStudent(prev => prev === e.studentName ? null : e.studentName)}
+                            onClick={() => sharing.setShareMenuStudent(prev => prev === e.studentName ? null : e.studentName)}
                             title="Сподели со родител"
                             aria-label="Сподели со родител"
                             className="p-1.5 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
                           >
                             <Share2 className="w-3.5 h-3.5" />
                           </button>
-                          {shareMenuStudent === e.studentName && (
+                          {sharing.shareMenuStudent === e.studentName && (
                             <div className="absolute right-6 top-0 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-[130px]"
-                              onMouseLeave={() => setShareMenuStudent(null)}>
+                              onMouseLeave={() => sharing.setShareMenuStudent(null)}>
                               <button type="button"
-                                onClick={() => handleShareWhatsApp(e.studentName)}
+                                onClick={() => sharing.handleShareWhatsApp(e.studentName)}
                                 className="flex items-center gap-2 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50 rounded-lg font-semibold transition-colors">
                                 <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                               </button>
                               <button type="button"
-                                onClick={() => handleShareViber(e.studentName)}
+                                onClick={() => sharing.handleShareViber(e.studentName)}
                                 className="flex items-center gap-2 px-3 py-1.5 text-xs text-violet-700 hover:bg-violet-50 rounded-lg font-semibold transition-colors">
                                 <Smartphone className="w-3.5 h-3.5" /> Viber
                               </button>
                               <button type="button"
-                                onClick={() => handleCopyParentLink(e.studentName)}
+                                onClick={() => sharing.handleCopyParentLink(e.studentName)}
                                 className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg font-semibold transition-colors">
                                 <Copy className="w-3.5 h-3.5" />
-                                {copiedParent === e.studentName ? 'Копирано!' : 'Копирај линк'}
+                                {sharing.copiedParent === e.studentName ? 'Копирано!' : 'Копирај линк'}
                               </button>
                             </div>
                           )}
@@ -718,56 +391,15 @@ export const GradeBookView: React.FC = () => {
         </div>
       )}
 
-      {/* Hidden gradebook print shell */}
-      <div className="absolute -left-[9999px] top-0">
-        <PrintShell
-          ref={gradebookPrintRef}
-          title="Електронска тетратка за оценување"
-          subtitle={`${className || 'Класа'} · ${gradeLevel}. одделение · Математика`}
-          grade={gradeLevel}
-          subject="Математика"
-        >
-          <table className="w-full border-collapse text-[9pt]">
-            <thead>
-              <tr className="print-header-bg">
-                <th className="border border-gray-600 px-2 py-1 text-left font-bold">#</th>
-                <th className="border border-gray-600 px-2 py-1 text-left font-bold">Ученик</th>
-                <th className="border border-gray-600 px-2 py-1 text-left font-bold">Тест</th>
-                <th className="border border-gray-600 px-2 py-1 text-center font-bold">%</th>
-                <th className="border border-gray-600 px-2 py-1 text-center font-bold">Оценка</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e, idx) => {
-                const grade = e.percentage >= 85 ? 5 : e.percentage >= 75 ? 4 : e.percentage >= 65 ? 3 : e.percentage >= 50 ? 2 : 1;
-                return (
-                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border border-gray-400 px-2 py-1 text-center text-gray-500">{idx + 1}</td>
-                    <td className="border border-gray-400 px-2 py-1 font-medium">{e.studentName}</td>
-                    <td className="border border-gray-400 px-2 py-1 text-gray-700">{e.testTitle}</td>
-                    <td className="border border-gray-400 px-2 py-1 text-center font-bold">{e.percentage}%</td>
-                    <td className="border border-gray-400 px-2 py-1 text-center font-black text-lg">{grade}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="print-header-bg font-bold">
-                <td colSpan={3} className="border border-gray-600 px-2 py-1 text-right">Просек на класата:</td>
-                <td className="border border-gray-600 px-2 py-1 text-center">{avg}%</td>
-                <td className="border border-gray-600 px-2 py-1 text-center">
-                  {avg >= 85 ? 5 : avg >= 75 ? 4 : avg >= 65 ? 3 : avg >= 50 ? 2 : 1}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-          <div className="mt-4 text-[8pt] text-gray-600">
-            <span className="font-bold">Вкупно ученици:</span> {entries.length} &nbsp;·&nbsp;
-            <span className="font-bold">Совладале (≥80%):</span> {mastered} &nbsp;·&nbsp;
-            <span className="font-bold">Во ризик (&lt;60%):</span> {atRisk}
-          </div>
-        </PrintShell>
-      </div>
+      <GradebookPrintShell
+        ref={gradebookPrintRef}
+        entries={entries}
+        className={className}
+        gradeLevel={gradeLevel}
+        avg={avg}
+        mastered={mastered}
+        atRisk={atRisk}
+      />
 
       {/* S99.1 БРО Coverage Panel — SBG mode only */}
       {activeModel === 'sbg' && entries.length > 0 && (
@@ -837,7 +469,6 @@ export const GradeBookView: React.FC = () => {
       {showMobileEntry && (
         <MobileGradeEntryModal
           existingEntries={entries}
-          defaultTestTitle={newTestTitle}
           onAdd={(name, testTitle, raw, max) => {
             const pct = Math.round((raw / max) * 100);
             const entry: GradeEntry = {

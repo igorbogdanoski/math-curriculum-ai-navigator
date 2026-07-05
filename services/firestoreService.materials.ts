@@ -241,6 +241,7 @@ export const fetchUnapprovedQuestions = async (): Promise<SavedQuestion[]> => {
       const q = query(
         collection(db, 'saved_questions'),
         where('isApproved', '==', false),
+        orderBy('savedAt', 'desc'),
         limit(200)
       );
       const snap = await getDocs(q);

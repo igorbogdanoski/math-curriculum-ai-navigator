@@ -10,10 +10,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  collection, query, where, onSnapshot,
+  collection, query, where, onSnapshot, limit,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+
+// Caps each listener so a very active teacher's history can't grow this into an
+// unbounded read — a nav badge only needs recent-ish activity, not full history.
+const UNREAD_LISTENER_CAP = 300;
 
 const STORAGE_KEY = 'forum_last_visit_ms';
 
@@ -75,11 +79,13 @@ export function useForumUnreadCount(teacherUid: string | null): number {
     const ownThreadsQuery = query(
       collection(db, 'forum_threads'),
       where('authorUid', '==', teacherUid),
+      limit(UNREAD_LISTENER_CAP),
     );
 
     const participantThreadsQuery = query(
       collection(db, 'forum_threads'),
       where('participantUids', 'array-contains', teacherUid),
+      limit(UNREAD_LISTENER_CAP),
     );
 
     unsubRef.current = onSnapshot(ownThreadsQuery, snap => {

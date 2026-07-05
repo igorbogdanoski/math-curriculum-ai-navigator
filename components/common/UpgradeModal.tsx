@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Check, Crown, Users, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppError, ErrorCode } from '../../utils/errors';
+import { ModalContainer } from './ModalContainer';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -41,12 +42,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col md:flex-row overflow-hidden border border-purple-100">
+    <ModalContainer onClose={onClose}>
+      <div className="relative flex flex-col md:flex-row max-h-[90vh] overflow-y-auto border border-purple-100 rounded-2xl">
 
         {/* Close */}
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Затвори"
           className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-700 bg-white/50 backdrop-blur-sm rounded-full p-1"
         >
           <X className="w-6 h-6" />
@@ -161,6 +164,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
           </div>
         </div>
       </div>
-    </div>
+    </ModalContainer>
   );
 };
