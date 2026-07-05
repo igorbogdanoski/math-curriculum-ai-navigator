@@ -55,6 +55,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     { id: 'VIDEO_EXTRACTOR', label: 'Video Extractor (MVP)', icon: 'gallery' },
     { id: 'IMAGE_EXTRACTOR', label: 'Image Extractor (НОВО)', icon: 'gallery' },
     { id: 'WEB_EXTRACTOR', label: 'Web Extractor (НОВО)', icon: 'gallery' },
+    { id: 'DOCUMENT_EXTRACTOR', label: 'Document Extractor (НОВО)', icon: 'gallery' },
     { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' },
   ];
 

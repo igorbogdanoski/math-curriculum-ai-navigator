@@ -365,6 +365,80 @@ export function useMainGenerate({
             }
             break;
           }
+          case 'DOCUMENT_EXTRACTOR': {
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Document Extractor');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Document Extractor');
+            if (!state.webpageText) throw new ValidationError('Документ', 'прикачете PDF/DOCX документ за извлекување');
+            {
+              const rawDocText = state.webpageText;
+              const docMeta = state.webpageExtractMeta;
+              const topicTitle = sanitizePromptInput(finalContext.topic?.title ?? 'Математика', 120);
+              const gradeLevel = finalContext.grade?.level ?? 1;
+              const conceptsList = finalContext.concepts?.map(c => c.title).join(', ') || '';
+
+              const safeDocText = rawDocText
+                ? sanitizePromptInput(rawDocText.slice(0, 6000), 6000)
+                : null;
+
+              const docContext = [
+                '=== ПРИКАЧЕН ДОКУМЕНТ ===',
+                docMeta?.sourceUrls?.length ? `ДОКУМЕНТИ: ${docMeta.sourceUrls.join(' | ')}` : '',
+                `Тема: ${topicTitle}`,
+                conceptsList ? `Концепти: ${conceptsList}` : '',
+                safeDocText
+                  ? `\n=== ИЗВЛЕЧЕНА СОДРЖИНА ОД ДОКУМЕНТ ===\n${safeDocText}\n=== КРАЈ НА СОДРЖИНА ===\n\nИнструкција: анализирај ја извлечената содржина погоре и идентификувај ги математичките концепти, задачи и теорија. Креирај детален наставен материјал базиран на ВИСТИНСКАТА содржина.`
+                  : '\nИнструкција: нема извлечена содржина — генерирај материјал врз основа на темата.',
+              ].filter(Boolean).join('\n');
+
+              const combinedInstruction = [effectiveInstruction, docContext].filter(Boolean).join('\n\n');
+              result = await geminiService.generateLessonPlanIdeas(
+                finalContext.concepts || [],
+                finalContext.topic,
+                gradeLevel,
+                user ?? undefined,
+                { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
+                combinedInstruction,
+              );
+              if (result && 'openingActivity' in result) {
+                const extractionBundle = buildExtractionBundle(safeDocText ?? '');
+                const mappedConceptIds = inferConceptIdsFromExtraction(
+                  extractionBundle,
+                  allConcepts,
+                  finalContext.concepts?.map(c => c.id) ?? [],
+                );
+                const extractionQuality = evaluateExtractionQuality(extractionBundle, {
+                  textLength: safeDocText?.length ?? 0,
+                  truncated: docMeta?.truncated,
+                });
+                (result as AIGeneratedIdeas).extractionBundle = extractionBundle;
+                (result as AIGeneratedIdeas).sourceMeta = {
+                  sourceType: 'web',
+                  sourceUrls: docMeta?.sourceUrls,
+                  conceptIds: mappedConceptIds,
+                  topicId: finalContext.topic?.id,
+                  gradeLevel,
+                  secondaryTrack: user?.secondaryTrack,
+                  extractionQuality,
+                };
+
+                await persistExtractionArtifact({
+                  sourceType: 'web',
+                  sourceUrls: docMeta?.sourceUrls,
+                  extractedText: safeDocText ?? '',
+                  extractionBundle,
+                  quality: {
+                    score: extractionQuality.score,
+                    label: extractionQuality.label,
+                    truncated: docMeta?.truncated,
+                  },
+                  gradeLevel,
+                  topicId: finalContext.topic?.id,
+                  conceptIds: mappedConceptIds,
+                });
+              }
+            }
+            break;
+          }
           case 'VIDEO_EXTRACTOR':
             if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Video Extractor');
             if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Video Extractor');
@@ -482,7 +556,7 @@ export function useMainGenerate({
         if (mt === 'QUIZ' || mt === 'ASSESSMENT') {
           trackFirstTimeEvent(firebaseUser.uid, 'first_quiz_generated', { materialType: mt });
         }
-        if (mt === 'IMAGE_EXTRACTOR' || mt === 'WEB_EXTRACTOR' || mt === 'VIDEO_EXTRACTOR') {
+        if (mt === 'IMAGE_EXTRACTOR' || mt === 'WEB_EXTRACTOR' || mt === 'VIDEO_EXTRACTOR' || mt === 'DOCUMENT_EXTRACTOR') {
           trackFirstTimeEvent(firebaseUser.uid, 'first_extraction_run', { sourceType: mt });
         }
         trackEvent(`feature_open_generator_${String(mt ?? 'unknown').toLowerCase()}`);
@@ -514,7 +588,7 @@ export function useMainGenerate({
       extractionContent = state.videoTranscript
         ? sanitizePromptInput(state.videoTranscript.slice(0, 6000), 6000)
         : (state.videoPreview?.title ?? '');
-    } else if (sourceType === 'WEB_EXTRACTOR') {
+    } else if (sourceType === 'WEB_EXTRACTOR' || sourceType === 'DOCUMENT_EXTRACTOR') {
       extractionContent = state.webpageText
         ? sanitizePromptInput(state.webpageText.slice(0, 6000), 6000)
         : '';

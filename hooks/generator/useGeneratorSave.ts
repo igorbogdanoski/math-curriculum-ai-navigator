@@ -84,7 +84,7 @@ export function useGeneratorSave({
       const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
       const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
         QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
-        SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas',
+        SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas', DOCUMENT_EXTRACTOR: 'ideas',
         LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas',
       };
       const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'assessment';

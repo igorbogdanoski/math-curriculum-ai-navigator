@@ -177,11 +177,11 @@ export function useGeneratorContext({
   const isGenerateDisabled = useMemo(() => {
     const { contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile,
       materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, videoUrl,
-      webpageUrl, bloomDistribution } = state;
+      webpageUrl, webpageText, bloomDistribution } = state;
     if (isGenerating || isGeneratingBulk || isGeneratingVariants || !isOnline) return true;
 
-    // Extractor types (VIDEO/IMAGE/WEB) only need grade+topic, not selectedConcepts
-    const EXTRACTOR_TYPES = ['VIDEO_EXTRACTOR', 'IMAGE_EXTRACTOR', 'WEB_EXTRACTOR'] as const;
+    // Extractor types (VIDEO/IMAGE/WEB/DOCUMENT) only need grade+topic, not selectedConcepts
+    const EXTRACTOR_TYPES = ['VIDEO_EXTRACTOR', 'IMAGE_EXTRACTOR', 'WEB_EXTRACTOR', 'DOCUMENT_EXTRACTOR'] as const;
     const isExtractorType = EXTRACTOR_TYPES.includes(materialType as typeof EXTRACTOR_TYPES[number]);
 
     if (!isExtractorType) {
@@ -210,6 +210,7 @@ export function useGeneratorContext({
     if (materialType === 'VIDEO_EXTRACTOR' && !videoUrl.trim()) return true;
     if (materialType === 'IMAGE_EXTRACTOR' && !imageFile) return true;
     if (materialType === 'WEB_EXTRACTOR' && !webpageUrl.trim()) return true;
+    if (materialType === 'DOCUMENT_EXTRACTOR' && !webpageText) return true;
     return false;
   }, [isGenerating, isGeneratingBulk, isGeneratingVariants, isOnline, state]);
 

@@ -259,7 +259,7 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
         <div className="mt-6 flex flex-col gap-4">
 
           {/* B5: Extraction → Generator pre-fill panel */}
-          {(state.materialType === 'VIDEO_EXTRACTOR' || state.materialType === 'IMAGE_EXTRACTOR' || state.materialType === 'WEB_EXTRACTOR') && (
+          {(state.materialType === 'VIDEO_EXTRACTOR' || state.materialType === 'IMAGE_EXTRACTOR' || state.materialType === 'WEB_EXTRACTOR' || state.materialType === 'DOCUMENT_EXTRACTOR') && (
             <div className="p-4 bg-gradient-to-r from-cyan-50 to-teal-50 border border-cyan-200 rounded-2xl">
               <p className="text-xs font-black text-cyan-800 uppercase tracking-widest mb-1">Содржината е извлечена!</p>
               <p className="text-sm text-cyan-700 mb-3">Избери тип на материјал за да генерираш врз основа на оваа содржина:</p>

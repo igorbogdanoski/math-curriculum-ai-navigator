@@ -28,6 +28,7 @@ const MATERIAL_DISPLAY: Partial<Record<string, { emoji: string; name: string }>>
   VIDEO_EXTRACTOR: { emoji: '🎬', name: 'Video Extractor (MVP)' },
   IMAGE_EXTRACTOR: { emoji: '📸', name: 'Image Extractor' },
   WEB_EXTRACTOR:   { emoji: '🌐', name: 'Web Extractor' },
+  DOCUMENT_EXTRACTOR: { emoji: '📄', name: 'Document Extractor' },
 };
 
 const EXAMPLE_PROMPTS = [
@@ -72,6 +73,7 @@ Available types and when to use each:
 - VIDEO_EXTRACTOR: teacher pastes video URL, gets preview + extracted lesson scenario
 - IMAGE_EXTRACTOR: teacher uploads image (textbook page, whiteboard photo, handwriting) and AI extracts tasks and generates lesson material
 - WEB_EXTRACTOR: teacher pastes URL of a math website/article, server fetches it, AI analyzes the real text and generates lesson material
+- DOCUMENT_EXTRACTOR: teacher uploads one or more PDF/DOCX documents (e.g. a textbook chapter or worksheet), AI extracts tasks and generates lesson material
 
 Teacher's request: "${safeInput}"
 

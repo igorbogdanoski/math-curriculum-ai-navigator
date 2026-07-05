@@ -87,6 +87,13 @@ export const MATERIAL_META: Record<string, MaterialMeta> = {
     timeEst: '~3 мин', tags: ['URL', 'Веб'],
     badge: 'НОВО', badgeColor: 'bg-teal-100 text-teal-700 border-teal-200',
   },
+  DOCUMENT_EXTRACTOR: {
+    emoji: '📄', category: 'extract',
+    description: 'Прикачи PDF или DOCX документ — AI ги извлекува задачите, дури и од повеќе фајлови',
+    features: ['PDF и DOCX анализа', 'Поддршка за повеќестрани документи', 'Batch: повеќе фајлови истовремено', 'Автоматско извлекување на задачи'],
+    timeEst: '~3 мин', tags: ['PDF', 'DOCX'],
+    badge: 'НОВО', badgeColor: 'bg-sky-100 text-sky-700 border-sky-200',
+  },
   VIDEO_EXTRACTOR: {
     emoji: '🎬', category: 'extract',
     description: 'Внеси видео URL, потврди preview и генерирај наставно сценарио',

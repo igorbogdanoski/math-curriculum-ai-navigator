@@ -11,7 +11,7 @@ export const DOK_META = {
 
 export type DokLevel = 1 | 2 | 3 | 4;
 
-export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR' | 'WEB_EXTRACTOR';
+export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR' | 'WEB_EXTRACTOR' | 'DOCUMENT_EXTRACTOR';
 
 export interface PresentationSlide {
   title: string;

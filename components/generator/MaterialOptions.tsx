@@ -10,6 +10,7 @@ import { LearningPathOptions }  from './options/LearningPathOptions';
 import { VideoExtractorOptions } from './options/VideoExtractorOptions';
 import { ImageExtractorOptions } from './options/ImageExtractorOptions';
 import { WebExtractorOptions }  from './options/WebExtractorOptions';
+import { DocumentExtractorOptions } from './options/DocumentExtractorOptions';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
@@ -30,6 +31,7 @@ export const MaterialOptions: React.FC<MaterialOptionsProps> = ({ state, dispatc
     if (materialType === 'VIDEO_EXTRACTOR')  return <VideoExtractorOptions state={state} dispatch={dispatch} />;
     if (materialType === 'IMAGE_EXTRACTOR')  return <ImageExtractorOptions state={state} dispatch={dispatch} />;
     if (materialType === 'WEB_EXTRACTOR')    return <WebExtractorOptions   state={state} dispatch={dispatch} />;
+    if (materialType === 'DOCUMENT_EXTRACTOR') return <DocumentExtractorOptions state={state} dispatch={dispatch} />;
 
     return null;
 };
