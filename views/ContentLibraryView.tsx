@@ -1,7 +1,7 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, Globe, Lock, RefreshCw, Search, Sparkles, Archive, Loader2 } from 'lucide-react';
-import { firestoreService, type CachedMaterial, fetchLibraryPage } from '../services/firestoreService';
+import { firestoreService, type CachedMaterial, fetchLibraryPage, fetchGlobalLibraryPage, getCachedMaterialById } from '../services/firestoreService';
 import { shareService } from '../services/shareService';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
@@ -87,7 +87,10 @@ export const ContentLibraryView: React.FC = () => {
             if (viewMode === 'archive') {
                 data = await firestoreService.fetchArchivedMaterials(firebaseUser.uid);
             } else if (viewMode === 'national') {
-                data = await firestoreService.fetchGlobalLibraryMaterials();
+                const page = await fetchGlobalLibraryPage(50);
+                data = page.items;
+                setHasMoreMaterials(page.hasMore);
+                setLastMaterialDoc(page.lastDoc);
             } else {
                 const page = await fetchLibraryPage(firebaseUser.uid, 50);
                 data = page.items;
@@ -111,10 +114,13 @@ export const ContentLibraryView: React.FC = () => {
     };
 
     const loadMore = async () => {
-        if (!firebaseUser?.uid || !lastMaterialDoc || loadingMore) return;
+        if (!lastMaterialDoc || loadingMore) return;
+        if (viewMode === 'my' && !firebaseUser?.uid) return;
         setLoadingMore(true);
         try {
-            const page = await fetchLibraryPage(firebaseUser.uid, 50, lastMaterialDoc);
+            const page = viewMode === 'national'
+                ? await fetchGlobalLibraryPage(50, lastMaterialDoc)
+                : await fetchLibraryPage(firebaseUser!.uid, 50, lastMaterialDoc);
             setMaterials(prev => {
                 const existingIds = new Set(prev.map(m => m.id));
                 return [...prev, ...page.items.filter(m => !existingIds.has(m.id))];
@@ -129,6 +135,21 @@ export const ContentLibraryView: React.FC = () => {
     };
 
     useEffect(() => { load(); }, [firebaseUser?.uid, viewMode]);
+
+    // Deep-link support: /content-library?id=X (e.g. the "Прегледај" button on a past-material
+    // card in the lesson-plan editor's resource hub, components/lesson-plan-editor/LessonResourceHub.tsx)
+    // opens that specific material's preview directly, regardless of which page/viewMode is loaded —
+    // the linked material may not even be on the first page of the "my" tab.
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('id');
+        if (!id) return;
+        let cancelled = false;
+        getCachedMaterialById(id)
+            .then(material => { if (!cancelled && material) setPreviewMaterial(material); })
+            .catch(() => { /* non-fatal — deep-link just doesn't open the preview */ });
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Wave B2 — clear selection when view mode changes
     useEffect(() => {
@@ -726,7 +747,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         />
                     ))}
 
-                    {viewMode === 'my' && hasMoreMaterials && (
+                    {(viewMode === 'my' || viewMode === 'national') && hasMoreMaterials && (
                         <div className="flex justify-center pt-4 pb-2">
                             <button
                                 type="button"

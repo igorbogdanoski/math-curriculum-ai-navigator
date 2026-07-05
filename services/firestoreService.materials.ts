@@ -519,23 +519,29 @@ export const getCachedMaterialById = async (id: string): Promise<CachedMaterial 
     }
 };
 
-export const fetchGlobalLibraryMaterials = async (): Promise<CachedMaterial[]> => {
-    try {
-      const q = query(
-        collection(db, 'cached_ai_materials'),
-        where('status', '==', 'published'),
-        limit(200)
-      );
-      const snap = await getDocs(q);
-      // Filter client-side: exclude materials explicitly marked private (isPublic === false)
-      return snap.docs
-        .map(d => ({ id: d.id, ...d.data() } as CachedMaterial))
-        .filter(m => m.isPublic !== false);
-    } catch (error) {
-      logger.error('Error fetching global library materials:', error);
-      return [];
-    }
-  };
+/**
+ * Cursor-paginated fetch for the "national" library tab. Previously a single
+ * `limit(200)` with no `orderBy` at all — which 200-of-N published materials came back
+ * was undefined/non-reproducible, not even "most recent". Now ordered by newest first
+ * and paginated the same way fetchLibraryPage already is, via the shared firestorePage helper.
+ */
+export const fetchGlobalLibraryPage = async (
+    pageSize = 50,
+    cursor?: QueryDocumentSnapshot,
+): Promise<{ items: CachedMaterial[]; hasMore: boolean; lastDoc: QueryDocumentSnapshot | null }> => {
+    return firestorePage<CachedMaterial>({
+        collectionName: 'cached_ai_materials',
+        constraints: [
+            where('status', '==', 'published'),
+            orderBy('createdAt', 'desc'),
+        ],
+        pageSize,
+        cursor,
+        // Exclude materials explicitly marked private (isPublic === false)
+        filter: (m) => m.isPublic !== false,
+        errorTag: 'global library',
+    });
+};
 
 export const publishMaterial = async (id: string): Promise<void> => {
     await updateDoc(doc(db, 'cached_ai_materials', id), { status: 'published' });

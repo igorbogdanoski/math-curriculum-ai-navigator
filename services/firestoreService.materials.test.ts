@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { buildAIMaterialFeedbackSummaryFromEvents } from './firestoreService.materials';
+import { describe, it, expect, vi } from 'vitest';
+import { buildAIMaterialFeedbackSummaryFromEvents, fetchGlobalLibraryPage } from './firestoreService.materials';
+import { firestorePage } from './firestorePagination';
+
+vi.mock('./firestorePagination', () => ({ firestorePage: vi.fn() }));
 
 describe('buildAIMaterialFeedbackSummaryFromEvents', () => {
   it('aggregates edit/reject/accept counts per material type', () => {
@@ -73,5 +76,32 @@ describe('buildAIMaterialFeedbackSummaryFromEvents', () => {
     expect(assessment.editEvents).toBe(4);
     expect(assessment.rejectEvents).toBe(2);
     expect(assessment.acceptEvents).toBe(3);
+  });
+});
+
+describe('fetchGlobalLibraryPage', () => {
+  it('queries published materials ordered by newest first, filtering out isPublic=false, via the shared pagination helper', async () => {
+    vi.mocked(firestorePage).mockResolvedValueOnce({ items: [], hasMore: false, lastDoc: null });
+
+    await fetchGlobalLibraryPage(25);
+
+    expect(firestorePage).toHaveBeenCalledWith(expect.objectContaining({
+      collectionName: 'cached_ai_materials',
+      pageSize: 25,
+    }));
+    const call = vi.mocked(firestorePage).mock.calls[0][0];
+    // The filter must exclude materials explicitly marked private
+    expect(call.filter!({ isPublic: false } as never)).toBe(false);
+    expect(call.filter!({ isPublic: true } as never)).toBe(true);
+    expect(call.filter!({} as never)).toBe(true);
+  });
+
+  it('threads the cursor through for subsequent pages', async () => {
+    vi.mocked(firestorePage).mockResolvedValueOnce({ items: [], hasMore: false, lastDoc: null });
+    const cursor = { id: 'last' } as never;
+
+    await fetchGlobalLibraryPage(25, cursor);
+
+    expect(firestorePage).toHaveBeenCalledWith(expect.objectContaining({ cursor }));
   });
 });
