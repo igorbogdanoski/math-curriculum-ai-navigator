@@ -52,7 +52,7 @@ async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialTy
     return result;
   },
 
-async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean, dokTarget?: 1 | 2 | 3 | 4 | 'mixed'): Promise<AIGeneratedAssessment> {
+async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean, dokTarget?: 1 | 2 | 3 | 4 | 'mixed', timeoutMs?: number): Promise<AIGeneratedAssessment> {
     const bloomDist = context.bloomDistribution;
     const hasBloom = bloomDist && Object.keys(bloomDist).length > 0;
     let bloomPart = '';
@@ -141,10 +141,10 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         DEFAULT_MODEL, 
         AIGeneratedAssessmentSchema, 
         MAX_RETRIES, 
-        false, 
+        false,
         systemInstr,
       profile?.tier,
-      { temperature: 0.2, topP: 0.9 }
+      { temperature: 0.2, topP: 0.9, timeoutMs }
     );
     const hardenedResult = reinforceFractionKeywords(result, context);
     
@@ -159,6 +159,10 @@ async generateABCTest(
   context: GenerationContext,
   profile?: TeachingProfile,
 ): Promise<{ a: AIGeneratedAssessment; b: AIGeneratedAssessment; c: AIGeneratedAssessment }> {
+  // Longer per-call timeout than a single generateAssessment call — these 3 requests fire
+  // in parallel against the same rate-limited API key pool, so each is more likely to hit
+  // retries/backoff than a lone call, and the default timeout was observed to trip in practice.
+  const ABC_TIMEOUT_MS = 90_000;
   const [a, b, c] = await Promise.all([
     this.generateAssessment(
       'ASSESSMENT',
@@ -170,6 +174,10 @@ async generateABCTest(
       undefined,
       undefined,
       'ВАРИЈАНТА А — ПОДДРШКА: Едноставни прашања со детални упатства. Нека бидат постепени, со многу структура.',
+      undefined,
+      undefined,
+      undefined,
+      ABC_TIMEOUT_MS,
     ),
     this.generateAssessment(
       'ASSESSMENT',
@@ -181,6 +189,10 @@ async generateABCTest(
       undefined,
       undefined,
       'ВАРИЈАНТА Б — СТАНДАРДНО: Прашања на просечно ниво без дополнителни помагала.',
+      undefined,
+      undefined,
+      undefined,
+      ABC_TIMEOUT_MS,
     ),
     this.generateAssessment(
       'ASSESSMENT',
@@ -192,6 +204,10 @@ async generateABCTest(
       undefined,
       undefined,
       'ВАРИЈАНТА В — НАПРЕДНО: Предизвикувачки прашања со повеќечекорно решавање, апликација во реален контекст и критичко размислување.',
+      undefined,
+      undefined,
+      undefined,
+      ABC_TIMEOUT_MS,
     ),
   ]);
   return { a, b, c };

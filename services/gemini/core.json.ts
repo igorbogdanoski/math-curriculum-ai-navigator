@@ -48,14 +48,17 @@ export async function generateAndParseJSON<T>(
   useThinking = false,
   customSystemInstruction?: string,
   userTier?: string,
-  generationOverrides?: { temperature?: number; topP?: number; maxOutputTokens?: number }
+  generationOverrides?: { temperature?: number; topP?: number; maxOutputTokens?: number; timeoutMs?: number }
 ): Promise<T> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         throw new OfflineError('AI generation requires network connection');
     }
     const activeModel = useThinking ? ULTIMATE_MODEL : model;
     const _controller = new AbortController();
-    const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
+    // Higher-fanout callers (e.g. generateABCTest's 3 parallel calls) pass a longer
+    // override — parallel requests contend more for the same rate-limited API keys and
+    // are more likely to hit the default timeout under real load than a single call.
+    const _timeoutId = setTimeout(() => _controller.abort(), generationOverrides?.timeoutMs ?? GENERATION_TIMEOUT_MS);
     try {
       const generationConfig: any = {
         temperature: generationOverrides?.temperature ?? 0.7,
