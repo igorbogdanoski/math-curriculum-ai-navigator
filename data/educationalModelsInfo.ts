@@ -1,4 +1,4 @@
-﻿export const educationalHints = {
+export const educationalHints = {
   pedagogicalModels: {
     "Standard": { title: "Стандарден модел", text: "Основа на креативен и логичен AI предлог без специфична педагошка рамка.", example: "Класичен вовед, главен дел каде се учи формулата и вежби за крај." },
     "5E Model": { title: "5Е Модел", text: "Конструктивистички модел во 5 фази: Engage (Ангажирај), Explore (Истражи), Explain (Објасни), Elaborate (Прошири), Evaluate (Вреднувај).", example: "Учениците прво мерат објекти во училница (истражуваат), пред наставникот да им ја покаже формулата за периметар." },
@@ -34,3 +34,18 @@
     "Диференцијација и персонализација": { text: "Материјалот е прилагоден за ученици со различни нивоа истовремено.", example: "Истата задача понудена во лесна, средна и тешка варијанта (scaffolding)." }
   }
 };
+
+/**
+ * Serializes the pedagogical-models reference into a self-contained text block for
+ * injection into an AI chat's ragContext — includes its own instructions so it reads
+ * correctly regardless of the surrounding wrapper text the caller adds (e.g.
+ * getChatResponseStream's "library materials" framing wasn't written with this
+ * use case in mind, so the block explains itself rather than relying on that wrapper).
+ */
+export function formatPedagogicalModelsReference(): string {
+  const models = Object.values(educationalHints.pedagogicalModels)
+    .map(m => `[${m.title}] ${m.text} Пример: ${m.example}`)
+    .join('\n\n');
+
+  return `=== ПЕДАГОШКИ РЕФЕРЕНТЕН МАТЕРИЈАЛ — МОДЕЛИ НА УЧЕЊЕ ===\nКога наставникот бара препорака за педагошки модел, начин на диференцијација или педагошко збогатување за конкретна ситуација, препорачај ЕДЕН конкретен модел од листата подолу (или комбинација од најмногу два), со јасно образложение зошто токму тој одговара на опишаната ситуација (одделение, тема, бројот на ученици, времето на располагање итн.). Не набројувај ги сите модели — избери го најсоодветниот.\n\n${models}\n=== КРАЈ НА ПЕДАГОШКИ РЕФЕРЕНТЕН МАТЕРИЈАЛ ===`;
+}

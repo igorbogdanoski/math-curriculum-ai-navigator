@@ -13,7 +13,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
-import { BookOpen, Library, X as XIcon, History, Plus, Trash2, Brain } from 'lucide-react';
+import { formatPedagogicalModelsReference } from '../data/educationalModelsInfo';
+import { BookOpen, Library, X as XIcon, History, Plus, Trash2, Brain, GraduationCap } from 'lucide-react';
 
 // Helper: convert File to Base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -123,6 +124,11 @@ export const AssistantView: React.FC = () => {
     const [libraryMode, setLibraryMode] = useState(false);
     const [libraryMaterials, setLibraryMaterials] = useState<CachedMaterial[]>([]);
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+
+    // Pedagogical Advisor mode — grounds answers in data/educationalModelsInfo.ts's
+    // pedagogical-models reference so the assistant can recommend a specific model
+    // for a described classroom situation, not just describe them generically.
+    const [advisorMode, setAdvisorMode] = useState(false);
 
     // Persistent chat history
     const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -339,7 +345,10 @@ export const AssistantView: React.FC = () => {
         const placeholderMsg: EnrichedChatMessage = { role: 'model', text: '', isThinking: true };
         setHistory(prev => [...prev, placeholderMsg]);
 
-        const { sources, ragContext } = await findRelevantMaterials(textToSend);
+        const { sources, ragContext: libraryRagContext } = await findRelevantMaterials(textToSend);
+        const ragContext = [libraryRagContext, advisorMode ? formatPedagogicalModelsReference() : '']
+            .filter(Boolean)
+            .join('\n\n');
 
         try {
             const currentHistory = [...history, newUserMsg];
@@ -525,8 +534,29 @@ export const AssistantView: React.FC = () => {
                                 </span>
                             )}
                         </button>
+                        {/* Pedagogical Advisor mode */}
+                        <button type="button" onClick={() => setAdvisorMode(v => !v)}
+                            title="Прашај за препорака на педагошки модел или збогатување за конкретна ситуација"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border shadow-sm transition-all ${
+                                advisorMode
+                                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
+                            }`}>
+                            <GraduationCap className="w-4 h-4" />
+                            {advisorMode ? 'Педагошки советник ON' : 'Педагошки советник'}
+                        </button>
                     </div>
                 </header>
+
+                {advisorMode && (
+                    <div className="mb-3 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-sm text-emerald-800">
+                        <GraduationCap className="w-4 h-4 flex-shrink-0 text-emerald-500" />
+                        <span><strong>Педагошки советник:</strong> опишете ситуација (одделение, тема, предизвик) и ќе препорачам конкретен педагошки модел.</span>
+                        <button type="button" onClick={() => setAdvisorMode(false)} title="Исклучи педагошки советник" aria-label="Исклучи педагошки советник" className="ml-auto text-emerald-400 hover:text-emerald-700">
+                            <XIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
 
                 {libraryMode && libraryMaterials.length > 0 && (
                     <div className="mb-3 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2 text-sm text-indigo-800">
