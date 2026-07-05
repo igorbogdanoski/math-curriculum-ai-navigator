@@ -92,11 +92,17 @@ export function gradeStudentChart(
   const yRange = Math.max(1e-6, yMax - yMin);
   const absTol = Math.max(1e-6, tol * yRange);
 
+  // Tracks which submitted points have already been counted as a hit, so a single
+  // submitted point can't satisfy multiple expected points (e.g. one point sitting
+  // within numeric-x tolerance of several expected x values would otherwise score
+  // full marks for a mostly-missing dataset).
+  const consumedIndices = new Set<number>();
   let pointHits = 0;
   for (const ep of expectedData) {
-    // Find a submitted point with matching x (string or numeric ~).
+    // Find an unconsumed submitted point with matching x (string or numeric ~).
     const epXNum = toNum(ep.x);
-    const match = submittedData.find(sp => {
+    const matchIndex = submittedData.findIndex((sp, idx) => {
+      if (consumedIndices.has(idx)) return false;
       if (typeof ep.x === 'string') {
         return normalizeLabel(String(sp.x)) === normalizeLabel(ep.x);
       }
@@ -104,10 +110,13 @@ export function gradeStudentChart(
       if (epXNum === undefined || spXNum === undefined) return false;
       return Math.abs(spXNum - epXNum) <= Math.max(1e-6, tol * Math.abs(epXNum || 1));
     });
-    if (!match) continue;
-    const spY = toNum(match.y);
+    if (matchIndex === -1) continue;
+    const spY = toNum(submittedData[matchIndex].y);
     if (spY === undefined) continue;
-    if (Math.abs(spY - ep.y) <= absTol) pointHits++;
+    if (Math.abs(spY - ep.y) <= absTol) {
+      pointHits++;
+      consumedIndices.add(matchIndex);
+    }
   }
 
   const pointScore = pointHits / Math.max(1, expectedData.length);

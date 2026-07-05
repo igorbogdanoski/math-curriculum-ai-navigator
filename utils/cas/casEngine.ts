@@ -27,17 +27,39 @@ export interface CasVerifyResult {
  * Confirmed against a corpus of 900+ real matura correctAnswer values this session —
  * these three rules alone lifted single-expression parse coverage from ~63% to ~69%.
  */
+/**
+ * Converts an unspaced plain decimal comma (e.g. "0,5") to a dot, but only outside
+ * any bracket/brace/paren nesting — so unspaced coordinate/point/interval notation
+ * like "(2,3)", "[2,3]", or "\{2,3\}" is left untouched instead of being silently
+ * misread as the single number 2.3. A spaced comma (e.g. "-2, 2") is never touched
+ * either way, since the digit-immediately-after check fails on whitespace.
+ */
+function normalizeDecimalCommaOutsideGroups(input: string): string {
+  let depth = 0;
+  let result = '';
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === '(' || ch === '{' || ch === '[') depth++;
+    else if (ch === ')' || ch === '}' || ch === ']') depth = Math.max(0, depth - 1);
+
+    if (ch === ',' && depth === 0 && /\d/.test(input[i - 1] ?? '') && /\d/.test(input[i + 1] ?? '')) {
+      result += '.';
+    } else {
+      result += ch;
+    }
+  }
+  return result;
+}
+
 function normalizeLatex(latex: string): string {
-  return latex
-    .replace(/\\dfrac/g, '\\frac')
-    .replace(/\\tfrac/g, '\\frac')
-    .replace(/\{,\}/g, '.')                     // European decimal comma written as LaTeX `{,}` (e.g. "0{,}5707")
-    .replace(/(\d),(\d)/g, '$1.$2')             // plain MK decimal comma, e.g. "0,5" or "3,14" typed directly (not LaTeX-wrapped).
-                                                 // Only fires with no space around the comma, so a spaced list/pair separator
-                                                 // like "-2, 2" or "(2, 3)" is left alone — that ambiguity is out of scope.
-    .replace(/\\text\{[^}]*\}(\^\d+)?/g, '')     // strip unit annotations incl. their own exponent (e.g. "448\text{ cm}^3" — the ^3 belongs to the unit, not the number)
-    .replace(/^\$+|\$+$/g, '')                  // strip wrapping $...$ / $$...$$ delimiters some stored answers still carry
-    .trim();
+  return normalizeDecimalCommaOutsideGroups(
+    latex
+      .replace(/\\dfrac/g, '\\frac')
+      .replace(/\\tfrac/g, '\\frac')
+      .replace(/\{,\}/g, '.')                   // European decimal comma written as LaTeX `{,}` (e.g. "0{,}5707")
+      .replace(/\\text\{[^}]*\}(\^\d+)?/g, '')   // strip unit annotations incl. their own exponent (e.g. "448\text{ cm}^3" — the ^3 belongs to the unit, not the number)
+      .replace(/^\$+|\$+$/g, '')                // strip wrapping $...$ / $$...$$ delimiters some stored answers still carry
+  ).trim();
 }
 
 export type BoxedExpr = ReturnType<ComputeEngine['parse']>;

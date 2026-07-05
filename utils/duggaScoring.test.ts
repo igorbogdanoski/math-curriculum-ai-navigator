@@ -92,6 +92,12 @@ describe('autoScore — checklist', () => {
     const q2 = makeQ({ type: 'checklist', options: [{ id: 'a', text: 'A' }] });
     expect(autoScore(q2, 'a')).toBeNull();
   });
+
+  it('does not award full credit for a duplicated option id standing in for a missing one (e.g. "a,a" instead of "a,b")', () => {
+    const r = autoScore(q, 'a,a');
+    expect(r?.correct).toBe(false);
+    expect(r?.earned).toBeLessThan(4);
+  });
 });
 
 // ─── true_false ───────────────────────────────────────────────────────────────

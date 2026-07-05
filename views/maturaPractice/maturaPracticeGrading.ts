@@ -8,6 +8,7 @@ import type { MaturaQuestion } from '../../services/firestoreService.matura';
 import { recordMaturaSpacedReview } from '../../services/firestoreService.maturaSpacedRep';
 import { safeParseJSON, type AIGrade } from './maturaPracticeHelpers';
 import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
+import { clampAiScore } from '../../utils/aiScoreClamp';
 
 function pushSpacedReview(
   uid: string | undefined,
@@ -111,7 +112,7 @@ ${hasImage
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
   const grade: AIGrade = {
-    score: Math.min(Number(p.score ?? 0), maxScore),
+    score: clampAiScore(p.score, maxScore),
     maxScore,
     feedback: p.feedback ?? '',
     correct: Boolean(p.correct),
@@ -183,7 +184,7 @@ ${hasImage
   });
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
-  const score = Math.min(Number(p.score ?? 0), q.points);
+  const score = clampAiScore(p.score, q.points);
   const feedback = p.feedback ?? '';
 
   saveAIGrade(cacheKey, {

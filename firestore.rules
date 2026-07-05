@@ -347,8 +347,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        // Allow bumping likes/forks counters by any authenticated user
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'forks']) ||
+        // Allow bumping likes/forks by exactly +1 per call (matches the only client
+        // usage, `increment(1)`) — constraining the delta prevents any authenticated
+        // caller from setting either counter to an arbitrary value.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']) &&
+         request.resource.data.likes == (resource.data.likes is number ? resource.data.likes : 0) + 1) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['forks']) &&
+         request.resource.data.forks == (resource.data.forks is number ? resource.data.forks : 0) + 1) ||
         isAdmin()
       );
       allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
@@ -517,7 +522,15 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated()
                     && request.resource.data.studentUid == request.auth.uid
-                    && request.resource.data.keys().hasAll(['testId', 'teacherUid', 'studentUid', 'studentName', 'score', 'totalPoints', 'percentage']);
+                    && request.resource.data.keys().hasAll(['testId', 'teacherUid', 'studentUid', 'studentName', 'score', 'totalPoints', 'percentage'])
+                    // Bounds only — this can't verify the score is actually correct for the
+                    // test's real questions (that would need server-side re-grading), but it
+                    // closes the trivial "fabricate an out-of-range 100%" case.
+                    && request.resource.data.score is number && request.resource.data.score >= 0
+                    && request.resource.data.totalPoints is number && request.resource.data.totalPoints > 0
+                    && request.resource.data.score <= request.resource.data.totalPoints
+                    && request.resource.data.percentage is number
+                    && request.resource.data.percentage >= 0 && request.resource.data.percentage <= 100;
       allow update: if isAuthenticated() && (
         resource.data.teacherUid == request.auth.uid || isAdmin()
       );

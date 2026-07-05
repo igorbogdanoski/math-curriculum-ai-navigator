@@ -1,4 +1,5 @@
 import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
+import { clampAiScore } from '../../utils/aiScoreClamp';
 import {
     buildGradeCacheKey, getCachedAIGrade, saveAIGrade,
 } from '../../services/firestoreService.matura';
@@ -201,7 +202,7 @@ export async function gradePart2(q: MaturaQuestion, answerA: string, answerB: st
     const p = safeParseJSON(resp.text);
     if (!p) throw new Error('Parse error');
     const grade: AIGrade = {
-        score: Number(p.score ?? 0), maxScore: 2, feedback: String(p.feedback ?? ''),
+        score: clampAiScore(p.score, 2), maxScore: 2, feedback: String(p.feedback ?? ''),
         partA: Boolean(p.partA), partB: Boolean(p.partB),
         commentA: String(p.commentA ?? ''), commentB: String(p.commentB ?? ''),
     };
@@ -231,7 +232,7 @@ export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGra
     });
     const p = safeParseJSON(resp.text);
     if (!p) throw new Error('Parse error');
-    const score    = Math.min(Number(p.score ?? 0), q.points);
+    const score    = clampAiScore(p.score, q.points);
     const feedback = String(p.feedback ?? '');
     saveAIGrade(cacheKey, {
         examId: q.examId, questionNumber: q.questionNumber,

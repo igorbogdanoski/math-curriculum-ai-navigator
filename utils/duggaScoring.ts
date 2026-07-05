@@ -26,12 +26,14 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
       return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
     }
     case 'checklist': {
-      const selected = answer ? answer.split(',').filter(Boolean) : [];
+      // Dedupe via a Set — the raw answer string can contain a repeated id (e.g. "a,a"),
+      // which must not count as selecting two distinct correct options.
+      const selectedSet = new Set(answer ? answer.split(',').filter(Boolean) : []);
       const correctIds = (q.options ?? []).filter(o => o.isCorrect).map(o => o.id);
       if (!correctIds.length) return null;
-      const allCorrect = correctIds.length === selected.length && correctIds.every(id => selected.includes(id));
-      const hits = selected.filter(id => correctIds.includes(id)).length;
-      const wrong = selected.filter(id => !correctIds.includes(id)).length;
+      const allCorrect = correctIds.length === selectedSet.size && correctIds.every(id => selectedSet.has(id));
+      const hits = correctIds.filter(id => selectedSet.has(id)).length;
+      const wrong = [...selectedSet].filter(id => !correctIds.includes(id)).length;
       const ratio = hits / correctIds.length;
       const earned = allCorrect ? q.points : Math.floor(q.points * ratio * (wrong > 0 ? 0.6 : 1));
       const correctTexts = (q.options ?? []).filter(o => o.isCorrect).map(o => o.text).join(', ');

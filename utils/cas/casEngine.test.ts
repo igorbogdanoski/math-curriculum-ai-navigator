@@ -87,6 +87,16 @@ describe('verifyExpressionEquivalence — normalization fixes confirmed against 
     // "-2, 2" has a space after the comma, so it must stay a two-element set, not become "-2.2".
     expect(verifyExpressionEquivalence('R \\setminus \\{-2, 2\\}', '1').verdict).toBe('not_equivalent');
   });
+
+  it('does not mangle an UNSPACED coordinate/point pair inside parens (was silently corrupted into a single decimal number)', () => {
+    // "(2,3)" must stay the point (2,3), not become the number 2.3 — otherwise a student
+    // who correctly types "(2, 3)" for a teacher-authored "(2,3)" answer is marked wrong.
+    expect(verifyExpressionEquivalence('(2,3)', '(2, 3)').verdict).toBe('equivalent');
+  });
+
+  it('does not mangle an unspaced pair inside square brackets (interval notation)', () => {
+    expect(verifyExpressionEquivalence('[2,3]', '[2, 3]').verdict).toBe('equivalent');
+  });
 });
 
 describe('verifyEquationSolution', () => {

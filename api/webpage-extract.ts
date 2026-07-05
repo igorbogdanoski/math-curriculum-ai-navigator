@@ -94,10 +94,11 @@ async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true; uid: st
 }
 
 function isPrivateOrUnsafeHost(host: string): boolean {
-  const lowered = host.toLowerCase();
+  // URL.hostname keeps surrounding brackets for IPv6 (e.g. "[::1]") — strip them
+  // before comparing, otherwise every IPv6 literal check below silently never matches.
+  const lowered = host.toLowerCase().replace(/^\[|\]$/g, '');
   if (
     lowered === 'localhost' ||
-    lowered === '127.0.0.1' ||
     lowered === '::1' ||
     lowered === '0.0.0.0' ||
     lowered.endsWith('.internal') ||
@@ -108,10 +109,16 @@ function isPrivateOrUnsafeHost(host: string): boolean {
     return true;
   }
 
+  // Full 127.0.0.0/8 loopback range, not just the single address 127.0.0.1.
+  if (/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(lowered)) return true;
   if (/^10\./.test(lowered) || /^192\.168\./.test(lowered) || /^169\.254\./.test(lowered)) {
     return true;
   }
   if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(lowered)) {
+    return true;
+  }
+  // IPv6 link-local (fe80::/10) and unique-local (fc00::/7) ranges.
+  if (/^fe[89ab][0-9a-f]:/.test(lowered) || /^f[cd][0-9a-f]{2}:/.test(lowered)) {
     return true;
   }
 

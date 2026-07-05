@@ -99,6 +99,25 @@ describe('gradeStudentChart', () => {
     expect(r.details.pointHits).toBe(4);
   });
 
+  it('does not let a single submitted point satisfy multiple expected numeric-x points (consumption tracking)', () => {
+    const numericExpected: DuggaExpectedChart = {
+      kind: 'line',
+      data: [
+        { x: 100, y: 5 },
+        { x: 103, y: 5 },
+        { x: 106, y: 5 },
+        { x: 109, y: 5 },
+      ],
+    };
+    const sub: StudentChartSubmission = {
+      kind: 'line',
+      data: [{ x: 104.5, y: 5 }], // one point, within 5% relative-x tolerance of all four expected x values
+    };
+    const r = gradeStudentChart(numericExpected, sub, 5);
+    // Must NOT be treated as 4/4 — only one submitted point exists to match against.
+    expect(r.details.pointHits).toBe(1);
+  });
+
   it('case-insensitive label matching', () => {
     const sub: StudentChartSubmission = {
       kind: 'bar',
