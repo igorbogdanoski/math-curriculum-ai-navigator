@@ -4,6 +4,7 @@ import { ICONS } from '../../constants';
 import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
+import { checkMathEquivalence } from '../../utils/mathEvaluator';
 
 interface QuizViewerProps {
   questions: AssessmentQuestion[];
@@ -19,15 +20,23 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
   
   const currentQuestion = questions[currentIndex];
 
+  // Free-typed answers (not picked from a fixed options list) get the math-equivalence
+  // checker so "2x+2" vs a stored "2+2x" is recognised as correct, not just literal text.
+  const isFreeTextType = (type: string) => type === 'SHORT_ANSWER' || type === 'FILL_IN_THE_BLANK';
+  const isCorrectAnswer = (userAnswer: string, correctAnswer: string, type: string): boolean =>
+    isFreeTextType(type)
+      ? checkMathEquivalence(userAnswer, correctAnswer)
+      : userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+
   const handleAnswer = (userAnswer: string) => {
     if (isAnswered) return;
-    
+
     setSelectedAnswer(userAnswer);
     setIsAnswered(true);
 
     // Only score gradable questions
     if (currentQuestion.type !== 'ESSAY') {
-        if (userAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()) {
+        if (isCorrectAnswer(userAnswer, currentQuestion.answer, currentQuestion.type)) {
             setScore((s: number) => s + 1);
         }
     }
@@ -89,8 +98,8 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
                         <button type="submit" disabled={isAnswered} className="px-4 py-2 bg-brand-primary text-white rounded-lg disabled:bg-gray-400">Провери</button>
                     </div>
                     {isAnswered && (
-                        <div className={`mt-2 p-2 rounded-md text-sm ${selectedAnswer?.toLowerCase().trim() === answer.toLowerCase().trim() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                           {selectedAnswer?.toLowerCase().trim() === answer.toLowerCase().trim() ? 'Точно!' : `Неточно.`} Точниот одговор е: <MathRenderer text={answer} />
+                        <div className={`mt-2 p-2 rounded-md text-sm ${selectedAnswer !== null && isCorrectAnswer(selectedAnswer, answer, type) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                           {selectedAnswer !== null && isCorrectAnswer(selectedAnswer, answer, type) ? 'Точно!' : `Неточно.`} Точниот одговор е: <MathRenderer text={answer} />
                         </div>
                     )}
                 </form>

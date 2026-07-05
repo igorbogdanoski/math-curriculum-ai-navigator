@@ -1,4 +1,6 @@
-﻿/**
+﻿import { verifyExpressionEquivalence } from './cas/casEngine';
+
+/**
  * Проверува дали два математички изрази се еквивалентни.
  * Работи за дропки (пр. 2/4 == 1/2 == 0.5) и основни алгебарски изрази (x+x == 2x).
  */
@@ -23,6 +25,15 @@ export const checkMathEquivalence = (studentAnswer: string, correctAnswer: strin
     if (equivalentBySampling(normStudent, normCorrect)) {
       return true;
     }
+  }
+
+  // 4) CAS fallback (utils/cas/casEngine.ts) — catches everything the checks above can't:
+  // LaTeX input from MathInput/MathLive (e.g. "\frac{1}{2}" vs "0.5"), variables other
+  // than x, and structural equivalence (distribution/factoring). Purely additive: only
+  // adds new true cases, never overrides a false result from the checks above. Runs last
+  // since it's the most expensive check.
+  if (verifyExpressionEquivalence(studentAnswer, correctAnswer).verdict === 'equivalent') {
+    return true;
   }
 
   return false;

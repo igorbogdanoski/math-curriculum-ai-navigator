@@ -6,6 +6,7 @@ import {
   saveAIGrade,
 } from '../../services/firestoreService.matura';
 import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
+import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 export const CHOICES: MaturaChoice[] = ['А', 'Б', 'В', 'Г'];
@@ -52,6 +53,8 @@ export const TRACK_LABELS: Record<string, string> = {
 export interface AIGrade {
   score: number; maxScore: number; feedback: string;
   correct?: boolean; comment?: string;
+  /** true when this grade was confirmed by deterministic CAS verification, skipping the Gemini call entirely. */
+  verifiedByCas?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -78,6 +81,25 @@ export async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIG
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
+  }
+
+  // CAS pre-gate: only an 'equivalent' verdict short-circuits past Gemini entirely;
+  // anything else (not_equivalent, inconclusive, a CAS outage) falls through unchanged.
+  if (answer.trim() && q.correctAnswer) {
+    const casResult = await verifyExpressionEquivalenceRemote(answer, q.correctAnswer);
+    if (casResult.verdict === 'equivalent') {
+      const grade: AIGrade = {
+        score: maxScore, maxScore, correct: true,
+        feedback: 'Проверено со CAS — одговорот е математички еквивалентен на точниот.',
+        comment: 'Проверено со CAS',
+        verifiedByCas: true,
+      };
+      saveAIGrade(cacheKey, {
+        examId: q.examId, questionNumber: q.questionNumber,
+        inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
+      });
+      return grade;
+    }
   }
 
   const prompt = `Ти си асистент за оценување матура на македонски јазик.

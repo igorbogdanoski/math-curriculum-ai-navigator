@@ -16,6 +16,7 @@ import type { SchoolClass } from '../services/firestoreService.types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { verifyExpressionEquivalence } from '../utils/cas/casEngine';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -313,7 +314,7 @@ function isObjectiveType(type: string) {
   return ['multiple_choice', 'true_false', 'inline_select', 'fill_blanks', 'checklist'].includes(type);
 }
 
-function isAnswerCorrect(q: DuggaQuestion, answer: string | string[] | undefined): boolean | null {
+export function isAnswerCorrect(q: DuggaQuestion, answer: string | string[] | undefined): boolean | null {
   if (answer === undefined || answer === null) return false;
   if (!isObjectiveType(q.type)) return null;
   if (q.type === 'multiple_choice' || q.type === 'true_false' || q.type === 'inline_select') {
@@ -321,7 +322,15 @@ function isAnswerCorrect(q: DuggaQuestion, answer: string | string[] | undefined
     return String(answer).trim() === String(correct ?? '').trim();
   }
   if (q.type === 'fill_blanks') {
-    return String(answer).trim().toLowerCase() === String(q.correctAnswer ?? '').trim().toLowerCase();
+    const literalMatch = String(answer).trim().toLowerCase() === String(q.correctAnswer ?? '').trim().toLowerCase();
+    if (literalMatch) return true;
+    // Mirrors utils/duggaScoring.ts's autoScore CAS fallback — without this, this
+    // independent results-view recompute could disagree with the live-graded score
+    // for the same submission (e.g. "2x+2" vs a stored "2+2x").
+    if (q.correctAnswer) {
+      return verifyExpressionEquivalence(String(answer), q.correctAnswer).verdict === 'equivalent';
+    }
+    return false;
   }
   if (q.type === 'checklist') {
     const correctIds = (q.options ?? []).filter(o => o.isCorrect).map(o => o.id).sort();

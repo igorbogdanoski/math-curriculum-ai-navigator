@@ -3,6 +3,7 @@ import {
     buildGradeCacheKey, getCachedAIGrade, saveAIGrade,
 } from '../../services/firestoreService.matura';
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
+import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,23 @@ export interface AIGrade {
     partB?:    boolean;
     commentA?: string;
     commentB?: string;
+    /** true when this grade was confirmed by deterministic CAS verification, skipping the Gemini call entirely. */
+    verifiedByCas?: boolean;
+}
+
+/**
+ * Splits a two-part reference answer like "A. 96, B. 10" / "A: x, B: y" (Latin or
+ * Cyrillic А/Б labels) into its individual parts, so each can be CAS-verified against
+ * the student's corresponding sub-answer. Returns null on any format it doesn't
+ * recognize — the caller must treat that as "can't CAS-verify this one," not an error.
+ */
+export function splitTwoPartAnswer(correctAnswer: string): { a: string; b: string } | null {
+    const match = correctAnswer.match(/^\s*[AА][.:)]\s*(.+?)\s*,?\s*[BБ][.:)]\s*(.+)$/s);
+    if (!match) return null;
+    const a = match[1].trim();
+    const b = match[2].trim();
+    if (!a || !b) return null;
+    return { a, b };
 }
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
@@ -138,6 +156,34 @@ export async function gradePart2(q: MaturaQuestion, answerA: string, answerB: st
     const cacheKey   = buildGradeCacheKey(q.examId, q.questionNumber, cacheInput);
     const cached     = await getCachedAIGrade(cacheKey);
     if (cached) return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
+
+    // CAS pre-gate: only short-circuits past Gemini when BOTH sub-answers are confirmed
+    // equivalent to their respective reference parts (full 2/2 credit). Any other outcome —
+    // an unparseable correctAnswer format, one part not equivalent, or a CAS outage — falls
+    // through unchanged to the Gemini path below, which still handles partial credit.
+    if (answerA.trim() && answerB.trim() && q.correctAnswer) {
+        const split = splitTwoPartAnswer(q.correctAnswer);
+        if (split) {
+            const [resultA, resultB] = await Promise.all([
+                verifyExpressionEquivalenceRemote(answerA, split.a),
+                verifyExpressionEquivalenceRemote(answerB, split.b),
+            ]);
+            if (resultA.verdict === 'equivalent' && resultB.verdict === 'equivalent') {
+                const grade: AIGrade = {
+                    score: 2, maxScore: 2,
+                    feedback: 'Проверено со CAS — двата дела се точни.',
+                    partA: true, partB: true,
+                    commentA: 'Точно (CAS)', commentB: 'Точно (CAS)',
+                    verifiedByCas: true,
+                };
+                saveAIGrade(cacheKey, {
+                    examId: q.examId, questionNumber: q.questionNumber,
+                    inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
+                });
+                return grade;
+            }
+        }
+    }
 
     const prompt = `Ти си асистент за оценување матура на македонски јазик.
 Задача Q${q.questionNumber}: ${q.questionText}
