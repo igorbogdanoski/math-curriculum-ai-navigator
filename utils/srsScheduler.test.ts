@@ -31,13 +31,11 @@ describe('buildReviewSchedule', () => {
     expect(schedule.today[0].overdue).toBe(true);
   });
 
-  it('places a record due within 24h into today bucket', () => {
-    // Use daysFromNow=0 but set nextReviewDate 12h in the future for stable "not overdue" check
-    const next = new Date(Date.now() + 12 * 3600_000);
-    const r: SpacedRepRecord = {
-      studentId: 'stu', conceptId: 'c2', easeFactor: 2.5, interval: 1, repetitions: 1,
-      nextReviewDate: next.toISOString(), lastReviewedAt: new Date().toISOString(),
-    };
+  it('places a record due later today into today bucket', () => {
+    // Bucketing is calendar-day based (see daysUntil's startOfDay normalization), so
+    // "due later today" must land in `today` regardless of what hour it currently is —
+    // unlike a raw-elapsed-hours check, this is deterministic no matter when the test runs.
+    const r = makeRecord({ daysFromNow: 0, conceptId: 'c2' });
     const schedule = buildReviewSchedule([r]);
     expect(schedule.today).toHaveLength(1);
     expect(schedule.today[0].overdue).toBe(false);
@@ -130,13 +128,13 @@ describe('buildReviewSchedule', () => {
     expect(typeof item.daysFromNow).toBe('number');
   });
 
-  it('Math.floor: item due in 0.9 days goes to today, not tomorrow', () => {
-    // nextReviewDate = 22 hours from now → daysUntil = Math.floor(0.916) = 0 → today
-    const next = new Date(Date.now() + 22 * 3600_000);
-    const r: SpacedRepRecord = {
-      studentId: 'stu', conceptId: 'boundary', easeFactor: 2.5, interval: 1, repetitions: 1,
-      nextReviewDate: next.toISOString(), lastReviewedAt: new Date().toISOString(),
-    };
+  it('buckets by calendar day, not raw elapsed hours — a same-day item stays in "today" no matter the current hour', () => {
+    // This used to be a raw-ms/24h floor: "22 hours from now" could land in `today` or
+    // `tomorrow` depending purely on what hour the test happened to run at, and the same
+    // raw-hours arithmetic misfiled real reviews by a day across a DST transition (a 23h
+    // "spring forward" gap divided by a fixed 24h would floor to 0 instead of 1). Bucketing
+    // is now based on calendar-day boundaries (see daysUntil), so this is deterministic.
+    const r = makeRecord({ daysFromNow: 0, conceptId: 'boundary' });
     const schedule = buildReviewSchedule([r]);
     expect(schedule.today).toHaveLength(1);
     expect(schedule.tomorrow).toHaveLength(0);

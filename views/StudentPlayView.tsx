@@ -4,7 +4,7 @@
  * UI components: StudentOnboardingWizard, QuizResultPanel.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, AlertCircle, Home, User, Users } from 'lucide-react';
+import { Loader2, AlertCircle, Home, User } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -13,6 +13,7 @@ import { useStudentIdentity } from '../hooks/useStudentIdentity';
 import { useStudentQuiz } from '../hooks/useStudentQuiz';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { StudentOnboardingWizard } from '../components/student/StudentOnboardingWizard';
+import { ReturningStudentConfirm } from '../components/student/ReturningStudentConfirm';
 import { QuizResultPanel } from '../components/student/QuizResultPanel';
 import { LearningLoopPanel } from '../components/student/LearningLoopPanel';
 
@@ -134,8 +135,17 @@ export const StudentPlayView: React.FC = () => {
       {/* Main card */}
       <main className="w-full max-w-4xl bg-white md:rounded-[2.5rem] shadow-2xl overflow-hidden md:border-8 border-white/20 relative flex flex-col min-h-[60vh] md:min-h-[500px]">
 
+        {/* "Still you?" — shown once per session when this device has a cached name */}
+        {!identity.nameConfirmed && identity.pendingReturningName && (
+          <ReturningStudentConfirm
+            name={identity.pendingReturningName}
+            onConfirm={identity.confirmReturningStudent}
+            onSwitch={identity.switchStudent}
+          />
+        )}
+
         {/* Onboarding / name entry */}
-        {!identity.nameConfirmed && (
+        {!identity.nameConfirmed && !identity.pendingReturningName && (
           <StudentOnboardingWizard
             wizardStep={identity.wizardStep}
             setWizardStep={identity.setWizardStep}

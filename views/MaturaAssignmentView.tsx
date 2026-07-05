@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BookOpen, ChevronRight, Loader2, ClipboardList, AlertCircle } from 'lucide-react';
 import { fetchMaturaAssignmentsByClass } from '../services/firestoreService.classroom';
 import type { MaturaAssignment } from '../services/firestoreService.classroom';
-import { getOrCreateDeviceId } from '../utils/studentIdentity';
+import { getOrCreateDeviceId, getCachedStudentName } from '../utils/studentIdentity';
 import { firestoreService } from '../services/firestoreService';
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -71,7 +71,7 @@ export function MaturaAssignmentView() {
   // Restore class membership if not cached
   useEffect(() => {
     if (classId) return;
-    firestoreService.fetchClassMembership(deviceId).then(m => {
+    firestoreService.fetchClassMembership(deviceId, getCachedStudentName()).then(m => {
       if (!m?.classId) return;
       setClassId(m.classId);
       try { localStorage.setItem('student_class_id', m.classId); } catch { /* incognito */ }

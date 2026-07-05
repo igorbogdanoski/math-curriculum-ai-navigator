@@ -1,5 +1,6 @@
-﻿import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, writeBatch, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
+﻿import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, writeBatch, serverTimestamp, startAfter, documentId, runTransaction, type QueryConstraint, type DocumentSnapshot, type QueryDocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { firestorePage } from './firestorePagination';
 import { logger } from '../utils/logger';
 import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
@@ -230,21 +231,23 @@ export const quizService = {
       };
     }
 
-    try {
-      const baseConstraints = teacherUid
-        ? [where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc')]
-        : [orderBy('playedAt', 'desc')];
-      const q = startAfterDoc
-        ? query(collection(db, 'quiz_results'), ...baseConstraints, startAfter(startAfterDoc), limit(pageSize))
-        : query(collection(db, 'quiz_results'), ...baseConstraints, limit(pageSize));
-      const snap = await getDocs(q);
-      const results = snap.docs.map(d => d.data()).filter(isValidQuizResult);
-      const lastDoc = snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null;
-      return { results, lastDoc };
-    } catch (error) {
-      logger.error('Error fetching quiz results page:', error);
-      return { results: [], lastDoc: null };
-    }
+    const baseConstraints = teacherUid
+      ? [where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc')]
+      : [orderBy('playedAt', 'desc')];
+    const { items, hasMore, lastDoc } = await firestorePage<QuizResult>({
+      collectionName: 'quiz_results',
+      constraints: baseConstraints,
+      pageSize,
+      cursor: startAfterDoc as QueryDocumentSnapshot | undefined,
+      mapper: (d) => d.data() as QuizResult,
+      filter: isValidQuizResult,
+      errorTag: 'quiz_results (page)',
+    });
+    // Preserve this function's existing contract: `lastDoc: null` signals "no more
+    // pages" to callers (e.g. TeacherAnalyticsView checks `page.lastDoc !== null`),
+    // whereas firestorePage's own `lastDoc` is the current page's last doc regardless
+    // of `hasMore`.
+    return { results: items, lastDoc: hasMore ? lastDoc : null };
   },
 
   fetchQuizResultsByStudentName: async (studentName: string, deviceId?: string): Promise<QuizResult[]> => {
@@ -479,29 +482,53 @@ export const quizService = {
       ? (teacherUid ? `${teacherUid}_${deviceId}` : deviceId)
       : (teacherUid ? `${teacherUid}_${studentName}` : studentName);
     const ref = doc(db, 'student_gamification', docId);
-    const snap = await getDoc(ref);
-    const today = new Date().toLocaleDateString('sv-SE');
-    const existing: StudentGamification = snap.exists()
-      ? (snap.data() as StudentGamification)
-      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0, ...(deviceId ? { deviceId } : {}), ...(teacherUid ? { teacherUid } : {}) };
 
-    const xpGained = calcXP(percentage, justMastered);
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('sv-SE');
-    const newStreak = calcStreak(existing.currentStreak, existing.lastActivityDate, today, yesterdayStr);
-    const newLongest = Math.max(existing.longestStreak, newStreak);
-    const updated: StudentGamification = {
-      ...existing,
-      totalXP: existing.totalXP + xpGained,
-      currentStreak: newStreak,
-      longestStreak: newLongest,
-      lastActivityDate: today,
-      totalQuizzes: existing.totalQuizzes + 1,
-      ...(teacherUid && !existing.teacherUid ? { teacherUid } : {}),
+    const computeUpdate = (existing: StudentGamification | null) => {
+      const today = new Date().toLocaleDateString('sv-SE');
+      const base: StudentGamification = existing
+        ?? { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0, ...(deviceId ? { deviceId } : {}), ...(teacherUid ? { teacherUid } : {}) };
+      const xpGained = calcXP(percentage, justMastered);
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('sv-SE');
+      const newStreak = calcStreak(base.currentStreak, base.lastActivityDate, today, yesterdayStr);
+      const newLongest = Math.max(base.longestStreak, newStreak);
+      const updated: StudentGamification = {
+        ...base,
+        totalXP: base.totalXP + xpGained,
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+        lastActivityDate: today,
+        totalQuizzes: base.totalQuizzes + 1,
+        ...(teacherUid && !base.teacherUid ? { teacherUid } : {}),
+      };
+      const newAchievements = computeNewAchievements(updated.totalQuizzes, updated.longestStreak, percentage, totalMastered, updated.achievements);
+      updated.achievements = [...updated.achievements, ...newAchievements];
+      return { updated, xpGained, newAchievements };
     };
-    const newAchievements = computeNewAchievements(updated.totalQuizzes, updated.longestStreak, percentage, totalMastered, updated.achievements);
-    updated.achievements = [...updated.achievements, ...newAchievements];
-    setDoc(ref, updated, { merge: false }).catch(err => logger.warn('Offline deferred', err));
-    return { xpGained, newAchievements, gamification: updated };
+
+    try {
+      // Atomic read-modify-write — without this, two concurrent calls for the same
+      // docId (e.g. a duplicate quiz submission slipping past the UI guard) both read
+      // the same stale doc and the second silently clobbers the first's XP/streak/
+      // achievement update instead of stacking on top of it.
+      const result = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const existing = snap.exists() ? (snap.data() as StudentGamification) : null;
+        const computed = computeUpdate(existing);
+        tx.set(ref, computed.updated, { merge: false });
+        return computed;
+      });
+      return { xpGained: result.xpGained, newAchievements: result.newAchievements, gamification: result.updated };
+    } catch (err) {
+      // Transactions require a live round-trip and don't queue while offline the way a
+      // plain setDoc does — fall back to the previous best-effort behavior (same race
+      // window as before this fix, but only while offline) so offline play still works.
+      logger.warn('Gamification transaction failed, falling back to best-effort write', err);
+      const snap = await getDoc(ref).catch(() => null);
+      const existing = snap?.exists() ? (snap.data() as StudentGamification) : null;
+      const { updated, xpGained, newAchievements } = computeUpdate(existing);
+      setDoc(ref, updated, { merge: false }).catch(e => logger.warn('Offline deferred', e));
+      return { xpGained, newAchievements, gamification: updated };
+    }
   },
 };

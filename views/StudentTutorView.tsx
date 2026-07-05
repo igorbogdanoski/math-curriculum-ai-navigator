@@ -179,7 +179,7 @@ export const StudentTutorView: React.FC = () => {
       const semanticContext = semanticHits.map(h => h.context).join('\n\n');
       const combinedContext = [ragContext, pacingContext, semanticContext].filter(Boolean).join('\n\n');
 
-      const response = await geminiService.askTutor(userMessage, newMessages, combinedContext || undefined);
+      const response = await geminiService.askTutor(userMessage, messages, combinedContext || undefined);
       setMessages([...newMessages, { id: Date.now().toString(), role: 'assistant', content: response }]);
     } catch (error) {
       logger.error('Failed to get tutor response:', error);

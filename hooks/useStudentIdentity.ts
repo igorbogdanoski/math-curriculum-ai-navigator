@@ -10,23 +10,35 @@ import { firestoreService } from '../services/firestoreService';
 import { validateStudentName } from '../utils/validation';
 import { getOrCreateDeviceId } from '../utils/studentIdentity';
 
+// Session-scoped (not localStorage) — a device "remembering" one student's name
+// forever meant a second physical student sharing that device silently continued
+// as the first student. This flag re-asks "still you?" once per browser session
+// instead of trusting the cached name indefinitely.
+const SESSION_CONFIRM_KEY = 'student_session_confirmed';
+
 export function useStudentIdentity() {
   const deviceId = getOrCreateDeviceId();
 
-  const [studentName, setStudentName] = useState<string>(() => {
+  const cachedName = (() => {
     try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
-  });
-  const [nameConfirmed, setNameConfirmed] = useState<boolean>(() => {
-    try { return !!localStorage.getItem('studentName'); } catch { return false; }
-  });
-  const [nameInput, setNameInput] = useState<string>(() => {
-    try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
-  });
+  })();
+  const alreadyConfirmedThisSession = (() => {
+    try { return sessionStorage.getItem(SESSION_CONFIRM_KEY) === 'true'; } catch { return false; }
+  })();
+
+  const [studentName, setStudentName] = useState<string>(cachedName);
+  const [nameConfirmed, setNameConfirmed] = useState<boolean>(!!cachedName && alreadyConfirmedThisSession);
+  // A cached name exists but this session hasn't confirmed it yet — show a quick
+  // "still you?" prompt instead of either silently continuing or the full wizard.
+  const [pendingReturningName, setPendingReturningName] = useState<string | null>(
+    cachedName && !alreadyConfirmedThisSession ? cachedName : null
+  );
+  const [nameInput, setNameInput] = useState<string>(cachedName);
   const [nameError, setNameError] = useState('');
   const [isReturningStudent, setIsReturningStudent] = useState(false);
-  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | null>(() => {
-    try { return localStorage.getItem('studentName') ? null : 0; } catch { return null; }
-  });
+  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | null>(
+    cachedName && alreadyConfirmedThisSession ? null : (cachedName ? null : 0)
+  );
 
   const [classId, setClassId] = useState<string | null>(() => {
     try { return localStorage.getItem('student_class_id'); } catch { return null; }
@@ -76,17 +88,18 @@ export function useStudentIdentity() {
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Restore class membership from Firestore
+  // Restore class membership from Firestore — disambiguated by studentName so a
+  // shared device doesn't resolve to whichever student joined most recently.
   useEffect(() => {
-    if (window.__E2E_MODE__) return;
+    if (window.__E2E_MODE__ || !studentName) return;
     let cancelled = false;
-    firestoreService.fetchClassMembership(deviceId).then(membership => {
+    firestoreService.fetchClassMembership(deviceId, studentName).then(membership => {
       if (cancelled || !membership?.classId) return;
       setClassId(membership.classId);
       try { localStorage.setItem('student_class_id', membership.classId); } catch { /* incognito */ }
     }).catch(() => { /* non-fatal */ });
     return () => { cancelled = true; };
-  }, [deviceId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deviceId, studentName]);
 
   // Detect IEP mode from class membership
   useEffect(() => {
@@ -115,6 +128,29 @@ export function useStudentIdentity() {
     }
   };
 
+  /** "Yes, still me" — confirms the cached name for this session without re-typing it. */
+  const confirmReturningStudent = () => {
+    try { sessionStorage.setItem(SESSION_CONFIRM_KEY, 'true'); } catch { /* incognito */ }
+    setNameConfirmed(true);
+    setPendingReturningName(null);
+    setIsReturningStudent(true);
+  };
+
+  /** "Not me" — a different student is using this device; start their own fresh identity. */
+  const switchStudent = () => {
+    try {
+      sessionStorage.removeItem(SESSION_CONFIRM_KEY);
+      localStorage.removeItem('studentName');
+      localStorage.removeItem('student_class_id');
+    } catch { /* incognito */ }
+    setPendingReturningName(null);
+    setNameConfirmed(false);
+    setStudentName('');
+    setNameInput('');
+    setClassId(null);
+    setWizardStep(0);
+  };
+
   const handleJoinClass = async (code: string) => {
     if (!code.trim()) { setWizardStep(null); return; }
     setClassCodeLoading(true);
@@ -141,6 +177,9 @@ export function useStudentIdentity() {
     deviceId,
     studentName, setStudentName,
     nameConfirmed, setNameConfirmed,
+    pendingReturningName,
+    confirmReturningStudent,
+    switchStudent,
     nameInput, setNameInput,
     nameError,
     isReturningStudent, setIsReturningStudent,

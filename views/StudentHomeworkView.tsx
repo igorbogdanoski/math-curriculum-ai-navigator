@@ -3,7 +3,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { fetchHomeworkByClass, markHomeworkComplete, HomeworkAssignment } from '../services/firestoreService.classroom';
 import { fetchClassMembership } from '../services/firestoreService.classroom';
-import { getOrCreateDeviceId } from '../utils/studentIdentity';
+import { getOrCreateDeviceId, getCachedStudentName } from '../utils/studentIdentity';
 import { useNavigation } from '../contexts/NavigationContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export const StudentHomeworkView: React.FC = () => {
     const [completing, setCompleting] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchClassMembership(deviceId).then(membership => {
+        fetchClassMembership(deviceId, getCachedStudentName()).then(membership => {
             if (!membership) { setIsLoading(false); return; }
             setClassId(membership.classId);
             setStudentName(membership.studentName ?? null);

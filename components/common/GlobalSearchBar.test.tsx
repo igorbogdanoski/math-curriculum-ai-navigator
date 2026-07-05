@@ -29,6 +29,7 @@ vi.mock('../../services/firestoreService', () => ({
 }));
 vi.mock('../../utils/studentIdentity', () => ({
     getOrCreateDeviceId: vi.fn(() => 'test-device-id'),
+    getCachedStudentName: vi.fn(() => null),
 }));
 
 // Mock data

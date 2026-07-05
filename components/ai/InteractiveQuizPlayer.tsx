@@ -103,6 +103,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
+  // Guard against finishQuiz() firing twice (e.g. a fast double-click/double-tap on
+  // the last question) before the re-render that hides the finish button commits —
+  // without this, onComplete() fires twice and creates two separate quiz_results docs.
+  const hasFinishedRef = useRef(false);
+
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -283,6 +288,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   };
 
   const finishQuiz = () => {
+    if (hasFinishedRef.current) return;
+    hasFinishedRef.current = true;
     setShowResult(true);
     if (onComplete) onComplete({
       score,

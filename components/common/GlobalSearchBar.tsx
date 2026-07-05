@@ -10,7 +10,7 @@ import type { HomeworkAssignment } from '../../services/firestoreService.classro
 import type { QuizResult } from '../../services/firestoreService.types';
 import { fetchClassMembership, fetchHomeworkByClass } from '../../services/firestoreService.classroom';
 import { firestoreService } from '../../services/firestoreService';
-import { getOrCreateDeviceId } from '../../utils/studentIdentity';
+import { getOrCreateDeviceId, getCachedStudentName } from '../../utils/studentIdentity';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 const RECENT_KEY = 'gsb_recent';
@@ -91,7 +91,7 @@ export const GlobalSearchBar: React.FC = () => {
         if (isTeacher) return;
         let cancelled = false;
         const deviceId = getOrCreateDeviceId();
-        fetchClassMembership(deviceId).then(membership => {
+        fetchClassMembership(deviceId, getCachedStudentName()).then(membership => {
             if (cancelled || !membership) return;
             fetchHomeworkByClass(membership.classId)
                 .then(hw => { if (!cancelled) setStudentHomework(hw); })

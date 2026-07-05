@@ -27,11 +27,19 @@ export interface ReviewSchedule {
   totalDue: number;
 }
 
+/** Midnight-local of the given date — used so day-diffing counts calendar days, not raw elapsed hours. */
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 function daysUntil(record: SpacedRepRecord): number {
-  const now = new Date();
-  const next = new Date(record.nextReviewDate);
-  // Math.floor: an item due in 0.9 days still belongs to "today", not "tomorrow"
-  return Math.floor((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const now = startOfDay(new Date());
+  const next = startOfDay(new Date(record.nextReviewDate));
+  // Both sides are local midnights, so this is normally an exact multiple of one day —
+  // except across a DST transition, where local-midnight-to-local-midnight can be 23h or
+  // 25h of real time. Math.round (not floor) is required so a "spring forward" 23h gap
+  // still counts as a full day, instead of misfiling a real "tomorrow" review into "today".
+  return Math.round((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function buildReviewSchedule(records: SpacedRepRecord[]): ReviewSchedule {

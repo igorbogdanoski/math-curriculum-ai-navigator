@@ -7,6 +7,7 @@ import { type StudentGroup, type SchoolClass, type ClassMembership, type Announc
 import { parseFirestoreDoc, SchoolClassSchema, ClassMembershipSchema } from '../schemas/firestoreSchemas';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { getE2EMockClasses } from './e2eTesting';
+import { membershipKey } from '../utils/studentIdentity';
 
 export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGroup[]> => {
     try {
@@ -111,12 +112,16 @@ export const fetchClassByJoinCode = async (code: string): Promise<SchoolClass | 
   } catch { return null; }
 };
 
-/** Student joins a class by code — writes class_memberships/{deviceId} */
+/**
+ * Student joins a class by code — writes class_memberships/{deviceId}__{studentSlug}.
+ * Keyed per-student-on-this-device (not bare deviceId) so two different students
+ * sharing one device/browser don't collide on the same membership doc.
+ */
 export const joinClassByCode = async (code: string, deviceId: string, studentName: string): Promise<SchoolClass | null> => {
   if (!code?.trim() || !deviceId?.trim()) return null;
   const cls = await fetchClassByJoinCode(code);
   if (!cls) return null;
-  await setDoc(doc(db, 'class_memberships', deviceId), {
+  await setDoc(doc(db, 'class_memberships', membershipKey(deviceId, studentName)), {
     deviceId,
     classId: cls.id,
     className: cls.name,
@@ -128,12 +133,26 @@ export const joinClassByCode = async (code: string, deviceId: string, studentNam
   return cls;
 };
 
-/** Fetch the class membership for a device (returns null if not joined any class) */
-export const fetchClassMembership = async (deviceId: string): Promise<ClassMembership | null> => {
+/**
+ * Fetch the class membership for a device, disambiguated by student name where
+ * available. Falls back to the legacy bare-deviceId doc (from before per-student
+ * keys existed) — but only trusts it when it isn't already known to belong to a
+ * *different* named student, so a shared device can't leak one student's class to
+ * another. Callers that don't have a name yet (e.g. a generic header widget) get the
+ * legacy-only lookup, same as before this fix.
+ */
+export const fetchClassMembership = async (deviceId: string, studentName?: string | null): Promise<ClassMembership | null> => {
   try {
-    const snap = await getDoc(doc(db, 'class_memberships', deviceId));
-    if (!snap.exists()) return null;
-    return parseFirestoreDoc(ClassMembershipSchema, snap.data(), `class_memberships/${deviceId}`) as ClassMembership;
+    if (studentName) {
+      const key = membershipKey(deviceId, studentName);
+      const snap = await getDoc(doc(db, 'class_memberships', key));
+      if (snap.exists()) return parseFirestoreDoc(ClassMembershipSchema, snap.data(), `class_memberships/${key}`) as ClassMembership;
+    }
+    const legacySnap = await getDoc(doc(db, 'class_memberships', deviceId));
+    if (!legacySnap.exists()) return null;
+    const legacy = legacySnap.data();
+    if (studentName && legacy.studentName && legacy.studentName !== studentName) return null;
+    return parseFirestoreDoc(ClassMembershipSchema, legacy, `class_memberships/${deviceId}`) as ClassMembership;
   } catch { return null; }
 };
 
@@ -147,6 +166,7 @@ export const fetchClassStats = async (
     const snap = await getDocs(query(
       collection(db, 'quiz_results'),
       where('teacherUid', '==', teacherUid),
+      orderBy('playedAt', 'desc'),
       limit(500)
     ));
     const nameSet = new Set(studentNames);
