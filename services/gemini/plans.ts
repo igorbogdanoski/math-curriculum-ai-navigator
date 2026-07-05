@@ -4,6 +4,7 @@ import { fetchScenarioBankContext } from './ragService';
 import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH } from '../../data/allNationalStandardsComplete';
 import { streamGeminiProxy } from './core.proxy';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext, PresentationSlide } from '../../types';
+import { educationalHints } from '../../data/educationalModelsInfo';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -473,7 +474,7 @@ ${standardsHint}
 3. ИНКЛУЗИВНОСТ: Kako активностите ќе ги поддржат и талентираните и учениците со потешкотии?
 ${teacherHistoryContext ? `\n### КОНТЕКСТ ОД ПРЕТХОДНИТЕ ПЛАНОВИ НА НАСТАВНИКОТ\n${teacherHistoryContext}\nВАЖНО: Анализирај ги горните педагошки модели и предложи РАЗЛИЧЕН пристап за оваа тема за разновидност. Ако наставникот претежно користел 5E, предложи ZPD или PBL за оваа тема.\n` : ''}
 
-### ИНСТРУКЦИИ ЗА СОДРЖИНА (6 задолжителни колони)
+### ИНСТРУКЦИИ ЗА СОДРЖИНА (7 задолжителни колони)
 - lessonUnit: Содржини и поими — конкретни поими кои се изучуваат (на пр. "Плоштина на правоаголен триаголник (P = a·b/2)")
 - learningOutcomes: Стандарди за оценување — мерливи исходи (на пр. "Пресметува плоштина на правоаголен триаголник.")
 - hours: Број на часови за таа подтема (цел број)
@@ -481,6 +482,7 @@ ${teacherHistoryContext ? `\n### КОНТЕКСТ ОД ПРЕТХОДНИТЕ П
 - resources: Конкретни наставни средства (одвоени со запирка)
 - assessment: Методи за следење на напредокот (одвоени со точка-запирка)
 - keyActivities: КРАТОК РЕЗИМЕ на сценариото (2-3 реченици)
+- pedagogicalModel: ТОЧНОТО име на еден педагошки модел од листата подолу кој најдобро одговара на сценариото за оваа лекција (не измислувај ново име, избери точно едно): ${Object.keys(educationalHints.pedagogicalModels).join(', ')}
 
 ### СЦЕНАРИО ЗА ЧАС — структура (scenario, задолжително за СЕКОЈА лекција):
 - scenario.intro: Воведна активност (~10 мин.) — мотивациска активност или игра, поврзување со претходно знаење, информирање за стандарди
@@ -508,6 +510,7 @@ ${teacherHistoryContext ? `\n### КОНТЕКСТ ОД ПРЕТХОДНИТЕ П
                           assessment: { type: Type.STRING },
                           resources: { type: Type.STRING },
                           hours: { type: Type.INTEGER },
+                          pedagogicalModel: { type: Type.STRING },
                           scenario: {
                               type: Type.OBJECT,
                               properties: {

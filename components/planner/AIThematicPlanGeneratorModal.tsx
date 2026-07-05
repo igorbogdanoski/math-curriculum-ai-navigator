@@ -17,6 +17,7 @@ import { resolveGradeByLabel } from '../../utils/gradeMatch';
 import { detectMathDomain } from '../../utils/mathDomainDetector';
 import { publishThematicPlanToBank } from '../../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../scenario-bank/PublishScenarioDialog';
+import { getPedagogicalModelInfo } from '../../data/educationalModelsInfo';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -496,7 +497,17 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.keyActivities}</td>
+                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">
+                                                {lesson.pedagogicalModel && (
+                                                    <span
+                                                        className="inline-block mb-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold"
+                                                        title={getPedagogicalModelInfo(lesson.pedagogicalModel)?.text ?? ''}
+                                                    >
+                                                        {getPedagogicalModelInfo(lesson.pedagogicalModel)?.title ?? lesson.pedagogicalModel}
+                                                    </span>
+                                                )}
+                                                <div>{lesson.keyActivities}</div>
+                                            </td>
                                             <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.assessment}</td>
                                         </tr>
                                     );

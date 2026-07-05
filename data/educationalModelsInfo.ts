@@ -35,6 +35,13 @@ export const educationalHints = {
   }
 };
 
+/** Safe lookup for an AI-returned model name, which may not exactly match one of the
+ *  known keys despite prompt instructions — returns undefined rather than throwing. */
+export function getPedagogicalModelInfo(key: string | undefined): { title: string; text: string; example: string } | undefined {
+  if (!key) return undefined;
+  return (educationalHints.pedagogicalModels as Record<string, { title: string; text: string; example: string }>)[key];
+}
+
 /**
  * Serializes the pedagogical-models reference into a self-contained text block for
  * injection into an AI chat's ragContext — includes its own instructions so it reads

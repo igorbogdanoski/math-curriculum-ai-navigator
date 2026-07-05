@@ -4,6 +4,7 @@ import {
     getSecondaryTrackContext,
 } from './core';
 import { buildPedagogyPromptContext } from '../../data/official/pedagogy';
+import { educationalHints } from '../../data/educationalModelsInfo';
 import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH, AREA_LABELS } from '../../data/allNationalStandardsComplete';
 
 function buildNationalStandardsContext(gradeNumber: number | null): string {
@@ -167,6 +168,7 @@ ${buildPedagogyPromptContext()}
 3. Вклучи најмалку ${MIN_ANNUAL_PLAN_TOPICS} одделни теми во полето "topics".
 4. Конвертирајте ги часовите во реални недели (${weeklyHoursForTrack} часа неделно). Ако официјалната програма дава точни часови по подтема, почитувај ја таа распределба.
 5. За секоја тема, извлечете ги примарните цели и предложете 2-3 конкретни активности (групна работа, проекти, истражување) усогласени со официјалните активности.
+5б. За секоја тема, во полето "pedagogicalModel" наведи ТОЧНОТО име на еден педагошки модел од листата кој најдобро одговара на предложените активности (не измислувај ново име): ${Object.keys(educationalHints.pedagogicalModels).join(', ')}
 6. ТЕМИ КОИ СЕ РЕАЛИЗИРААТ НИЗ ЦЕЛАТА ГОДИНА (Геометрија, Мерење, Работа со податоци): разбивај ги на подтеми кои се вметнуваат меѓу другите теми — не ги ставај само на крај.
 7. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и зимски распусти.
 8. Вклучи 4 писмени работи рамномерно распоредени низ годината.
@@ -180,7 +182,7 @@ ${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД Н
       type: Type.OBJECT,
       properties: {
         grade: { type: Type.STRING }, subject: { type: Type.STRING }, totalWeeks: { type: Type.NUMBER },
-        topics: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, durationWeeks: { type: Type.NUMBER }, objectives: { type: Type.ARRAY, items: { type: Type.STRING } }, suggestedActivities: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['title', 'durationWeeks', 'objectives', 'suggestedActivities'] } },
+        topics: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, durationWeeks: { type: Type.NUMBER }, objectives: { type: Type.ARRAY, items: { type: Type.STRING } }, suggestedActivities: { type: Type.ARRAY, items: { type: Type.STRING } }, pedagogicalModel: { type: Type.STRING } }, required: ['title', 'durationWeeks', 'objectives', 'suggestedActivities'] } },
       },
       required: ['grade', 'subject', 'totalWeeks', 'topics'],
     };

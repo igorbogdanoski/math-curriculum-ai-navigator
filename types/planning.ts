@@ -149,6 +149,10 @@ export interface ThematicPlanLesson {
   levelDescription?: string;
   /** Structured scenario per official MoN format (S74) */
   scenario?: ThematicPlanLessonScenario;
+  /** Which pedagogical model (key into data/educationalModelsInfo.ts) this lesson's
+   *  keyActivities is designed around, e.g. "5E Model", "ZPD", "PBL". Optional —
+   *  older plans generated before this field existed simply omit it. */
+  pedagogicalModel?: string;
 }
 
 export interface AIGeneratedThematicPlan {
@@ -158,5 +162,13 @@ export interface AIGeneratedThematicPlan {
   levelDescription?: string;
 }
 
-export interface AIGeneratedAnnualPlanTopic { title: string; durationWeeks: number; objectives: string[]; suggestedActivities: string[]; }
+export interface AIGeneratedAnnualPlanTopic {
+  title: string;
+  durationWeeks: number;
+  objectives: string[];
+  suggestedActivities: string[];
+  /** Which pedagogical model (key into data/educationalModelsInfo.ts) the suggested
+   *  activities are designed around. Optional — older plans omit it. */
+  pedagogicalModel?: string;
+}
 export interface AIGeneratedAnnualPlan { grade: string; subject: string; totalWeeks: number; topics: AIGeneratedAnnualPlanTopic[]; }

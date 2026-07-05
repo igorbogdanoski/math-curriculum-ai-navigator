@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { TopicOverlay } from '../../services/firestoreService.curriculumOverlays';
 import type { AIGeneratedAnnualPlanTopic } from '../../types';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { getPedagogicalModelInfo } from '../../data/educationalModelsInfo';
 
 interface SortableTopicProps {
     topic: AIGeneratedAnnualPlanTopic;
@@ -234,6 +235,14 @@ export const SortableTopic: React.FC<SortableTopicProps> = ({
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 21v-8a2 2 0 0 1 2-2h8"></path><polygon points="16 7 20 11 16 15"></polygon><line x1="4" y1="11" x2="10" y2="11"></line></svg>
                         Предложени активности
                     </h4>
+                    {topic.pedagogicalModel && (
+                        <span
+                            className="inline-block mb-2 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold"
+                            title={getPedagogicalModelInfo(topic.pedagogicalModel)?.text ?? ''}
+                        >
+                            {getPedagogicalModelInfo(topic.pedagogicalModel)?.title ?? topic.pedagogicalModel}
+                        </span>
+                    )}
                     <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1.5">
                         {topic.suggestedActivities.map((act, i) => (
                             <li key={i} className="leading-snug">{act}</li>

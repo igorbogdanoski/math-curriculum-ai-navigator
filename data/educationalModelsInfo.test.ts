@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { educationalHints, formatPedagogicalModelsReference } from './educationalModelsInfo';
+import { educationalHints, formatPedagogicalModelsReference, getPedagogicalModelInfo } from './educationalModelsInfo';
 
 describe('formatPedagogicalModelsReference', () => {
   it('includes every pedagogical model\'s title', () => {
@@ -18,5 +18,19 @@ describe('formatPedagogicalModelsReference', () => {
     const ref = formatPedagogicalModelsReference();
     expect(ref).toMatch(/^=== ПЕДАГОШКИ РЕФЕРЕНТЕН МАТЕРИЈАЛ/);
     expect(ref).toMatch(/=== КРАЈ НА ПЕДАГОШКИ РЕФЕРЕНТЕН МАТЕРИЈАЛ ===$/);
+  });
+});
+
+describe('getPedagogicalModelInfo', () => {
+  it('resolves a known model key', () => {
+    expect(getPedagogicalModelInfo('ZPD')?.title).toBe(educationalHints.pedagogicalModels.ZPD.title);
+  });
+
+  it('returns undefined for an unrecognized key instead of throwing (AI may not return an exact match)', () => {
+    expect(getPedagogicalModelInfo('Some Model The AI Made Up')).toBeUndefined();
+  });
+
+  it('returns undefined for missing input', () => {
+    expect(getPedagogicalModelInfo(undefined)).toBeUndefined();
   });
 });
