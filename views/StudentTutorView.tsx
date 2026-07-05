@@ -14,6 +14,9 @@ import { DokBadge } from '../components/common/DokBadge';
 import type { DokLevel, AIGeneratedAnnualPlan } from '../types';
 import { ForumCTA } from '../components/common/ForumCTA';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { detectMathDomain, DOMAIN_TOOLS } from '../utils/mathDomainDetector';
+import { SolutionChecker } from '../components/common/SolutionChecker';
 
 const DOK_TUTOR_HINTS: Record<DokLevel, string> = {
   1: 'Се потсетуваме на дефиниции и факти',
@@ -37,6 +40,7 @@ interface Message {
 export const StudentTutorView: React.FC = () => {
   const { t } = useLanguage();
   const { firebaseUser } = useAuth();
+  const { navigate } = useNavigation();
 
   // Curriculum context from URL params
   const params = getHashParams();
@@ -45,6 +49,17 @@ export const StudentTutorView: React.FC = () => {
   const conceptTitleParam = params.get('title') ?? conceptIdParam;
   const gradeParam = params.get('grade');
   const gradeLevelParam = gradeParam ? Number(gradeParam) : null;
+
+  // Suggests a matching interactive lab for the preselected concept — reuses the
+  // same domain classifier/tool map already used by ContextualMathTools in the
+  // lesson-plan editor sidebar (utils/mathDomainDetector.ts), so a concept like
+  // "Плоштина на триаголник" surfaces the Geometry 2D lab rather than nothing.
+  // Suppressed for 'other' (no confident domain match) to avoid a generic,
+  // untargeted suggestion.
+  const labSuggestion = conceptTitleParam ? (() => {
+    const domain = detectMathDomain(conceptTitleParam);
+    return domain === 'other' ? null : DOMAIN_TOOLS[domain][0];
+  })() : null;
 
   const [contextBanner, setContextBanner] = useState<string | null>(null);
   // Official BRO curriculum text for the preselected concept — grounds the tutor's
@@ -62,6 +77,7 @@ export const StudentTutorView: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showChecker, setShowChecker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -215,18 +231,42 @@ export const StudentTutorView: React.FC = () => {
               ) : (
                 <p className="text-sm text-gray-500">Безбедно учење. Објаснува, не решава.</p>
               )}
+              {labSuggestion && (
+                <button
+                  type="button"
+                  onClick={() => navigate(labSuggestion.route)}
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors"
+                >
+                  <span>{labSuggestion.icon}</span> Пробај во {labSuggestion.label}
+                </button>
+              )}
             </div>
           </div>
-          {/* DoK level strip */}
-          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
-            {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
-              <div key={lvl} className="flex flex-col items-center gap-0.5" title={`DoK ${lvl}: ${DOK_TUTOR_HINTS[lvl]}`}>
-                <DokBadge level={lvl} size="compact" showTooltip={false} />
-                <span className="text-[8px] text-gray-400 font-medium text-center leading-none max-w-[44px] truncate">{DOK_TUTOR_HINTS[lvl].split(' ').slice(0, 2).join(' ')}</span>
-              </div>
-            ))}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowChecker(v => !v)}
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${showChecker ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+            >
+              🔍 Провери го решението
+            </button>
+            {/* DoK level strip */}
+            <div className="hidden md:flex items-center gap-1.5">
+              {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
+                <div key={lvl} className="flex flex-col items-center gap-0.5" title={`DoK ${lvl}: ${DOK_TUTOR_HINTS[lvl]}`}>
+                  <DokBadge level={lvl} size="compact" showTooltip={false} />
+                  <span className="text-[8px] text-gray-400 font-medium text-center leading-none max-w-[44px] truncate">{DOK_TUTOR_HINTS[lvl].split(' ').slice(0, 2).join(' ')}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {showChecker && (
+          <div className="p-4 bg-indigo-50/50 border-b border-brand-100">
+            <SolutionChecker />
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-gray-50/50">
           {messages.map((msg) => (

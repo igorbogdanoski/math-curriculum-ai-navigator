@@ -69,36 +69,43 @@ export function detectMathDomain(topicTitle: string): MathDomain {
   return bestDomain;
 }
 
-/** Tool sets surfaced in ContextualMathTools per domain */
+/**
+ * Tool sets surfaced in ContextualMathTools per domain.
+ *
+ * All routes point at real, directly-navigable destinations inside
+ * DataVizStudioView's tabs (`/data-viz?tab=<id>`, read by that view's own
+ * URLSearchParams parsing) rather than `/geometry-2d`, `/geometry-3d`, or
+ * `/math-tools`, none of which are registered routes in App.tsx — those were
+ * dead links everywhere except LessonPlanSidebar's one-off `/math-tools?tab=`
+ * interception, which reroutes into the in-editor MathToolsPanel instead of
+ * navigating. Kept plain `/data-viz?tab=X` here so every consumer (this
+ * mapping is also read directly by StudentTutorView) can `navigate()` to it.
+ */
 export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; icon: string }[]> = {
   algebra: [
-    { label: 'Algebra Tiles', route: '/math-tools?tab=algebra-tiles', icon: '🔲' },
-    { label: 'Алгебарски идентитети', route: '/math-tools?tab=algebra-identity', icon: '≡' },
-    { label: 'График на функција', route: '/math-tools?tab=function-grapher', icon: '📈' },
-    { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
+    { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
+    { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
   geometry: [
-    { label: 'Геометрија 2D лаб', route: '/geometry-2d', icon: '△' },
-    { label: 'Геометрија 3D лаб', route: '/geometry-3d', icon: '🔷' },
-    { label: 'GeoGebra', route: '/math-tools?tab=geogebra', icon: '📐' },
-    { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
+    { label: 'Геометрија 2D лаб', route: '/data-viz?tab=geo2d', icon: '△' },
+    { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷' },
+    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
   ],
   statistics: [
-    { label: 'DataViz Studio', route: '/data-viz', icon: '📊' },
-    { label: 'Лаб за веројатност', route: '/math-tools?tab=probability', icon: '🎲' },
-    { label: 'График на функција', route: '/math-tools?tab=function-grapher', icon: '📈' },
+    { label: 'Лаб за веројатност', route: '/data-viz?tab=prob', icon: '🎲' },
+    { label: 'Статистика лаб', route: '/data-viz?tab=stats', icon: '📊' },
+    { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
   calculus: [
-    { label: 'График на функција', route: '/math-tools?tab=function-grapher', icon: '📈' },
-    { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
-    { label: 'Конични пресеци', route: '/math-tools?tab=conic', icon: '⊙' },
+    { label: 'Калкулус лаб', route: '/data-viz?tab=calc', icon: '∫' },
+    { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
+    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
   ],
   arithmetic: [
-    { label: 'Алгебра плочки', route: '/math-tools?tab=algebra-tiles', icon: '🔲' },
-    { label: 'График на функција', route: '/math-tools?tab=function-grapher', icon: '📈' },
+    { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
+    { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
   other: [
-    { label: 'Математички алатки', route: '/math-tools', icon: '🧮' },
     { label: 'DataViz Studio', route: '/data-viz', icon: '📊' },
   ],
 };
