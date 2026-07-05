@@ -40,8 +40,8 @@ async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: Teach
     });
   },
 
-async askTutor(message: string, history: Array<{ role: string; content: string }>): Promise<string> {
-    const systemPrompt = `Ти си безбеден AI тутор по математика за ученици во основно образование. Твојата главна цел е да им помогнеш да ги разберат концептите, НЕ да им ги решаваш задачите.
+async askTutor(message: string, history: Array<{ role: string; content: string }>, ragContext?: string): Promise<string> {
+    let systemPrompt = `Ти си безбеден AI тутор по математика за ученици во основно образование. Твојата главна цел е да им помогнеш да ги разберат концептите, НЕ да им ги решаваш задачите.
 
 ПРАВИЛА КОИ МОРА ДА ГИ СЛЕДИШ:
 1. НИКОГАШ не го давај конечниот одговор на задача пред ученикот да се обиде сам.
@@ -50,6 +50,10 @@ async askTutor(message: string, history: Array<{ role: string; content: string }
 4. Користи јасен, едноставен јазик прилагоден за основци. ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}
 5. Разложувај ги проблемите на помали, полесни чекори.
 6. Ако изгледа дека ученикот сака само да препише решение, потсети го дека твојата улога е да објаснуваш, а не да решаваш.`;
+
+    if (ragContext) {
+      systemPrompt += `\n\n--- ОФИЦИЈАЛНА НАСТАВНА ПРОГРАМА ЗА ОВАА ТЕМА ---\nСледната содржина е точно она што ученикот треба да го совлада според официјалната програма. Насочувај го разговорот и примерите строго во рамки на ова ниво — не воведувај концепти надвор од неа:\n\n${ragContext}\n--- КРАЈ НА НАСТАВНА ПРОГРАМА ---`;
+    }
 
     const contents = [
       ...history.map(msg => ({

@@ -648,7 +648,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                           type="button"
                           onClick={() => {
                             const enc = (s: string) => encodeURIComponent(s);
-                            window.location.hash = `/tutor?student=${enc(studentName)}&concept=${enc(m.conceptId)}&title=${enc(conceptTitle)}`;
+                            window.location.hash = `/tutor?student=${enc(studentName)}&concept=${enc(m.conceptId)}&title=${enc(conceptTitle)}&grade=${enc(String(conceptGrade))}`;
                           }}
                           title="Вежбај со AI тутор"
                           className="flex-shrink-0 text-xs px-2 py-1 rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 transition"

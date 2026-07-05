@@ -1,14 +1,19 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { firestoreService } from '../services/firestoreService';
+import { ragService } from '../services/ragService';
+import { getCurrentSchoolWeek, getCurrentTopicForWeek } from '../utils/annualPlanPacing';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { DokBadge } from '../components/common/DokBadge';
-import type { DokLevel } from '../types';
+import type { DokLevel, AIGeneratedAnnualPlan } from '../types';
 import { ForumCTA } from '../components/common/ForumCTA';
+import { useAuth } from '../contexts/AuthContext';
 
 const DOK_TUTOR_HINTS: Record<DokLevel, string> = {
   1: 'Се потсетуваме на дефиниции и факти',
@@ -31,14 +36,23 @@ interface Message {
 
 export const StudentTutorView: React.FC = () => {
   const { t } = useLanguage();
+  const { firebaseUser } = useAuth();
 
   // Curriculum context from URL params
   const params = getHashParams();
   const studentParam = params.get('student') ?? '';
   const conceptIdParam = params.get('concept') ?? '';
   const conceptTitleParam = params.get('title') ?? conceptIdParam;
+  const gradeParam = params.get('grade');
+  const gradeLevelParam = gradeParam ? Number(gradeParam) : null;
 
   const [contextBanner, setContextBanner] = useState<string | null>(null);
+  // Official BRO curriculum text for the preselected concept — grounds the tutor's
+  // answers in what this concept is actually supposed to cover, not generic knowledge.
+  const [ragContext, setRagContext] = useState<string>('');
+  // What this class is currently covering per the teacher's own annual plan pacing —
+  // separate from ragContext since it comes from a different, optional source.
+  const [pacingContext, setPacingContext] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -93,6 +107,57 @@ export const StudentTutorView: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Deterministic curriculum grounding — no AI call, just a static lookup from the
+  // official BRO program data, so it can't fail in a costly way.
+  useEffect(() => {
+    if (!conceptIdParam || !gradeLevelParam) return;
+    let cancelled = false;
+
+    ragService.getConceptContext(gradeLevelParam, conceptIdParam)
+      .then(context => { if (!cancelled) setRagContext(context); })
+      .catch(() => { /* non-fatal — tutor falls back to ungrounded behavior */ });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pacing awareness — what this class is currently covering per the launching
+  // teacher's own most recent annual plan (same "latest plan" convention already used
+  // by components/home/PlanningHubWidget.tsx's dashboard widget). Deliberately
+  // conservative: only used when its grade matches the concept being tutored, and
+  // silently skipped on any mismatch, missing plan, or fetch error — this is
+  // supplementary pacing context, never something worth blocking or guessing on.
+  useEffect(() => {
+    if (!firebaseUser?.uid || !gradeLevelParam) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'academic_annual_plans'),
+          where('userId', '==', firebaseUser.uid),
+          orderBy('createdAt', 'desc'),
+          limit(1),
+        ));
+        if (cancelled || snap.empty) return;
+        const data = snap.docs[0].data() as { grade?: string; planData?: AIGeneratedAnnualPlan };
+        const plan = data.planData;
+        if (!plan || String(gradeLevelParam) !== String(data.grade)) return;
+
+        const week = getCurrentSchoolWeek();
+        const topic = getCurrentTopicForWeek(plan, week);
+        if (topic && !cancelled) {
+          setPacingContext(`Оваа паралелка моментално работи на темата „${topic.title}" според годишниот план на наставникот.`);
+        }
+      } catch {
+        // non-fatal — tutor falls back to behavior without pacing context
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -103,7 +168,18 @@ export const StudentTutorView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await geminiService.askTutor(userMessage, newMessages);
+      // Semantic search supplements the deterministic concept grounding for questions that
+      // drift from the preselected concept (or when none was preselected). Requires an
+      // authenticated Firebase session (the embedding proxy needs it) — StudentTutorView is
+      // launched only from teacher-facing views today, so this is normally satisfied; if
+      // absent, this silently falls back to Phase-1-only grounding rather than failing.
+      const semanticHits = firebaseUser
+        ? await ragService.searchSimilarContext(userMessage, 3, gradeLevelParam ?? undefined).catch(() => [])
+        : [];
+      const semanticContext = semanticHits.map(h => h.context).join('\n\n');
+      const combinedContext = [ragContext, pacingContext, semanticContext].filter(Boolean).join('\n\n');
+
+      const response = await geminiService.askTutor(userMessage, newMessages, combinedContext || undefined);
       setMessages([...newMessages, { id: Date.now().toString(), role: 'assistant', content: response }]);
     } catch (error) {
       logger.error('Failed to get tutor response:', error);
