@@ -1,8 +1,10 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
   onSnapshot, query, orderBy, where, serverTimestamp, Timestamp, increment,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { firestorePage } from './firestorePagination';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -361,16 +363,28 @@ export const subscribeMyDuggaTests = (
   });
 };
 
-export const subscribePublicDuggaTests = (
-  onData: (tests: DuggaTest[]) => void,
-): (() => void) => {
-  const q = query(
-    collection(db, 'dugga_tests'),
-    where('isPublic', '==', true),
-    orderBy('createdAt', 'desc'),
-  );
-  return onSnapshot(q, snap => {
-    onData(snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaTest)));
+/**
+ * Cursor-paginated one-time fetch for the public Dugga library tab — replaces a
+ * previously-unbounded live onSnapshot listener on the entire public dugga_tests
+ * collection (every teacher who opened the tab downloaded and real-time-synced ALL
+ * public tests, with no cap, re-rendering on any unrelated write). This collection
+ * actively grows (unlike communityLessonPlans), so it needs real pagination rather
+ * than a one-time full fetch — same firestorePage helper already used by
+ * fetchLibraryPage/fetchGlobalLibraryPage.
+ */
+export const fetchPublicDuggaTestsPage = async (
+  pageSize = 30,
+  cursor?: QueryDocumentSnapshot,
+): Promise<{ items: DuggaTest[]; hasMore: boolean; lastDoc: QueryDocumentSnapshot | null }> => {
+  return firestorePage<DuggaTest>({
+    collectionName: 'dugga_tests',
+    constraints: [
+      where('isPublic', '==', true),
+      orderBy('createdAt', 'desc'),
+    ],
+    pageSize,
+    cursor,
+    errorTag: 'public Dugga tests',
   });
 };
 

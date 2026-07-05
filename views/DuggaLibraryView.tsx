@@ -7,10 +7,11 @@ import {
 } from 'lucide-react';
 import { MathRenderer } from '../components/common/MathRenderer';
 import {
-  subscribeMyDuggaTests, subscribePublicDuggaTests,
+  subscribeMyDuggaTests, fetchPublicDuggaTestsPage,
   deleteDuggaTest, updateDuggaTest, getTestSubmissions,
 } from '../services/firestoreService.dugga';
 import type { DuggaTest, DuggaSubmission, DuggaQuestion } from '../services/firestoreService.dugga';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { fetchClasses, createDuggaAssignment } from '../services/firestoreService';
 import type { SchoolClass } from '../services/firestoreService.types';
 import { useAuth } from '../contexts/AuthContext';
@@ -566,6 +567,9 @@ export function DuggaLibraryView() {
   const [assignTest, setAssignTest] = useState<DuggaTest | null>(null);
   const [loadingMy, setLoadingMy] = useState(true);
   const [loadingPublic, setLoadingPublic] = useState(false);
+  const [loadingMorePublic, setLoadingMorePublic] = useState(false);
+  const [publicLastDoc, setPublicLastDoc] = useState<QueryDocumentSnapshot | null>(null);
+  const [publicHasMore, setPublicHasMore] = useState(false);
 
   // Subscribe to my tests
   useEffect(() => {
@@ -578,16 +582,37 @@ export function DuggaLibraryView() {
     return unsub;
   }, [firebaseUser?.uid]);
 
-  // Subscribe to public tests (lazy — only when tab switches)
+  // Load public tests (lazy — only when tab switches). Paginated one-time fetch instead of
+  // an unbounded live listener — this collection actively grows as teachers publish tests.
   useEffect(() => {
     if (tab !== 'public') return;
+    let cancelled = false;
     setLoadingPublic(true);
-    const unsub = subscribePublicDuggaTests(tests => {
-      setPublicTests(tests);
+    fetchPublicDuggaTestsPage(30).then(page => {
+      if (cancelled) return;
+      setPublicTests(page.items);
+      setPublicLastDoc(page.lastDoc);
+      setPublicHasMore(page.hasMore);
       setLoadingPublic(false);
     });
-    return unsub;
+    return () => { cancelled = true; };
   }, [tab]);
+
+  const loadMorePublicTests = useCallback(async () => {
+    if (!publicLastDoc || loadingMorePublic) return;
+    setLoadingMorePublic(true);
+    try {
+      const page = await fetchPublicDuggaTestsPage(30, publicLastDoc);
+      setPublicTests(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        return [...prev, ...page.items.filter(t => !existingIds.has(t.id))];
+      });
+      setPublicLastDoc(page.lastDoc);
+      setPublicHasMore(page.hasMore);
+    } finally {
+      setLoadingMorePublic(false);
+    }
+  }, [publicLastDoc, loadingMorePublic]);
 
   const handleEdit = useCallback((id: string) => {
     navigate(`/dugga/build?edit=${id}`);
@@ -753,6 +778,21 @@ export function DuggaLibraryView() {
               onAssign={t.teacherUid === firebaseUser?.uid ? () => setAssignTest(t) : undefined}
             />
           ))}
+        </div>
+      )}
+
+      {/* Load more — only the public tab is paginated; "my" tests stay a live subscription (bounded per-teacher) */}
+      {tab === 'public' && publicHasMore && (
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            onClick={loadMorePublicTests}
+            disabled={loadingMorePublic}
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+          >
+            {loadingMorePublic ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Вчитај уште →
+          </button>
         </div>
       )}
 

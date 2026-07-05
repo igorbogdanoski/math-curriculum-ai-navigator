@@ -53,6 +53,10 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // communityLessonPlans is write-locked (firestore.rules: allow write: if false — migrated
+  // to scenario_bank, S102 consolidation) and can never change again, so a persistent
+  // onSnapshot listener buys nothing over a one-time fetch — every authenticated session was
+  // otherwise holding an always-open realtime connection for data that is provably immutable.
   useEffect(() => {
     if (!firebaseUser) {
         setCommunityLessonPlans(exampleLessonPlans);
@@ -60,10 +64,12 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return;
     }
 
+    let cancelled = false;
     setIsCommunityLoading(true);
     const q = query(collection(db, "communityLessonPlans"));
-    const unsubscribe = onSnapshot(q,
+    getDocs(q).then(
       (snapshot) => {
+        if (cancelled) return;
         const fetchedPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LessonPlan));
         const combined = [...exampleLessonPlans, ...fetchedPlans];
         const uniquePlans = Array.from(new Map(combined.map(p => [p.id, p])).values());
@@ -71,13 +77,14 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setIsCommunityLoading(false);
       },
       (err) => {
+        if (cancelled) return;
         logger.error("Error fetching community plans:", err);
         setError("Не може да се вчитаат подготовките од заедницата.");
         setCommunityLessonPlans(exampleLessonPlans);
         setIsCommunityLoading(false);
       }
     );
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [firebaseUser]);
 
   useEffect(() => {

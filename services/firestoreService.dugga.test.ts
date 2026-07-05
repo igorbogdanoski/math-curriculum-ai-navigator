@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createDuggaTest, updateDuggaTest, deleteDuggaTest,
   getDuggaTest, getDuggaTestByCode, submitDuggaTest, incrementDuggaAdaptCount,
+  fetchPublicDuggaTestsPage,
 } from './firestoreService.dugga';
 import type { DuggaTest } from './firestoreService.dugga';
 import {
@@ -25,6 +26,8 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: vi.fn(),
   serverTimestamp: vi.fn(() => 'SERVER_TS'),
   increment: vi.fn((n: number) => ['increment', n]),
+  limit: (n: number) => ({ __limit: n }),
+  startAfter: (c: unknown) => ({ __startAfter: c }),
 }));
 
 vi.mock('../firebaseConfig', () => ({ db: {} }));
@@ -226,5 +229,26 @@ describe('submitDuggaTest', () => {
       studentName: 'Петар', score: 8, submittedAt: 'SERVER_TS',
     }));
     expect(subId).toBe('sub-1');
+  });
+});
+
+describe('fetchPublicDuggaTestsPage — replaces the old unbounded live listener', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const mkDoc = (id: string) => ({ id, data: () => ({ title: `Тест ${id}`, isPublic: true }) });
+
+  it('returns hasMore=false when fewer docs than the page size come back', async () => {
+    (getDocs as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ docs: [mkDoc('a'), mkDoc('b')] });
+    const page = await fetchPublicDuggaTestsPage(5);
+    expect(page.items).toHaveLength(2);
+    expect(page.hasMore).toBe(false);
+  });
+
+  it('reports hasMore=true and a lastDoc when the peek-ahead extra doc comes back', async () => {
+    (getDocs as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ docs: [mkDoc('a'), mkDoc('b'), mkDoc('c')] });
+    const page = await fetchPublicDuggaTestsPage(2);
+    expect(page.items.map(t => t.id)).toEqual(['a', 'b']);
+    expect(page.hasMore).toBe(true);
+    expect(page.lastDoc).toEqual(expect.objectContaining({ id: 'b' }));
   });
 });
