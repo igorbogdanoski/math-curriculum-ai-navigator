@@ -48,7 +48,7 @@ export async function generateAndParseJSON<T>(
   useThinking = false,
   customSystemInstruction?: string,
   userTier?: string,
-  generationOverrides?: { temperature?: number; topP?: number; maxOutputTokens?: number; timeoutMs?: number }
+  generationOverrides?: { temperature?: number; topP?: number; maxOutputTokens?: number; timeoutMs?: number; costKey?: string }
 ): Promise<T> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         throw new OfflineError('AI generation requires network connection');
@@ -82,7 +82,8 @@ export async function generateAndParseJSON<T>(
         generationConfig,
         systemInstruction: customSystemInstruction || JSON_SYSTEM_INSTRUCTION,
         safetySettings: SAFETY_SETTINGS,
-        userTier
+        userTier,
+        costKey: generationOverrides?.costKey,
       }, _controller.signal);
 
       const rawText = response.text || "";

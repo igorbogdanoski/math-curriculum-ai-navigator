@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
+import { deductCreditsServerSide } from './_lib/aiCredits.js';
 
 type GeminiPart = { text?: string };
 type GeminiContent = { parts?: GeminiPart[] };
@@ -87,6 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('embed-proxy', Date.now() - handlerStart);
+      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey);
 
       if (responseShape === 'embeddings') {
         return res.status(200).json({ embeddings: embedding });

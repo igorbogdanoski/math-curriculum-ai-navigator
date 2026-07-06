@@ -1,4 +1,3 @@
-import { logger } from '../utils/logger';
 import { useTour } from '../hooks/useTour';
 import { useGeneratorActions } from '../hooks/useGeneratorActions';
 import { isUnlimitedProfile } from '../hooks/useSubscriptionStatus';
@@ -10,9 +9,7 @@ import { MathToolsPanel } from '../components/common/MathToolsPanel';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
 import { clearDailyQuotaFlag } from '../services/geminiService';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { X } from 'lucide-react';
-import { app } from '../firebaseConfig';
 import type { MaterialType, NationalStandard, Concept, Grade } from '../types';
 import { firestoreService } from '../services/firestoreService';
 import { trackCreditConsumed } from '../services/telemetryService';
@@ -81,31 +78,26 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         }
     };
 
+    // Credit deduction now happens server-side (api/gemini.ts / api/gemini-stream.ts,
+    // defaulting to TEXT_BASIC when the underlying generate call doesn't thread a more
+    // specific costKey through generateAndParseJSON yet). This closure keeps its original
+    // signature — still threaded through useMainGenerate/useBulkGenerate/useVariantGenerate
+    // via useGeneratorActions — but only refreshes the local balance optimistically for
+    // immediate UI feedback; it no longer calls the (now redundant) deductCredits callable,
+    // which would otherwise double-charge on top of the automatic server-side deduction.
     const deductCredits = async (costKeys: string[] = ['TEXT_BASIC']) => {
         if (!user || user.role === 'admin' || isUnlimitedProfile(user)) return;
-        // Client-side sum is only for optimistic UI/telemetry — the server independently
-        // looks up each cost key's price from its own table and never trusts a raw amount.
         const amount = costKeys.reduce((sum, key) => sum + (AI_COSTS[key as keyof typeof AI_COSTS] ?? 0), 0);
         const originalBalance = user.aiCreditsBalance || 0;
         const newBalance = Math.max(0, originalBalance - amount);
-        try {
-            updateLocalProfile({ aiCreditsBalance: newBalance });
-
-            const functions = getFunctions(app);
-            const deductFn = httpsCallable(functions, 'deductCredits');
-            await deductFn({ costKeys });
-
-            trackCreditConsumed({
-                uid: firebaseUser?.uid,
-                amount,
-                previousBalance: originalBalance,
-                newBalance,
-                reason: 'materials_generator',
-            });
-        } catch (err) {
-            logger.error("Failed to deduct credits remotely", err);
-            updateLocalProfile({ aiCreditsBalance: originalBalance });
-        }
+        updateLocalProfile({ aiCreditsBalance: newBalance });
+        trackCreditConsumed({
+            uid: firebaseUser?.uid,
+            amount,
+            previousBalance: originalBalance,
+            newBalance,
+            reason: 'materials_generator',
+        });
     };
 
     const { addNotification } = useNotification();

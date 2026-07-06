@@ -188,7 +188,7 @@ ${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД Н
     };
 
     const generatedPlan = await generateAndParseJSON<AIGeneratedAnnualPlan>(
-      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.2, topP: 0.9 }
+      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.2, topP: 0.9, costKey: 'ANNUAL_PLAN' }
     );
     return enforceAnnualPlanQuality(generatedPlan);
   },

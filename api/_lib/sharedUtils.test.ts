@@ -8,7 +8,7 @@
  * - Methods and headers allowlist are set.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setCorsHeaders, evaluateCreditGate } from './sharedUtils';
+import { setCorsHeaders, evaluateCreditGate, GeminiRequestSchema } from './sharedUtils';
 
 type HeaderMap = Record<string, string>;
 
@@ -136,5 +136,21 @@ describe('evaluateCreditGate — credit paywall decision logic', () => {
   it('isPremium=true bypasses like an active Pro tier', () => {
     const { bypassed } = evaluateCreditGate({ isPremium: true, aiCreditsBalance: 0 });
     expect(bypassed).toBe(true);
+  });
+});
+
+describe('GeminiRequestSchema — costKey (server-side credit deduction bucket)', () => {
+  const baseRequest = { model: 'gemini-2.5-flash', contents: 'hello', config: {} };
+
+  it('accepts a request with no costKey (deductCreditsServerSide defaults to TEXT_BASIC)', () => {
+    const parsed = GeminiRequestSchema.safeParse(baseRequest);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.costKey).toBeUndefined();
+  });
+
+  it('accepts and preserves a request with a costKey', () => {
+    const parsed = GeminiRequestSchema.safeParse({ ...baseRequest, costKey: 'PRESENTATION' });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.costKey).toBe('PRESENTATION');
   });
 });

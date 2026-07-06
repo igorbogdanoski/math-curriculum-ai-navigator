@@ -90,6 +90,8 @@ async function callGeminiOnce(params: {
   userTier?: string;
   skipTierOverride?: boolean;
   tools?: unknown[];
+  /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
+  costKey?: string;
 }, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
@@ -115,6 +117,7 @@ async function callGeminiOnce(params: {
         contents: normalizeContents(params.contents),
         config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig },
         ...(params.tools && params.tools.length > 0 ? { tools: params.tools } : {}),
+        ...(params.costKey ? { costKey: params.costKey } : {}),
       }),
       signal: effectiveSignal
     });
@@ -156,6 +159,8 @@ export async function callGeminiProxy(params: {
   userTier?: string;
   skipTierOverride?: boolean;
   tools?: unknown[];
+  /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
+  costKey?: string;
 }, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
   return queueRequest(() =>
     circuitBreakerCall('gemini', () =>
@@ -259,6 +264,8 @@ export async function callGeminiEmbed(params: { model?: string; contents: unknow
 
 export async function* streamGeminiProxy(params: {
   model: string; contents: unknown; generationConfig?: Record<string, unknown>; systemInstruction?: string; safetySettings?: SafetySetting[]; userTier?: string;
+  /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
+  costKey?: string;
 }, signal?: AbortSignal): AsyncGenerator<string, void, unknown> {
   const STREAM_TIMEOUT_MS = 120_000;
   const timeoutController = new AbortController();
@@ -273,7 +280,7 @@ export async function* streamGeminiProxy(params: {
     const response = await fetch('/api/gemini-stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ model: modelToUse, contents: normalizeContents(params.contents), config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig } }),
+      body: JSON.stringify({ model: modelToUse, contents: normalizeContents(params.contents), config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig }, ...(params.costKey ? { costKey: params.costKey } : {}) }),
       signal: effectiveSignal,
     });
     if (!response.ok) {
@@ -314,6 +321,8 @@ export async function* streamGeminiProxy(params: {
 
 export async function* streamGeminiProxyRich(params: {
   model: string; contents: unknown; generationConfig?: Record<string, unknown>; systemInstruction?: string; safetySettings?: SafetySetting[]; userTier?: string;
+  /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
+  costKey?: string;
 }): AsyncGenerator<StreamChunk, void, unknown> {
   const token = await getAuthToken();
   let modelToUse = params.model;
@@ -323,7 +332,7 @@ export async function* streamGeminiProxyRich(params: {
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify({ model: modelToUse, contents: normalizeContents(params.contents), config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig } }),
+    body: JSON.stringify({ model: modelToUse, contents: normalizeContents(params.contents), config: { systemInstruction: params.systemInstruction, safetySettings: params.safetySettings, ...params.generationConfig }, ...(params.costKey ? { costKey: params.costKey } : {}) }),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

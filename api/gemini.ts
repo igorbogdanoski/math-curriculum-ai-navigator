@@ -3,6 +3,7 @@ import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool
 import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
+import { deductCreditsServerSide } from './_lib/aiCredits.js';
 
 // Increase body size limit to 10 MB to support PDF inline data uploads
 export const config = {
@@ -116,6 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-proxy', Date.now() - handlerStart);
+      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey);
       return res.status(200).json({ text: response.text(), candidates: response.candidates, groundingMetadata });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));

@@ -144,7 +144,7 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         false,
         systemInstr,
       profile?.tier,
-      { temperature: 0.2, topP: 0.9, timeoutMs }
+      { temperature: 0.2, topP: 0.9, timeoutMs, costKey: 'ASSESSMENT' }
     );
     const hardenedResult = reinforceFractionKeywords(result, context);
     

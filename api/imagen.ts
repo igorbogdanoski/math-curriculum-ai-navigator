@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
+import { deductCreditsServerSide } from './_lib/aiCredits.js';
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 
 interface ImageGenResult {
@@ -105,6 +106,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // best-effort — never break the response path
         }
         recordLatency('imagen-proxy', Date.now() - handlerStart);
+        // This route only ever generates images — default to ILLUSTRATION
+        // rather than aiCredits.ts's generic TEXT_BASIC fallback if the
+        // caller didn't specify a costKey.
+        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey ?? 'ILLUSTRATION');
         return res.status(200).json({ inlineData: { mimeType, data } });
       }
 

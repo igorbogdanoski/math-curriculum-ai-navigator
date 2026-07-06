@@ -24,7 +24,7 @@ async generateParallelTest(topic: string, gradeLevel: number, questionCount: num
 
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, groups: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { groupName: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, text: { type: Type.STRING }, type: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.STRING }, points: { type: Type.NUMBER }, cognitiveLevel: { type: Type.STRING }, dokLevel: { type: Type.NUMBER } }, required: ['id', 'text', 'correctAnswer', 'points'] } } }, required: ['groupName', 'questions'] } } }, required: ['title', 'groups'] };
 
-    const result = await generateAndParseJSON<GeneratedTest>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema);
+    const result = await generateAndParseJSON<GeneratedTest>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema, MAX_RETRIES, false, undefined, undefined, { costKey: 'TEST' });
     const enrichedResult: GeneratedTest = {
         ...result, topic: safeTopic, gradeLevel, createdAt: new Date().toISOString(),
         groups: result.groups.map((g: GeneratedTest['groups'][number]) => ({
@@ -93,7 +93,7 @@ async generateDifferentiatedTest(topics: string[], gradeLevel: number, levels: D
     const levelDesc = levels.map(l => `Ниво ${l.level} (${l.bloomLabel}, ${l.pointsPerTask}п): ${l.taskCount} задачи`).join('\n');
     const prompt = `Генерирај диференцирана ПИСМЕНА РАБОТА по математика за одделение ${gradeLevel}.\nТеми: ${topicStr}\n\nСТРУКТУРА (3 нивоа по Bloom):\n${levelDesc}\n\nПравила:\n- ДВЕ ГРУПИ (А и Б): паралелни задачи, различни бројки\n- LaTeX за сите математички изрази: $...$\n- Секоја задача носи точниот број поени наведен за нивото\n\nВрати JSON со title, rubric, groups [{groupName, questions}].`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, rubric: { type: Type.STRING }, groups: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { groupName: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, text: { type: Type.STRING }, type: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.STRING }, points: { type: Type.NUMBER }, cognitiveLevel: { type: Type.STRING } }, required: ['id', 'text', 'correctAnswer', 'points'] } } }, required: ['groupName', 'questions'] } } }, required: ['title', 'groups'] };
-    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>([{ text: prompt }], schema, PRO_MODEL);
+    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>([{ text: prompt }], schema, PRO_MODEL, undefined, MAX_RETRIES, false, undefined, undefined, { costKey: 'TEST' });
     return { ...result, model: 'differentiated', topics, gradeLevel, topic: topicStr, levels, rubric: result.rubric, createdAt: new Date().toISOString() };
   },
 
@@ -102,7 +102,7 @@ async generateMasteryTest(topics: string[], gradeLevel: number, questionCount: n
     const topicStr = topics.join(', ');
     const prompt = `Генерирај тест по МОДЕЛ НА МАСТЕРИ (Bloom, 1968) за математика, одделение ${gradeLevel}.\nТеми: ${topicStr}\nБрој прашања: ${questionCount} (по група А и Б)\nПраг на мастери: ${masteryThreshold}%\n\nПедагошки принципи:\n- 60% прашања = базично владеење\n- 30% прашања = примена во нов контекст\n- 10% прашања = трансфер/проблем (бонус)\n- ДВЕ ГРУПИ (А и Б): паралелни задачи\n- LaTeX за сите математички изрази: $...$\n\nВрати JSON со title, rubric, groups [{groupName, questions}].`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, rubric: { type: Type.STRING }, groups: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { groupName: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, text: { type: Type.STRING }, type: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.STRING }, points: { type: Type.NUMBER }, cognitiveLevel: { type: Type.STRING } }, required: ['id', 'text', 'correctAnswer', 'points'] } } }, required: ['groupName', 'questions'] } } }, required: ['title', 'groups'] };
-    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>([{ text: prompt }], schema, PRO_MODEL);
+    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>([{ text: prompt }], schema, PRO_MODEL, undefined, MAX_RETRIES, false, undefined, undefined, { costKey: 'TEST' });
     return { ...result, model: 'mastery', topics, gradeLevel, topic: topicStr, masteryThreshold, rubric: result.rubric, createdAt: new Date().toISOString() };
   },
 

@@ -107,6 +107,7 @@ ${buildSchema()}`;
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: 'application/json', temperature: 0.3 },
     safetySettings: SAFETY_SETTINGS,
+    costKey: 'KAHOOT',
   });
   try {
     return parseResponse(response.text);
@@ -144,6 +145,7 @@ ${buildSchema()}`;
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: 'application/json', temperature: 0.5 },
     safetySettings: SAFETY_SETTINGS,
+    costKey: 'KAHOOT',
   });
   try {
     return parseResponse(response.text);
@@ -181,6 +183,7 @@ ${buildSchema()}`;
     }],
     generationConfig: { responseMimeType: 'application/json', temperature: 0.3 },
     safetySettings: SAFETY_SETTINGS,
+    costKey: 'KAHOOT',
   });
   try {
     return parseResponse(response.text);

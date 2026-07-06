@@ -231,26 +231,20 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
       const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined);
       setPlan(generated);
 
+      // Credit deduction now happens server-side (api/gemini.ts, costKey: 'ANNUAL_PLAN'
+      // threaded through generateAnnualPlan) — no separate client-side call needed.
+      // Local balance is refreshed optimistically only, for immediate UI feedback.
       if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
         const previousBalance = user.aiCreditsBalance || 0;
         const newBalance = Math.max(0, previousBalance - cost);
-        try {
-          const { getFunctions, httpsCallable } = await import('firebase/functions');
-          const { app } = await import('../firebaseConfig');
-          const functions = getFunctions(app);
-          const deductFn = httpsCallable(functions, 'deductCredits');
-          await deductFn({ costKeys: ['ANNUAL_PLAN'] });
-          updateLocalProfile({ aiCreditsBalance: newBalance });
-          trackCreditConsumed({
-            uid: firebaseUser?.uid,
-            amount: cost,
-            previousBalance,
-            newBalance,
-            reason: 'annual_plan_generator',
-          });
-        } catch (err) {
-          logger.error('Error deducting credits:', err);
-        }
+        updateLocalProfile({ aiCreditsBalance: newBalance });
+        trackCreditConsumed({
+          uid: firebaseUser?.uid,
+          amount: cost,
+          previousBalance,
+          newBalance,
+          reason: 'annual_plan_generator',
+        });
       }
     } catch (error) {
       logger.error('Failed to generate plan:', error);

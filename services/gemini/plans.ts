@@ -194,7 +194,7 @@ ${isSecondaryGrade
     const ragQuery84 = [topicTitle, ...concepts.map(c => c.title)].filter(Boolean).join(' ');
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack, ragQuery84);
     // Use high-quality model for better pedagogical reasoning
-        const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
+        const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier, { costKey: 'IDEAS' });
         // Cache write must never block UI completion; generation result is already available.
         void setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
@@ -662,7 +662,7 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
 
     const ragQueryPres = [topic, ...concepts].filter(Boolean).join(' ');
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack, ragQueryPres || undefined);
-    return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
+    return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier, { costKey: 'PRESENTATION' });
   }
 };
 

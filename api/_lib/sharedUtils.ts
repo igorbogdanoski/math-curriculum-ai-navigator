@@ -159,6 +159,9 @@ export const GeminiRequestSchema = z.object({
   taskType: z.enum(EMBEDDING_TASK_TYPES).optional(),
   // Gemini Embedding 2 — Matryoshka variable dimensions (64–3072, default 3072)
   outputDimensionality: z.number().int().min(64).max(3072).optional(),
+  // AI_COSTS bucket name for server-side credit deduction after a successful
+  // response — optional, defaults to TEXT_BASIC when absent/unrecognized.
+  costKey: z.string().optional(),
 });
 
 export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;

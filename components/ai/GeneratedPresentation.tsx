@@ -166,15 +166,12 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
         user ?? undefined
       );
 
-      // Deduct credits
+      // Credit deduction now happens server-side (api/imagen.ts defaults to
+      // ILLUSTRATION when no costKey is sent) — no separate client-side call
+      // needed. Local balance is refreshed optimistically only.
       if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
           const previousBalance = user.aiCreditsBalance || 0;
           const newBalance = Math.max(0, previousBalance - cost);
-          const { getFunctions, httpsCallable } = await import('firebase/functions');
-          const { app } = await import('../../firebaseConfig');
-          const functions = getFunctions(app);
-          const deductFn = httpsCallable(functions, 'deductCredits');
-          await deductFn({ costKeys: ['ILLUSTRATION'] });
           updateLocalProfile({ aiCreditsBalance: newBalance });
           // S39-F2: telemetry
           trackCreditConsumed({

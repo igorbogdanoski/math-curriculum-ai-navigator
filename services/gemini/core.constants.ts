@@ -19,6 +19,10 @@ export const AI_COSTS = {
     LEARNING_PATH: 3,
     VARIANTS: 3,
     ANNUAL_PLAN: 10,
+    TEST: 4,
+    KAHOOT: 3,
+    ASSESSMENT: 3,
+    IDEAS: 2,
 };
 
 export enum Type {

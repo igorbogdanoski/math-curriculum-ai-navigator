@@ -3,6 +3,7 @@ import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@g
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
+import { deductCreditsServerSide } from './_lib/aiCredits.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
@@ -121,6 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
+      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey);
 
       res.write('data: [DONE]\n\n');
       res.end();
