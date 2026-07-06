@@ -264,19 +264,25 @@ service cloud.firestore {
 
     // ── Зачувани прашања (saved_questions) ──
     match /saved_questions/{doc} {
-      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin() || isSchoolAdmin(resource.data.schoolId));
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
-      allow delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
-      // Author may flip public/verified flags on their own question; admin moderation
+      allow delete: if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin() || isSchoolAdmin(resource.data.schoolId));
+      // Author may flip public/verified flags on their own question; admin/school_admin moderation
       // (ContentReviewView approve/revision-request flow) may set the full review field set.
       allow update: if isAuthenticated() && (
         (resource.data.teacherUid == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'isVerified', 'verifiedAt'])) ||
-        (isAdmin() &&
+        ((isAdmin() || isSchoolAdmin(resource.data.schoolId)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(
             ['isApproved', 'isVerified', 'isPublic', 'reviewStatus', 'reviewedBy', 'reviewedAt', 'reviewReasonCodes', 'reviewComments']
           ))
       );
+    }
+
+    // ── Глобални поставки за feature flags (app_config/featureFlags) — само global admin пишува ──
+    match /app_config/{doc} {
+      allow read:  if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // ── Огласи (announcements) ──

@@ -149,6 +149,8 @@ export interface SavedQuestion {
   verifiedAt?: any;
   isPublic?: boolean;
   isApproved?: boolean;
+  /** Denormalized from the saving teacher's profile — lets a school_admin's review queue scope to their own school. */
+  schoolId?: string;
   reviewStatus?: 'pending' | 'approved' | 'revision_requested' | 'rejected';
   reviewReasonCodes?: FeedbackReasonCode[];
   reviewComments?: string;

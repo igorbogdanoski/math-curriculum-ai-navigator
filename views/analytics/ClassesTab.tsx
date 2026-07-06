@@ -96,17 +96,24 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const handleCreate = async () => {
         if (!newName.trim() || !teacherUid) return;
         setSaving(true);
-        await firestoreService.createClass({
+        const classId = await firestoreService.createClass({
             name: newName.trim(),
             gradeLevel: newGrade,
             teacherUid,
             studentNames: [],
         });
+        const code = await firestoreService.generateClassJoinCode(classId);
         setNewName('');
         setNewGrade(1);
         setShowForm(false);
         setSaving(false);
         await loadClasses();
+        addNotification(
+            code
+                ? `Одделението е креирано! Код за учениците: ${code}`
+                : 'Одделението е креирано! Кодот за учениците ќе се генерира одделно.',
+            'success'
+        );
     };
 
     const handleDelete = (classId: string, name: string) => {

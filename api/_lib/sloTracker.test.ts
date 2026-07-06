@@ -9,6 +9,8 @@ import {
   quantile,
   _resetForTests,
   ROUTE_BUDGETS_MS,
+  bucketFieldFor,
+  currentHourKey,
 } from './sloTracker';
 
 describe('sloTracker.quantile', () => {
@@ -89,6 +91,26 @@ describe('sloTracker.recordLatency + getSloSnapshot', () => {
     recordLatency('unknown-route', 100);
     const snap = getSloSnapshot().find(s => s.route === 'unknown-route');
     expect(snap!.budget).toBeGreaterThan(0);
+  });
+});
+
+describe('sloTracker.bucketFieldFor — fleet-wide histogram bucketing', () => {
+  it('places samples in the correct bucket, including the lowest and open-ended buckets', () => {
+    expect(bucketFieldFor(0)).toBe('bucket_0_500');
+    expect(bucketFieldFor(499)).toBe('bucket_0_500');
+    expect(bucketFieldFor(500)).toBe('bucket_500_1000');
+    expect(bucketFieldFor(1999)).toBe('bucket_1000_2000');
+    expect(bucketFieldFor(2000)).toBe('bucket_2000_4000');
+    expect(bucketFieldFor(15999)).toBe('bucket_8000_16000');
+    expect(bucketFieldFor(16000)).toBe('bucket_16000_plus');
+    expect(bucketFieldFor(999_999)).toBe('bucket_16000_plus');
+  });
+});
+
+describe('sloTracker.currentHourKey', () => {
+  it('produces a YYYYMMDDHH key with no separators', () => {
+    const key = currentHourKey();
+    expect(key).toMatch(/^\d{10}$/);
   });
 });
 

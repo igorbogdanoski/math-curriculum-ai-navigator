@@ -48,6 +48,11 @@ interface SloAPISummary {
     topErrors: { code: string; count: number }[];
     periodDays: number;
   };
+  ai: {
+    available: boolean;
+    routes: { route: string; count: number; p50: number | null; p95: number | null }[];
+    periodHours: number;
+  };
 }
 
 type WebVitalName = 'LCP' | 'CLS' | 'INP' | 'FCP' | 'TTFB';
@@ -355,6 +360,16 @@ export const SLODashboardView: React.FC = () => {
   const ciPassRate   = apiData?.ci.passRate ?? null;
   const ciStatus     = rag(ciPassRate, { green: SLO_THRESHOLDS.ciPassRatePct.green, amber: SLO_THRESHOLDS.ciPassRatePct.amber });
 
+  // Fleet-wide AI latency derived (real cross-user data, unlike the shadow-log panel below)
+  const aiFleetRoutes = apiData?.ai.routes ?? [];
+  const aiFleetWorstP95 = aiFleetRoutes.reduce<number | null>((worst, r) => {
+    if (r.p95 === null) return worst;
+    return worst === null ? r.p95 : Math.max(worst, r.p95);
+  }, null);
+  const aiFleetStatus = apiData?.ai.available
+    ? rag(aiFleetWorstP95, { green: SLO_THRESHOLDS.aiP95LatencyMs.green, amber: SLO_THRESHOLDS.aiP95LatencyMs.amber }, true)
+    : 'unknown';
+
   // Web Vitals device split derived
   const webVitalsByDevice = webVitals?.byDevice ?? [];
   const webVitalsAll = webVitals?.samples ?? [];
@@ -393,10 +408,18 @@ export const SLODashboardView: React.FC = () => {
       '# SLO Dashboard — EOD Report',
       `**Датум:** ${new Date().toLocaleString('mk-MK')}`,
       '',
-      '## AI Performance',
+      '## AI Performance (оваа сесија — shadow log)',
       `- p50 латенција: ${fmtMs(aiP50)}`,
       `- p95 латенција: ${fmtMs(aiP95)} ${aiP95Status === 'green' ? '✅' : aiP95Status === 'amber' ? '🟡' : '❌'}`,
       `- Error rate: ${fmt(aiErrorRatePct, 1, '%')} ${aiErrorStatus === 'green' ? '✅' : aiErrorStatus === 'amber' ? '🟡' : '❌'}`,
+      '',
+      `## AI Latency (флота, последни ${apiData?.ai.periodHours ?? 24}ч)`,
+      ...(apiData?.ai.available
+        ? [
+            `- Најспора рута (p95): ${fmtMs(aiFleetWorstP95)} ${aiFleetStatus === 'green' ? '✅' : aiFleetStatus === 'amber' ? '🟡' : '❌'}`,
+            ...aiFleetRoutes.map(r => `  - ${r.route}: p50=${fmtMs(r.p50)}, p95=${fmtMs(r.p95)}, n=${r.count}`),
+          ]
+        : ['- Недостапно (сервисна сметка не е конфигурирана)']),
       `- Quota: ${quotaDiag.isCurrentlyExhausted ? '❌ EXHAUSTED' : '✅ OK'}`,
       `- Shadow samples: ${shadowReport.sampleSize}`,
       '',
@@ -514,6 +537,30 @@ export const SLODashboardView: React.FC = () => {
           <div className="text-[10px] text-gray-400 mt-1">
             Базирано на {latencies.length} повик{latencies.length !== 1 ? 'и' : ''} (shadow log)
           </div>
+        </Panel>
+
+        {/* ── Panel 1B: AI Latency (fleet-wide, real cross-user data) ────────── */}
+        <Panel title="AI Латенција (флота)" icon={<Server className="w-4 h-4" />} status={aiFleetStatus} refreshedAt={refreshedAt}>
+          {!apiData?.ai.available ? (
+            <div className="text-xs text-gray-400">Нема податоци (сервисна сметка не е конфигурирана).</div>
+          ) : aiFleetRoutes.length === 0 ? (
+            <div className="text-xs text-gray-400">Нема сообраќај во последните {apiData.ai.periodHours}ч.</div>
+          ) : (
+            <>
+              <Metric
+                label="Најспора рута (p95)"
+                value={fmtMs(aiFleetWorstP95)}
+                status={aiFleetStatus}
+                sub={`SLO: <${SLO_THRESHOLDS.aiP95LatencyMs.green / 1000}s`}
+              />
+              {aiFleetRoutes.slice(0, 4).map(r => (
+                <Metric key={r.route} label={r.route} value={fmtMs(r.p95)} sub={`n=${r.count}`} />
+              ))}
+              <div className="text-[10px] text-gray-400 mt-1">
+                Сите корисници, последни {apiData.ai.periodHours}ч (приближно, bucket-резолуција)
+              </div>
+            </>
+          )}
         </Panel>
 
         {/* ── Panel 2: AI Availability ──────────────────────────────────────── */}

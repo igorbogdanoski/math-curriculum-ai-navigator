@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContentReviewView } from './ContentReviewView';
 
+let mockUser: { role: string; schoolId?: string } = { role: 'admin' };
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { role: 'admin' },
+    user: mockUser,
     firebaseUser: { uid: 'admin-uid' },
   }),
 }));
@@ -50,6 +51,7 @@ describe('ContentReviewView rollout reactivity', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    mockUser = { role: 'admin' };
   });
 
   it('updates reject action label when rollout flag changes during session', async () => {
@@ -64,5 +66,28 @@ describe('ContentReviewView rollout reactivity', () => {
     });
 
     expect(await screen.findByRole('button', { name: 'Feedback / Отфрли' })).toBeTruthy();
+  });
+});
+
+describe('ContentReviewView school scoping', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+  });
+
+  it('passes no schoolId for a global admin (sees every school)', async () => {
+    mockUser = { role: 'admin' };
+    const { firestoreService } = await import('../services/firestoreService');
+    render(<ContentReviewView />);
+    await screen.findByText('2+2?');
+    expect(firestoreService.fetchUnapprovedQuestions).toHaveBeenCalledWith(undefined);
+  });
+
+  it("scopes the query to the school_admin's own schoolId", async () => {
+    mockUser = { role: 'school_admin', schoolId: 'school-A' };
+    const { firestoreService } = await import('../services/firestoreService');
+    render(<ContentReviewView />);
+    await screen.findByText('2+2?');
+    expect(firestoreService.fetchUnapprovedQuestions).toHaveBeenCalledWith('school-A');
   });
 });

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneDrive — Math Navigator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F9FAFB;
+      font-family: system-ui, sans-serif;
+      color: #1e293b;
+    }
+    p { font-size: 14px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <p>Се поврзувам со OneDrive…</p>
+  <!--
+    Dedicated landing page for the OneDrive file-picker OAuth redirect (see
+    services/cloudImport/oneDrivePicker.ts). Isolated from the SPA's own strict
+    site-wide CSP (vercel.json) so the OneDrive.js SDK's own popup-close/
+    postMessage handshake — which relies on an inline handler — isn't blocked.
+    This page never renders user-controlled content, so the relaxed CSP here
+    doesn't reopen any XSS surface on the actual app.
+  -->
+  <script src="https://js.live.net/v7.2/OneDrive.js"></script>
+</body>
+</html>

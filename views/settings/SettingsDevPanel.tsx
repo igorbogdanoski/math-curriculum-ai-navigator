@@ -6,6 +6,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { firestoreService } from '../../services/firestoreService';
 import { requestNotificationPermission } from '../../services/pushService';
 import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../../services/feedbackTaxonomyRollout';
+import { getGlobalDefault, setGlobalDefault, type GlobalFlagKey } from '../../services/featureFlags/globalConfig';
 import {
     isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics,
     isMacedonianContextEnabled, setMacedonianContextEnabled,
@@ -34,6 +35,16 @@ export function SettingsDevPanel() {
     const [vertexShadowEnabled, setVertexShadowState] = useState(() => isVertexShadowEnabled());
     const [shadowReport, setShadowReport] = useState<ShadowCompareReport | null>(null);
     const [isMentorEnabled, setIsMentorEnabled] = useState(user?.isMentor ?? false);
+
+    // Global (admin-controlled) fleet-wide defaults — a separate layer from the per-user toggles above.
+    const [globalFlags, setGlobalFlags] = useState<Record<GlobalFlagKey, boolean>>(() => ({
+        mk_local_context_enabled: getGlobalDefault('mk_local_context_enabled') ?? true,
+        recovery_worksheet_enabled: getGlobalDefault('recovery_worksheet_enabled') ?? false,
+        intent_router_enabled: getGlobalDefault('intent_router_enabled') ?? true,
+        vertex_ai_shadow_enabled: getGlobalDefault('vertex_ai_shadow_enabled') ?? false,
+        feedback_taxonomy_rollout_enabled: getGlobalDefault('feedback_taxonomy_rollout_enabled') ?? false,
+    }));
+    const [isSavingGlobalFlag, setIsSavingGlobalFlag] = useState<GlobalFlagKey | null>(null);
 
     // Quota dashboard state
     const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string; resetDate: string; source: string }>({ exhausted: false, resetTime: '', resetDate: '', source: '' });
@@ -118,6 +129,21 @@ export function SettingsDevPanel() {
         } catch {
             setIsMentorEnabled(!next);
             addNotification('Грешка при промена на менторски статус.', 'error');
+        }
+    };
+
+    const toggleGlobalFlag = async (key: GlobalFlagKey) => {
+        const next = !globalFlags[key];
+        setGlobalFlags(prev => ({ ...prev, [key]: next }));
+        setIsSavingGlobalFlag(key);
+        try {
+            await setGlobalDefault(key, next);
+            addNotification('Глобалната поставка е зачувана за сите наставници.', 'success');
+        } catch {
+            setGlobalFlags(prev => ({ ...prev, [key]: !next }));
+            addNotification('Грешка при зачувување на глобалната поставка.', 'error');
+        } finally {
+            setIsSavingGlobalFlag(null);
         }
     };
 
@@ -330,6 +356,25 @@ export function SettingsDevPanel() {
                             </button>
                         </div>
                     </div>
+                </Card>
+            )}
+
+            {/* Global (admin-controlled) feature-flag defaults */}
+            {user?.role === 'admin' && (
+                <Card className="max-w-2xl border-purple-200 bg-purple-50/30">
+                    <h2 className="text-xl font-semibold text-purple-800 mb-2">🌐 Глобални поставки (само админ)</h2>
+                    <p className="text-sm text-purple-700 mb-2">
+                        Овие поставки важат за сите наставници кои немаат лично поставено сопствен прекинувач погоре.
+                        Личниот прекинувач секогаш има предност пред глобалната вредност.
+                    </p>
+                    <div className="space-y-0">
+                        <ToggleRow label="🇲🇰 Македонски контекст во AI (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.mk_local_context_enabled} onToggle={() => toggleGlobalFlag('mk_local_context_enabled')} color="indigo" />
+                        <ToggleRow label="🩹 Recovery Worksheet (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.recovery_worksheet_enabled} onToggle={() => toggleGlobalFlag('recovery_worksheet_enabled')} color="emerald" />
+                        <ToggleRow label="⚡ Intent Router (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.intent_router_enabled} onToggle={() => toggleGlobalFlag('intent_router_enabled')} color="violet" />
+                        <ToggleRow label="🔬 Vertex AI Shadow Mode (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.vertex_ai_shadow_enabled} onToggle={() => toggleGlobalFlag('vertex_ai_shadow_enabled')} color="blue" />
+                        <ToggleRow label="🧭 Feedback Taxonomy Rollout (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.feedback_taxonomy_rollout_enabled} onToggle={() => toggleGlobalFlag('feedback_taxonomy_rollout_enabled')} color="indigo" />
+                    </div>
+                    {isSavingGlobalFlag && <p className="text-xs text-purple-600 mt-2">Зачувувам...</p>}
                 </Card>
             )}
 

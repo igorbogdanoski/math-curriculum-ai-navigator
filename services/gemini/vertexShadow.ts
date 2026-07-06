@@ -16,6 +16,8 @@
  *   - AbortSignal.timeout(30_000) prevents long-hanging shadow calls.
  */
 
+import { getGlobalDefault } from '../featureFlags/globalConfig';
+
 export const VERTEX_SHADOW_KEY = 'vertex_ai_shadow_enabled';
 const VERTEX_SHADOW_LOG_KEY = 'vertex_ai_shadow_log';
 const MAX_LOG_ENTRIES = 50;
@@ -67,7 +69,11 @@ export interface ShadowCompareReport {
 // ─── Feature-flag helpers ─────────────────────────────────────────────────────
 
 export function isVertexShadowEnabled(): boolean {
-  try { return localStorage.getItem(VERTEX_SHADOW_KEY) === 'true'; } catch { return false; }
+  try {
+    const local = localStorage.getItem(VERTEX_SHADOW_KEY);
+    if (local !== null) return local === 'true';
+    return getGlobalDefault('vertex_ai_shadow_enabled') ?? false;
+  } catch { return false; }
 }
 
 export function setVertexShadowEnabled(enabled: boolean): void {

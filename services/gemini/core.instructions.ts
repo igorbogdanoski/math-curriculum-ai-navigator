@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger';
 import { SecondaryTrack, SECONDARY_TRACK_LABELS } from '../../types';
+import { getGlobalDefault } from '../featureFlags/globalConfig';
 
 // @prompt-start: TEXT_SYSTEM_INSTRUCTION
 export const TEXT_SYSTEM_INSTRUCTION = `
@@ -28,13 +29,21 @@ export const MK_LOCAL_CONTEXT_KEY = 'mk_local_context_enabled';
 export const RECOVERY_WORKSHEET_KEY = 'recovery_worksheet_enabled';
 
 export function isMacedonianContextEnabled(): boolean {
-    try { return localStorage.getItem(MK_LOCAL_CONTEXT_KEY) !== 'false'; } catch { return true; }
+    try {
+        const local = localStorage.getItem(MK_LOCAL_CONTEXT_KEY);
+        if (local !== null) return local !== 'false';
+        return getGlobalDefault('mk_local_context_enabled') ?? true;
+    } catch { return true; }
 }
 export function setMacedonianContextEnabled(val: boolean): void {
     try { localStorage.setItem(MK_LOCAL_CONTEXT_KEY, String(val)); } catch { /* ignore */ }
 }
 export function isRecoveryWorksheetEnabled(): boolean {
-    try { return localStorage.getItem(RECOVERY_WORKSHEET_KEY) === 'true'; } catch { return false; }
+    try {
+        const local = localStorage.getItem(RECOVERY_WORKSHEET_KEY);
+        if (local !== null) return local === 'true';
+        return getGlobalDefault('recovery_worksheet_enabled') ?? false;
+    } catch { return false; }
 }
 export function setRecoveryWorksheetEnabled(val: boolean): void {
     try { localStorage.setItem(RECOVERY_WORKSHEET_KEY, String(val)); } catch { /* ignore */ }

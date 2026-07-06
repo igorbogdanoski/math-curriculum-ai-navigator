@@ -9,6 +9,8 @@
 //
 // This is a spike: tracks decisions in sessionStorage for latency/cost measurement.
 
+import { getGlobalDefault } from '../featureFlags/globalConfig';
+
 export type AITaskType =
   // Lite — trivial output, 1-3 sentences or ≤ 10 words
   | 'quiz_title'         // Smart title from quiz content (<10 words)
@@ -70,8 +72,9 @@ const INTENT_ROUTER_STATS_KEY = 'intent_router_stats';
 
 export function isIntentRouterEnabled(): boolean {
   try {
-    const val = localStorage.getItem(INTENT_ROUTER_KEY);
-    return val === null ? true : val === 'true'; // enabled by default
+    const local = localStorage.getItem(INTENT_ROUTER_KEY);
+    if (local !== null) return local === 'true';
+    return getGlobalDefault('intent_router_enabled') ?? true; // enabled by default
   } catch { return true; }
 }
 

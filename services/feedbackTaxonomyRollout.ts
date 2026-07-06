@@ -1,3 +1,5 @@
+import { getGlobalDefault } from './featureFlags/globalConfig';
+
 export const FEEDBACK_TAXONOMY_ROLLOUT_KEY = 'feedback_taxonomy_rollout_enabled';
 const FEEDBACK_TAXONOMY_STATS_KEY = 'feedback_taxonomy_rollout_stats';
 
@@ -16,7 +18,9 @@ type FeedbackTaxonomyRolloutStats = Record<
 
 export function isFeedbackTaxonomyRolloutEnabled(): boolean {
   try {
-    return localStorage.getItem(FEEDBACK_TAXONOMY_ROLLOUT_KEY) === 'true';
+    const local = localStorage.getItem(FEEDBACK_TAXONOMY_ROLLOUT_KEY);
+    if (local !== null) return local === 'true';
+    return getGlobalDefault('feedback_taxonomy_rollout_enabled') ?? false;
   } catch {
     return false;
   }

@@ -10,7 +10,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { HISTOGRAM_BUCKET_BOUNDARIES_MS } from './_lib/sloTracker.js';
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -267,6 +268,98 @@ async function fetchSentryHealth(): Promise<SentryHealthData> {
   }
 }
 
+// ─── Fleet-wide AI latency (from api/_lib/sloTracker.ts's Firestore histogram) ─
+
+interface AiRouteLatency {
+  route: string;
+  count: number;
+  p50: number | null;
+  p95: number | null;
+}
+
+interface AiFleetLatencyData {
+  available: boolean;
+  routes: AiRouteLatency[];
+  periodHours: number;
+}
+
+function bucketFieldNames(): string[] {
+  const names: string[] = [];
+  let lo = 0;
+  for (const hi of HISTOGRAM_BUCKET_BOUNDARIES_MS) {
+    names.push(`bucket_${lo}_${hi}`);
+    lo = hi;
+  }
+  names.push(`bucket_${lo}_plus`);
+  return names;
+}
+
+function bucketUpperBound(fieldName: string): number {
+  if (fieldName.endsWith('_plus')) {
+    return HISTOGRAM_BUCKET_BOUNDARIES_MS[HISTOGRAM_BUCKET_BOUNDARIES_MS.length - 1];
+  }
+  return Number(fieldName.split('_')[2]);
+}
+
+/**
+ * Estimates a percentile from a bucketed histogram. Approximate by design — resolution
+ * is bucket-boundary width, not exact — and deliberately rounds UP to the boundary of
+ * whichever bucket contains the target rank (better to slightly overestimate latency
+ * on an SLO dashboard than underestimate it).
+ */
+export function estimatePercentileFromHistogram(buckets: Record<string, number>, totalCount: number, p: number): number | null {
+  if (totalCount <= 0) return null;
+  const targetRank = (p / 100) * totalCount;
+  let cumulative = 0;
+  const fields = bucketFieldNames();
+  for (const field of fields) {
+    cumulative += buckets[field] ?? 0;
+    if (cumulative >= targetRank) return bucketUpperBound(field);
+  }
+  return bucketUpperBound(fields[fields.length - 1]);
+}
+
+const AI_FLEET_LATENCY_PERIOD_HOURS = 24;
+
+function hourKeysForLastNHours(n: number): string[] {
+  const now = Date.now();
+  const keys: string[] = [];
+  for (let i = 0; i < n; i++) {
+    keys.push(new Date(now - i * 3_600_000).toISOString().slice(0, 13).replace(/[-:T]/g, ''));
+  }
+  return keys;
+}
+
+export async function fetchAiFleetLatency(db: Firestore): Promise<AiFleetLatencyData> {
+  try {
+    const hourKeys = hourKeysForLastNHours(AI_FLEET_LATENCY_PERIOD_HOURS);
+    const snap = await db.collection('slo_histograms').where('hourKey', 'in', hourKeys).get();
+
+    const merged = new Map<string, { count: number; buckets: Record<string, number> }>();
+    for (const doc of snap.docs) {
+      const data = doc.data() as Record<string, unknown>;
+      const route = String(data.route ?? 'unknown');
+      const entry = merged.get(route) ?? { count: 0, buckets: {} };
+      entry.count += Number(data.count ?? 0);
+      for (const field of bucketFieldNames()) {
+        entry.buckets[field] = (entry.buckets[field] ?? 0) + Number(data[field] ?? 0);
+      }
+      merged.set(route, entry);
+    }
+
+    const routes: AiRouteLatency[] = Array.from(merged.entries()).map(([route, { count, buckets }]) => ({
+      route,
+      count,
+      p50: estimatePercentileFromHistogram(buckets, count, 50),
+      p95: estimatePercentileFromHistogram(buckets, count, 95),
+    }));
+
+    return { available: true, routes, periodHours: AI_FLEET_LATENCY_PERIOD_HOURS };
+  } catch {
+    return { available: false, routes: [], periodHours: AI_FLEET_LATENCY_PERIOD_HOURS };
+  }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -279,12 +372,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(authz.status).json({ error: authz.error });
   }
 
-  const [ci, sentry] = await Promise.all([fetchCIReliability(), fetchSentryHealth()]);
+  const admin = getFirebaseAdmin();
+  const [ci, sentry, ai] = await Promise.all([
+    fetchCIReliability(),
+    fetchSentryHealth(),
+    admin ? fetchAiFleetLatency(admin.db) : Promise.resolve<AiFleetLatencyData>({ available: false, routes: [], periodHours: AI_FLEET_LATENCY_PERIOD_HOURS }),
+  ]);
 
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
   return res.status(200).json({
     generatedAt: new Date().toISOString(),
     ci,
     sentry,
+    ai,
   });
 }

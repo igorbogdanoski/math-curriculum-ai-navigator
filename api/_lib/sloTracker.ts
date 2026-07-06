@@ -1,17 +1,15 @@
 /**
- * api/_lib/sloTracker.ts — In-memory p50/p95 latency tracker for API routes.
+ * api/_lib/sloTracker.ts — latency tracking for API routes.
  *
- * Vercel serverless functions can't share state across cold starts, so this
- * is a best-effort observability primitive that:
- *   - Records the last N samples per route in a fixed-size ring buffer
- *   - Computes p50/p95 on demand
- *   - Emits a console.warn when a recorded latency exceeds the route's
- *     configured budget — surfaces in Vercel logs / Sentry breadcrumbs
- *
- * For real SLO dashboards, route the warn lines into Sentry/Datadog or
- * forward Vercel runtime logs to your APM. This module is the cheap
- * always-on signal that catches obvious p95 regressions on a single
- * warm container.
+ * Two layers:
+ *   1. An in-memory p50/p95 ring buffer, scoped to a single warm container —
+ *      cheap, always-on, catches obvious p95 regressions on whichever
+ *      instance happens to be warm, but resets on every cold start and never
+ *      reflects the whole fleet.
+ *   2. A fire-and-forget Firestore histogram (`slo_histograms`), bucketed per
+ *      route per hour via atomic increments — one small doc per route per
+ *      hour, bounded and cheap, aggregated fleet-wide by /api/slo-summary for
+ *      the admin-only /slo dashboard's "AI Latency" panel.
  */
 
 const MAX_SAMPLES_PER_ROUTE = 100;
@@ -64,6 +62,7 @@ export function quantile(values: readonly number[], q: number): number {
 export function recordLatency(route: string, ms: number): void {
   if (!Number.isFinite(ms) || ms < 0) return;
   pushSample(route, ms);
+  persistHistogramSample(route, ms);
 
   const budget = ROUTE_BUDGETS_MS[route] ?? DEFAULT_P95_BUDGET_MS;
   if (ms > budget) {
@@ -73,6 +72,57 @@ export function recordLatency(route: string, ms: number): void {
       `[slo] route=${route} latency=${ms.toFixed(0)}ms exceeds budget=${budget}ms`,
     );
   }
+}
+
+// ─── Fleet-wide histogram persistence (Firestore) ──────────────────────────────
+
+/** Upper bound (exclusive) of each bucket, in ms. The last bucket is open-ended ("_plus"). */
+export const HISTOGRAM_BUCKET_BOUNDARIES_MS = [500, 1000, 2000, 4000, 8000, 16000] as const;
+
+/** Maps a latency to its histogram bucket's Firestore field name. Exported for unit testing. */
+export function bucketFieldFor(ms: number): string {
+  let lo = 0;
+  for (const hi of HISTOGRAM_BUCKET_BOUNDARIES_MS) {
+    if (ms < hi) return `bucket_${lo}_${hi}`;
+    lo = hi;
+  }
+  return `bucket_${lo}_plus`;
+}
+
+/** `YYYYMMDDHH` bucket for the current hour — keeps `slo_histograms` docs small and bounded. */
+export function currentHourKey(): string {
+  return new Date().toISOString().slice(0, 13).replace(/[-:T]/g, '');
+}
+
+/**
+ * Fire-and-forget: atomically increments the current hour's histogram bucket
+ * for this route in Firestore. Never awaited by callers, never throws — a
+ * missed sample is an acceptable loss, blocking the response is not (same
+ * convention as deductCreditsServerSide in api/_lib/aiCredits.ts).
+ */
+function persistHistogramSample(route: string, ms: number): void {
+  void (async () => {
+    try {
+      const { getFirebaseAdmin } = await import('./sharedUtils.js');
+      if (!getFirebaseAdmin()) return; // local dev without a service account — no-op
+
+      const { getFirestore, FieldValue } = await import('firebase-admin/firestore');
+      const hourKey = currentHourKey();
+      const bucket = bucketFieldFor(ms);
+      await getFirestore().collection('slo_histograms').doc(`${route}_${hourKey}`).set(
+        {
+          [bucket]: FieldValue.increment(1),
+          count: FieldValue.increment(1),
+          route,
+          hourKey,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } catch (err) {
+      console.error('[slo] failed to persist histogram sample:', err);
+    }
+  })();
 }
 
 export interface RouteSloSnapshot {

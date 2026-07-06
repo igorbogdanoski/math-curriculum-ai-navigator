@@ -134,6 +134,7 @@ export function useGeneratorSave({
       const conceptId = state.selectedConcepts[0];
       await firestoreService.saveQuestion({
         teacherUid: firebaseUser.uid,
+        schoolId: user?.schoolId,
         question: q.question,
         type: q.type,
         options: q.options,

@@ -43,6 +43,11 @@ function detectMimeType(name: string): string {
  * Uses the hosted OneDrive.js picker (action: 'download'), which handles its own auth popup against the
  * multitenant + personal-account app registration and returns a pre-authenticated, CORS-enabled download URL —
  * no separate MSAL token flow needed for this read-only picking use case.
+ *
+ * The OAuth popup's redirectUri deliberately points at a dedicated static page (public/onedrive-redirect.html)
+ * rather than the SPA root — that page has its own relaxed, narrowly-scoped CSP (vercel.json) so the OneDrive
+ * SDK's own popup-close handshake (which relies on an inline handler) isn't blocked by the app's strict
+ * site-wide CSP, which has no 'unsafe-inline' in script-src.
  */
 export async function pickFromOneDrive(): Promise<CloudPickedFile | null> {
   if (!CLIENT_ID) {
@@ -57,7 +62,7 @@ export async function pickFromOneDrive(): Promise<CloudPickedFile | null> {
       clientId: CLIENT_ID,
       action: 'download',
       multiSelect: false,
-      advanced: { redirectUri: window.location.origin },
+      advanced: { redirectUri: `${window.location.origin}/onedrive-redirect.html` },
       success: (response) => resolve(response.value[0] ?? null),
       cancel: () => resolve(null),
       error: (err) => reject(new CloudImportError(`OneDrive грешка: ${String(err)}`, 'onedrive')),

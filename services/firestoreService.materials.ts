@@ -230,20 +230,25 @@ export const saveQuestion = async (q: Omit<SavedQuestion, 'id'>): Promise<string
       ...q,
       options: q.options ?? [],      // Firestore rejects undefined
       solution: q.solution ?? '',
+      // Explicit — fetchUnapprovedQuestions() filters `isApproved == false`, and Firestore
+      // equality queries never match a missing field, so this must be written on create.
+      isApproved: q.isApproved ?? false,
       reviewStatus: q.reviewStatus ?? 'pending',
       savedAt: serverTimestamp(),
     });
     return ref.id;
   };
 
-export const fetchUnapprovedQuestions = async (): Promise<SavedQuestion[]> => {
+/** Global admin passes no schoolId (sees every school's queue). A school_admin must pass their own schoolId. */
+export const fetchUnapprovedQuestions = async (schoolId?: string): Promise<SavedQuestion[]> => {
     try {
-      const q = query(
-        collection(db, 'saved_questions'),
+      const constraints = [
         where('isApproved', '==', false),
+        ...(schoolId ? [where('schoolId', '==', schoolId)] : []),
         orderBy('savedAt', 'desc'),
-        limit(200)
-      );
+        limit(200),
+      ];
+      const q = query(collection(db, 'saved_questions'), ...constraints);
       const snap = await getDocs(q);
       return snap.docs
         .map(d => ({ id: d.id, ...d.data() } as SavedQuestion))

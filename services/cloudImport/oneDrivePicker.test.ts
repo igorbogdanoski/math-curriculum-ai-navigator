@@ -9,12 +9,16 @@ async function importFresh() {
   return import('./oneDrivePicker');
 }
 
+let capturedOpenOptions: { advanced?: { redirectUri: string } } | undefined;
+
 function installOneDriveMock(picked: { name: string; downloadUrl: string } | 'cancel') {
   (window as any).OneDrive = {
     open: (options: {
+      advanced?: { redirectUri: string };
       success: (response: { value: unknown[] }) => void;
       cancel: () => void;
     }) => {
+      capturedOpenOptions = options;
       if (picked === 'cancel') {
         options.cancel();
       } else {
@@ -47,6 +51,13 @@ describe('pickFromOneDrive', () => {
     const { pickFromOneDrive } = await importFresh();
     const result = await pickFromOneDrive();
     expect(result).toBeNull();
+  });
+
+  it('points the OAuth redirect at the dedicated onedrive-redirect.html page, not the SPA root', async () => {
+    installOneDriveMock('cancel');
+    const { pickFromOneDrive } = await importFresh();
+    await pickFromOneDrive();
+    expect(capturedOpenOptions?.advanced?.redirectUri).toBe(`${window.location.origin}/onedrive-redirect.html`);
   });
 
   it('downloads via the pre-authenticated Graph downloadUrl and infers mimeType', async () => {

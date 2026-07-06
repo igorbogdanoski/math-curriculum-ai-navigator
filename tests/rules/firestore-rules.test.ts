@@ -248,6 +248,30 @@ d('SEC-2 — Firestore rules coverage', () => {
         reviewedBy: 'admin1', reviewedAt: new Date(),
       }));
     });
+
+    it('a school_admin can read/approve saved_questions scoped to their own school, but not another school\'s', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('users/schoolAdminA').set({ role: 'school_admin', schoolId: 'school-A' });
+        await f.doc('saved_questions/qA').set({ teacherUid: 'teacher1', schoolId: 'school-A', isApproved: false });
+        await f.doc('saved_questions/qB').set({ teacherUid: 'teacher2', schoolId: 'school-B', isApproved: false });
+      });
+      const schoolAdminA = testEnv.authenticatedContext('schoolAdminA');
+      const fSchoolAdminA = schoolAdminA.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(fSchoolAdminA.doc('saved_questions/qA').get());
+      await assertSucceeds(fSchoolAdminA.doc('saved_questions/qA').update({
+        isApproved: true, isVerified: true, isPublic: true, reviewStatus: 'approved',
+        reviewedBy: 'schoolAdminA', reviewedAt: new Date(),
+      }));
+      await assertFails(fSchoolAdminA.doc('saved_questions/qB').get());
+      await assertFails(fSchoolAdminA.doc('saved_questions/qB').update({ isApproved: true, reviewStatus: 'approved' }));
+    });
   });
 
   describe('scenario_bank/{docId} — moderation fields scoping', () => {

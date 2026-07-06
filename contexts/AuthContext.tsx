@@ -9,6 +9,7 @@ import { setSentryUser, clearSentryUser } from '../services/sentryService';
 import { parseFirestoreDoc, TeachingProfileSchema } from '../schemas/firestoreSchemas';
 import { deleteAllUserData } from '../services/firestoreService.gdpr';
 import { isDemoMode } from '../services/demoMode';
+import { initGlobalFeatureFlags } from '../services/featureFlags/globalConfig';
 
 interface AuthState {
     firebaseUser: User | null;
@@ -51,6 +52,9 @@ const initialAuthState: AuthState = {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(initialAuthState);
   const auth = getAuth(app);
+
+  // Admin-controlled fleet-wide feature-flag defaults — subscribed once, independent of auth state.
+  useEffect(() => { initGlobalFeatureFlags(); }, []);
 
   const fetchUserProfile = useCallback(async (uid: string): Promise<TeachingProfile | null> => {
     const docRef = doc(db, "users", uid);

@@ -57,9 +57,9 @@ export const ContentReviewView: React.FC = () => {
         const fetchPending = async () => {
             setIsLoading(true);
             try {
-                // Here we fetch questions to review. 
-                // In a production app, this would be a specific query: `isApproved == false`
-                const allQs = await firestoreService.fetchUnapprovedQuestions();
+                // Global admin sees every school's queue; school_admin is scoped to their own school.
+                const scopeSchoolId = user?.role === 'school_admin' ? user.schoolId : undefined;
+                const allQs = await firestoreService.fetchUnapprovedQuestions(scopeSchoolId);
                 setQuestions(allQs);
             } catch (error) {
                 logger.error("Error fetching content for review", error);
