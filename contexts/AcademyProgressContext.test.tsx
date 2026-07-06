@@ -74,6 +74,24 @@ describe('AcademyProgressContext — earnedSpecializationIds + badge sync', () =
     expect(academyBadgesService.setOwnBadges).toHaveBeenCalledWith('u1', expect.arrayContaining(['inclusive-teacher']));
   });
 
+  it('earns a quizOnly specialization from quizzes alone, with zero appliedLessons', async () => {
+    const AI_LITERATE_CHAPTERS = [
+      'ch-01-intro', 'ch-03-what-is-ai', 'ch-07-prompt-engineering',
+      'ch-14-limitations', 'ch-16-mk-schools', 'ch-17-integrity',
+    ];
+    const { result } = renderHook(() => useAcademyProgress(), { wrapper });
+
+    for (const id of AI_LITERATE_CHAPTERS.slice(0, -1)) {
+      act(() => result.current.markQuizAsCompleted(id));
+    }
+    expect(result.current.earnedSpecializationIds).not.toContain('ai-literate-teacher');
+
+    act(() => result.current.markQuizAsCompleted(AI_LITERATE_CHAPTERS[AI_LITERATE_CHAPTERS.length - 1]));
+
+    await waitFor(() => expect(result.current.earnedSpecializationIds).toContain('ai-literate-teacher'));
+    expect(result.current.progress.appliedLessons).toEqual([]);
+  });
+
   it('does not sync badges when there is no authenticated user', () => {
     vi.mocked(useAuth).mockReturnValue({ firebaseUser: null } as unknown as ReturnType<typeof useAuth>);
     const { result } = renderHook(() => useAcademyProgress(), { wrapper });

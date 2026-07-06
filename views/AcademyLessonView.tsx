@@ -7,6 +7,7 @@ import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { GeneratorState } from '../hooks/useGeneratorState';
 import { AcademyMentor } from '../components/academy/AcademyMentor';
 import { AcademyQuiz } from '../components/academy/AcademyQuiz';
+import { AcademyReflectionPrompt } from '../components/academy/AcademyReflectionPrompt';
 import { FeynmanChallenge } from '../components/academy/FeynmanChallenge';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { DokBadge } from '../components/common/DokBadge';
@@ -119,7 +120,8 @@ const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
 export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
-  const { markLessonAsRead } = useAcademyProgress();
+  const { markLessonAsRead, markLessonAsApplied, saveReflection, progress } = useAcademyProgress();
+  const [showReflectionPrompt, setShowReflectionPrompt] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
   const [scrollPct, setScrollPct] = useState(0);
   const [sm2Updated, setSm2Updated] = useState(false);
@@ -204,6 +206,8 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
     }
     
     openGeneratorPanel(statePayload);
+    markLessonAsApplied(lesson.id);
+    setShowReflectionPrompt(true);
   };
 
   const getCategoryName = () => {
@@ -358,7 +362,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
             <ConceptFlashcards lesson={lesson} />
 
             {/* Mastery Quiz */}
-            <AcademyQuiz lesson={lesson} />
+            <AcademyQuiz item={{ id: lesson.id, title: lesson.title, contentText: lesson.theory.join(' ') }} />
 
             {/* Feynman Challenge */}
             <FeynmanChallenge lesson={lesson} onGradeComplete={handleFeynmanGradeComplete} />
@@ -392,6 +396,14 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
       
       {/* AI Mentor */}
       <AcademyMentor lesson={lesson} />
+
+      {showReflectionPrompt && (
+        <AcademyReflectionPrompt
+          existingNote={progress.reflections[lesson.id]}
+          onSave={note => saveReflection(lesson.id, note)}
+          onClose={() => setShowReflectionPrompt(false)}
+        />
+      )}
     </div>
   );
 };

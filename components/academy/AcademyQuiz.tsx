@@ -1,7 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, Brain, HelpCircle, ArrowRight, Loader2, Award } from 'lucide-react';
-import { AcademyLesson } from '../../data/academy/content';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import confetti from 'canvas-confetti';
@@ -13,7 +12,16 @@ interface Question {
   explanation: string;
 }
 
-export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => {
+export interface AcademyQuizItem {
+  id: string;
+  title: string;
+  /** Prose content the quiz is generated from — a lesson's theory paragraphs
+   *  joined into one string, or an AI-literacy chapter's description + key
+   *  points joined the same way. Content-agnostic on purpose. */
+  contentText: string;
+}
+
+export const AcademyQuiz: React.FC<{ item: AcademyQuizItem }> = ({ item }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -23,13 +31,13 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
   const [isFinished, setIsFinished] = useState(false);
   const { markQuizAsCompleted, progress } = useAcademyProgress();
 
-  const isAlreadyCompleted = progress.completedQuizzes.includes(lesson.id);
+  const isAlreadyCompleted = progress.completedQuizzes.includes(item.id);
 
   const generateQuiz = async () => {
     setIsGenerating(true);
     try {
-      const safeLessonTitle = sanitizePromptInput(lesson.title, 120);
-      const safeLessonTheory = sanitizePromptInput(lesson.theory.join(' '), 1200);
+      const safeLessonTitle = sanitizePromptInput(item.title, 120);
+      const safeLessonTheory = sanitizePromptInput(item.contentText, 1200);
       const prompt = `Генерирај краток квиз од 3 прашања за наставник по математика базиран на лекцијата: "${safeLessonTitle}".
 Лекцијата покрива: ${safeLessonTheory}
 
@@ -83,7 +91,7 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
     } else {
       setIsFinished(true);
       if (score / questions.length >= 0.8) { // ≥80% correct (pedagogical standard)
-        markQuizAsCompleted(lesson.id);
+        markQuizAsCompleted(item.id);
         confetti({
           particleCount: 150,
           spread: 70,

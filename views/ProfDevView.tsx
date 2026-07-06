@@ -17,6 +17,7 @@ import {
   type ChapterCategory, type ToolCategory, type GlossaryCategory,
   type PromptSubject, type PromptGrade,
 } from '../data/profDev/index';
+import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 
 // ── Tab definition ────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ const GuideTab: React.FC = () => {
                             </li>
                           ))}
                         </ul>
+                        <AcademyQuiz item={{ id: ch.id, title: ch.title, contentText: [ch.description, ...ch.keyPoints].join(' ') }} />
                       </div>
                     )}
                   </div>

@@ -8,6 +8,11 @@ export interface Specialization {
   badgeColor: string;
   lessonIds: string[];
   certificateLabel: string;
+  /** When true, earning this specialization only requires quizzing every
+   *  lessonId — no matching appliedLessons entry. Defaults to false (existing
+   *  behavior) when omitted. Used for content with no "applied in the
+   *  classroom" analog, like the AI-literacy reference chapters. */
+  quizOnly?: boolean;
 }
 
 export const SPECIALIZATIONS: Specialization[] = [
@@ -78,6 +83,25 @@ export const SPECIALIZATIONS: Specialization[] = [
       'cooperative-think-pair-share',
       'cooperative-gallery-walk',
       'formative-traffic-light',
+    ],
+  },
+  {
+    id: 'ai-literate-teacher',
+    title: 'AI-Писмен Наставник',
+    subtitle: 'Одговорна и ефективна употреба на AI во наставата',
+    emoji: '🤖',
+    color: 'bg-violet-50 text-violet-700',
+    borderColor: 'border-violet-200',
+    badgeColor: 'bg-violet-500',
+    certificateLabel: 'Сертификат за AI писменост',
+    quizOnly: true,
+    lessonIds: [
+      'ch-01-intro',
+      'ch-03-what-is-ai',
+      'ch-07-prompt-engineering',
+      'ch-14-limitations',
+      'ch-16-mk-schools',
+      'ch-17-integrity',
     ],
   },
 ];

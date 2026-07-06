@@ -102,7 +102,8 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
   const earnedSpecializationIds = useMemo(() => (
     SPECIALIZATIONS
       .filter(spec => spec.lessonIds.every(id =>
-        progress.appliedLessons.includes(id) && progress.completedQuizzes.includes(id)))
+        progress.completedQuizzes.includes(id) &&
+        (spec.quizOnly || progress.appliedLessons.includes(id))))
       .map(spec => spec.id)
   ), [progress.appliedLessons, progress.completedQuizzes]);
 
