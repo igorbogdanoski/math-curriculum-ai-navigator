@@ -272,7 +272,10 @@ export default defineConfig(({ mode }) => {
             ],
             // Show offline page when navigation request fails
             navigateFallback: '/offline.html',
-            navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
+            // onedrive-redirect.html must reach the network for real (its own scoped CSP in
+            // vercel.json, and the ?oauth=... query the OneDrive picker appends) — otherwise
+            // Workbox silently swaps in offline.html for this and any other uncached navigation.
+            navigateFallbackDenylist: [/^\/api\//, /^\/admin\//, /^\/onedrive-redirect\.html/],
             runtimeCaching: [
               {
                 // Large on-demand chunks (matura data, mammoth, mathlive, pdf)
