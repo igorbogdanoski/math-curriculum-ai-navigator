@@ -297,5 +297,28 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(fOwner.doc('grade_books/gb1').get());
       await assertFails(fIntruder.doc('grade_books/gb1').get());
     });
+
+    it('academy_badges: any authenticated user can read, only the owner can write', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('academy_badges/teacherY').set({ completedSpecializationIds: ['inclusive-teacher'] });
+      });
+      const owner = testEnv.authenticatedContext('teacherY');
+      const otherTeacher = testEnv.authenticatedContext('anotherTeacher');
+      const fOwner = owner.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      const fOther = otherTeacher.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(fOwner.doc('academy_badges/teacherY').get());
+      await assertSucceeds(fOther.doc('academy_badges/teacherY').get());
+      await assertSucceeds(fOwner.doc('academy_badges/teacherY').set({ completedSpecializationIds: ['inclusive-teacher', 'digital-innovator'] }));
+      await assertFails(fOther.doc('academy_badges/teacherY').set({ completedSpecializationIds: [] }));
+    });
   });
 });

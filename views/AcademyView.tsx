@@ -25,7 +25,7 @@ const SRSReviewPanel = React.lazy(() =>
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
   const { user } = useAuth();
-  const { progress } = useAcademyProgress();
+  const { progress, earnedSpecializationIds } = useAcademyProgress();
   const { readLessons, appliedLessons, completedQuizzes, xp } = progress;
   const levelInfo = calcFibonacciLevel(xp);
   const avatar = getAvatar(levelInfo.level);
@@ -372,11 +372,9 @@ export const AcademyView: React.FC = () => {
               const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
               const quizzed = spec.lessonIds.filter(id => completedQuizzes.includes(id)).length;
               const total = spec.lessonIds.length;
-              
-              const isAppliedComplete = applied === total;
-              const isQuizComplete = quizzed === total;
-              const completed = isAppliedComplete && isQuizComplete;
-              
+
+              const completed = earnedSpecializationIds.includes(spec.id);
+
               const pct = Math.round(((applied + quizzed) / (total * 2)) * 100);
               return (
                 <div key={spec.id} className={`rounded-2xl border-2 p-6 bg-white ${completed ? spec.borderColor : 'border-gray-100'} transition-all`}>

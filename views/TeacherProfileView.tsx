@@ -71,7 +71,7 @@ function RadarMini({ scores, labels }: { scores: number[]; labels: string[] }) {
 
 export const TeacherProfileView: React.FC = () => {
   const { user, firebaseUser } = useAuth();
-  const { progress } = useAcademyProgress();
+  const { progress, earnedSpecializationIds } = useAcademyProgress();
   const { readLessons, appliedLessons, completedQuizzes, xp } = progress;
   const levelInfo = calcFibonacciLevel(xp);
   const avatar = getAvatar(levelInfo.level);
@@ -124,11 +124,7 @@ export const TeacherProfileView: React.FC = () => {
     return { domain, total: ids.length, applied, pct: ids.length > 0 ? applied / ids.length : 0 };
   });
 
-  const earnedSpecializations = SPECIALIZATIONS.filter(spec => {
-    const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
-    const quizzed = spec.lessonIds.filter(id => completedQuizzes.includes(id)).length;
-    return applied === spec.lessonIds.length && quizzed === spec.lessonIds.length;
-  });
+  const earnedSpecializations = SPECIALIZATIONS.filter(spec => earnedSpecializationIds.includes(spec.id));
 
   const inProgressSpecializations = SPECIALIZATIONS
     .filter(spec => !earnedSpecializations.includes(spec))

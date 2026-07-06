@@ -724,6 +724,15 @@ service cloud.firestore {
       allow write: if isOwner(teacherUid);
     }
 
+    // ── Academy public badges (denormalized summary of completed specializations) ──
+    // Doc ID = uid. Only specialization IDs — no XP, no lesson-level detail, no
+    // reflections (those stay self-only under users/{uid}/academy/progress).
+    // Shown next to a teacher's name elsewhere in the app (Scenario Bank, Forum).
+    match /academy_badges/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(uid);
+    }
+
     // ── School B2B inquiry (public lead-capture form, /school-pricing) ──
     // Unauthenticated by design — pre-signup. Write-only from the client; only admins read leads.
     match /school_inquiries/{doc} {

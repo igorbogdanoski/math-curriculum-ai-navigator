@@ -1,8 +1,11 @@
 ﻿import { logger } from '../utils/logger';
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useQueryClient } from '@tanstack/react-query';
+import { SPECIALIZATIONS } from '../data/academy/specializations';
+import { academyBadgesService } from '../services/firestoreService.academyBadges';
 
 export const ACADEMY_XP = {
   READ_LESSON: 5,
@@ -68,6 +71,9 @@ export interface AcademyProgressContextType {
   getCompletionPercentage: (totalLessons: number) => number;
   /** Call after saving a material to the library. Returns newly unlocked achievement labels. */
   trackMaterialSaved: (type: string) => string[];
+  /** Specialization ids where every lessonId is both applied and quizzed — single
+   *  source of truth, also drives the public academy_badges/{uid} sync below. */
+  earnedSpecializationIds: string[];
 }
 
 const defaultProgress: AcademyProgress = {
@@ -90,6 +96,32 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
   const { firebaseUser } = useAuth();
   const progressRef = useRef(progress);
   useEffect(() => { progressRef.current = progress; }, [progress]);
+  const queryClient = useQueryClient();
+  const lastSyncedBadgesRef = useRef<string[]>([]);
+
+  const earnedSpecializationIds = useMemo(() => (
+    SPECIALIZATIONS
+      .filter(spec => spec.lessonIds.every(id =>
+        progress.appliedLessons.includes(id) && progress.completedQuizzes.includes(id)))
+      .map(spec => spec.id)
+  ), [progress.appliedLessons, progress.completedQuizzes]);
+
+  // Publish the public academy_badges/{uid} summary whenever the earned set
+  // actually changes — never on every unrelated progress tick.
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const prev = lastSyncedBadgesRef.current;
+    const changed = earnedSpecializationIds.length !== prev.length
+      || earnedSpecializationIds.some(id => !prev.includes(id));
+    if (!changed) return;
+
+    lastSyncedBadgesRef.current = earnedSpecializationIds;
+    academyBadgesService.setOwnBadges(firebaseUser.uid, earnedSpecializationIds)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['academy-badges', firebaseUser.uid] });
+      })
+      .catch(e => logger.error('Failed to sync academy badges', e));
+  }, [earnedSpecializationIds, firebaseUser, queryClient]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -303,6 +335,7 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
       addXp,
       getCompletionPercentage,
       trackMaterialSaved,
+      earnedSpecializationIds,
     }}>
       {children}
     </AcademyProgressContext.Provider>

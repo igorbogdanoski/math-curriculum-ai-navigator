@@ -9,6 +9,7 @@ import { MathRenderer } from '../common/MathRenderer';
 import { DOK_META } from '../../types';
 import type { DokLevel, Concept } from '../../types';
 import { uploadForumImage } from '../../services/storageService';
+import { AcademyBadgeRow } from '../academy/AcademyBadgeChip';
 
 const Shape3DViewer = React.lazy(() =>
   import('../math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
@@ -480,6 +481,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <AuthorAvatar name={thread.authorName} />
             <span className="text-[10px] text-gray-600 font-medium">{thread.authorName}</span>
+            <AcademyBadgeRow uid={thread.authorUid} />
             {thread.conceptTitle && (
               <span className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
                 <Tag className="w-2.5 h-2.5" />{thread.conceptTitle}
@@ -753,7 +755,10 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 flex-wrap">
               <AuthorAvatar name={thread.authorName} size="md" />
               <div>
-                <div className="text-xs font-semibold text-gray-700">{thread.authorName}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-gray-700">{thread.authorName}</span>
+                  <AcademyBadgeRow uid={thread.authorUid} />
+                </div>
                 <div className="text-[10px] text-gray-400">{formatDate(thread.createdAt)}</div>
               </div>
               <div className="ml-auto">
@@ -888,6 +893,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                             {reply.authorUid === 'ai-expert' && (
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">AI</span>
                             )}
+                            <AcademyBadgeRow uid={reply.authorUid} />
                           </div>
                           <div className="text-[10px] text-gray-400">{timeAgo(reply.createdAt)}</div>
                         </div>

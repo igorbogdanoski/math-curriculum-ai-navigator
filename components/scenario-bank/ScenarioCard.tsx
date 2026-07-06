@@ -5,6 +5,7 @@ import { getAvgRating, getUserRating } from '../../services/firestoreService.sce
 import { DokBadge } from '../common/DokBadge';
 import { SuggestRevisionModal } from './SuggestRevisionModal';
 import { ObservationModal } from './ObservationModal';
+import { AcademyBadgeRow } from '../academy/AcademyBadgeChip';
 
 const BLOOM_LABELS: Record<string, string> = {
   '1': 'Помнење', '2': 'Разбирање', '3': 'Примена',
@@ -176,6 +177,8 @@ export const ScenarioCard: React.FC<Props> = ({
             )}
             {entry.authorName}
             {entry.schoolName ? ` · ${entry.schoolName}` : ''}
+            {' '}
+            <AcademyBadgeRow uid={entry.authorUid} />
           </span>
           <div className="flex items-center gap-2 shrink-0">
             <span className="flex items-center gap-0.5"><GitFork className="w-3 h-3" />{entry.forkCount}</span>
