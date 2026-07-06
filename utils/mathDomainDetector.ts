@@ -72,24 +72,26 @@ export function detectMathDomain(topicTitle: string): MathDomain {
 /**
  * Tool sets surfaced in ContextualMathTools per domain.
  *
- * All routes point at real, directly-navigable destinations inside
- * DataVizStudioView's tabs (`/data-viz?tab=<id>`, read by that view's own
- * URLSearchParams parsing) rather than `/geometry-2d`, `/geometry-3d`, or
- * `/math-tools`, none of which are registered routes in App.tsx — those were
- * dead links everywhere except LessonPlanSidebar's one-off `/math-tools?tab=`
- * interception, which reroutes into the in-editor MathToolsPanel instead of
- * navigating. Kept plain `/data-viz?tab=X` here so every consumer (this
- * mapping is also read directly by StudentTutorView) can `navigate()` to it.
+ * Routes point at real, directly-navigable destinations: DataVizStudioView's
+ * tabs (`/data-viz?tab=<id>`) for the dedicated labs, and MathToolsView's tabs
+ * (`/math-tools?tab=<id>`) for Desmos/GeoGebra, both registered in App.tsx and
+ * both reading their tab from the same `?tab=` URLSearchParams convention.
+ * Neither `/geometry-2d`/`/geometry-3d` nor bare `/math-tools` (without a tab
+ * param falling through LessonPlanSidebar's one-off interception) were ever
+ * registered routes — fixed 2026-07-06. This mapping is read directly by
+ * StudentTutorView too, so every entry here must be a real `navigate()` target.
  */
 export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; icon: string }[]> = {
   algebra: [
     { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
+    { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
   ],
   geometry: [
     { label: 'Геометрија 2D лаб', route: '/data-viz?tab=geo2d', icon: '△' },
     { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷' },
     { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
+    { label: 'GeoGebra', route: '/math-tools?tab=geogebra', icon: '📐' },
   ],
   statistics: [
     { label: 'Лаб за веројатност', route: '/data-viz?tab=prob', icon: '🎲' },
@@ -100,6 +102,7 @@ export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; ic
     { label: 'Калкулус лаб', route: '/data-viz?tab=calc', icon: '∫' },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
     { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
+    { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
   ],
   arithmetic: [
     { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },

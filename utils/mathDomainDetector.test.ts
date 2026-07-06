@@ -106,10 +106,13 @@ describe('DOMAIN_TOOLS', () => {
     }
   });
 
-  it('only points at the real /data-viz route, never the unregistered /math-tools, /geometry-2d, or /geometry-3d paths', () => {
+  it('only points at the real /data-viz or /math-tools routes, never the unregistered /geometry-2d or /geometry-3d paths', () => {
     for (const tools of Object.values(DOMAIN_TOOLS)) {
       for (const tool of tools) {
-        expect(tool.route === '/data-viz' || tool.route.startsWith('/data-viz?tab=')).toBe(true);
+        const isRealRoute = tool.route === '/data-viz'
+          || tool.route.startsWith('/data-viz?tab=')
+          || tool.route.startsWith('/math-tools?tab=');
+        expect(isRealRoute).toBe(true);
       }
     }
   });

@@ -147,15 +147,17 @@ const RELATED_TOOLS_MAP: Record<string, RelatedTool[]> = {
     { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
     { label: 'AI Асистент', path: '/assistant', icon: 'assistant' },
   ],
-  '/geometry-3d': [
-    { label: 'DataViz', path: '/data-viz', icon: 'chart' },
+  // Exact-match keys (not just the generic '/data-viz' prefix below) so these two
+  // labs cross-suggest each other specifically, instead of the generic DataViz list.
+  '/data-viz?tab=solid': [
+    { label: 'Геометрија 2D', path: '/data-viz?tab=geo2d', icon: 'geometry' },
     { label: 'Мат. Уредник', path: '/math-editor', icon: 'sparkles' },
     { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
   ],
-  '/geometry-2d': [
-    { label: 'DataViz', path: '/data-viz', icon: 'chart' },
+  '/data-viz?tab=geo2d': [
     { label: 'Геометрија 3D', path: '/data-viz?tab=solid', icon: 'geometry' },
     { label: 'Мат. Уредник', path: '/math-editor', icon: 'sparkles' },
+    { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
   ],
   '/grade-book': [
     { label: 'Аналитика', path: '/analytics', icon: 'analytics' },
