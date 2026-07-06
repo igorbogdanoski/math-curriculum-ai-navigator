@@ -76,7 +76,7 @@ export function getGradeHoursInfo(level: number): { weeklyHours: number; lessonM
   return { weeklyHours: 3, lessonMinutes: 45, totalHours: 108 };
 }
 
-async function buildOfficialCurriculumSummary(level: number): Promise<string> {
+export async function buildOfficialCurriculumSummary(level: number): Promise<string> {
   const { weeklyHours, lessonMinutes, totalHours } = getGradeHoursInfo(level);
   const header = `\n📋 МОН официјална програма — ${level}. одделение (${weeklyHours}ч/нед × 36 нед = ${totalHours}ч, ${lessonMinutes}мин/час)\n`;
   try {

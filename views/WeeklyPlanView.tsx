@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { collection, query, getDocs, where, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { usePlanning } from '../contexts/PlanningContext';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { resolveGradeByLabel } from '../utils/gradeMatch';
 import { Card } from '../components/common/Card';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { loadThematicPlanEdit } from '../services/firestoreService.plans';
@@ -150,8 +151,9 @@ export const WeeklyPlanView: React.FC = () => {
               collection(db, 'academic_annual_plans'),
               where('userId', '==', firebaseUser.uid),
               orderBy('createdAt', 'desc'),
+              limit(50),
             )
-          : query(collection(db, 'academic_annual_plans'), orderBy('createdAt', 'desc'));
+          : query(collection(db, 'academic_annual_plans'), orderBy('createdAt', 'desc'), limit(50));
         const snap = await getDocs(q);
         const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedPlan));
         setPlans(loaded);
@@ -184,17 +186,16 @@ export const WeeklyPlanView: React.FC = () => {
     if (!topicEntry) return;
 
     // Match grade from plan string to curriculum grade
-    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
-    const gradeObj = gradeNum
-      ? curriculum.grades.find(g => String(g.level) === gradeNum)
-      : null;
+    const gradeObj = resolveGradeByLabel(curriculum.grades, selectedPlan.planData.grade);
     if (!gradeObj) return;
 
     const topicTitle = topicEntry.topic.title.toLowerCase();
-    const topicObj = gradeObj.topics.find(t =>
-      t.title.toLowerCase().includes(topicTitle.slice(0, 5)) ||
-      topicTitle.includes(t.title.toLowerCase().slice(0, 5)),
-    );
+    const topicObj =
+      (topicEntry.topic.topicId ? gradeObj.topics.find(t => t.id === topicEntry.topic.topicId) : undefined) ??
+      gradeObj.topics.find(t =>
+        t.title.toLowerCase().includes(topicTitle.slice(0, 5)) ||
+        topicTitle.includes(t.title.toLowerCase().slice(0, 5)),
+      );
     if (!topicObj) return;
 
     loadThematicPlanEdit(firebaseUser.uid, gradeObj.id, topicObj.id).then(saved => {
@@ -225,10 +226,7 @@ export const WeeklyPlanView: React.FC = () => {
     [topicRanges, weekNumber],
   );
 
-  const gradeNumForModal = (selectedPlan as any)?.planData?.grade?.match?.(/\d+/)?.[0];
-  const gradeObj = gradeNumForModal
-    ? curriculum?.grades.find(g => String(g.level) === gradeNumForModal) ?? null
-    : null;
+  const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan?.planData.grade) ?? null;
 
   const handleGenerateLesson = (slot: WeeklySlot) => {
     if (!selectedPlan) return;
@@ -274,8 +272,7 @@ export const WeeklyPlanView: React.FC = () => {
 
   const handleSave = async () => {
     if (!firebaseUser?.uid || !selectedPlan || slots.length === 0) return;
-    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
-    const gradeObj = gradeNum ? curriculum?.grades.find(g => String(g.level) === gradeNum) : null;
+    const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan.planData.grade);
     if (!gradeObj) { addNotification('Не е пронајдено одделение.', 'error'); return; }
     setIsSaving(true);
     try {
@@ -300,8 +297,7 @@ export const WeeklyPlanView: React.FC = () => {
   // Restore saved periodsPerDay when plan + week change
   useEffect(() => {
     if (!firebaseUser?.uid || !selectedPlan) return;
-    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
-    const gradeObj = gradeNum ? curriculum?.grades.find(g => String(g.level) === gradeNum) : null;
+    const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan.planData.grade);
     if (!gradeObj) return;
     loadWeeklyPlan(firebaseUser.uid, gradeObj.id, weekNumber).then(saved => {
       if (saved) {
@@ -442,15 +438,11 @@ export const WeeklyPlanView: React.FC = () => {
           {' · '}
           <strong>{weeklyHours} ч/нед.</strong>
         </span>
-        {(() => {
-          const gradeNum = selectedPlan?.planData.grade?.match(/\d+/)?.[0];
-          const lvl = gradeNum ? parseInt(gradeNum, 10) : null;
-          return lvl && lvl <= 5 ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 border border-amber-300 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
-              ⚖️ Законска обврска 1–5 одд.
-            </span>
-          ) : null;
-        })()}
+        {gradeObj && gradeObj.level <= 5 ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 border border-amber-300 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
+            ⚖️ Законска обврска 1–5 одд.
+          </span>
+        ) : null}
         {topicForWeek && (
           <span className="flex items-center gap-1">
             <span className="text-gray-400">·</span>

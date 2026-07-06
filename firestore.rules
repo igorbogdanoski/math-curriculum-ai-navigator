@@ -353,16 +353,34 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        // Allow bumping likes/forks by exactly +1 per call (matches the only client
+        // Like/unlike: caller may only ever add or remove their OWN uid from
+        // likedByUid, one at a time (toggleAnnualPlanLike) — prevents inflating the
+        // count for other users or removing someone else's like.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedByUid']) &&
+         (
+           (request.resource.data.likedByUid.size() == resource.data.get('likedByUid', []).size() + 1 &&
+            request.resource.data.likedByUid.hasAll(resource.data.get('likedByUid', [])) &&
+            request.resource.data.likedByUid.hasAny([request.auth.uid])) ||
+           (request.resource.data.likedByUid.size() == resource.data.get('likedByUid', []).size() - 1 &&
+            resource.data.get('likedByUid', []).hasAll(request.resource.data.likedByUid) &&
+            !request.resource.data.likedByUid.hasAny([request.auth.uid]))
+         )) ||
+        // Fork count: allow bumping by exactly +1 per call (matches the only client
         // usage, `increment(1)`) — constraining the delta prevents any authenticated
-        // caller from setting either counter to an arbitrary value.
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']) &&
-         request.resource.data.likes == (resource.data.likes is number ? resource.data.likes : 0) + 1) ||
+        // caller from setting the counter to an arbitrary value.
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['forks']) &&
          request.resource.data.forks == (resource.data.forks is number ? resource.data.forks : 0) + 1) ||
         isAdmin()
       );
       allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    // ── AI Концептуални карти (mind_maps) — приватни, само сопственикот ──
+    match /mind_maps/{doc} {
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
     }
 
     // ── AI Chat сесии (chat_sessions) ──

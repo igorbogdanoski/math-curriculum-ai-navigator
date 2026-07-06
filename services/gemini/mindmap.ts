@@ -1,5 +1,7 @@
 import { logger } from '../../utils/logger';
 import { Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, JSON_SYSTEM_INSTRUCTION } from './core';
+import { isMacedonianContextEnabled, MACEDONIAN_CONTEXT_SNIPPET } from './core.instructions';
+import type { TeachingProfile } from '../../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,14 @@ export interface MindMapData {
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
-export async function generateMindMap(topic: string, gradeLevel: number): Promise<MindMapData> {
+export async function generateMindMap(topic: string, gradeLevel: number, profile?: TeachingProfile): Promise<MindMapData> {
+    // Secondary grades (10-12) don't have БРО standard codes — those apply only to
+    // primary/lower-secondary (1-9), same convention as buildTopicStandardsHint (plans.ts).
+    const standardsNote = gradeLevel > 9
+        ? 'Не користи БРО кодови (пр. III-А.3) — тие важат само за основно образование (1-9 одд.). За средно образование фокусирај се на концепти и компетенции.'
+        : '';
+    const mkContext = isMacedonianContextEnabled() ? MACEDONIAN_CONTEXT_SNIPPET : '';
+
     const prompt = `
 Ти си наставник по математика за ${gradeLevel}. одделение.
 Создади ИНТЕРАКТИВНА КОНЦЕПТУАЛНА КАРТА (Mind Map) за темата: "${topic}"
@@ -35,6 +44,8 @@ export async function generateMindMap(topic: string, gradeLevel: number): Promis
 
 Генерирај конкретна математичка содржина, не генерички зборови.
 Јазик: македонски.
+${standardsNote}
+${mkContext}
 `.trim();
 
     const schema = {
@@ -68,5 +79,7 @@ export async function generateMindMap(topic: string, gradeLevel: number): Promis
         MAX_RETRIES,
         false,
         JSON_SYSTEM_INSTRUCTION,
+        profile?.tier,
+        { costKey: 'ASSESSMENT' },
     );
 }

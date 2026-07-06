@@ -793,9 +793,24 @@ export const rateAnnualPlan = async (planId: string, uid: string, rating: number
 /** Fetches all annual plans owned by a teacher, newest first — centralises a query pattern otherwise inlined per-view. */
 export const fetchMyAnnualPlans = async (uid: string): Promise<AnnualPlanDoc[]> => {
   const snap = await getDocs(
-    query(collection(db, 'academic_annual_plans'), where('userId', '==', uid), orderBy('createdAt', 'desc'))
+    query(collection(db, 'academic_annual_plans'), where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(100))
   );
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as AnnualPlanDoc));
+};
+
+/**
+ * Toggles a like on an annual plan, keyed per-uid via `likedByUid` (mirrors `rateAnnualPlan`'s
+ * `ratingsByUid` pattern) — replaces the old bare `likes: increment(1)` which had no dedup, so
+ * the same user could inflate the count by clicking repeatedly.
+ */
+export const toggleAnnualPlanLike = async (planId: string, uid: string): Promise<{ liked: boolean }> => {
+  const snap = await getDoc(doc(db, 'academic_annual_plans', planId));
+  const likedByUid: string[] = snap.exists() ? (snap.data().likedByUid ?? []) : [];
+  const alreadyLiked = likedByUid.includes(uid);
+  await updateDoc(doc(db, 'academic_annual_plans', planId), {
+    likedByUid: alreadyLiked ? arrayRemove(uid) : arrayUnion(uid),
+  });
+  return { liked: !alreadyLiked };
 };
 
 export const fetchAnnualPlanById = async (planId: string): Promise<AnnualPlanDoc | null> => {

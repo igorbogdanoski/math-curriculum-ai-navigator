@@ -274,6 +274,55 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('academic_annual_plans/{doc} — like/unlike toggle scoping', () => {
+    it('any authenticated user may add/remove only their own uid to likedByUid, not arbitrary uids', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('academic_annual_plans/p1').set({ userId: 'author1', isPublic: true, likedByUid: [] });
+      });
+      const liker = testEnv.authenticatedContext('liker1');
+      const fLiker = liker.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+
+      // Adding someone else's uid instead of their own must fail.
+      await assertFails(fLiker.doc('academic_annual_plans/p1').update({ likedByUid: ['someoneElse'] }));
+      // Adding their own uid (the toggle "like" path) must succeed.
+      await assertSucceeds(fLiker.doc('academic_annual_plans/p1').update({ likedByUid: ['liker1'] }));
+      // Removing their own uid (the toggle "unlike" path) must succeed.
+      await assertSucceeds(fLiker.doc('academic_annual_plans/p1').update({ likedByUid: [] }));
+      // Bumping likedByUid by more than one entry at once must fail.
+      await assertFails(fLiker.doc('academic_annual_plans/p1').update({ likedByUid: ['liker1', 'someoneElse'] }));
+    });
+  });
+
+  describe('mind_maps/{doc} — owner-only', () => {
+    it('the owning teacher can read/update their own mind map; another teacher cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('mind_maps/m1').set({ teacherUid: 'teacher1', topic: 'Дропки', gradeLevel: 6, nodes: [] });
+      });
+      const owner = testEnv.authenticatedContext('teacher1');
+      const intruder = testEnv.authenticatedContext('teacher2');
+      const fOwner = owner.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      const fIntruder = intruder.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(fOwner.doc('mind_maps/m1').get());
+      await assertSucceeds(fOwner.doc('mind_maps/m1').update({ topic: 'Дропки и децимали' }));
+      await assertFails(fIntruder.doc('mind_maps/m1').get());
+      await assertFails(fIntruder.doc('mind_maps/m1').update({ topic: 'Хакирано' }));
+    });
+  });
+
   describe('scenario_bank/{docId} — moderation fields scoping', () => {
     it('any authenticated teacher may bump community counters, but not flip deleted/isFeatured', async () => {
       if (!testEnv) return;

@@ -1,6 +1,14 @@
 {
     "indexes":  [
                     {
+                        "collectionGroup":  "mind_maps",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "teacherUid", "order": "ASCENDING" },
+                                       { "fieldPath": "updatedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "dugga_tests",
                         "queryScope":  "COLLECTION",
                         "fields":  [

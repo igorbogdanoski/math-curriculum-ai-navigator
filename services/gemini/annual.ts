@@ -6,6 +6,7 @@ import {
 import { buildPedagogyPromptContext } from '../../data/official/pedagogy';
 import { educationalHints } from '../../data/educationalModelsInfo';
 import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH, AREA_LABELS } from '../../data/allNationalStandardsComplete';
+import { buildOfficialCurriculumSummary } from './plans';
 
 function buildNationalStandardsContext(gradeNumber: number | null): string {
   const forPrimary = gradeNumber !== null && gradeNumber >= 6 && gradeNumber <= 9;
@@ -132,7 +133,8 @@ async generateAnnualPlan(
     totalWeeks: number,
     curriculumContext: string,
     profile?: TeachingProfile,
-    customInstruction?: string
+    customInstruction?: string,
+    topicIdHints?: { id: string; title: string }[]
   ): Promise<AIGeneratedAnnualPlan> {
     const safeCustomInstruction = sanitizePromptInput(customInstruction, 600);
     const weeklyHoursForTrack = profile?.secondaryTrack
@@ -148,6 +150,17 @@ async generateAnnualPlan(
       : null;
     const nationalStandardsBlock = buildNationalStandardsContext(detectedGrade);
 
+    // Official MoN curriculum grounding — was previously only wired for grade 8 by the
+    // caller; now built here internally for every grade 1-9, matching how
+    // generateThematicPlan/generateCalendarPlan already ground themselves (plans.ts).
+    // Silently empty for grades without official data (e.g. secondary) — the caller's
+    // curriculumContext below still carries the app's own generic topic list either way.
+    const officialSummary = detectedGrade !== null ? await buildOfficialCurriculumSummary(detectedGrade) : '';
+
+    const topicIdHintsBlock = topicIdHints && topicIdHints.length > 0
+      ? `\n### ДОСТАПНИ ТЕМИ ВО СИСТЕМОТ (по ID)\nДоколку генерирана тема одговара на некоја од овие, постави го точното "topicId" (инаку остави го празно):\n${topicIdHints.map(t => `  ${t.id}: ${t.title}`).join('\n')}\n`
+      : '';
+
     const prompt = `
 Вие сте врвен експерт за планирање на наставата по ${subject} за ${grade} во македонскиот образовен систем.
 Ваша задача е да креирате детална, практична и изводлива предлог-годишна програма.
@@ -156,9 +169,8 @@ ${secondaryContextBlock}
 ПАРАМЕТРИ:
 - Вкупно недели на располагање: ${totalWeeks}.
 
-ОФИЦИЈАЛНА ПРОГРАМА (МОРА да се придржувате до овие теми и нивните специфики):
-${curriculumContext}
-
+${officialSummary ? `ОФИЦИЈАЛНА МОН ПРОГРАМА (МОРА да се придржувате до овие теми и нивните специфики):\n${officialSummary}\n\nДОПОЛНИТЕЛЕН КОНТЕКСТ ОД ЛОКАЛНАТА БАЗА:\n${curriculumContext}` : `ОФИЦИЈАЛНА ПРОГРАМА (МОРА да се придржувате до овие теми и нивните специфики):\n${curriculumContext}`}
+${topicIdHintsBlock}
 ПЕДАГОШКИ ПРИНЦИПИ:
 ${buildPedagogyPromptContext()}
 
@@ -172,6 +184,7 @@ ${buildPedagogyPromptContext()}
 6. ТЕМИ КОИ СЕ РЕАЛИЗИРААТ НИЗ ЦЕЛАТА ГОДИНА (Геометрија, Мерење, Работа со податоци): разбивај ги на подтеми кои се вметнуваат меѓу другите теми — не ги ставај само на крај.
 7. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и зимски распусти.
 8. Вклучи 4 писмени работи рамномерно распоредени низ годината.
+9. Ако полето "ДОСТАПНИ ТЕМИ ВО СИСТЕМОТ" е дадено погоре, за секоја генерирана тема провери дали одговара на некоја од нив и ако да, постави го точното "topicId" од листата.
 ${nationalStandardsBlock}
 
 ${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${safeCustomInstruction}\n` : ''}
@@ -182,7 +195,7 @@ ${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД Н
       type: Type.OBJECT,
       properties: {
         grade: { type: Type.STRING }, subject: { type: Type.STRING }, totalWeeks: { type: Type.NUMBER },
-        topics: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, durationWeeks: { type: Type.NUMBER }, objectives: { type: Type.ARRAY, items: { type: Type.STRING } }, suggestedActivities: { type: Type.ARRAY, items: { type: Type.STRING } }, pedagogicalModel: { type: Type.STRING } }, required: ['title', 'durationWeeks', 'objectives', 'suggestedActivities'] } },
+        topics: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, durationWeeks: { type: Type.NUMBER }, objectives: { type: Type.ARRAY, items: { type: Type.STRING } }, suggestedActivities: { type: Type.ARRAY, items: { type: Type.STRING } }, pedagogicalModel: { type: Type.STRING }, topicId: { type: Type.STRING, nullable: true } }, required: ['title', 'durationWeeks', 'objectives', 'suggestedActivities'] } },
       },
       required: ['grade', 'subject', 'totalWeeks', 'topics'],
     };

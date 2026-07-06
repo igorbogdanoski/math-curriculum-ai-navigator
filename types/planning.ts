@@ -170,5 +170,10 @@ export interface AIGeneratedAnnualPlanTopic {
   /** Which pedagogical model (key into data/educationalModelsInfo.ts) the suggested
    *  activities are designed around. Optional — older plans omit it. */
   pedagogicalModel?: string;
+  /** Id of the matching curriculum Topic (data/curriculum.ts), when the model could
+   *  confidently match it against the topicIdHints supplied at generation time.
+   *  Optional — older plans and low-confidence matches omit it; callers that need to
+   *  resolve a topic back to the curriculum should fall back to title-matching. */
+  topicId?: string;
 }
 export interface AIGeneratedAnnualPlan { grade: string; subject: string; totalWeeks: number; topics: AIGeneratedAnnualPlanTopic[]; }

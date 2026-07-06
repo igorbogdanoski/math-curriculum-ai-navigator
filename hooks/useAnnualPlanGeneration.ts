@@ -6,7 +6,6 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { fetchAnnualPlanById, updateAnnualPlan, createAnnualPlan, toggleAnnualPlanPublic } from '../services/firestoreService.materials';
 import { useCurriculum } from './useCurriculum';
 import { useCollabPlan } from './useCollabPlan';
-import { buildOfficialCurriculumContext } from '../data/official/grade8Official';
 import { geminiService } from '../services/geminiService';
 import { trackCreditConsumed } from '../services/telemetryService';
 import { resolveGradeByLabel } from '../utils/gradeMatch';
@@ -157,6 +156,7 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
 
     const promises = plan.topics.map((annualTopic: AIGeneratedAnnualPlanTopic, idx: number) => {
       const topicMatch =
+        (annualTopic.topicId ? gradeMatch.topics.find(t => t.id === annualTopic.topicId) : undefined) ??
         gradeMatch.topics.find(
           t =>
             t.title.toLowerCase().includes(annualTopic.title.toLowerCase().slice(0, 5)) ||
@@ -208,12 +208,11 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
       const gradeName = gradeData?.title || gradeData?.id || selectedGradeId;
       let curriculumContext = '';
 
-      const gradeNum = gradeData?.level ?? 0;
-      const officialContext = gradeNum === 8 ? buildOfficialCurriculumContext(8) : '';
-
-      if (officialContext) {
-        curriculumContext = officialContext;
-      } else if (gradeData && gradeData.topics && gradeData.topics.length > 0) {
+      // Rich official MoN grounding (grades 1-9) is now built internally by
+      // generateAnnualPlan itself (services/gemini/annual.ts), matching how thematic/
+      // calendar plan generation already grounds itself — this local list is just the
+      // app's own supplementary topic data (hours/outcomes), passed alongside it.
+      if (gradeData && gradeData.topics && gradeData.topics.length > 0) {
         curriculumContext = gradeData.topics
           .map((t, idx) => {
             let desc = `- Тема ${idx + 1}: ${t.title}`;
@@ -228,7 +227,9 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
         curriculumContext = 'Нема специфични теми во системот за ова одделение. Генерирајте општи теми по математика.';
       }
 
-      const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined);
+      const topicIdHints = gradeData?.topics?.map(t => ({ id: t.id, title: t.title }));
+
+      const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined, undefined, topicIdHints);
       setPlan(generated);
 
       // Credit deduction now happens server-side (api/gemini.ts, costKey: 'ANNUAL_PLAN'

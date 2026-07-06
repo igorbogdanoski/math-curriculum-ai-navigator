@@ -3,7 +3,12 @@ import { useReactToPrint } from 'react-to-print';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePlanning } from '../contexts/PlanningContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { generateMindMap, MMNode } from '../services/gemini/mindmap';
+import { saveMindMap, fetchMyMindMaps, fetchMindMap, type SavedMindMap } from '../services/firestoreService.mindMaps';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -242,6 +247,9 @@ const MindMapCanvas: React.FC<CanvasProps> = ({
 
 export const AIMindMapView: React.FC = () => {
     const { addNotification } = useNotification();
+    const { user, firebaseUser } = useAuth();
+    const { setPlanningState } = usePlanning();
+    const { navigate } = useNavigation();
     const printRef = useRef<HTMLDivElement>(null);
     const handlePrint = useReactToPrint({ contentRef: printRef });
 
@@ -252,6 +260,18 @@ export const AIMindMapView: React.FC = () => {
     const [positions, setPositions] = useState<Positions>({});
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [editState, setEditState] = useState<{ id: string; value: string } | null>(null);
+
+    // Persistence — a saved map has an id; a fresh/unsaved generation doesn't.
+    const [currentMapId, setCurrentMapId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [myMaps, setMyMaps] = useState<SavedMindMap[]>([]);
+
+    const refreshMyMaps = useCallback(async () => {
+        if (!firebaseUser?.uid) return;
+        setMyMaps(await fetchMyMindMaps(firebaseUser.uid));
+    }, [firebaseUser?.uid]);
+
+    useEffect(() => { refreshMyMaps(); }, [refreshMyMaps]);
 
     // Load prefill from sessionStorage (other views can set 'mindmap_prefill')
     useEffect(() => {
@@ -270,16 +290,84 @@ export const AIMindMapView: React.FC = () => {
         if (!topic.trim()) { addNotification('Внесете тема.', 'warning'); return; }
         setIsGenerating(true);
         try {
-            const data = await generateMindMap(topic.trim(), grade);
+            const data = await generateMindMap(topic.trim(), grade, user ?? undefined);
             const layout = buildLayout(data.nodes);
             setNodes(data.nodes);
             setPositions(layout);
             setSelectedId(null);
+            setCurrentMapId(null); // fresh generation — not yet saved under any id
         } catch {
             addNotification('Грешка при генерирање. Обидете се повторно.', 'error');
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleSaveMap = async () => {
+        if (!firebaseUser?.uid) { addNotification('Мора да сте најавени за да зачувате.', 'warning'); return; }
+        if (nodes.length === 0) return;
+        setIsSaving(true);
+        try {
+            const id = await saveMindMap(firebaseUser.uid, topic.trim() || nodes[0]?.label || 'Концептуална карта', grade, nodes, currentMapId ?? undefined);
+            setCurrentMapId(id);
+            addNotification('Концептуалната карта е зачувана!', 'success');
+            await refreshMyMaps();
+        } catch {
+            addNotification('Грешка при зачувување.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadMap = async (id: string) => {
+        if (!id) return;
+        const saved = await fetchMindMap(id);
+        if (!saved) { addNotification('Картата не е пронајдена.', 'error'); return; }
+        setTopic(saved.topic);
+        setGrade(saved.gradeLevel);
+        setNodes(saved.nodes);
+        setPositions(buildLayout(saved.nodes));
+        setSelectedId(null);
+        setCurrentMapId(saved.id);
+    };
+
+    const handleGenerateLesson = () => {
+        const rootLabel = nodes.find(n => n.level === 0)?.label ?? topic;
+        setPlanningState({ themeName: rootLabel });
+        const params = new URLSearchParams({
+            prefillTopic: rootLabel,
+            prefillGrade: String(grade),
+        });
+        navigate(`/planner/lesson/new?${params.toString()}`);
+    };
+
+    /** Rasterizes the current SVG canvas to a PNG and downloads it — no extra dependency needed. */
+    const handleExportPNG = () => {
+        const svg = printRef.current?.querySelector('svg');
+        if (!svg) return;
+        const svgString = new XMLSerializer().serializeToString(svg);
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const scale = 2; // basic supersampling for a crisper export
+            canvas.width = SVG_W * scale;
+            canvas.height = SVG_H * scale;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.scale(scale, scale);
+                ctx.drawImage(img, 0, 0, SVG_W, SVG_H);
+            }
+            URL.revokeObjectURL(url);
+            const link = document.createElement('a');
+            link.download = `${(topic || 'koncept-karta').trim().replace(/\s+/g, '-')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        img.src = url;
     };
 
     const handleDrag = useCallback((id: string, x: number, y: number) => {
@@ -340,6 +428,8 @@ export const AIMindMapView: React.FC = () => {
 
     return (
         <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+            <PlanningChainBar currentStep="thematic" />
+
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -350,19 +440,59 @@ export const AIMindMapView: React.FC = () => {
                         Внеси тема → AI ја гради картата → влечи јазли, уредувај, печати.
                     </p>
                 </div>
-                {hasMindMap && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">{lvl1Count} гранки · {lvl2Count} листови</span>
-                        <button
-                            type="button"
-                            onClick={() => handlePrint()}
-                            className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition"
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {myMaps.length > 0 && (
+                        <select
+                            value={currentMapId ?? ''}
+                            onChange={e => e.target.value && handleLoadMap(e.target.value)}
+                            aria-label="Мои карти"
+                            className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-violet-300 outline-none"
                         >
-                            <ICONS.printer className="w-4 h-4" />
-                            Печати
-                        </button>
-                    </div>
-                )}
+                            <option value="">📂 Мои карти ({myMaps.length})</option>
+                            {myMaps.map(m => (
+                                <option key={m.id} value={m.id}>{m.topic} — {m.gradeLevel}. одд.</option>
+                            ))}
+                        </select>
+                    )}
+                    {hasMindMap && (
+                        <>
+                            <span className="text-xs text-gray-400">{lvl1Count} гранки · {lvl2Count} листови</span>
+                            <button
+                                type="button"
+                                onClick={handleSaveMap}
+                                disabled={isSaving}
+                                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition disabled:opacity-60"
+                            >
+                                {isSaving ? <ICONS.spinner className="w-4 h-4 animate-spin" /> : <ICONS.bookmark className="w-4 h-4" />}
+                                {currentMapId ? 'Зачувано' : 'Зачувај'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGenerateLesson}
+                                className="flex items-center gap-1.5 px-3 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-xl text-sm hover:bg-indigo-100 transition"
+                            >
+                                <ICONS.sparkles className="w-4 h-4" />
+                                Генерирај час →
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleExportPNG}
+                                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition"
+                            >
+                                <ICONS.download className="w-4 h-4" />
+                                PNG
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handlePrint()}
+                                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition"
+                            >
+                                <ICONS.printer className="w-4 h-4" />
+                                Печати
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* ── Controls ── */}
@@ -416,8 +546,9 @@ export const AIMindMapView: React.FC = () => {
             {editState && (
                 <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={commitEdit}>
                     <div className="bg-white rounded-xl shadow-2xl p-4 w-80" onClick={e => e.stopPropagation()}>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Уреди јазол</label>
+                        <label htmlFor="mindmap-edit-node" className="block text-sm font-bold text-gray-700 mb-2">Уреди јазол</label>
                         <input
+                            id="mindmap-edit-node"
                             autoFocus
                             type="text"
                             value={editState.value}

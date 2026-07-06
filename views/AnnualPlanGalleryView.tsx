@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, updateDoc, doc, increment, where } from 'firebase/firestore';
+import { where, orderBy, updateDoc, doc, increment, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -9,9 +9,12 @@ import { AIGeneratedAnnualPlan } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useNavigation } from '../contexts/NavigationContext';
-import { createAnnualPlan, rateAnnualPlan } from '../services/firestoreService.materials';
+import { createAnnualPlan, rateAnnualPlan, toggleAnnualPlanLike } from '../services/firestoreService.materials';
+import { firestorePage } from '../services/firestorePagination';
 
 type FilterMode = 'public' | 'mine';
+
+const PAGE_SIZE = 60;
 
 interface SavedPlan {
     id: string;
@@ -21,7 +24,7 @@ interface SavedPlan {
     grade: string;
     subject: string;
     planData: AIGeneratedAnnualPlan;
-    likes?: number;
+    likedByUid?: string[];
     forks?: number;
     isForked?: boolean;
     originalPlanId?: string;
@@ -36,6 +39,9 @@ interface SavedPlan {
 export const AnnualPlanGalleryView: React.FC = () => {
     const [plans, setPlans] = useState<SavedPlan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
     const { user, firebaseUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterMode, setFilterMode] = useState<FilterMode>('public');
@@ -44,39 +50,58 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [isForking, setIsForking] = useState(false);
     const [ratingPending, setRatingPending] = useState<string | null>(null);
+    const [likePending, setLikePending] = useState<string | null>(null);
 
     useEffect(() => {
+        setPlans([]);
+        setLastDoc(null);
+        setHasMore(false);
         fetchPlans(filterMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterMode, firebaseUser?.uid]);
 
+    const constraintsFor = (mode: FilterMode) =>
+        mode === 'mine' && firebaseUser?.uid
+            ? [where('userId', '==', firebaseUser.uid), orderBy('createdAt', 'desc')]
+            : [where('isPublic', '==', true), orderBy('createdAt', 'desc')];
+
     const fetchPlans = async (mode: FilterMode) => {
         setIsLoading(true);
         try {
-            let q;
-            if (mode === 'mine' && firebaseUser?.uid) {
-                q = query(
-                    collection(db, 'academic_annual_plans'),
-                    where('userId', '==', firebaseUser.uid),
-                    orderBy('createdAt', 'desc'),
-                );
-            } else {
-                q = query(
-                    collection(db, 'academic_annual_plans'),
-                    where('isPublic', '==', true),
-                    orderBy('createdAt', 'desc'),
-                );
-            }
-            const snapshot = await getDocs(q);
-            const loadedPlans = snapshot.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            } as SavedPlan));
-            setPlans(loadedPlans);
+            const { items, hasMore: more, lastDoc: cursor } = await firestorePage<SavedPlan>({
+                collectionName: 'academic_annual_plans',
+                constraints: constraintsFor(mode),
+                pageSize: PAGE_SIZE,
+                errorTag: 'annual plan gallery',
+            });
+            setPlans(items);
+            setHasMore(more);
+            setLastDoc(cursor);
         } catch (error) {
             logger.error("Грешка при вчитување планови:", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadMore = async () => {
+        if (!lastDoc || isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const { items, hasMore: more, lastDoc: cursor } = await firestorePage<SavedPlan>({
+                collectionName: 'academic_annual_plans',
+                constraints: constraintsFor(filterMode),
+                pageSize: PAGE_SIZE,
+                cursor: lastDoc,
+                errorTag: 'annual plan gallery',
+            });
+            setPlans(prev => [...prev, ...items]);
+            setHasMore(more);
+            setLastDoc(cursor);
+        } catch (error) {
+            logger.error("Грешка при вчитување дополнителни планови:", error);
+        } finally {
+            setIsLoadingMore(false);
         }
     };
 
@@ -108,16 +133,24 @@ export const AnnualPlanGalleryView: React.FC = () => {
     };
 
     const handleLike = async (planId: string) => {
-        if (!user) { addNotification("Мора да сте најавени за да лајкнете.", 'warning'); return; }
-        // Optimistic update first
-        const prevLikes = plans.find(p => p.id === planId)?.likes ?? 0;
-        setPlans(prev => prev.map(p => p.id === planId ? { ...p, likes: prevLikes + 1 } : p));
+        if (!user || !firebaseUser?.uid) { addNotification("Мора да сте најавени за да лајкнете.", 'warning'); return; }
+        if (likePending) return;
+        const uid = firebaseUser.uid;
+        const prevLikedByUid = plans.find(p => p.id === planId)?.likedByUid ?? [];
+        const wasLiked = prevLikedByUid.includes(uid);
+        // Optimistic toggle first
+        setPlans(prev => prev.map(p => p.id === planId
+            ? { ...p, likedByUid: wasLiked ? prevLikedByUid.filter(u => u !== uid) : [...prevLikedByUid, uid] }
+            : p));
+        setLikePending(planId);
         try {
-            await updateDoc(doc(db, 'academic_annual_plans', planId), { likes: increment(1) });
-        } catch (error) {
+            await toggleAnnualPlanLike(planId, uid);
+        } catch {
             // Rollback on failure
-            setPlans(prev => prev.map(p => p.id === planId ? { ...p, likes: prevLikes } : p));
+            setPlans(prev => prev.map(p => p.id === planId ? { ...p, likedByUid: prevLikedByUid } : p));
             addNotification("Грешка при лајкување. Обидете се повторно.", 'error');
+        } finally {
+            setLikePending(null);
         }
     };
 
@@ -289,12 +322,27 @@ export const AnnualPlanGalleryView: React.FC = () => {
                             <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-100">
                                 <div className="flex flex-col gap-1">
                                     <StarRating plan={plan} />
-                                    <div className="flex items-center gap-1.5 text-gray-400 text-[10px]">
-                                        <ICONS.gitBranch className="w-3 h-3" />
-                                        {plan.forks || 0} клонирања
+                                    <div className="flex items-center gap-3 text-gray-400 text-[10px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleLike(plan.id)}
+                                            disabled={likePending === plan.id}
+                                            aria-label={firebaseUser?.uid && plan.likedByUid?.includes(firebaseUser.uid) ? 'Отстрани лајк' : 'Лајкни'}
+                                            className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                                                firebaseUser?.uid && plan.likedByUid?.includes(firebaseUser.uid)
+                                                    ? 'text-rose-500'
+                                                    : 'hover:text-rose-400'
+                                            }`}
+                                        >
+                                            {firebaseUser?.uid && plan.likedByUid?.includes(firebaseUser.uid) ? '❤' : '🤍'} {plan.likedByUid?.length ?? 0}
+                                        </button>
+                                        <span className="flex items-center gap-1.5">
+                                            <ICONS.gitBranch className="w-3 h-3" />
+                                            {plan.forks || 0} клонирања
+                                        </span>
                                     </div>
                                 </div>
-                                
+
                                 {plan.userId === firebaseUser?.uid ? (
                                     <button
                                         type="button"
@@ -321,11 +369,31 @@ export const AnnualPlanGalleryView: React.FC = () => {
                         </Card>
                     ))}
                 </div>
+            ) : plans.length > 0 ? (
+                <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                    <ICONS.search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Нема совпаѓања</h3>
+                    <p className="text-gray-500">Обидете се со друг збор за пребарување.</p>
+                </div>
             ) : (
                 <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                     <ICONS.database className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <h3 className="text-lg font-medium text-gray-900 mb-1">Нема пронајдено планови</h3>
                     <p className="text-gray-500">Бидете првиот што ќе изгенерира и зачува план.</p>
+                </div>
+            )}
+
+            {!isLoading && hasMore && !searchTerm && (
+                <div className="flex justify-center pt-2">
+                    <button
+                        type="button"
+                        onClick={loadMore}
+                        disabled={isLoadingMore}
+                        className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                        {isLoadingMore ? <ICONS.spinner className="w-4 h-4 animate-spin" /> : null}
+                        Вчитај повеќе
+                    </button>
                 </div>
             )}
         </div>

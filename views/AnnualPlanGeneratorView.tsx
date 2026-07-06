@@ -515,10 +515,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                                         onClick={() => {
                                                                             if (!plan || !curriculum) return;
                                                                             const gradeMatch = resolveGradeByLabel(curriculum.grades, plan.grade) ?? curriculum.grades[0];
-                                                                            const topicMatch = gradeMatch?.topics.find(t =>
-                                                                                t.title.toLowerCase().includes(f.topic.toLowerCase().slice(0, 5)) ||
-                                                                                f.topic.toLowerCase().includes(t.title.toLowerCase().slice(0, 5))
-                                                                            ) ?? gradeMatch?.topics[0];
+                                                                            const annualTopic = plan.topics.find(t => t.title === f.topic);
+                                                                            const topicMatch =
+                                                                                (annualTopic?.topicId ? gradeMatch?.topics.find(t => t.id === annualTopic.topicId) : undefined) ??
+                                                                                gradeMatch?.topics.find(t =>
+                                                                                    t.title.toLowerCase().includes(f.topic.toLowerCase().slice(0, 5)) ||
+                                                                                    f.topic.toLowerCase().includes(t.title.toLowerCase().slice(0, 5))
+                                                                                ) ?? gradeMatch?.topics[0];
                                                                             if (!gradeMatch || !topicMatch) return;
                                                                             setParallelProgress(prev => prev ? {
                                                                                 ...prev,
