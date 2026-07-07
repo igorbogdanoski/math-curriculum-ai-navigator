@@ -134,6 +134,13 @@ export function useStudentIdentity() {
     setNameConfirmed(true);
     setPendingReturningName(null);
     setIsReturningStudent(true);
+    // Also reached by live-PIN-join (StudentLiveView writes the name to localStorage before
+    // navigating here, so this path — not the fresh wizard — is what resolves it) — without
+    // this, PIN-joined students would never get a student_identity doc, leaving their device
+    // permanently "unclaimed" under firestore.rules' deviceOwnershipOk() first-come check.
+    if (!window.__E2E_MODE__) {
+      firestoreService.saveStudentIdentity(deviceId, studentName, auth.currentUser?.uid ?? '').catch(() => {});
+    }
   };
 
   /** "Not me" — a different student is using this device; start their own fresh identity. */

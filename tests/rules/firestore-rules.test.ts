@@ -519,4 +519,81 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(f.doc('student_gamification/g3').set({ studentName: 'Ana', totalXP: 500, currentStreak: 5, longestStreak: 10 }));
     });
   });
+
+  describe('quiz_results/concept_mastery/student_gamification — deviceId bound to student_identity', () => {
+    it('an anonymous student cannot claim a deviceId already bound to a different uid', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceA').set({ deviceId: 'deviceA', name: 'Ана', anonymousUid: 'the-real-owner' });
+      });
+      const impostor = testEnv.authenticatedContext('a-different-anon-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = impostor.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.collection('quiz_results').add({ studentName: 'Ана', percentage: 90, conceptId: 'c1', deviceId: 'deviceA' }));
+      await assertFails(f.collection('concept_mastery').add({ studentName: 'Ана', conceptId: 'c1', deviceId: 'deviceA' }));
+    });
+
+    it('a deviceId with no student_identity doc yet is first-come-first-served (covers live-PIN-join before the first confirm completes)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const firstComer = testEnv.authenticatedContext('brand-new-anon-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = firstComer.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.collection('quiz_results').add({ studentName: 'Марко', percentage: 70, conceptId: 'c1', deviceId: 'brand-new-device' }));
+    });
+
+    it('the legitimate owning anonymous uid can write under their own claimed deviceId', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceB').set({ deviceId: 'deviceB', name: 'Ива', anonymousUid: 'owner-uid' });
+      });
+      const owner = testEnv.authenticatedContext('owner-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = owner.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.collection('quiz_results').add({ studentName: 'Ива', percentage: 85, conceptId: 'c1', deviceId: 'deviceB' }));
+    });
+
+    it('a teacher (non-anonymous) referencing a student device bound to someone else stays exempt', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceC').set({ deviceId: 'deviceC', name: 'Дарко', anonymousUid: 'student-uid' });
+      });
+      const teacher = testEnv.authenticatedContext('teacher-uid');
+      const f = teacher.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.collection('concept_mastery').add({ studentName: 'Дарко', conceptId: 'c1', deviceId: 'deviceC', teacherUid: 'teacher-uid' }));
+    });
+
+    it('a write with no deviceId field at all (lab session shape) is unaffected', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('lab-anon-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.collection('quiz_results').add({ studentName: 'Лаб Ученик', percentage: 60, conceptId: 'lab-c1' }));
+    });
+
+    it('quiz_results update: a non-owning anonymous student cannot set confidence on another device\'s result', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceD').set({ deviceId: 'deviceD', name: 'Сара', anonymousUid: 'sara-uid' });
+        await f.doc('quiz_results/qr1').set({ studentName: 'Сара', percentage: 90, conceptId: 'c1', deviceId: 'deviceD' });
+      });
+      const impostor = testEnv.authenticatedContext('not-sara', { firebase: { sign_in_provider: 'anonymous' } });
+      const owner = testEnv.authenticatedContext('sara-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const fImpostor = impostor.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      const fOwner = owner.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(fImpostor.doc('quiz_results/qr1').update({ confidence: 3 }));
+      await assertSucceeds(fOwner.doc('quiz_results/qr1').update({ confidence: 4 }));
+    });
+  });
 });

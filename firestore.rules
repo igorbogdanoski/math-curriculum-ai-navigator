@@ -45,6 +45,24 @@ service cloud.firestore {
       return isAuthenticated() && resource.data.teacherUid == request.auth.uid;
     }
 
+    // First-come-first-served device ownership, mirroring student_identity's own create
+    // rule: if nobody has claimed this deviceId yet, allow it (nothing to violate yet); if
+    // someone has, only that same auth uid may write under it.
+    function ownsClaimedDevice(deviceId) {
+      return !exists(/databases/$(database)/documents/student_identity/$(deviceId))
+        || get(/databases/$(database)/documents/student_identity/$(deviceId)).data.anonymousUid == request.auth.uid;
+    }
+
+    // Only anonymous-student writers need to prove device ownership. Teacher-authenticated
+    // writes (isDocOwner()) legitimately reference a student's deviceId without the
+    // teacher's own uid ever matching that device's anonymousUid, and lab/self-practice
+    // writes have no deviceId field at all — both stay exempt, matching current behavior.
+    function deviceOwnershipOk() {
+      return !isAnonymousStudent()
+        || !('deviceId' in request.resource.data)
+        || ownsClaimedDevice(request.resource.data.deviceId);
+    }
+
     // Cosmetic/leaderboard-integrity bound on student_gamification numeric fields — no
     // credits/PII at stake, just keeps a compromised client from writing absurd XP/streak values.
     function isValidGamificationNumbers() {
@@ -96,15 +114,18 @@ service cloud.firestore {
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
-      // Allow students to self-assess (confidence 1-5) or save metacognitive notes
-      allow update: if isAuthenticated() && (
+                    && request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId'])
+                    && deviceOwnershipOk();
+      // Allow students to self-assess (confidence 1-5) or save metacognitive notes — gated
+      // by deviceOwnershipOk() so only the quiz's own device-bound student (or a teacher/
+      // lab write with no deviceId) can set these, not any authenticated caller.
+      allow update: if isAuthenticated() && deviceOwnershipOk() && (
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confidence'])
           && request.resource.data.confidence is int
           && request.resource.data.confidence >= 1
           && request.resource.data.confidence <= 5
       ) || (
-        isAuthenticated() &&
+        isAuthenticated() && deviceOwnershipOk() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['metacognitiveNote'])
           && request.resource.data.metacognitiveNote is string
       );
@@ -176,13 +197,13 @@ service cloud.firestore {
         isAnonymousStudent() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
-      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk();
       // Only the owning teacher, anonymous students (quiz completion), or admin may update
       allow update: if isAuthenticated() && (
         isDocOwner() ||
         isAnonymousStudent() ||
         isAdmin()
-      ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk();
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
@@ -202,11 +223,11 @@ service cloud.firestore {
         isDocOwner() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
-      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']) && isValidGamificationNumbers();
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']) && isValidGamificationNumbers() && deviceOwnershipOk();
       // Prevent changing studentName; only the anonymous student or teacher-owner may update
       allow update: if isAuthenticated() && (
         isAnonymousStudent() || isDocOwner() || isAdmin()
-      ) && resource.data.studentName == request.resource.data.studentName && isValidGamificationNumbers();
+      ) && resource.data.studentName == request.resource.data.studentName && isValidGamificationNumbers() && deviceOwnershipOk();
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
