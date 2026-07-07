@@ -79,6 +79,41 @@ describe('deductCreditsServerSide', () => {
     expect(updateCalls[0].data).toEqual({ aiCreditsBalance: 9 }); // TEXT_BASIC = 1
   });
 
+  it('enforces the model floor when costKey under-declares relative to the model used', async () => {
+    const { db, updateCalls } = makeFirestoreMock({ aiCreditsBalance: 20, tier: 'Free' });
+    vi.doMock('firebase-admin/firestore', () => ({ getFirestore: () => db }));
+    vi.resetModules();
+    const { deductCreditsServerSide: fn } = await import('./aiCredits');
+
+    // TEXT_BASIC=1, but the ultimate model floor (8) should win.
+    await fn('u1', 'TEXT_BASIC', 'gemini-3.1-pro-preview');
+
+    expect(updateCalls[0].data).toEqual({ aiCreditsBalance: 12 });
+  });
+
+  it('uses the declared costKey amount when it already exceeds the model floor', async () => {
+    const { db, updateCalls } = makeFirestoreMock({ aiCreditsBalance: 20, tier: 'Free' });
+    vi.doMock('firebase-admin/firestore', () => ({ getFirestore: () => db }));
+    vi.resetModules();
+    const { deductCreditsServerSide: fn } = await import('./aiCredits');
+
+    // ANNUAL_PLAN=10 already exceeds the default-model floor (1).
+    await fn('u1', 'ANNUAL_PLAN', 'gemini-3-flash-preview');
+
+    expect(updateCalls[0].data).toEqual({ aiCreditsBalance: 10 });
+  });
+
+  it('skips the floor entirely when no model is passed (backward compatible)', async () => {
+    const { db, updateCalls } = makeFirestoreMock({ aiCreditsBalance: 20, tier: 'Free' });
+    vi.doMock('firebase-admin/firestore', () => ({ getFirestore: () => db }));
+    vi.resetModules();
+    const { deductCreditsServerSide: fn } = await import('./aiCredits');
+
+    await fn('u1', 'TEXT_BASIC');
+
+    expect(updateCalls[0].data).toEqual({ aiCreditsBalance: 19 });
+  });
+
   it('does not write anything when the user is bypassed (admin/unlimited)', async () => {
     const { db, updateCalls } = makeFirestoreMock({ aiCreditsBalance: 10, role: 'admin' });
     vi.doMock('firebase-admin/firestore', () => ({ getFirestore: () => db }));

@@ -17,6 +17,9 @@ import {
   setDoc,
   collection,
   getDocs,
+  query,
+  where,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -81,12 +84,16 @@ export const nationalBenchmarkService = {
     yourAvg: number,
   ): Promise<BenchmarkResult | null> => {
     try {
-      const col = collection(db, 'national_benchmark');
-      const snaps = await getDocs(col);
+      const q = query(
+        collection(db, 'national_benchmark'),
+        where('gradeLevel', '==', gradeLevel),
+        limit(500),
+      );
+      const snaps = await getDocs(q);
       const entries: BenchmarkEntry[] = [];
       snaps.forEach(s => {
         const d = s.data() as BenchmarkEntry;
-        if (d.gradeLevel === gradeLevel && s.id !== teacherUid) {
+        if (s.id !== teacherUid) {
           entries.push(d);
         }
       });

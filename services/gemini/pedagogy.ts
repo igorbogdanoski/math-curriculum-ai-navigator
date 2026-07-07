@@ -61,6 +61,7 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
 
 async generateLearningPaths(context: GenerationContext, studentProfiles: StudentProfile[], profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedLearningPaths> {
     const profileNames = studentProfiles.map(p => p.name).join(', ');
+    const safeCustomInstruction = sanitizePromptInput(customInstruction);
     const vertProgText = context.verticalProgression?.length
         ? `\nВЕРТИКАЛНА ПРОГРЕСИЈА (развој на концептот низ годините):\n${context.verticalProgression.map(vp => `- ${vp.title}: ${vp.progression.map(p => `${p.grade} одд. → "${p.conceptTitle}"`).join(' → ')}`).join('\n')}`
         : '';
@@ -73,7 +74,7 @@ async generateLearningPaths(context: GenerationContext, studentProfiles: Student
 4. Патеките треба да се диференцирани — различно темпо, сложеност и поддршка за секој профил.
 5. Ако постои вертикална прогресија, поврзи го тековното знаење со претходното и идното учење.
 ${vertProgText}
-${customInstruction || ''}`;
+${safeCustomInstruction}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ['stepNumber', 'activity'] } } }, required: ['profileName', 'steps'] } } }, required: ['title', 'paths'] };
     return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false, undefined, profile?.tier);
   },
@@ -122,19 +123,21 @@ async generateInfographicLayout(plan: Partial<LessonPlan>, profile?: TeachingPro
     return generateAndParseJSON<import('../../types').InfographicLayout>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
   },
 
-async generateRubric(gradeLevel: number, activityTitle: string, activityType: string, _criteriaHints: string, _profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedRubric> {
-    const prompt = `Креирај рубрика за ${activityTitle} (${activityType}). ${customInstruction || ''}`;
+async generateRubric(gradeLevel: number, activityTitle: string, activityType: string, _criteriaHints: string, _profile?: TeachingProfile, customInstruction?: string, costKeyOverride?: string): Promise<AIGeneratedRubric> {
+    const safeCustomInstruction = sanitizePromptInput(customInstruction, 600);
+    const prompt = `Креирај рубрика за ${activityTitle} (${activityType}). ${safeCustomInstruction}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, criteria: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { criterion: { type: Type.STRING }, levels: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { levelName: { type: Type.STRING }, description: { type: Type.STRING }, points: { type: Type.STRING } }, required: ['levelName', 'description'] } } }, required: ['criterion', 'levels'] } } }, required: ['title', 'criteria'] };
+    const overrides = costKeyOverride ? { costKey: costKeyOverride } : undefined;
 
     if (!customInstruction) {
         const cacheKey = `rubric_g${gradeLevel}_${activityTitle.replace(/\W/g, '_').toLowerCase().substring(0, 40)}`;
         const cached = await getCached<AIGeneratedRubric>(cacheKey);
         if (cached) return cached;
-        const result = await generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
+        const result = await generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema, MAX_RETRIES, false, undefined, undefined, overrides);
         await setCached(cacheKey, result, { type: 'rubric', gradeLevel });
         return result;
     }
-    return generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
+    return generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema, MAX_RETRIES, false, undefined, undefined, overrides);
   },
 
 async generatePresentationOutline(concept: Concept, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
@@ -221,14 +224,62 @@ async generateReflectionQuestions(lessonTitle: string, grade: number, theme: str
     return generateAndParseJSON<{ wentWell: string; challenges: string; nextSteps: string }>([{ text: prompt }], schema, DEFAULT_MODEL, ReflectionSummarySchema);
   },
 
-async analyzeCoverage(_lessonPlans: LessonPlan[], _allNationalStandards: NationalStandard[]): Promise<CoverageAnalysisReport> {
-    const prompt = `Анализирај ја покриеноста на националните стандарди.`;
-    const schema = { type: Type.OBJECT, properties: { analysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { gradeLevel: { type: Type.INTEGER }, coveredStandardIds: { type: Type.ARRAY, items: { type: Type.STRING } }, summary: { type: Type.STRING } }, required: ['gradeLevel', 'coveredStandardIds', 'summary'] } } }, required: ['analysis'] };
+async analyzeCoverage(lessonPlans: LessonPlan[], allNationalStandards: NationalStandard[]): Promise<CoverageAnalysisReport> {
+    const gradesPresent = [...new Set(lessonPlans.map(lp => lp.grade))].sort((a, b) => a - b);
+    const lessonSummaries = lessonPlans
+      .map(lp => `- [${lp.grade}. одд.] "${lp.theme || lp.title}" — стандарди означени од наставникот: ${lp.assessmentStandards?.length ? lp.assessmentStandards.join(', ') : '(нема означено)'}`)
+      .join('\n');
+    const standardsList = allNationalStandards
+      .map(s => `${s.id} [${s.code}${s.gradeLevel ? `, ${s.gradeLevel}. одд.` : ''}]: ${s.description}`)
+      .join('\n');
+
+    const prompt = `Ти си експерт за анализа на наставни програми по математика во Македонија.
+Наставникот има ${lessonPlans.length} подготовки за час, опфаќајќи ги одделенијата: ${gradesPresent.join(', ') || '(нема)'}.
+
+ПОДГОТОВКИ НА НАСТАВНИКОТ:
+${lessonSummaries || '(нема подготовки)'}
+
+НАЦИОНАЛНИ СТАНДАРДИ (БРО) — целосна листа со ID:
+${standardsList}
+
+ЗАДАЧА: За СЕКОЕ одделение застапено погоре, анализирај ги подготовките и определи:
+- coveredStandardIds: стандарди целосно опфатени (експлицитно означени и/или јасно поврзани со темата/целите на подготовката)
+- partiallyCoveredStandards: стандарди делумно допрени, секој со кратка причина (id + reason)
+- uncoveredStandardIds: стандарди релевантни за тоа одделение кои воопшто не се допрени
+- summary: краток опис (2-3 реченици) на состојбата за тоа одделение
+- totalStandardsInGrade: вкупен број стандарди релевантни за тоа одделение
+
+Врати JSON според шемата, со посебен елемент во "analysis" за секое застапено одделение.`;
+
+    const schema = { type: Type.OBJECT, properties: { analysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: {
+      gradeLevel: { type: Type.INTEGER },
+      coveredStandardIds: { type: Type.ARRAY, items: { type: Type.STRING } },
+      partiallyCoveredStandards: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, reason: { type: Type.STRING } }, required: ['id', 'reason'] } },
+      uncoveredStandardIds: { type: Type.ARRAY, items: { type: Type.STRING } },
+      summary: { type: Type.STRING },
+      totalStandardsInGrade: { type: Type.INTEGER },
+    }, required: ['gradeLevel', 'coveredStandardIds', 'summary'] } } }, required: ['analysis'] };
     return generateAndParseJSON<CoverageAnalysisReport>([{ text: prompt }], schema, DEFAULT_MODEL, CoverageAnalysisSchema);
   },
 
-async getPersonalizedRecommendations(_profile: TeachingProfile, _lessonPlans: LessonPlan[]): Promise<AIRecommendation[]> {
-    const prompt = `Генерирај 3 персонализирани препораки.`;
+async getPersonalizedRecommendations(profile: TeachingProfile, lessonPlans: LessonPlan[]): Promise<AIRecommendation[]> {
+    const recentLessons = lessonPlans.slice(-8);
+    const lessonSummaries = recentLessons.length > 0
+      ? recentLessons.map(lp => `- [${lp.grade}. одд.] ${lp.theme || lp.title}`).join('\n')
+      : '(наставникот сеуште нема зачувани подготовки за час)';
+    const trackContext = getSecondaryTrackContext(profile.secondaryTrack);
+
+    const prompt = `Ти си педагошки советник за наставник по математика во Македонија.
+Наставник: ${profile.name || 'наставник'}${profile.secondaryTrack ? ' (средно образование)' : ''}
+${trackContext}
+
+ПОСЛЕДНИ ПОДГОТОВКИ ЗА ЧАС:
+${lessonSummaries}
+
+Генерирај точно 3 персонализирани препораки за наставникот, засновани на неговите неодамнешни подготовки —
+идентификувај шаблони, празнини или можности за подобрување (нови педагошки модели, диференцијација,
+занемарени теми/стандарди, итн). Ако нема подготовки, дај општи препораки за започнување.`;
+
     const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { category: { type: Type.STRING }, title: { type: Type.STRING }, recommendationText: { type: Type.STRING } }, required: ['category', 'title', 'recommendationText'] } };
     return generateAndParseJSON<AIRecommendation[]>([{ text: prompt }], schema, DEFAULT_MODEL, AIRecommendationSchema);
   },
@@ -242,26 +293,32 @@ async parsePlannerInput(input: string): Promise<{ title: string; date: string; t
     return generateAndParseJSON<{ title: string; date: string; type: string; description: string }>([{ text: prompt }], schema, plannerModel);
   },
 
-async generateClassRecommendations(analyticsData: { totalAttempts: number; avgScore: number; passRate: number; weakConcepts: Array<{ conceptId: string; title: string; avgPct: number; attempts: number }>; masteredCount: number; inProgressCount: number; strugglingCount: number; uniqueStudentCount: number }): Promise<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>> {
+async generateClassRecommendations(analyticsData: { totalAttempts: number; avgScore: number; passRate: number; weakConcepts: Array<{ conceptId: string; title: string; avgPct: number; attempts: number }>; masteredCount: number; inProgressCount: number; strugglingCount: number; uniqueStudentCount: number }, profile?: TeachingProfile): Promise<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>> {
     const weakList = analyticsData.weakConcepts.slice(0, 3).map(c => `"${c.title}" (просек ${c.avgPct}%, ${c.attempts} обид${c.attempts === 1 ? '' : 'и'})`).join('; ') || 'нема идентификувани слаби концепти';
-    const prompt = `Ти си педагошки советник за математика (одд. 6-9, Македонија).\nКласата има следните реални резултати:\n- Вкупно обиди: ${analyticsData.totalAttempts}\n- Просечен резултат: ${analyticsData.avgScore.toFixed(1)}%\n- Стапка на положување (≥70%): ${analyticsData.passRate.toFixed(1)}%\n- Слаби концепти (под 70%): ${weakList}\n- Совладани концепти: ${analyticsData.masteredCount}\n- Во напредок (streak): ${analyticsData.inProgressCount}\n- Потребна помош (повеќе обиди, нема напредок): ${analyticsData.strugglingCount}\n- Различни ученици: ${analyticsData.uniqueStudentCount}\n\nГенерирај точно 3 конкретни, акциски педагошки препораки за СЛЕДНИОТ ЧАС/НЕДЕЛА.\nВрати JSON array со 3 елементи.`;
+    const secondaryNote = profile?.secondaryTrack ? getSecondaryTrackContext(profile.secondaryTrack) : '';
+    const prompt = `Ти си педагошки советник за математика (одд. 6-9, Македонија).\nКласата има следните реални резултати:\n- Вкупно обиди: ${analyticsData.totalAttempts}\n- Просечен резултат: ${analyticsData.avgScore.toFixed(1)}%\n- Стапка на положување (≥70%): ${analyticsData.passRate.toFixed(1)}%\n- Слаби концепти (под 70%): ${weakList}\n- Совладани концепти: ${analyticsData.masteredCount}\n- Во напредок (streak): ${analyticsData.inProgressCount}\n- Потребна помош (повеќе обиди, нема напредок): ${analyticsData.strugglingCount}\n- Различни ученици: ${analyticsData.uniqueStudentCount}\n${secondaryNote}\n\nГенерирај точно 3 конкретни, акциски педагошки препораки за СЛЕДНИОТ ЧАС/НЕДЕЛА.\nВрати JSON array со 3 елементи.`;
     const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { priority: { type: Type.INTEGER }, icon: { type: Type.STRING }, title: { type: Type.STRING }, explanation: { type: Type.STRING }, actionLabel: { type: Type.STRING }, differentiationLevel: { type: Type.STRING }, conceptId: { type: Type.STRING }, conceptTitle: { type: Type.STRING } }, required: ['priority', 'icon', 'title', 'explanation', 'actionLabel', 'differentiationLevel'] } };
-    return generateAndParseJSON<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>>([{ text: prompt }], schema, DEFAULT_MODEL);
+    return generateAndParseJSON<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
   },
 
-async generateDifferentiationActivities(title: string, grade: number, theme: string, objectives: string[]): Promise<{ support: string[]; standard: string[]; advanced: string[] }> {
+async generateDifferentiationActivities(title: string, grade: number, theme: string, objectives: string[], profile?: TeachingProfile): Promise<{ support: string[]; standard: string[]; advanced: string[] }> {
     const { checkDailyQuotaGuard: guard } = await import('./core');
     guard();
     const safeTitle = sanitizePromptInput(title, 200);
     const safeTheme = sanitizePromptInput(theme, 200);
     const objList = objectives.slice(0, 5).map(o => `- ${sanitizePromptInput(o, 150)}`).join('\n') || '- (без цели)';
-    const prompt = `Ти си искусен наставник по математика во македонско основно образование.\nПодготвуваш час за одделение ${grade}:\nНаслов: „${safeTitle}"\nТема: „${safeTheme}"\nЦели:\n${objList}\n\nГенерирај 3 конкретни активности за секое ниво на диференцијација.\nВрати JSON со клучеви "support", "standard", "advanced" — секој е низа од 3 стринга.`;
+    // Secondary grades (10-12) don't have БРО standard codes — same convention as mindmap.ts.
+    const standardsNote = grade > 9
+      ? ' Ова е за средно образование — не користи БРО кодови, фокусирај се на концепти и компетенции.'
+      : '';
+    const secondaryNote = profile?.secondaryTrack ? getSecondaryTrackContext(profile.secondaryTrack) : '';
+    const prompt = `Ти си искусен наставник по математика во македонско основно образование.\nПодготвуваш час за одделение ${grade}:\nНаслов: „${safeTitle}"\nТема: „${safeTheme}"\nЦели:\n${objList}${standardsNote}\n${secondaryNote}\n\nГенерирај 3 конкретни активности за секое ниво на диференцијација.\nВрати JSON со клучеви "support", "standard", "advanced" — секој е низа од 3 стринга.`;
     const schema = { type: Type.OBJECT, properties: { support: { type: Type.ARRAY, items: { type: Type.STRING } }, standard: { type: Type.ARRAY, items: { type: Type.STRING } }, advanced: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['support', 'standard', 'advanced'] };
-    const result = await generateAndParseJSON<{ support: string[]; standard: string[]; advanced: string[] }>([{ text: prompt }], schema, LITE_MODEL);
+    const result = await generateAndParseJSON<{ support: string[]; standard: string[]; advanced: string[] }>([{ text: prompt }], schema, LITE_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
     return { support: result.support?.slice(0, 3) ?? [], standard: result.standard?.slice(0, 3) ?? [], advanced: result.advanced?.slice(0, 3) ?? [] };
   },
 
-async generateRichTask(title: string, grade: number, theme: string, concepts: string[]): Promise<{
+async generateRichTask(title: string, grade: number, theme: string, concepts: string[], profile?: TeachingProfile): Promise<{
     context: string;
     task: string;
     support: string;
@@ -274,6 +331,11 @@ async generateRichTask(title: string, grade: number, theme: string, concepts: st
     const safeTitle = sanitizePromptInput(title, 200);
     const safeTheme = sanitizePromptInput(theme, 200);
     const conceptList = concepts.slice(0, 6).map(c => `- ${sanitizePromptInput(c, 100)}`).join('\n') || '- (без поими)';
+    // Secondary grades (10-12) don't have БРО standard codes — same convention as mindmap.ts.
+    const standardsNote = grade > 9
+      ? '\nОва е за средно образование — не користи БРО кодови, фокусирај се на концепти и компетенции.'
+      : '';
+    const secondaryNote = profile?.secondaryTrack ? `\n${getSecondaryTrackContext(profile.secondaryTrack)}` : '';
     const prompt = `Ти си искусен наставник по математика за ${grade}. одделение.
 Тема: „${safeTheme}" | Лекција: „${safeTitle}"
 Поими: ${conceptList}
@@ -287,6 +349,7 @@ async generateRichTask(title: string, grade: number, theme: string, concepts: st
 - standard: Стандардна верзија — без дополнителна поддршка
 - advanced: Проширување — дополнителен предизвик, генерализација, докажување
 - discussionQuestion: Прашање за класна дискусија за да се поврзат различните решенија
+${standardsNote}${secondaryNote}
 
 Одговори со ВАЛИДЕН JSON. Само JSON, без ништо друго.`;
     const schema = {
@@ -304,16 +367,17 @@ async generateRichTask(title: string, grade: number, theme: string, concepts: st
     return generateAndParseJSON<{
       context: string; task: string; support: string;
       standard: string; advanced: string; discussionQuestion: string;
-    }>([{ text: prompt }], schema, DEFAULT_MODEL);
+    }>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
   },
 
-async suggestNextLessons(recentLessons: Array<{ title: string; date: string; description?: string }>): Promise<Array<{ title: string; description: string; conceptHint: string }>> {
+async suggestNextLessons(recentLessons: Array<{ title: string; date: string; description?: string }>, profile?: TeachingProfile): Promise<Array<{ title: string; description: string; conceptHint: string }>> {
     if (recentLessons.length === 0) return [];
     const lessonsText = recentLessons.map(l => `- ${l.date}: ${l.title}${l.description ? ` (${l.description.slice(0, 80)})` : ''}`).join('\n');
-    const prompt = `Си наставник по математика. Последните лекции во планот беа:\n${lessonsText}\n\nВрз основа на оваа прогресија, предложи 3 логични теми за следната недела.\nОдговори само во JSON формат.`;
+    const secondaryNote = profile?.secondaryTrack ? `\n${getSecondaryTrackContext(profile.secondaryTrack)}` : '';
+    const prompt = `Си наставник по математика. Последните лекции во планот беа:\n${lessonsText}${secondaryNote}\n\nВрз основа на оваа прогресија, предложи 3 логични теми за следната недела.\nОдговори само во JSON формат.`;
     const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, conceptHint: { type: Type.STRING } }, required: ['title', 'description', 'conceptHint'] } };
     try {
-      const result = await generateAndParseJSON<Array<{ title: string; description: string; conceptHint: string }>>([{ text: prompt }], schema, DEFAULT_MODEL);
+      const result = await generateAndParseJSON<Array<{ title: string; description: string; conceptHint: string }>>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
       return Array.isArray(result) ? result.slice(0, 3) : [];
     } catch {
       return [];

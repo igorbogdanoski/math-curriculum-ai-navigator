@@ -7,6 +7,7 @@ import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamificatio
 import type { ConceptMastery, QuizResult, StudentGamification } from './firestoreService.types';
 import { parseFirestoreDoc, QuizResultSchema, ConceptMasterySchema, StudentGamificationSchema } from '../schemas/firestoreSchemas';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
+import { membershipKey } from '../utils/studentIdentity';
 
 function isValidQuizResult(data: unknown): data is QuizResult {
   if (!data || typeof data !== 'object') return false;
@@ -181,6 +182,37 @@ export const quizService = {
     }
   },
 
+  /**
+   * Replays queued offline mastery updates one at a time (not batch-committed like
+   * syncOfflineQuizzes) — each update is a stateful read-modify-write (consecutiveHighScores,
+   * mastered streak), so every replay must read the then-current Firestore state rather than
+   * risk overwriting with a stale precomputed snapshot.
+   */
+  syncOfflineMastery: async (): Promise<number> => {
+    try {
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      if (!isOnline) return 0;
+      const { getPendingMastery, clearPendingMastery } = await import('./indexedDBService');
+      const pending = await getPendingMastery();
+      if (pending.length === 0) return 0;
+
+      let synced = 0;
+      for (const item of pending) {
+        try {
+          await quizService.updateConceptMastery(item.studentName, item.conceptId, item.score, item.meta, item.teacherUid, item.deviceId);
+          await clearPendingMastery(item.id);
+          synced++;
+        } catch (err) {
+          logger.error(`Failed to sync offline mastery update ${item.id}:`, err);
+        }
+      }
+      return synced;
+    } catch (err) {
+      logger.error('Mastery sync error', err);
+      return 0;
+    }
+  },
+
   updateQuizConfidence: async (docId: string, confidence: number): Promise<void> => {
     if (!docId) return;
     try {
@@ -319,12 +351,31 @@ export const quizService = {
     deviceId?: string,
   ): Promise<ConceptMastery> => {
     const safeName = studentName.replace(/\s+/g, '_');
+    // Keyed per-student-on-this-device (membershipKey), not bare deviceId — two different
+    // students sharing one device/browser would otherwise collide on the same doc and the
+    // second student's update would silently overwrite the first's mastery record.
     const docId = deviceId
-      ? (teacherUid ? `${teacherUid}_${deviceId}_${conceptId}` : `${deviceId}_${conceptId}`)
+      ? (teacherUid ? `${teacherUid}_${membershipKey(deviceId, studentName)}_${conceptId}` : `${membershipKey(deviceId, studentName)}_${conceptId}`)
       : (teacherUid ? `${teacherUid}_${safeName}_${conceptId}` : `${safeName}_${conceptId}`);
     const ref = doc(db, 'concept_mastery', docId);
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const queueOffline = async () => {
+      try {
+        const { saveMasteryOffline } = await import('./indexedDBService');
+        await saveMasteryOffline({ studentName, conceptId, score, meta, teacherUid, deviceId });
+      } catch (err) {
+        logger.error('Error queueing offline mastery update:', err);
+      }
+    };
     try {
-      const snap = await getDoc(ref);
+      let snap = await getDoc(ref);
+      // Fall back to the legacy bare-deviceId doc (pre-fix data) for continuity on this
+      // student's first update after the fix — subsequent updates only touch the new doc.
+      if (!snap.exists() && deviceId) {
+        const legacyDocId = teacherUid ? `${teacherUid}_${deviceId}_${conceptId}` : `${deviceId}_${conceptId}`;
+        const legacySnap = await getDoc(doc(db, 'concept_mastery', legacyDocId));
+        if (legacySnap.exists()) snap = legacySnap;
+      }
       const existing = snap.exists() ? parseFirestoreDoc(ConceptMasterySchema, snap.data(), `concept_mastery/${docId}`) as ConceptMastery : null;
       const prevConsecutive = existing?.consecutiveHighScores ?? 0;
       const newConsecutive = score >= 85 ? prevConsecutive + 1 : 0;
@@ -345,10 +396,15 @@ export const quizService = {
         updatedAt: serverTimestamp() as unknown as Timestamp,
         ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() as unknown as Timestamp } : {}),
       };
-      setDoc(ref, updated, { merge: true }).catch(err => logger.warn('Offline deferred', err));
+      if (!isOnline) {
+        await queueOffline();
+      } else {
+        setDoc(ref, updated, { merge: true }).catch(err => { logger.warn('Mastery write failed, queueing offline:', err); void queueOffline(); });
+      }
       return { ...updated, attempts: updated.attempts! } as ConceptMastery;
     } catch (error) {
       logger.error('Error updating concept mastery:', error);
+      await queueOffline();
       return {
         studentName, conceptId, attempts: 1,
         consecutiveHighScores: score >= 85 ? 1 : 0,
@@ -433,13 +489,23 @@ export const quizService = {
 
   fetchStudentGamification: async (studentName: string, teacherUid?: string, deviceId?: string): Promise<StudentGamification | null> => {
     try {
+      // Keyed per-student-on-this-device — two students sharing a device must not read/write
+      // the same gamification doc. Falls back to the legacy bare-deviceId doc for continuity
+      // with data written before this fix.
       if (deviceId && teacherUid) {
-        const s = await getDoc(doc(db, 'student_gamification', `${teacherUid}_${deviceId}`));
-        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${teacherUid}_${deviceId}`) as StudentGamification;
+        const key = `${teacherUid}_${membershipKey(deviceId, studentName)}`;
+        const s = await getDoc(doc(db, 'student_gamification', key));
+        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${key}`) as StudentGamification;
+        const legacyKey = `${teacherUid}_${deviceId}`;
+        const legacy = await getDoc(doc(db, 'student_gamification', legacyKey));
+        if (legacy.exists()) return parseFirestoreDoc(StudentGamificationSchema, legacy.data(), `student_gamification/${legacyKey}`) as StudentGamification;
       }
       if (deviceId && !teacherUid) {
-        const s = await getDoc(doc(db, 'student_gamification', deviceId));
-        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${deviceId}`) as StudentGamification;
+        const key = membershipKey(deviceId, studentName);
+        const s = await getDoc(doc(db, 'student_gamification', key));
+        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${key}`) as StudentGamification;
+        const legacy = await getDoc(doc(db, 'student_gamification', deviceId));
+        if (legacy.exists()) return parseFirestoreDoc(StudentGamificationSchema, legacy.data(), `student_gamification/${deviceId}`) as StudentGamification;
       }
       if (teacherUid) {
         const s = await getDoc(doc(db, 'student_gamification', `${teacherUid}_${studentName}`));
@@ -459,6 +525,7 @@ export const quizService = {
         collection(db, 'student_gamification'),
         where(documentId(), '>=', `${teacherUid}_`),
         where(documentId(), '<=', `${teacherUid}_\uf8ff`),
+        limit(1000),
       );
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as StudentGamification)
@@ -478,9 +545,13 @@ export const quizService = {
     teacherUid?: string,
     deviceId?: string,
   ): Promise<{ xpGained: number; newAchievements: string[]; gamification: StudentGamification }> => {
+    // Keyed per-student-on-this-device — see fetchStudentGamification's matching comment.
     const docId = deviceId
-      ? (teacherUid ? `${teacherUid}_${deviceId}` : deviceId)
+      ? (teacherUid ? `${teacherUid}_${membershipKey(deviceId, studentName)}` : membershipKey(deviceId, studentName))
       : (teacherUid ? `${teacherUid}_${studentName}` : studentName);
+    const legacyDocId = deviceId
+      ? (teacherUid ? `${teacherUid}_${deviceId}` : deviceId)
+      : null;
     const ref = doc(db, 'student_gamification', docId);
 
     const computeUpdate = (existing: StudentGamification | null) => {
@@ -513,7 +584,11 @@ export const quizService = {
       // achievement update instead of stacking on top of it.
       const result = await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        const existing = snap.exists() ? (snap.data() as StudentGamification) : null;
+        let existing = snap.exists() ? (snap.data() as StudentGamification) : null;
+        if (!existing && legacyDocId) {
+          const legacySnap = await tx.get(doc(db, 'student_gamification', legacyDocId));
+          if (legacySnap.exists()) existing = legacySnap.data() as StudentGamification;
+        }
         const computed = computeUpdate(existing);
         tx.set(ref, computed.updated, { merge: false });
         return computed;
@@ -524,7 +599,10 @@ export const quizService = {
       // plain setDoc does — fall back to the previous best-effort behavior (same race
       // window as before this fix, but only while offline) so offline play still works.
       logger.warn('Gamification transaction failed, falling back to best-effort write', err);
-      const snap = await getDoc(ref).catch(() => null);
+      let snap = await getDoc(ref).catch(() => null);
+      if ((!snap || !snap.exists()) && legacyDocId) {
+        snap = await getDoc(doc(db, 'student_gamification', legacyDocId)).catch(() => null);
+      }
       const existing = snap?.exists() ? (snap.data() as StudentGamification) : null;
       const { updated, xpGained, newAchievements } = computeUpdate(existing);
       setDoc(ref, updated, { merge: false }).catch(e => logger.warn('Offline deferred', e));

@@ -122,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
-      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey);
+      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
 
       res.write('data: [DONE]\n\n');
       res.end();

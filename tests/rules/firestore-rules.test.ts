@@ -298,6 +298,90 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('cached_ai_materials/{doc} — peer rating cannot wipe other ratings', () => {
+    it("setting only the caller's own rating entry succeeds; overwriting the whole map fails", async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('cached_ai_materials/m1').set({ teacherUid: 'author1', ratingsByUid: { other1: 4 } });
+      });
+      const rater = testEnv.authenticatedContext('rater1');
+      const fRater = rater.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+
+      // Adding only their own key, preserving other1's, must succeed.
+      await assertSucceeds(fRater.doc('cached_ai_materials/m1').update({ 'ratingsByUid.rater1': 5 }));
+      // Wiping the whole map down to just their own entry must fail.
+      await assertFails(fRater.doc('cached_ai_materials/m1').update({ ratingsByUid: { rater1: 5 } }));
+    });
+  });
+
+  describe('scenario_bank/{docId} — community fields scoped per-uid', () => {
+    it('rating only touches the caller\'s own key; save/unsave only touches the caller\'s own uid', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('scenario_bank/s2').set({
+          authorUid: 'author1', deleted: false, isFeatured: false,
+          ratingsByUid: { other1: 4 }, savedByUids: ['other1'], forkCount: 0, usageCount: 0,
+        });
+      });
+      const teacher = testEnv.authenticatedContext('teacher2');
+      const f = teacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.doc('scenario_bank/s2').update({ 'ratingsByUid.teacher2': 5 }));
+      await assertFails(f.doc('scenario_bank/s2').update({ ratingsByUid: { teacher2: 5 } }));
+      await assertSucceeds(f.doc('scenario_bank/s2').update({ savedByUids: ['other1', 'teacher2'] }));
+      await assertFails(f.doc('scenario_bank/s2').update({ savedByUids: ['teacher2'] })); // drops other1
+      await assertSucceeds(f.doc('scenario_bank/s2').update({ forkCount: 1 }));
+      await assertFails(f.doc('scenario_bank/s2').update({ forkCount: 100 }));
+    });
+  });
+
+  describe('matura_community_solutions/{solutionId} — upvote toggle scoped per-uid', () => {
+    it('upvotes must move in lockstep with the caller\'s own uid in upvoterUids', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('matura_community_solutions/sol1').set({ authorUid: 'author1', upvotes: 1, upvoterUids: ['other1'] });
+      });
+      const voter = testEnv.authenticatedContext('voter1');
+      const f = voter.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.doc('matura_community_solutions/sol1').update({ upvotes: 2, upvoterUids: ['other1', 'voter1'] }));
+      // Setting the count directly without a matching membership change must fail.
+      await assertFails(f.doc('matura_community_solutions/sol1').update({ upvotes: 999, upvoterUids: ['other1'] }));
+    });
+  });
+
+  describe('matura_ai_grades/{cacheKey} — direct client writes always denied', () => {
+    it('grading + cache writes now only happen server-side via /api/matura-grade (Admin SDK)', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> };
+      };
+      // A client precomputing the deterministic cache key and writing a fabricated grade must fail.
+      await assertFails(f.doc('matura_ai_grades/exam1_q1_abc123').set({ score: 4, maxPoints: 4, feedback: 'fake' }));
+
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const admin = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await admin.doc('matura_ai_grades/exam1_q1_abc123').set({ score: 2, maxPoints: 4, feedback: 'real' });
+      });
+      // Reading an already-cached (server-written) grade is still allowed.
+      await assertSucceeds(f.doc('matura_ai_grades/exam1_q1_abc123').get());
+    });
+  });
+
   describe('mind_maps/{doc} — owner-only', () => {
     it('the owning teacher can read/update their own mind map; another teacher cannot', async () => {
       if (!testEnv) return;
@@ -392,6 +476,47 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(fOther.doc('academy_badges/teacherY').get());
       await assertSucceeds(fOwner.doc('academy_badges/teacherY').set({ completedSpecializationIds: ['inclusive-teacher', 'digital-innovator'] }));
       await assertFails(fOther.doc('academy_badges/teacherY').set({ completedSpecializationIds: [] }));
+    });
+  });
+
+  describe('student_identity/{deviceId} — create must be bound to the caller\'s own uid', () => {
+    it('a caller cannot create a student_identity doc claiming a different anonymousUid', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const caller = testEnv.authenticatedContext('anon-real-uid');
+      const f = caller.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.doc('student_identity/device1').set({ deviceId: 'device1', name: 'Learner', anonymousUid: 'someone-elses-uid' }));
+      await assertSucceeds(f.doc('student_identity/device1').set({ deviceId: 'device1', name: 'Learner', anonymousUid: 'anon-real-uid' }));
+    });
+  });
+
+  describe('saved_questions/{doc} — school-admin null-guard consistency', () => {
+    it('a school_admin without their own schoolId set cannot read/delete a question missing schoolId', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/schoolAdminNoSchool').set({ role: 'school_admin' });
+        await f.doc('saved_questions/q1').set({ teacherUid: 'someTeacher' }); // no schoolId field at all
+      });
+      const admin = testEnv.authenticatedContext('schoolAdminNoSchool');
+      const f = admin.firestore() as unknown as { doc(p: string): { get(): Promise<unknown>; delete(): Promise<unknown> } };
+      await assertFails(f.doc('saved_questions/q1').get());
+      await assertFails(f.doc('saved_questions/q1').delete());
+    });
+  });
+
+  describe('student_gamification/{doc} — numeric bounds on XP/streaks', () => {
+    it('rejects absurd totalXP/streak values but accepts realistic ones', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('anonStudent1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.doc('student_gamification/g1').set({ studentName: 'Ana', totalXP: 99999999 }));
+      await assertFails(f.doc('student_gamification/g2').set({ studentName: 'Ana', currentStreak: -1 }));
+      await assertSucceeds(f.doc('student_gamification/g3').set({ studentName: 'Ana', totalXP: 500, currentStreak: 5, longestStreak: 10 }));
     });
   });
 });

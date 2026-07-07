@@ -36,10 +36,34 @@ interface MathNavDB extends DBSchema {
       timestamp: number;
     };
   };
+  pending_mastery: {
+    key: string;
+    value: {
+      id: string; // generated offline UUID
+      studentName: string;
+      conceptId: string;
+      score: number;
+      meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number };
+      teacherUid?: string;
+      deviceId?: string;
+      timestamp: number;
+    };
+  };
+  pending_spaced_rep: {
+    key: string;
+    value: {
+      id: string; // generated offline UUID
+      studentId: string;
+      conceptId: string;
+      percentage: number;
+      studentName?: string;
+      timestamp: number;
+    };
+  };
 }
 
 const DB_NAME = 'MathNavOfflineDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 const AI_CACHE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 h
 const QUIZ_CACHE_TTL_MS_CLEANUP = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -113,6 +137,12 @@ export const initDB = () => {
         if (!db.objectStoreNames.contains('matura_exam_cache')) {
           db.createObjectStore('matura_exam_cache', { keyPath: 'id' });
         }
+        if (!db.objectStoreNames.contains('pending_mastery')) {
+          db.createObjectStore('pending_mastery', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('pending_spaced_rep')) {
+          db.createObjectStore('pending_spaced_rep', { keyPath: 'id' });
+        }
         // v3 migration: schedule stale-entry cleanup on next tick
         if (oldVersion < 3) {
           setTimeout(() => cleanupExpiredCache().catch(() => {}), 0);
@@ -150,6 +180,54 @@ export const clearPendingQuiz = async (id: string): Promise<void> => {
 export const getPendingQuizzesCount = async (): Promise<number> => {
   const db = await initDB();
   return db.count('pending_quizzes');
+};
+
+// ── Offline queue: concept mastery + spaced repetition ──────────────────────
+//
+// Mirrors pending_quizzes' save/get/clear shape. Unlike quiz results (fresh
+// auto-ID docs, safe to batch-write blind), mastery/spaced-rep updates are
+// stateful read-modify-write operations — queued items are replayed one at a
+// time through the same online update function on reconnect (see
+// firestoreService.quiz.ts's syncOfflineMastery / firestoreService.spacedRep.ts's
+// syncOfflineSpacedRep), not batch-committed, so each replay computes against
+// the correct then-current state instead of a stale snapshot.
+
+export const saveMasteryOffline = async (
+  entry: Omit<MathNavDB['pending_mastery']['value'], 'id' | 'timestamp'>,
+): Promise<string> => {
+  const db = await initDB();
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+  await db.add('pending_mastery', { ...entry, id, timestamp: Date.now() });
+  return id;
+};
+
+export const getPendingMastery = async () => {
+  const db = await initDB();
+  return db.getAll('pending_mastery');
+};
+
+export const clearPendingMastery = async (id: string): Promise<void> => {
+  const db = await initDB();
+  await db.delete('pending_mastery', id);
+};
+
+export const saveSpacedRepOffline = async (
+  entry: Omit<MathNavDB['pending_spaced_rep']['value'], 'id' | 'timestamp'>,
+): Promise<string> => {
+  const db = await initDB();
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+  await db.add('pending_spaced_rep', { ...entry, id, timestamp: Date.now() });
+  return id;
+};
+
+export const getPendingSpacedRep = async () => {
+  const db = await initDB();
+  return db.getAll('pending_spaced_rep');
+};
+
+export const clearPendingSpacedRep = async (id: string): Promise<void> => {
+  const db = await initDB();
+  await db.delete('pending_spaced_rep', id);
 };
 
 export const saveAICache = async (id: string, content: any): Promise<void> => {

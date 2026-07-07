@@ -85,6 +85,7 @@ export function useLessonPlanAIActions({
         plan.grade ?? 6,
         plan.theme ?? '',
         (plan.objectives ?? []).map(o => typeof o === 'string' ? o : o.text),
+        user ?? undefined,
       );
       if (isMounted.current) setDiffActivities(result);
     } catch {
@@ -92,7 +93,7 @@ export function useLessonPlanAIActions({
     } finally {
       if (isMounted.current) setIsGeneratingDiff(false);
     }
-  }, [plan.title, plan.grade, plan.theme, plan.objectives, isMounted]);
+  }, [plan.title, plan.grade, plan.theme, plan.objectives, user, isMounted]);
 
   const handleGenerateRichTask = useCallback(async () => {
     if (!plan.title && !plan.theme) return;
@@ -113,6 +114,7 @@ export function useLessonPlanAIActions({
         plan.grade ?? 6,
         plan.theme ?? '',
         concepts,
+        user ?? undefined,
       );
       if (isMounted.current) setRichTask(result);
     } catch {
@@ -120,7 +122,7 @@ export function useLessonPlanAIActions({
     } finally {
       if (isMounted.current) setIsGeneratingRichTask(false);
     }
-  }, [plan.title, plan.grade, plan.theme, plan.conceptIds, curriculum, isMounted]);
+  }, [plan.title, plan.grade, plan.theme, plan.conceptIds, curriculum, user, isMounted]);
 
   const handleEnhanceField = useCallback(async (
     fieldName: string,

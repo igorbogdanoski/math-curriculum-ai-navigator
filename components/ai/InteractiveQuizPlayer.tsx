@@ -108,14 +108,46 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   // without this, onComplete() fires twice and creates two separate quiz_results docs.
   const hasFinishedRef = useRef(false);
 
-  // State
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [streak, setStreak] = useState(0);
+  // ── In-progress autosave/draft recovery ────────────────────────────────────
+  // Session state was previously held only in memory — an accidental refresh, or a
+  // mobile OS reclaiming a backgrounded tab, silently lost the whole in-progress
+  // attempt. Keyed by a fingerprint of this specific quiz's content (title + length +
+  // first question), so a draft only ever restores into the SAME quiz, never a
+  // different one that happens to load next. sessionStorage (not localStorage) —
+  // scoped to this tab's lifetime, matching the "in-progress attempt" scope.
+  const draftKey = useMemo(() => {
+    if (normalizedQuestions.length === 0) return null;
+    const fingerprint = `${quizTitle}|${normalizedQuestions.length}|${normalizedQuestions[0]?.question ?? ''}`;
+    const safe = fingerprint.replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 120);
+    return `quiz_draft_${safe}`;
+  }, [quizTitle, normalizedQuestions]);
+
+  const loadDraft = (): {
+    currentIndex: number; score: number; correctCount: number; streak: number;
+    answersMap: Record<string, boolean>;
+    misconceptions: { question: string; studentAnswer: string; misconception: string }[];
+  } | null => {
+    if (!draftKey) return null;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+
+  const clearDraft = () => {
+    if (!draftKey) return;
+    try { sessionStorage.removeItem(draftKey); } catch { /* ignore */ }
+  };
+
+  // State — lazy initializers restore a matching draft on the very first render,
+  // so there's no render-then-snap-back flash.
+  const [currentIndex, setCurrentIndex] = useState(() => loadDraft()?.currentIndex ?? 0);
+  const [score, setScore] = useState(() => loadDraft()?.score ?? 0);
+  const [correctCount, setCorrectCount] = useState(() => loadDraft()?.correctCount ?? 0);
+  const [streak, setStreak] = useState(() => loadDraft()?.streak ?? 0);
   const [timeLeft, setTimeLeft] = useState(perQ);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
-  
+
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -132,10 +164,20 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const [isLoadingHint, setIsLoadingHint] = useState(false);
 
   // Misconception tracking state
-  const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
+  const [misconceptions, setMisconceptions] = useState(() => loadDraft()?.misconceptions ?? []);
 
   // Per-question answer map for live-session analytics: index string → correct
-  const [answersMap, setAnswersMap] = useState<Record<string, boolean>>({});
+  const [answersMap, setAnswersMap] = useState<Record<string, boolean>>(() => loadDraft()?.answersMap ?? {});
+
+  // Persist the resumable slice of state on every change — cheap (sessionStorage,
+  // small payload) and correctness-critical progress (index/score/streak/answers)
+  // only, not transient per-question UI state (hints, scaffolding, timer).
+  useEffect(() => {
+    if (!draftKey || showResult) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ currentIndex, score, correctCount, streak, answersMap, misconceptions }));
+    } catch { /* ignore — quota exceeded or unavailable, autosave is best-effort */ }
+  }, [draftKey, showResult, currentIndex, score, correctCount, streak, answersMap, misconceptions]);
 
   // S27-A2: Personalized result feedback
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
@@ -291,6 +333,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
     setShowResult(true);
+    clearDraft();
     if (onComplete) onComplete({
       score,
       correctCount,

@@ -23,6 +23,24 @@ export const AI_COSTS = {
     KAHOOT: 3,
     ASSESSMENT: 3,
     IDEAS: 2,
+    /** Zero-cost bucket for a call that's one part of an already separately-priced bundle
+     *  (e.g. generateABCTest's 2nd/3rd variant, bulk-generate's later steps) — the bundle's
+     *  own costKey covers the whole operation, so its other legs must not double-charge. */
+    BUNDLE_PART: 0,
+};
+
+/**
+ * Server-side floor on credits deducted per model, regardless of the client-supplied costKey.
+ * `costKey` is chosen by the CALLING code, not verified against the model actually used — a
+ * request made directly against the API (bypassing the UI) could otherwise pair an expensive
+ * model with a cheap costKey and get premium generations for far less than their real cost.
+ * The amount deducted is always max(AI_COSTS[costKey], MODEL_MIN_COST[model actually used]).
+ */
+export const MODEL_MIN_COST: Record<string, number> = {
+    [LITE_MODEL]: 1,
+    [DEFAULT_MODEL]: 1,
+    [PRO_MODEL]: 5,
+    [ULTIMATE_MODEL]: 8,
 };
 
 export enum Type {

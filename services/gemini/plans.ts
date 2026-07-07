@@ -115,7 +115,7 @@ export async function buildOfficialCurriculumSummary(level: number): Promise<str
 // ────────────────────────────────────────────────────────────────────────────────
 
 export const plansAPI = {
-async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string): Promise<AIGeneratedIdeas> {
+async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string, costKeyOverride?: string): Promise<AIGeneratedIdeas> {
     const conceptId = concepts?.[0]?.id || 'no_concept';
     const cacheKey = `ideas_${conceptId}_g${gradeLevel}`;
     // Skip cache when custom instruction is provided — user wants specific generation, not community cache
@@ -194,7 +194,7 @@ ${isSecondaryGrade
     const ragQuery84 = [topicTitle, ...concepts.map(c => c.title)].filter(Boolean).join(' ');
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack, ragQuery84);
     // Use high-quality model for better pedagogical reasoning
-        const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier, { costKey: 'IDEAS' });
+        const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier, { costKey: costKeyOverride ?? 'IDEAS' });
         // Cache write must never block UI completion; generation result is already available.
         void setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;

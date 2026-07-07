@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, where, serverTimestamp, Timestamp, increment,
+  onSnapshot, query, orderBy, where, serverTimestamp, Timestamp, increment, limit,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -357,6 +357,7 @@ export const subscribeMyDuggaTests = (
     collection(db, 'dugga_tests'),
     where('teacherUid', '==', teacherUid),
     orderBy('createdAt', 'desc'),
+    limit(200),
   );
   return onSnapshot(q, snap => {
     onData(snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaTest)));

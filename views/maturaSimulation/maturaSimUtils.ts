@@ -1,10 +1,8 @@
-import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
-import { clampAiScore } from '../../utils/aiScoreClamp';
+import { getAuthToken } from '../../services/gemini/core';
 import {
-    buildGradeCacheKey, getCachedAIGrade, saveAIGrade,
+    buildGradeCacheKey, getCachedAIGrade,
 } from '../../services/firestoreService.matura';
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
-import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -150,7 +148,22 @@ export function safeParseJSON(text: string): Record<string, unknown> | null {
 export function progressKey(examId: string): string { return `matura_sim_progress_${examId}`; }
 export function resultKey(examId: string): string    { return `matura_sim_result_${examId}`; }
 
-// ── AI grading (with Firestore cache) ────────────────────────────────────────
+// ── AI grading (server-side — see api/matura-grade.ts's header comment for why grading
+// and the matura_ai_grades cache write moved off the client) ────────────────────────
+
+async function gradeViaServer(body: Record<string, unknown>): Promise<AIGrade> {
+    const token = await getAuthToken();
+    const res = await fetch('/api/matura-grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Grading failed (HTTP ${res.status})`);
+    }
+    return (await res.json()) as AIGrade;
+}
 
 export async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
     const cacheInput = `${answerA}|||${answerB}`;
@@ -158,59 +171,11 @@ export async function gradePart2(q: MaturaQuestion, answerA: string, answerB: st
     const cached     = await getCachedAIGrade(cacheKey);
     if (cached) return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
 
-    // CAS pre-gate: only short-circuits past Gemini when BOTH sub-answers are confirmed
-    // equivalent to their respective reference parts (full 2/2 credit). Any other outcome —
-    // an unparseable correctAnswer format, one part not equivalent, or a CAS outage — falls
-    // through unchanged to the Gemini path below, which still handles partial credit.
-    if (answerA.trim() && answerB.trim() && q.correctAnswer) {
-        const split = splitTwoPartAnswer(q.correctAnswer);
-        if (split) {
-            const [resultA, resultB] = await Promise.all([
-                verifyExpressionEquivalenceRemote(answerA, split.a),
-                verifyExpressionEquivalenceRemote(answerB, split.b),
-            ]);
-            if (resultA.verdict === 'equivalent' && resultB.verdict === 'equivalent') {
-                const grade: AIGrade = {
-                    score: 2, maxScore: 2,
-                    feedback: 'Проверено со CAS — двата дела се точни.',
-                    partA: true, partB: true,
-                    commentA: 'Точно (CAS)', commentB: 'Точно (CAS)',
-                    verifiedByCas: true,
-                };
-                saveAIGrade(cacheKey, {
-                    examId: q.examId, questionNumber: q.questionNumber,
-                    inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
-                });
-                return grade;
-            }
-        }
-    }
-
-    const prompt = `Ти си асистент за оценување матура на македонски јазик.
-Задача Q${q.questionNumber}: ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-Одговор на ученикот: А. ${answerA||'(нема)'} | Б. ${answerB||'(нема)'}
-Оцени ги двата дела. Секој дел вреди 1 поен.
-Врати САМО валиден JSON: {"score":0,"partA":false,"partB":false,"commentA":"...","commentB":"...","feedback":"..."}
-- Споредувај математичко значење, не буквален текст. score = 0, 1 или 2.`;
-
-    const resp = await callGeminiProxy({
-        model: DEFAULT_MODEL,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 },
+    return gradeViaServer({
+        mode: 'sim-part2',
+        examId: q.examId, questionNumber: q.questionNumber, questionText: q.questionText,
+        correctAnswer: q.correctAnswer, answer: answerA, answerB, maxScore: 2,
     });
-    const p = safeParseJSON(resp.text);
-    if (!p) throw new Error('Parse error');
-    const grade: AIGrade = {
-        score: clampAiScore(p.score, 2), maxScore: 2, feedback: String(p.feedback ?? ''),
-        partA: Boolean(p.partA), partB: Boolean(p.partB),
-        commentA: String(p.commentA ?? ''), commentB: String(p.commentB ?? ''),
-    };
-    saveAIGrade(cacheKey, {
-        examId: q.examId, questionNumber: q.questionNumber,
-        inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
-    });
-    return grade;
 }
 
 export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
@@ -218,25 +183,9 @@ export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGra
     const cached   = await getCachedAIGrade(cacheKey);
     if (cached) return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
 
-    const prompt = `Ти си асистент за оценување матура на македонски јазик.
-Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-Опис на решението: ${desc||'(нема)'}
-Врати САМО валиден JSON: {"score":0,"feedback":"коментар на македонски"}
-- score: цел број 0..${q.points}. Биди праведен и охрабрувачки.`;
-
-    const resp = await callGeminiProxy({
-        model: DEFAULT_MODEL,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 },
+    return gradeViaServer({
+        mode: 'part3',
+        examId: q.examId, questionNumber: q.questionNumber, questionText: q.questionText,
+        correctAnswer: q.correctAnswer, answer: desc, maxScore: q.points,
     });
-    const p = safeParseJSON(resp.text);
-    if (!p) throw new Error('Parse error');
-    const score    = clampAiScore(p.score, q.points);
-    const feedback = String(p.feedback ?? '');
-    saveAIGrade(cacheKey, {
-        examId: q.examId, questionNumber: q.questionNumber,
-        inputHash: cacheKey, score, maxPoints: q.points, feedback,
-    });
-    return { score, maxScore: q.points, feedback };
 }

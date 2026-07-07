@@ -52,11 +52,12 @@ async analyzeDocumentText(
     const detailInstruction = detailMode === 'detailed'
       ? `\n5. **Педагошка дијагноза** — за секоја грешка наведи тип на заблуда (процедурна/концептуална), зошто се јавува и предлог за интервенција.\n6. **Следни микро-чекори** — дај 2 кратки вежби (со насока, без целосно решение) за поправка на грешката.`
       : '';
+    const safeDocumentText = sanitizePromptInput(documentText, 8000);
     const prompt = `${contextLine}
 Ти си искусен македонски наставник по математика. Анализирај го следниот текст од математичка домашна работа или тест (извлечен од документ):
 
 ---
-${documentText.slice(0, 8000)}
+${safeDocumentText}
 ---
 
 Твојата анализа треба да содржи:
@@ -73,6 +74,7 @@ ${detailInstruction}
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       systemInstruction: getResolvedTextSystemInstruction(),
       safetySettings: SAFETY_SETTINGS,
+      costKey: 'ASSESSMENT',
     });
     return response.text.trim();
   },

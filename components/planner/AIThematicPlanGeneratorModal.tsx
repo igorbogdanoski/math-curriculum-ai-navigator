@@ -13,7 +13,7 @@ import { getGradeHoursInfo } from '../../services/gemini/plans';
 import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
 import { CoachBubble } from '../common/CoachBubble';
 import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
-import { resolveGradeByLabel } from '../../utils/gradeMatch';
+import { resolveGradeByLabel, findTopicByFuzzyTitle } from '../../utils/gradeMatch';
 import { detectMathDomain } from '../../utils/mathDomainDetector';
 import { publishThematicPlanToBank } from '../../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../scenario-bank/PublishScenarioDialog';
@@ -126,12 +126,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
 
     const topicForConfig = useMemo(() => {
         if (!gradeForConfig || !isPrefilled) return null;
-        return (
-            gradeForConfig.topics.find(t =>
-                t.title.toLowerCase().includes((prefillThemeName ?? '').toLowerCase()) ||
-                (prefillThemeName ?? '').toLowerCase().includes(t.title.toLowerCase())
-            ) ?? gradeForConfig.topics[0]
-        );
+        return findTopicByFuzzyTitle(gradeForConfig.topics, prefillThemeName);
     }, [gradeForConfig, isPrefilled, prefillThemeName]);
 
     const handleConfigGenerate = useCallback(() => {

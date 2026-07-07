@@ -1,14 +1,11 @@
-import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL, getAuthToken } from '../../services/gemini/core';
 import {
   buildGradeCacheKey,
   getCachedAIGrade,
-  saveAIGrade,
 } from '../../services/firestoreService.matura';
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
 import { recordMaturaSpacedReview } from '../../services/firestoreService.maturaSpacedRep';
-import { safeParseJSON, type AIGrade } from './maturaPracticeHelpers';
-import { verifyExpressionEquivalenceRemote } from '../../services/casVerificationClient';
-import { clampAiScore } from '../../utils/aiScoreClamp';
+import type { AIGrade } from './maturaPracticeHelpers';
 
 function pushSpacedReview(
   uid: string | undefined,
@@ -43,6 +40,44 @@ async function urlToBase64(url: string): Promise<{ data: string; mimeType: strin
   }
 }
 
+/**
+ * Grading now happens server-side via /api/matura-grade (see that file's header comment for
+ * why: the matura_ai_grades cache key is a deterministic hash, so a client-side grade+cache-write
+ * would let a student precompute the key for their own wrong answer and write a fabricated
+ * "correct" grade). This still checks the cache directly first (read-only, allowed by
+ * firestore.rules) purely as a fast path to skip invoking the serverless function on a hit.
+ */
+async function gradeViaServer(
+  mode: 'part2' | 'part3',
+  q: MaturaQuestion,
+  answer: string,
+  maxScore: number,
+  imageUrl?: string,
+): Promise<AIGrade> {
+  const image = imageUrl ? await urlToBase64(imageUrl) : null;
+  const token = await getAuthToken();
+  const res = await fetch('/api/matura-grade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      mode,
+      examId: q.examId,
+      questionNumber: q.questionNumber,
+      questionText: q.questionText,
+      correctAnswer: q.correctAnswer,
+      answer,
+      imageBase64: image?.data,
+      imageMimeType: image?.mimeType,
+      maxScore,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Grading failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as AIGrade;
+}
+
 export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: string, uid?: string): Promise<AIGrade> {
   const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer + (imageUrl ? '_img' : ''));
   const maxScore = q.points ?? 4;
@@ -53,76 +88,7 @@ export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: s
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
-  const hasImage = Boolean(imageUrl);
-
-  // CAS pre-gate: a photo answer can't be verified this way (no extracted expression
-  // to compare), and a question with no stored correctAnswer has nothing to check
-  // against — both fall straight through to the unchanged Gemini path below. Only an
-  // 'equivalent' verdict short-circuits past Gemini entirely; anything else (including
-  // a CAS outage, which degrades to 'inconclusive') leaves today's behavior untouched.
-  if (!hasImage && answer.trim() && q.correctAnswer) {
-    const casResult = await verifyExpressionEquivalenceRemote(answer, q.correctAnswer);
-    if (casResult.verdict === 'equivalent') {
-      const grade: AIGrade = {
-        score: maxScore,
-        maxScore,
-        correct: true,
-        feedback: 'Проверено со CAS — одговорот е математички еквивалентен на точниот.',
-        comment: 'Проверено со CAS',
-        verifiedByCas: true,
-      };
-      saveAIGrade(cacheKey, {
-        examId: q.examId, questionNumber: q.questionNumber,
-        inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
-      });
-      pushSpacedReview(uid, q, grade.score, maxScore);
-      return grade;
-    }
-  }
-
-  const prompt = `Ти си асистент за оценување матура на македонски јазик.
-
-Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-${hasImage
-    ? `Ученикот испратил фотографија на своето решение${answer ? ` (дополнително: "${answer}")` : ''}.`
-    : `Одговор на ученикот: ${answer || '(нема одговор)'}`}
-
-Оцени го одговорот. Споредувај математичко значење, не буквален текст.
-Врати САМО валиден JSON:
-{"score":0,"correct":false,"comment":"...","feedback":"..."}
-
-- score = цел број од 0 до ${maxScore}.
-- correct = true ако одговорот суштински совпаѓа со точниот.
-- comment = кратка реченица за одговорот (на македонски).
-- feedback = детална повратна информација (на македонски).`;
-
-  const textPart = { text: prompt };
-  const parts: object[] = [textPart];
-  if (imageUrl) {
-    const img = await urlToBase64(imageUrl);
-    if (img) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-  }
-
-  const resp = await callGeminiProxy({
-    model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts }],
-    generationConfig: { temperature: 0, maxOutputTokens: 512 },
-  });
-  const p = safeParseJSON(resp.text);
-  if (!p) throw new Error('Parse error');
-  const grade: AIGrade = {
-    score: clampAiScore(p.score, maxScore),
-    maxScore,
-    feedback: p.feedback ?? '',
-    correct: Boolean(p.correct),
-    comment: p.comment,
-  };
-
-  saveAIGrade(cacheKey, {
-    examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
-  });
+  const grade = await gradeViaServer('part2', q, answer, maxScore, imageUrl);
   pushSpacedReview(uid, q, grade.score, maxScore);
   return grade;
 }
@@ -155,44 +121,9 @@ export async function gradePart3(q: MaturaQuestion, desc: string, imageUrl?: str
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
-  const hasImage = Boolean(imageUrl);
-  const prompt = `Ти си асистент за оценување матура на македонски јазик.
-
-Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-${hasImage
-    ? `Ученикот испратил фотографија на своето решение${desc ? ` (опис: "${desc}")` : ''}.`
-    : `Опис на решението на ученикот: ${desc || '(нема опис)'}`}
-
-Оцени го решението. Врати САМО валиден JSON:
-{"score":0,"feedback":"детален коментар на македонски"}
-
-- score: цел број 0..${q.points}
-- Биди праведен, конструктивен и охрабрувачки.`;
-
-  const textPart = { text: prompt };
-  const parts: object[] = [textPart];
-  if (imageUrl) {
-    const img = await urlToBase64(imageUrl);
-    if (img) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-  }
-
-  const resp = await callGeminiProxy({
-    model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts }],
-    generationConfig: { temperature: 0, maxOutputTokens: 512 },
-  });
-  const p = safeParseJSON(resp.text);
-  if (!p) throw new Error('Parse error');
-  const score = clampAiScore(p.score, q.points);
-  const feedback = p.feedback ?? '';
-
-  saveAIGrade(cacheKey, {
-    examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score, maxPoints: q.points, feedback,
-  });
-  pushSpacedReview(uid, q, score, q.points);
-  return { score, maxScore: q.points, feedback };
+  const grade = await gradeViaServer('part3', q, desc, q.points, imageUrl);
+  pushSpacedReview(uid, q, grade.score, q.points);
+  return grade;
 }
 
 /**

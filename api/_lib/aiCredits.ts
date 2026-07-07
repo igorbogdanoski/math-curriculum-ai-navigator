@@ -9,7 +9,7 @@
  * mirroring functions/src/index.ts's transaction (read balance, bypass
  * check, floor at 0) so it can't be skipped by the client forgetting to ask.
  */
-import { AI_COSTS } from '../../services/gemini/core.constants.js';
+import { AI_COSTS, MODEL_MIN_COST } from '../../services/gemini/core.constants.js';
 import { getFirebaseAdmin, evaluateCreditGate } from './sharedUtils.js';
 
 /**
@@ -20,11 +20,19 @@ import { getFirebaseAdmin, evaluateCreditGate } from './sharedUtils.js';
  * swallowed, since failing the HTTP response over a bookkeeping error would
  * be strictly worse than a missed deduction (the user already paid the
  * upstream Gemini cost and is about to receive their result).
+ *
+ * `model` (the model actually used for this generation, not just requested) is optional but
+ * strongly recommended: it enforces MODEL_MIN_COST as a floor so a caller bypassing the normal
+ * UI can't pair an expensive model with an under-declared costKey to pay far less than the
+ * real cost. Omitting it (e.g. embed/imagen routes with no meaningful model-tier choice) simply
+ * skips the floor, matching today's behavior.
  */
-export async function deductCreditsServerSide(uid: string, costKey: string | undefined): Promise<void> {
+export async function deductCreditsServerSide(uid: string, costKey: string | undefined, model?: string): Promise<void> {
   if (!getFirebaseAdmin()) return; // local dev without a service account — no-op
 
-  const amount = (costKey && AI_COSTS[costKey as keyof typeof AI_COSTS]) ?? AI_COSTS.TEXT_BASIC;
+  const declaredAmount = (costKey && AI_COSTS[costKey as keyof typeof AI_COSTS]) ?? AI_COSTS.TEXT_BASIC;
+  const floor = model ? (MODEL_MIN_COST[model] ?? 0) : 0;
+  const amount = Math.max(declaredAmount, floor);
 
   try {
     const { getFirestore } = await import('firebase-admin/firestore');

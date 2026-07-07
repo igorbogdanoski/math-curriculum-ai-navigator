@@ -18,9 +18,19 @@ async function syncWithRetry(maxAttempts = 6): Promise<void> {
   let delay = 2_000;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const synced = await firestoreService.syncOfflineQuizzes();
+      const [synced, syncedMastery, syncedSpacedRep] = await Promise.all([
+        firestoreService.syncOfflineQuizzes(),
+        firestoreService.syncOfflineMastery(),
+        firestoreService.syncOfflineSpacedRep(),
+      ]);
       if (synced > 0) {
         logger.info(`[Offline Sync] Synced ${synced} pending quiz(es) on attempt ${attempt}.`);
+      }
+      if (syncedMastery > 0) {
+        logger.info(`[Offline Sync] Synced ${syncedMastery} pending mastery update(s) on attempt ${attempt}.`);
+      }
+      if (syncedSpacedRep > 0) {
+        logger.info(`[Offline Sync] Synced ${syncedSpacedRep} pending spaced-rep record(s) on attempt ${attempt}.`);
       }
       return; // success
     } catch (err) {

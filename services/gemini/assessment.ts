@@ -2,6 +2,7 @@ import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateA
 import { Concept, QuestionType, GenerationContext, TeachingProfile, DifferentiationLevel, StudentProfile, AIGeneratedAssessment, AIGeneratedPracticeMaterial } from '../../types';
 import { AIGeneratedAssessmentSchema, AIGeneratedPracticeMaterialSchema } from '../../utils/schemas';
 import { fetchFewShotExamples } from './ragService';
+import { detectMathDomain } from '../../utils/mathDomainDetector';
 
 const FRACTION_KEYWORDS = ['дропка', 'собирање', 'одземање'];
 
@@ -52,7 +53,7 @@ async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialTy
     return result;
   },
 
-async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean, dokTarget?: 1 | 2 | 3 | 4 | 'mixed', timeoutMs?: number): Promise<AIGeneratedAssessment> {
+async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean, dokTarget?: 1 | 2 | 3 | 4 | 'mixed', timeoutMs?: number, costKeyOverride?: string): Promise<AIGeneratedAssessment> {
     const bloomDist = context.bloomDistribution;
     const hasBloom = bloomDist && Object.keys(bloomDist).length > 0;
     let bloomPart = '';
@@ -89,10 +90,10 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       : ' За секое прашање постави го полето dokLevel (Webb\'s DoK: 1=Recall, 2=Skill/Concept, 3=Strategic Thinking, 4=Extended Thinking).';
 
     // Detect domain from topic/concept for visual enrichment
-    const topicId = (context.topic?.id || '').toLowerCase();
-    const conceptTitles = (context.concepts || []).map(c => (c.title || '').toLowerCase()).join(' ');
-    const isGeometry = topicId.includes('geom') || conceptTitles.includes('геометрија') || conceptTitles.includes('триаголник') || conceptTitles.includes('агол') || conceptTitles.includes('правоаголник') || conceptTitles.includes('кружница') || conceptTitles.includes('трансформац') || conceptTitles.includes('координат');
-    const isStatistics = topicId.includes('stat') || conceptTitles.includes('статистик') || conceptTitles.includes('средна вредност') || conceptTitles.includes('медијана') || conceptTitles.includes('мод') || conceptTitles.includes('честота') || conceptTitles.includes('дијаграм') || conceptTitles.includes('податоц');
+    const conceptTitles = (context.concepts || []).map(c => c.title || '').join(' ');
+    const domain = detectMathDomain(`${context.topic?.title ?? ''} ${context.topic?.id ?? ''} ${conceptTitles}`);
+    const isGeometry = domain === 'geometry';
+    const isStatistics = domain === 'statistics';
 
     const geometryPart = isGeometry
       ? ' ГЕОМЕТРИЈА — ВИЗУЕЛНИ ДИЈАГРАМИ: За секое прашање поврзано со геометриска фигура, агол, координати или трансформација, генерирај SVG дијаграм во полето "svgDiagram". SVG правила: viewBox="0 0 220 180", width="220" height="180", само безбедни елементи (line, circle, polygon, polyline, rect, path, text, g), без скрипти, без надворешни ресурси. Користи stroke="#4f46e5" за линии, fill="none" за фигури, fill="#1e1b4b" за текст (font-size 12), fill="#e0e7ff" за попребоени површини. Означи темиња со букви (A, B, C...) и димензии каде е релевантно.'
@@ -144,7 +145,7 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         false,
         systemInstr,
       profile?.tier,
-      { temperature: 0.2, topP: 0.9, timeoutMs, costKey: 'ASSESSMENT' }
+      { temperature: 0.2, topP: 0.9, timeoutMs, costKey: costKeyOverride ?? 'ASSESSMENT' }
     );
     const hardenedResult = reinforceFractionKeywords(result, context);
     
@@ -163,6 +164,9 @@ async generateABCTest(
   // in parallel against the same rate-limited API key pool, so each is more likely to hit
   // retries/backoff than a lone call, and the default timeout was observed to trip in practice.
   const ABC_TIMEOUT_MS = 90_000;
+  // The client gates/discloses this whole operation at AI_COSTS.VARIANTS (one bundle price) —
+  // only the first of the 3 parallel calls actually carries that cost; the other two ride for
+  // free (BUNDLE_PART=0) so the server doesn't silently charge 3x ASSESSMENT on top of it.
   const [a, b, c] = await Promise.all([
     this.generateAssessment(
       'ASSESSMENT',
@@ -178,6 +182,7 @@ async generateABCTest(
       undefined,
       undefined,
       ABC_TIMEOUT_MS,
+      'VARIANTS',
     ),
     this.generateAssessment(
       'ASSESSMENT',
@@ -193,6 +198,7 @@ async generateABCTest(
       undefined,
       undefined,
       ABC_TIMEOUT_MS,
+      'BUNDLE_PART',
     ),
     this.generateAssessment(
       'ASSESSMENT',
@@ -208,6 +214,7 @@ async generateABCTest(
       undefined,
       undefined,
       ABC_TIMEOUT_MS,
+      'BUNDLE_PART',
     ),
   ]);
   return { a, b, c };

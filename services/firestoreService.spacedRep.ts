@@ -31,12 +31,19 @@ import {
   updateRecordAfterReview,
 } from '../utils/spacedRepetition';
 import type { SM2Card } from '../utils/sm2';
+import { membershipKey } from '../utils/studentIdentity';
 
 const COLLECTION = 'spaced_rep';
 
-/** Composite document ID: prevents collisions across students. */
-const docId = (studentId: string, conceptId: string) =>
-  `${studentId}_${conceptId}`;
+/**
+ * Composite document ID: prevents collisions across students. `studentId` is device-bound,
+ * not person-bound — two students sharing one device would collide on the same doc without
+ * folding `studentName` in (same membershipKey pattern used for class_memberships/concept_mastery).
+ * The stored `studentId` FIELD (not the doc id) stays the raw device id either way, so
+ * `fetchSpacedRepRecords`'s field-based query is unaffected by this change.
+ */
+const docId = (studentId: string, conceptId: string, studentName?: string) =>
+  studentName ? `${membershipKey(studentId, studentName)}_${conceptId}` : `${studentId}_${conceptId}`;
 
 // ── Write ─────────────────────────────────────────────────────────────────────
 
@@ -51,28 +58,50 @@ export async function updateSpacedRepRecord(
   studentId: string,
   conceptId: string,
   percentage: number,
+  studentName?: string,
 ): Promise<void> {
   if (!studentId || !conceptId) return;
 
-  const ref = doc(db, COLLECTION, docId(studentId, conceptId));
+  const ref = doc(db, COLLECTION, docId(studentId, conceptId, studentName));
+  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  const queueOffline = async () => {
+    try {
+      const { saveSpacedRepOffline } = await import('./indexedDBService');
+      await saveSpacedRepOffline({ studentId, conceptId, percentage, studentName });
+    } catch (e) {
+      logger.error('[spacedRep] Failed to queue offline record:', e);
+    }
+  };
 
-  // Load existing record or create fresh one
+  // Load existing record or create fresh one — falling back to the legacy bare-studentId
+  // doc (pre-fix data) for continuity on this student's first review after the fix.
   let record: SpacedRepRecord;
   try {
-    const snap = await getDoc(ref);
+    let snap = await getDoc(ref);
+    if (!snap.exists() && studentName) {
+      const legacySnap = await getDoc(doc(db, COLLECTION, docId(studentId, conceptId)));
+      if (legacySnap.exists()) snap = legacySnap;
+    }
     record = snap.exists()
       ? (snap.data() as SpacedRepRecord)
       : createInitialRecord(studentId, conceptId);
   } catch {
     record = createInitialRecord(studentId, conceptId);
+    if (!isOnline) await queueOffline();
   }
 
   const updated = updateRecordAfterReview(record, percentage);
 
-  // Fire-and-forget (same pattern as gamification saves in firestoreService.quiz.ts)
-  setDoc(ref, updated, { merge: true }).catch((e) =>
-    logger.warn('[spacedRep] Failed to save record:', e),
-  );
+  if (!isOnline) {
+    await queueOffline();
+    return;
+  }
+  // Best-effort write; queue for later replay if it fails despite believing we're online
+  // (network dropped mid-request, or Firestore's own retry gave up).
+  setDoc(ref, updated, { merge: true }).catch((e) => {
+    logger.warn('[spacedRep] Failed to save record, queueing offline:', e);
+    void queueOffline();
+  });
 }
 
 // ── Read ──────────────────────────────────────────────────────────────────────
@@ -107,13 +136,49 @@ export async function fetchSpacedRepRecords(
 export async function fetchSpacedRepRecord(
   studentId: string,
   conceptId: string,
+  studentName?: string,
 ): Promise<SpacedRepRecord | null> {
   if (!studentId || !conceptId) return null;
   try {
-    const snap = await getDoc(doc(db, COLLECTION, docId(studentId, conceptId)));
-    return snap.exists() ? (snap.data() as SpacedRepRecord) : null;
+    const snap = await getDoc(doc(db, COLLECTION, docId(studentId, conceptId, studentName)));
+    if (snap.exists()) return snap.data() as SpacedRepRecord;
+    if (studentName) {
+      const legacySnap = await getDoc(doc(db, COLLECTION, docId(studentId, conceptId)));
+      if (legacySnap.exists()) return legacySnap.data() as SpacedRepRecord;
+    }
+    return null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Replays queued offline SM-2 updates one at a time through updateSpacedRepRecord itself
+ * (not batch-committed) — each review is a stateful read-modify-write against the SM-2
+ * interval/repetitions state, so replay order and reading the then-current doc both matter.
+ */
+export async function syncOfflineSpacedRep(): Promise<number> {
+  try {
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    if (!isOnline) return 0;
+    const { getPendingSpacedRep, clearPendingSpacedRep } = await import('./indexedDBService');
+    const pending = await getPendingSpacedRep();
+    if (pending.length === 0) return 0;
+
+    let synced = 0;
+    for (const item of pending) {
+      try {
+        await updateSpacedRepRecord(item.studentId, item.conceptId, item.percentage, item.studentName);
+        await clearPendingSpacedRep(item.id);
+        synced++;
+      } catch (err) {
+        logger.warn(`[spacedRep] Failed to sync offline record ${item.id}:`, err);
+      }
+    }
+    return synced;
+  } catch (err) {
+    logger.warn('[spacedRep] Sync error:', err);
+    return 0;
   }
 }
 
@@ -121,6 +186,7 @@ export const spacedRepService = {
   updateSpacedRepRecord,
   fetchSpacedRepRecords,
   fetchSpacedRepRecord,
+  syncOfflineSpacedRep,
 };
 
 // ── Academy SM-2 teacher cards ────────────────────────────────────────────────

@@ -69,6 +69,10 @@ export function useBulkGenerate({
     setGeneratedMaterial(null);
     const acc: BulkResults = {};
 
+    // The client gates/discloses this whole bundle at AI_COSTS.BULK (one bundle price) — only
+    // the first step (SCENARIO) actually carries that cost; the other three ride for free
+    // (BUNDLE_PART=0) so the server doesn't silently charge IDEAS+ASSESSMENT+ASSESSMENT+TEXT_BASIC
+    // on top of it (previously ~9 credits actual vs. 5 disclosed/gated).
     const steps: Array<{ key: BulkStep; fn: () => Promise<void> }> = [
       { key: 'SCENARIO', fn: async () => {
         const ideas = await geminiService.generateLessonPlanIdeas(
@@ -76,6 +80,7 @@ export function useBulkGenerate({
           user ?? undefined,
           { focus: state.activityFocus, tone: state.scenarioTone, learningDesign: state.learningDesignModel },
           effectiveInstruction,
+          'BULK',
         );
         ideas.generationContext = context;
         acc.scenario = ideas;
@@ -84,6 +89,7 @@ export function useBulkGenerate({
         acc.quiz = await geminiService.generateAssessment(
           'QUIZ', [QuestionType.MULTIPLE_CHOICE], 5, context, user ?? undefined,
           undefined, undefined, undefined, effectiveInstruction, false,
+          undefined, undefined, undefined, 'BUNDLE_PART',
         );
       } },
       { key: 'ASSESSMENT', fn: async () => {
@@ -92,6 +98,7 @@ export function useBulkGenerate({
           state.questionTypes.length ? state.questionTypes : [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
           10, context, user ?? undefined,
           undefined, undefined, undefined, effectiveInstruction, false,
+          undefined, undefined, undefined, 'BUNDLE_PART',
         );
       } },
       { key: 'RUBRIC', fn: async () => {
@@ -99,6 +106,7 @@ export function useBulkGenerate({
           context.grade.level,
           tempActivityTitle || `Активност за ${context.topic?.title ?? ''}`,
           state.activityType, '', user ?? undefined, effectiveInstruction,
+          'BUNDLE_PART',
         );
       } },
     ];

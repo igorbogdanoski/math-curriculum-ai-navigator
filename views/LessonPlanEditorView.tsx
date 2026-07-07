@@ -37,7 +37,7 @@ import { UploadedScenarioBanner } from '../components/lesson-plan-editor/Uploade
 import { DraftMergeDialog } from '../components/lesson-plan-editor/DraftMergeDialog';
 import { ConfirmScenarioGradeModal } from '../components/lesson-plan-editor/ConfirmScenarioGradeModal';
 import { loadAndClearUploadDraft } from '../services/uploadDraftService';
-import { resolveGradeByLabel } from '../utils/gradeMatch';
+import { resolveGradeByLabel, findTopicByFuzzyTitle } from '../utils/gradeMatch';
 import type { SecondaryTrack } from '../types';
 import { ReflectionModal, type ReflectionState } from '../components/lesson-plan-editor/ReflectionModal';
 import { OfficialLessonFormModal } from '../components/lesson-plan-editor/OfficialLessonFormModal';
@@ -211,10 +211,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
           if (prefillTopic) {
             const gradeData = resolveGradeByLabel(curriculum.grades, prefillGrade) ?? curriculum.grades[0];
-            const matchedTopic = gradeData?.topics.find(t =>
-              t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
-              prefillTopic.toLowerCase().includes(t.title.toLowerCase())
-            ) ?? gradeData?.topics[0];
+            const matchedTopic = gradeData ? findTopicByFuzzyTitle(gradeData.topics, prefillTopic) : undefined;
             const unitTitle = prefillLessonUnit ?? prefillTopic;
             return {
               ...initialPlanState,

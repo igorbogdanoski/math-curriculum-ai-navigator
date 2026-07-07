@@ -250,7 +250,7 @@ export function useQuizSession({
 
     // 3b. Spaced Repetition
     if (!isE2E && meta.conceptId && deviceId) {
-      firestoreService.updateSpacedRepRecord(deviceId, meta.conceptId, percentage)
+      firestoreService.updateSpacedRepRecord(deviceId, meta.conceptId, percentage, studentName)
         .catch(err => logger.warn('[SM-2] updateSpacedRepRecord failed:', err));
     }
 

@@ -17,6 +17,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { useNavigation } from '../contexts/NavigationContext';
 import { shareService } from '../services/shareService';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { PlannerAgendaView } from '../components/planner/PlannerAgendaView';
 import { PlannerWeekView } from '../components/planner/PlannerWeekView';
 import { PlannerMetaAnalysis } from '../components/planner/PlannerMetaAnalysis';
@@ -48,6 +49,7 @@ export const PlannerView: React.FC = () => {
     const { items, updateItem, addItem, deleteItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
     const { showModal } = useModal();
     const { addNotification } = useNotification();
+    const { user } = useAuth();
     useTour('planner', plannerTourSteps, !isLoading);
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
@@ -159,7 +161,7 @@ export const PlannerView: React.FC = () => {
         setIsSuggesting(true);
         setSuggestions(null);
         try {
-            const result = await geminiService.suggestNextLessons(recentLessons);
+            const result = await geminiService.suggestNextLessons(recentLessons, user ?? undefined);
             setSuggestions(result.length > 0 ? result : []);
         } catch {
             addNotification(t('planner.notifications.errorGener'), 'error');

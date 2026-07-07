@@ -90,9 +90,10 @@
     <div class="tip">
       💡 <strong>Совет:</strong> Резултатите од квизовите се зачуваат на уредот и автоматски се испраќаат кога интернетот ќе се врати.
     </div>
-    <button class="retry-btn" onclick="window.location.reload()">
+    <button id="retry-btn" class="retry-btn">
       ↻ Обиди се повторно
     </button>
   </div>
+  <script>document.getElementById('retry-btn').addEventListener('click', function () { window.location.reload(); });</script>
 </body>
 </html>

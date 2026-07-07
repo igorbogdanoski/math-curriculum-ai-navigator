@@ -17,27 +17,31 @@ describe('sanitizeWorksheetHtml', () => {
     expect(sanitizeWorksheetHtml(input)).toBe('<p>A</p><p>B</p>');
   });
 
-  it('blocks javascript: hrefs', () => {
+  it('strips javascript: hrefs entirely', () => {
     const input = '<a href="javascript:alert(1)">click</a>';
-    expect(sanitizeWorksheetHtml(input)).toBe('<a href="blocked:alert(1)">click</a>');
+    const result = sanitizeWorksheetHtml(input);
+    expect(result).not.toContain('javascript:');
+    expect(result).toContain('click');
   });
 
   it('blocks javascript: with whitespace variants', () => {
     const input = '<a href="javascript :alert(1)">x</a>';
-    expect(sanitizeWorksheetHtml(input)).toContain('blocked:');
+    expect(sanitizeWorksheetHtml(input)).not.toContain('javascript');
   });
 
-  it('blocks on* event attributes', () => {
+  it('strips on* event attributes', () => {
     const input = '<img src="x" onerror="alert(1)">';
-    expect(sanitizeWorksheetHtml(input)).toBe('<img src="x" data-blocked="alert(1)">');
+    const result = sanitizeWorksheetHtml(input);
+    expect(result).not.toContain('onerror');
+    expect(result).toContain('src="x"');
   });
 
-  it('blocks multiple different event attributes', () => {
+  it('strips multiple different event attributes', () => {
     const input = '<div onclick="bad()" onmouseover="bad2()">text</div>';
     const result = sanitizeWorksheetHtml(input);
     expect(result).not.toContain('onclick=');
     expect(result).not.toContain('onmouseover=');
-    expect(result).toContain('data-blocked=');
+    expect(result).toContain('text');
   });
 
   it('handles combined attack vectors', () => {
@@ -46,6 +50,14 @@ describe('sanitizeWorksheetHtml', () => {
     expect(result).not.toContain('<script>');
     expect(result).not.toContain('javascript:');
     expect(result).not.toContain('onerror=');
+  });
+
+  it('preserves worksheet-relevant tags and attributes (table, style, class)', () => {
+    const input = '<table class="grid"><tr style="color:red"><td>1</td></tr></table>';
+    const result = sanitizeWorksheetHtml(input);
+    expect(result).toContain('<table');
+    expect(result).toContain('class="grid"');
+    expect(result).toContain('style="color:red"');
   });
 
   it('returns empty string for empty input', () => {

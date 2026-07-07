@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, setDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, limit, arrayUnion, arrayRemove, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { School } from '../types';
 
@@ -161,7 +161,7 @@ export const schoolService = {
 
   fetchSchools: async (): Promise<any[]> => {
     try {
-      const q = query(collection(db, 'schools'), orderBy('name'));
+      const q = query(collection(db, 'schools'), orderBy('name'), limit(1000));
       const snapshot = await getDocs(q);
       if (snapshot.empty) return [];
       return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -189,7 +189,7 @@ export const schoolService = {
    *  data/schoolRegistry.ts's stable registry id, admin-only read/write (see firestore.rules). */
   fetchSchoolOutreachLog: async (): Promise<Record<string, { contactedAt?: unknown; contactedByUid?: string }>> => {
     try {
-      const snap = await getDocs(collection(db, 'school_outreach_log'));
+      const snap = await getDocs(query(collection(db, 'school_outreach_log'), limit(1000)));
       const result: Record<string, { contactedAt?: unknown; contactedByUid?: string }> = {};
       snap.docs.forEach(d => { result[d.id] = d.data() as { contactedAt?: unknown; contactedByUid?: string }; });
       return result;
@@ -338,19 +338,12 @@ export const schoolService = {
       const qTeachers = query(usersRef, where('schoolId', '==', schoolId));
       const teachersSnap = await getDocs(qTeachers);
 
-      const teachersData: SchoolTeacherStat[] = [];
-      let totalSchoolQuizzes = 0;
-      let globalScoreSum = 0;
-      let teachersWithQuizzes = 0;
+      const teacherDocs = teachersSnap.docs.filter(tDoc => tDoc.data().role === 'teacher');
 
-      for (const tDoc of teachersSnap.docs) {
+      const perTeacherStats = await Promise.all(teacherDocs.map(async (tDoc) => {
         const tData = tDoc.data();
-        if (tData.role !== 'teacher') continue;
-
         const quizRef = collection(db, 'quiz_results');
         const qQuizzes = query(quizRef, where('teacherUid', '==', tDoc.id));
-
-        getAggregateFromServer(qQuizzes, { total: average('percentage') }).catch(() => {/* non-fatal */});
 
         const countSnap = await getCountFromServer(qQuizzes);
         const quizzesGiven = countSnap.data().count;
@@ -361,23 +354,30 @@ export const schoolService = {
           let sum = 0;
           quizzes.forEach(q => sum += (q.data().percentage || 0));
           avgScore = sum / quizzes.size;
-          globalScoreSum += avgScore;
-          teachersWithQuizzes++;
         }
 
-        totalSchoolQuizzes += quizzesGiven;
-        teachersData.push({
-          id: tDoc.id,
-          name: tData.name as string || 'Непознат наставник',
+        return {
+          teacher: {
+            id: tDoc.id,
+            name: tData.name as string || 'Непознат наставник',
+            quizzesGiven,
+            avgScore,
+            materialsGenerated: 0,
+            lastActive: tData.lastActive ? new Date(tData.lastActive as string).toISOString() : null,
+            aiCreditsBalance: (tData.aiCreditsBalance as number) ?? 0,
+            isPremium: (tData.isPremium as boolean) ?? false,
+            tier: (tData.tier as string) ?? 'Free',
+          } as SchoolTeacherStat,
           quizzesGiven,
           avgScore,
-          materialsGenerated: 0,
-          lastActive: tData.lastActive ? new Date(tData.lastActive as string).toISOString() : null,
-          aiCreditsBalance: (tData.aiCreditsBalance as number) ?? 0,
-          isPremium: (tData.isPremium as boolean) ?? false,
-          tier: (tData.tier as string) ?? 'Free',
-        });
-      }
+          hasQuizzes: quizzesGiven > 0,
+        };
+      }));
+
+      const teachersData: SchoolTeacherStat[] = perTeacherStats.map(s => s.teacher);
+      const totalSchoolQuizzes = perTeacherStats.reduce((sum, s) => sum + s.quizzesGiven, 0);
+      const globalScoreSum = perTeacherStats.reduce((sum, s) => sum + (s.hasQuizzes ? s.avgScore : 0), 0);
+      const teachersWithQuizzes = perTeacherStats.filter(s => s.hasQuizzes).length;
 
       // Count generated materials per teacher
       const teacherUids = teachersData.map(t => t.id);

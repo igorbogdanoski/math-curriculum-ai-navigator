@@ -10,10 +10,9 @@ import { getE2EMockClasses } from './e2eTesting';
 import { membershipKey } from '../utils/studentIdentity';
 
 export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGroup[]> => {
+    if (!teacherUid) return [];
     try {
-      const q = teacherUid
-        ? query(collection(db, 'student_groups'), where('teacherUid', '==', teacherUid))
-        : collection(db, 'student_groups');
+      const q = query(collection(db, 'student_groups'), where('teacherUid', '==', teacherUid), limit(500));
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentGroup));
     } catch (error) {
@@ -46,7 +45,7 @@ export const fetchClasses = async (teacherUid: string): Promise<SchoolClass[]> =
     if (e2eClasses) return e2eClasses;
 
     try {
-      const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'), limit(500));
       const snap = await getDocs(q);
       return snap.docs.map(d => parseFirestoreDoc(SchoolClassSchema, { id: d.id, ...d.data() }, `classes/${d.id}`) as SchoolClass);
     } catch (error) {

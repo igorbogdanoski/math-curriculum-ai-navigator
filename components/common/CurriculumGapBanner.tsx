@@ -4,6 +4,7 @@ import { AlertCircle, X, MapPin } from 'lucide-react';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
 import { detectCurriculumGaps } from '../../utils/curriculumGapDetector';
+import { extractGradeLevelFromLabel } from '../../utils/gradeMatch';
 import { isDailyQuotaKnownExhausted } from '../../services/geminiService';
 import type { AIGeneratedAnnualPlan } from '../../types';
 
@@ -54,8 +55,10 @@ export const CurriculumGapBanner: React.FC = () => {
         const plan = data.planData;
         if (!plan?.topics?.length) return;
 
-        const gradeMatch = (data.grade ?? '').match(/\d+/);
-        const gradeLevel = gradeMatch ? parseInt(gradeMatch[0], 10) : NaN;
+        // .match(/\d+/) alone misses a pure Roman numeral grade label ("VI", "X") — the
+        // common case for AI-generated annual plans — so this banner silently never fired
+        // for most teachers before extractGradeLevelFromLabel handled both formats.
+        const gradeLevel = extractGradeLevelFromLabel(data.grade);
         if (!gradeLevel || gradeLevel > 9) return; // standards only defined for primary grades
 
         const { uncovered, coveragePct } = detectCurriculumGaps(plan.topics.map(t => t.title), gradeLevel);

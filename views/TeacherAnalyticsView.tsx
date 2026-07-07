@@ -53,7 +53,7 @@ export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
   const recoveryWorksheetEnabled = isRecoveryWorksheetEnabled();
   const feedbackTaxonomyEnabled = isFeedbackTaxonomyRolloutEnabled();
-  const { firebaseUser } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const { navigate } = useNavigation();
 const { addNotification } = useNotification();
   const { data: analyticsData, isLoading, error, refetch: loadResults } = useTeacherAnalytics(firebaseUser?.uid);
@@ -242,7 +242,7 @@ const { addNotification } = useNotification();
         inProgressCount: masteryStats?.inProgress.length ?? 0,
         strugglingCount: masteryStats?.struggling.length ?? 0,
         uniqueStudentCount: uniqueStudentSet.size,
-      });
+      }, user ?? undefined);
       setAiRecs(recs);
     } catch (err) {
       logger.error('Error generating class recommendations:', err);
