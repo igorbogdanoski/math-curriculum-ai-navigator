@@ -58,3 +58,18 @@ export function findTopicByFuzzyTitle(topics: Topic[], label: string | undefined
     return lowerTitle.includes(lowerLabel) || lowerLabel.includes(lowerTitle);
   }) ?? topics[0];
 }
+
+/**
+ * Same bidirectional substring match as findTopicByFuzzyTitle, but WITHOUT the
+ * fallback-to-first-topic — returns undefined when nothing really matches. Use this
+ * whenever a false-positive match would be worse than no match at all (e.g. attributing
+ * an annual-plan topic to the wrong curriculum Topic, or grounding an AI generation in
+ * unrelated curriculum content just because some topic happened to be first in the list).
+ */
+export function matchTopicByTitleStrict(topics: Topic[], label: string): Topic | undefined {
+  const lowerLabel = label.toLowerCase();
+  return topics.find(t => {
+    const lowerTitle = t.title.toLowerCase();
+    return lowerTitle.includes(lowerLabel) || lowerLabel.includes(lowerTitle);
+  });
+}

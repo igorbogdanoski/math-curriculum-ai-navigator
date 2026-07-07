@@ -1,14 +1,17 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
-import { 
+import {
     curriculumOverridesService,
     type CustomConcept,
     type CustomTopic
 } from '../services/firestoreService.curriculumOverrides';
+import { fetchMyAnnualPlans, type AnnualPlanDoc } from '../services/firestoreService.materials';
+import { resolveGradeByLabel, matchTopicByTitleStrict } from '../utils/gradeMatch';
+import type { Topic, AIGeneratedAnnualPlanTopic } from '../types';
 import {
     BookOpen,
     Plus,
@@ -16,9 +19,27 @@ import {
     ChevronRight,
     ChevronDown,
     X,
-    Info
+    Info,
+    Calendar
 } from 'lucide-react';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+
+/**
+ * Matches an AI-generated annual-plan topic back to a real curriculum Topic — topicId
+ * first (set when the model confidently matched it at generation time, see
+ * AIGeneratedAnnualPlanTopic.topicId), else a strict bidirectional title match. Unlike
+ * utils/gradeMatch.ts's findTopicByFuzzyTitle, this never falls back to the grade's first
+ * topic — a badge claiming "used in N annual plans" must not be a false positive.
+ */
+export function matchAnnualTopicToRealTopic(topics: Topic[], annualTopic: AIGeneratedAnnualPlanTopic): Topic | undefined {
+    if (annualTopic.topicId) {
+        const byId = topics.find(t => t.id === annualTopic.topicId);
+        if (byId) return byId;
+    }
+    return matchTopicByTitleStrict(topics, annualTopic.title);
+}
+
+interface TopicPlanLink { planId: string; subject: string; grade: string; annualTopicTitle: string; }
 
 export const CurriculumEditorView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
@@ -31,6 +52,8 @@ export const CurriculumEditorView: React.FC = () => {
     const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
     const [isAddingConcept, setIsAddingConcept] = useState<{ gradeId: string; topicId: string } | null>(null);
     const [isAddingTopic, setIsAddingTopic] = useState<{ gradeId: string } | null>(null);
+    const [myAnnualPlans, setMyAnnualPlans] = useState<AnnualPlanDoc[]>([]);
+    const [openPlansForTopic, setOpenPlansForTopic] = useState<string | null>(null);
 
     // Form states
     const [newConcept, setNewConcept] = useState<Partial<CustomConcept>>({
@@ -57,6 +80,31 @@ export const CurriculumEditorView: React.FC = () => {
             .catch(err => { logger.error('Error loading overrides:', err); addNotification('Грешка при вчитување.', 'error'); })
             .finally(() => setIsLoading(false));
     }, [user, ownerUid, navigate, addNotification]);
+
+    // Own annual plans — used to show "used in N annual plans" per topic below.
+    useEffect(() => {
+        if (!firebaseUser?.uid) return;
+        fetchMyAnnualPlans(firebaseUser.uid)
+            .then(setMyAnnualPlans)
+            .catch(err => logger.error('Error loading annual plans for curriculum linking:', err));
+    }, [firebaseUser?.uid]);
+
+    const topicPlanLinks = useMemo(() => {
+        const map = new Map<string, TopicPlanLink[]>();
+        if (!curriculum) return map;
+        for (const plan of myAnnualPlans) {
+            const gradeMatch = resolveGradeByLabel(curriculum.grades, plan.grade);
+            if (!gradeMatch) continue;
+            for (const annualTopic of plan.planData.topics) {
+                const realTopic = matchAnnualTopicToRealTopic(gradeMatch.topics, annualTopic);
+                if (!realTopic) continue;
+                const link: TopicPlanLink = { planId: plan.id, subject: plan.subject, grade: plan.grade, annualTopicTitle: annualTopic.title };
+                if (!map.has(realTopic.id)) map.set(realTopic.id, []);
+                map.get(realTopic.id)!.push(link);
+            }
+        }
+        return map;
+    }, [curriculum, myAnnualPlans]);
 
     const toggleGrade = (gradeId: string) => {
         setExpandedGrades(prev => {
@@ -197,18 +245,49 @@ export const CurriculumEditorView: React.FC = () => {
                         {expandedGrades.has(grade.id) && (
                             <div className="p-4 bg-gray-50/30 border-t border-gray-100 space-y-4">
                                 {/* Existing Topics in this Grade */}
-                                {grade.topics.map(topic => (
+                                {grade.topics.map(topic => {
+                                    const linkedPlans = topicPlanLinks.get(topic.id) ?? [];
+                                    return (
                                     <div key={topic.id} className="bg-white rounded-xl border border-gray-200 p-4">
                                         <div className="flex justify-between items-start mb-3">
-                                            <h3 className="font-bold text-gray-800">{topic.title}</h3>
-                                            <button 
+                                            <div className="min-w-0">
+                                                <h3 className="font-bold text-gray-800">{topic.title}</h3>
+                                                {linkedPlans.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenPlansForTopic(prev => prev === topic.id ? null : topic.id)}
+                                                        className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-colors"
+                                                    >
+                                                        <Calendar className="w-3 h-3" />
+                                                        Во {linkedPlans.length} {linkedPlans.length === 1 ? 'годишна програма' : 'годишни програми'}
+                                                        {openPlansForTopic === topic.id ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <button
                                                 onClick={() => setIsAddingConcept({ gradeId: grade.id, topicId: topic.id })}
-                                                className="flex items-center gap-1 text-xs font-bold text-brand-primary hover:bg-brand-primary/5 px-2 py-1 rounded-lg transition-colors"
+                                                className="flex items-center gap-1 text-xs font-bold text-brand-primary hover:bg-brand-primary/5 px-2 py-1 rounded-lg transition-colors shrink-0"
                                             >
                                                 <Plus className="w-3.5 h-3.5" />
                                                 Додај концепт
                                             </button>
                                         </div>
+
+                                        {openPlansForTopic === topic.id && linkedPlans.length > 0 && (
+                                            <div className="mb-3 -mt-1 p-2 bg-amber-50/50 border border-amber-100 rounded-lg space-y-1 animate-fade-in">
+                                                {linkedPlans.map((link, i) => (
+                                                    <button
+                                                        key={`${link.planId}-${i}`}
+                                                        type="button"
+                                                        onClick={() => navigate(`/annual-planner/${link.planId}`)}
+                                                        className="w-full flex items-center justify-between gap-2 text-xs text-left px-2 py-1.5 rounded-md hover:bg-amber-100 transition-colors"
+                                                    >
+                                                        <span className="text-gray-700 truncate">{link.subject} · {link.grade} — <span className="text-gray-500">{link.annualTopicTitle}</span></span>
+                                                        <ChevronRight className="w-3 h-3 text-amber-600 shrink-0" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
 
                                         <div className="space-y-2">
                                             {topic.concepts.map(concept => {
@@ -281,9 +360,10 @@ export const CurriculumEditorView: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                ))}
+                                    );
+                                })}
 
-                                <button 
+                                <button
                                     onClick={() => setIsAddingTopic({ gradeId: grade.id })}
                                     className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:text-brand-primary hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-all flex items-center justify-center gap-2 font-bold text-sm"
                                 >

@@ -14,7 +14,7 @@ import { CACHE_COLLECTION } from './core';
 // ── National standards helpers ─────────────────────────────────────────────────
 
 /** Returns the math standards relevant to a topic + cross-curricular bridges, for grades 6-9 */
-function buildTopicStandardsHint(gradeLevel: number, topicTitle: string, conceptTitles: string[]): string {
+export function buildTopicStandardsHint(gradeLevel: number, topicTitle: string, conceptTitles: string[]): string {
   if (gradeLevel < 6) return '';
   if (gradeLevel > 9) {
     return `\n### СРЕДНО ОБРАЗОВАНИЕ (одд. ${gradeLevel}) — МОН наставна програма\nassessmentStandards: наведи ги исходите на учење и компетенциите за оваа единица (не користи БРО кодови III-А — тие важат само за основно образование).\n`;

@@ -1,7 +1,21 @@
 import { logger } from '../../utils/logger';
 import { Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, JSON_SYSTEM_INSTRUCTION } from './core';
 import { isMacedonianContextEnabled, MACEDONIAN_CONTEXT_SNIPPET } from './core.instructions';
-import type { TeachingProfile } from '../../types';
+import { buildTopicStandardsHint } from './plans';
+import type { TeachingProfile, Topic } from '../../types';
+
+/**
+ * Real curriculum grounding for a mind map — the caller (AIMindMapView.tsx, which has
+ * useCurriculum() access) resolves the free-text topic input to a matching curriculum
+ * Topic, if any, and passes it here. mindmap.ts itself stays framework-agnostic (no
+ * curriculum-loading of its own), matching how annual.ts/plans.ts receive pre-resolved
+ * topic/concept data from their callers rather than importing the async curriculum
+ * context directly.
+ */
+export interface MindMapGroundingTopic {
+    title: string;
+    concepts: Pick<Topic['concepts'][number], 'title' | 'description'>[];
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,13 +33,28 @@ export interface MindMapData {
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
-export async function generateMindMap(topic: string, gradeLevel: number, profile?: TeachingProfile): Promise<MindMapData> {
+export async function generateMindMap(
+    topic: string,
+    gradeLevel: number,
+    profile?: TeachingProfile,
+    grounding?: MindMapGroundingTopic,
+): Promise<MindMapData> {
     // Secondary grades (10-12) don't have БРО standard codes — those apply only to
     // primary/lower-secondary (1-9), same convention as buildTopicStandardsHint (plans.ts).
     const standardsNote = gradeLevel > 9
         ? 'Не користи БРО кодови (пр. III-А.3) — тие важат само за основно образование (1-9 одд.). За средно образование фокусирај се на концепти и компетенции.'
         : '';
     const mkContext = isMacedonianContextEnabled() ? MACEDONIAN_CONTEXT_SNIPPET : '';
+
+    // Real curriculum grounding, when the input topic matched a known curriculum Topic —
+    // otherwise the AI falls back to its general knowledge (still needed for free-text
+    // topics that aren't in the curriculum, e.g. cross-curricular or enrichment themes).
+    const groundingHint = grounding ? [
+        `\n### НАСТАВНА ПРОГРАМА — реални концепти за темата "${grounding.title}" (${gradeLevel}. одд.)`,
+        'Овие концепти СЕ ВЕЌЕ дел од официјалната програма — искористи ги како основа за branch/leaf јазлите наместо да измислуваш генерички поими:',
+        grounding.concepts.map(c => `  – ${c.title}${c.description ? `: ${c.description}` : ''}`).join('\n'),
+        buildTopicStandardsHint(gradeLevel, grounding.title, grounding.concepts.map(c => c.title)),
+    ].filter(Boolean).join('\n') : '';
 
     const prompt = `
 Ти си наставник по математика за ${gradeLevel}. одделение.
@@ -45,6 +74,7 @@ export async function generateMindMap(topic: string, gradeLevel: number, profile
 Генерирај конкретна математичка содржина, не генерички зборови.
 Јазик: македонски.
 ${standardsNote}
+${groundingHint}
 ${mkContext}
 `.trim();
 
@@ -69,7 +99,7 @@ ${mkContext}
         required: ['nodes'],
     };
 
-    logger.info('[S79] generateMindMap', { topic, gradeLevel });
+    logger.info('[S79] generateMindMap', { topic, gradeLevel, grounded: !!grounding, matchedConcepts: grounding?.concepts.length ?? 0 });
 
     return generateAndParseJSON<MindMapData>(
         [{ text: prompt }],

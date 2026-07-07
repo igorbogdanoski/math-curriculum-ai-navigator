@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Grade } from '../../types';
 import { MASTERY_COLORS, FOCUS_COLOR, PRIOR_COLOR, FUTURE_COLOR, GRADE_COLORS, getRomanGrade } from './graphUtils';
+import { getGradeHoursInfo } from '../../services/gemini/plans';
 
 interface GraphLegendProps {
     showMasteryOverlay: boolean;
@@ -41,12 +42,18 @@ export function GraphLegend({ showMasteryOverlay, focusNodeId, curriculum, isClu
                     </div>
                 ) : !focusNodeId ? (
                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 animate-fade-in">
-                        {(curriculum?.grades ?? []).map((g: Grade) => (
-                            <div key={g.level} className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{ backgroundColor: GRADE_COLORS[g.level] ?? '#9E9E9E' }} />
-                                <span>{g.level}. Одд. ({getRomanGrade(g.level)}){g.secondaryTrack ? ' ★' : ''}</span>
-                            </div>
-                        ))}
+                        {(curriculum?.grades ?? []).map((g: Grade) => {
+                            const { weeklyHours, totalHours } = getGradeHoursInfo(g.level);
+                            return (
+                                <div key={g.level} className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300 flex-shrink-0" style={{ backgroundColor: GRADE_COLORS[g.level] ?? '#9E9E9E' }} />
+                                    <span>
+                                        {g.level}. Одд. ({getRomanGrade(g.level)}){g.secondaryTrack ? ' ★' : ''}
+                                        <span className="text-gray-400"> · {weeklyHours}ч/нед, {totalHours}ч/год</span>
+                                    </span>
+                                </div>
+                            );
+                        })}
                         {isClustered && (
                             <div className="col-span-2 flex items-start gap-2 mt-2 border-t pt-2 text-gray-600">
                                 <div className="mt-0.5" style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '10px solid gray' }} />

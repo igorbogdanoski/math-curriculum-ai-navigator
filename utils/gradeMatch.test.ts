@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractGradeLevelFromLabel, resolveGradeByLabel, findTopicByFuzzyTitle } from './gradeMatch';
+import { extractGradeLevelFromLabel, resolveGradeByLabel, findTopicByFuzzyTitle, matchTopicByTitleStrict } from './gradeMatch';
 import type { Grade, Topic } from '../types';
 
 describe('extractGradeLevelFromLabel', () => {
@@ -50,5 +50,21 @@ describe('findTopicByFuzzyTitle', () => {
   it('falls back to the first topic when nothing matches or the label is missing', () => {
     expect(findTopicByFuzzyTitle(topics, 'нешто сосема друго')?.id).toBe('t1');
     expect(findTopicByFuzzyTitle(topics, undefined)?.id).toBe('t1');
+  });
+});
+
+describe('matchTopicByTitleStrict', () => {
+  const topics: Topic[] = [
+    { id: 't1', title: 'Дропки' } as unknown as Topic,
+    { id: 't2', title: 'Триаголници и агли' } as unknown as Topic,
+  ];
+
+  it('matches bidirectionally, same as findTopicByFuzzyTitle', () => {
+    expect(matchTopicByTitleStrict(topics, 'Триаголници')?.id).toBe('t2');
+    expect(matchTopicByTitleStrict(topics, 'Дропки — собирање и одземање')?.id).toBe('t1');
+  });
+
+  it('returns undefined instead of falling back to the first topic when nothing matches', () => {
+    expect(matchTopicByTitleStrict(topics, 'нешто сосема друго')).toBeUndefined();
   });
 });

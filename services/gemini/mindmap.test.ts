@@ -49,4 +49,25 @@ describe('generateMindMap', () => {
     expect(call[7]).toBe('Pro'); // userTier
     expect(call[8]).toEqual({ costKey: 'ASSESSMENT' });
   });
+
+  it('includes real curriculum concept titles/descriptions in the prompt when grounding is provided', async () => {
+    await generateMindMap('Дропки', 6, undefined, {
+      title: 'Дропки',
+      concepts: [
+        { title: 'Собирање дропки', description: 'Собирање дропки со ист именител' },
+        { title: 'Множење дропки', description: 'Множење на две дропки' },
+      ],
+    });
+    const prompt = mockGenerateAndParseJSON.mock.calls[0][0][0].text as string;
+    expect(prompt).toContain('Собирање дропки');
+    expect(prompt).toContain('Собирање дропки со ист именител');
+    expect(prompt).toContain('Множење дропки');
+    expect(prompt).toContain('НАСТАВНА ПРОГРАМА');
+  });
+
+  it('does not add a grounding section when no grounding topic is provided', async () => {
+    await generateMindMap('Нешто непознато', 6);
+    const prompt = mockGenerateAndParseJSON.mock.calls[0][0][0].text as string;
+    expect(prompt).not.toContain('НАСТАВНА ПРОГРАМА');
+  });
 });
