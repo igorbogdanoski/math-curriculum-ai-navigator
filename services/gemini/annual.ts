@@ -200,8 +200,13 @@ ${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД Н
       required: ['grade', 'subject', 'totalWeeks', 'topics'],
     };
 
+    // Annual plans combine the largest single prompt in the app — full official curriculum
+    // grounding, all 27 БРО standards + cross-curricular bridges, pedagogy context, and a
+    // multi-topic detailed JSON output — so the default GENERATION_TIMEOUT_MS (60s) is too
+    // tight under real-world latency; matches generateABCTest's ABC_TIMEOUT_MS precedent.
+    const ANNUAL_PLAN_TIMEOUT_MS = 120_000;
     const generatedPlan = await generateAndParseJSON<AIGeneratedAnnualPlan>(
-      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.2, topP: 0.9, costKey: 'ANNUAL_PLAN' }
+      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.2, topP: 0.9, costKey: 'ANNUAL_PLAN', timeoutMs: ANNUAL_PLAN_TIMEOUT_MS }
     );
     return enforceAnnualPlanQuality(generatedPlan);
   },

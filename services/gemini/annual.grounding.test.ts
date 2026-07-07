@@ -79,4 +79,13 @@ describe('generateAnnualPlan — official curriculum grounding for every grade (
     const schema = mockGenerateAndParseJSON.mock.calls[0][1] as { properties: { topics: { items: { properties: { topicId?: unknown } } } } };
     expect(schema.properties.topics.items.properties.topicId).toBeDefined();
   });
+
+  it('overrides the default 60s generation timeout — this prompt (full official grounding + all 27 БРО standards + pedagogy context) is the largest single generation in the app and was observed timing out in production', async () => {
+    mockBuildOfficialCurriculumSummary.mockResolvedValue('');
+
+    await annualAPI.generateAnnualPlan('IX', 'Математика', 36, 'контекст');
+
+    const overrides = mockGenerateAndParseJSON.mock.calls[0][8] as { timeoutMs?: number };
+    expect(overrides.timeoutMs).toBeGreaterThanOrEqual(90_000);
+  });
 });
