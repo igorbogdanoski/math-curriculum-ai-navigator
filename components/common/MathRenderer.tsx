@@ -1,4 +1,5 @@
 ﻿import { logger } from '../../utils/logger';
+import { sanitizeKatexHtml } from '../../utils/sanitizeHtml';
 import React, { useState, useEffect } from 'react';
 
 interface MathRendererProps {
@@ -164,7 +165,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                         logger.debug("KaTeX inline rendering error", { message: e.message, math });
                         html = `<span class="text-red-600 font-mono bg-red-100 p-1 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</span>`;
                     }
-                    return <span key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
+                    return <span key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: sanitizeKatexHtml(html) }} />;
                 }
                 
                 if (part.startsWith('**') && part.endsWith('**')) {
@@ -276,7 +277,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                             logger.debug("KaTeX block rendering error", { message: e.message, math });
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</div>`;
                         }
-                        return <div key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
+                        return <div key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: sanitizeKatexHtml(html) }} />;
                     }
                     
                     const paragraphs = block.split(/\n\s*\n/g).filter(p => p.trim() !== '');

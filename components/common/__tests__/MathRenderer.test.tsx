@@ -68,4 +68,21 @@ describe('MathRenderer', () => {
         render(<MathRenderer text="$$\frac{$1$}{2}$$" />);
         expect(mockRenderToString).toHaveBeenCalledWith('\\frac{1}{2}', expect.objectContaining({ displayMode: true }));
     });
+
+    it('sanitizes malicious KaTeX output (trust:true enables \\href/\\includegraphics) before injecting it', () => {
+        // KaTeX's `trust: true` (required for legitimate \text{}-style macros used throughout
+        // this app) also permits \href/\includegraphics, which can turn untrusted LaTeX (e.g.
+        // a forum post) into a script/onerror payload. Simulate what a malicious renderToString
+        // output would look like and assert the sanitizer strips it before dangerouslySetInnerHTML.
+        mockRenderToString.mockReturnValueOnce('<span><img src=x onerror="window.__pwned=true">$x$</span>');
+        const { container } = render(<MathRenderer text="$x$" />);
+        expect(container.querySelector('img')?.getAttribute('onerror')).toBeNull();
+        expect((window as unknown as { __pwned?: boolean }).__pwned).toBeUndefined();
+    });
+
+    it('sanitizes malicious KaTeX output for block (display) math too', () => {
+        mockRenderToString.mockReturnValueOnce('<div><svg onload="window.__pwned2=true"></svg></div>');
+        const { container } = render(<MathRenderer text="$$x$$" />);
+        expect(container.querySelector('svg')?.getAttribute('onload')).toBeNull();
+    });
 });

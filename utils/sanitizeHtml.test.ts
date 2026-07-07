@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeWorksheetHtml } from './sanitizeHtml';
+import { sanitizeWorksheetHtml, sanitizeKatexHtml } from './sanitizeHtml';
 
 describe('sanitizeWorksheetHtml', () => {
   it('passes through clean HTML unchanged', () => {
@@ -62,5 +62,25 @@ describe('sanitizeWorksheetHtml', () => {
 
   it('returns empty string for empty input', () => {
     expect(sanitizeWorksheetHtml('')).toBe('');
+  });
+});
+
+describe('sanitizeKatexHtml', () => {
+  it('strips \\href/\\includegraphics-style payloads that KaTeX trust:true can produce from untrusted LaTeX', () => {
+    // Approximates what KaTeX renders for \href{javascript:alert(1)}{x} or \includegraphics
+    // with an onerror-bearing src when `trust: true` is in effect (MathRenderer's katexOptions).
+    const input = '<span class="katex"><a href="javascript:alert(1)">x</a><img src="x" onerror="alert(2)"></span>';
+    const result = sanitizeKatexHtml(input);
+    expect(result).not.toContain('javascript:');
+    expect(result).not.toContain('onerror');
+  });
+
+  it('preserves ordinary KaTeX structural output (span/style/class)', () => {
+    const input = '<span class="katex-html"><span style="height:0.8em;">x</span></span>';
+    expect(sanitizeKatexHtml(input)).toBe(input);
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(sanitizeKatexHtml('')).toBe('');
   });
 });

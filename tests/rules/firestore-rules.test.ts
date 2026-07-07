@@ -596,4 +596,151 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(fOwner.doc('quiz_results/qr1').update({ confidence: 4 }));
     });
   });
+
+  describe('forum_threads/{threadId} — field-scoped update (self-pin/self-approve gap fix)', () => {
+    it('the thread author cannot set isPinned or moderationStatus on their own thread', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t1').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'pending',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const author = testEnv.authenticatedContext('author1');
+      const f = author.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('forum_threads/t1').update({ isPinned: true }));
+      await assertFails(f.doc('forum_threads/t1').update({ moderationStatus: 'approved' }));
+    });
+
+    it('an admin can pin and approve a thread they do not own', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/admin1').set({ role: 'admin' });
+        await f.doc('forum_threads/t2').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'pending',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const admin = testEnv.authenticatedContext('admin1');
+      const f = admin.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t2').update({ isPinned: true }));
+      await assertSucceeds(f.doc('forum_threads/t2').update({ moderationStatus: 'approved' }));
+    });
+
+    it('the author can still edit title/body and soft-delete their own thread', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t3').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'approved',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const author = testEnv.authenticatedContext('author1');
+      const f = author.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t3').update({ title: 'Нов наслов', body: 'Ново тело', editedAt: new Date() }));
+      await assertSucceeds(f.doc('forum_threads/t3').update({ deleted: true }));
+    });
+
+    it('a non-author can upvote/react by toggling only their own uid, but not touch any other field', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t4').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'approved',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const other = testEnv.authenticatedContext('other1');
+      const f = other.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t4').update({ upvotedBy: ['other1'] }));
+      await assertFails(f.doc('forum_threads/t4').update({ upvotedBy: ['someoneElse'] }));
+      await assertFails(f.doc('forum_threads/t4').update({ title: 'hijacked' }));
+    });
+
+    it('any authenticated user posting a reply can bump replyCount/lastActivityAt/participantUids on a thread they do not own', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t5').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'approved',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const replier = testEnv.authenticatedContext('replier1');
+      const f = replier.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t5').update({
+        replyCount: 1, lastActivityAt: new Date(), participantUids: ['author1', 'replier1'],
+      }));
+      // Jumping replyCount by more than 1, or dropping an existing participant, must fail.
+      await assertFails(f.doc('forum_threads/t5').update({
+        replyCount: 5, lastActivityAt: new Date(), participantUids: ['author1', 'replier1'],
+      }));
+    });
+  });
+
+  describe('forum_replies/{replyId} — isBestAnswer/feynmanBadge belong to the thread author, not the reply author', () => {
+    it("the thread's author can mark a reply they did not write as the best answer", async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t6').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r1').set({ threadId: 't6', authorUid: 'answerer1', body: 'Одговор', isBestAnswer: false });
+      });
+      const asker = testEnv.authenticatedContext('asker1');
+      const f = asker.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_replies/r1').update({ isBestAnswer: true }));
+    });
+
+    it('a random other teacher (not the thread author) cannot mark a reply as best answer', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t7').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r2').set({ threadId: 't7', authorUid: 'answerer1', body: 'Одговор', isBestAnswer: false });
+      });
+      const stranger = testEnv.authenticatedContext('stranger1');
+      const f = stranger.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('forum_replies/r2').update({ isBestAnswer: true }));
+    });
+
+    it('the reply author can edit their own body, but not another reply\'s body', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t8').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r3').set({ threadId: 't8', authorUid: 'answerer1', body: 'Одговор', isBestAnswer: false });
+      });
+      const author = testEnv.authenticatedContext('answerer1');
+      const stranger = testEnv.authenticatedContext('stranger1');
+      const fAuthor = author.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      const fStranger = stranger.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fAuthor.doc('forum_replies/r3').update({ body: 'Изменето', editedAt: new Date() }));
+      await assertFails(fStranger.doc('forum_replies/r3').update({ body: 'hijacked' }));
+    });
+
+    it('any authenticated user can toggle only their own uid on a reply\'s upvotedBy', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t9').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r4').set({ threadId: 't9', authorUid: 'answerer1', body: 'Одговор', upvotedBy: [] });
+      });
+      const voter = testEnv.authenticatedContext('voter1');
+      const f = voter.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_replies/r4').update({ upvotedBy: ['voter1'] }));
+      await assertFails(f.doc('forum_replies/r4').update({ upvotedBy: ['someoneElse'] }));
+    });
+  });
 });

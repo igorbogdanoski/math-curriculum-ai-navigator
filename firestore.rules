@@ -71,6 +71,42 @@ service cloud.firestore {
         (!('longestStreak' in request.resource.data) || (request.resource.data.longestStreak is number && request.resource.data.longestStreak >= 0 && request.resource.data.longestStreak <= 3650));
     }
 
+    // Forum: lets ANY authenticated user toggle only their own uid in a single string-array
+    // field (upvotedBy / reactionsHelpful / reactionsSame / reactionsGreat) — add or remove
+    // exactly one entry, exactly their own, with every other field and array member untouched.
+    // Mirrors academic_annual_plans' existing likedByUid toggle pattern, generalized to any
+    // field name since forum threads/replies each have four of these.
+    function isSelfArrayToggle(field) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field]) &&
+        (
+          (request.resource.data[field].size() == resource.data.get(field, []).size() + 1 &&
+           request.resource.data[field].hasAll(resource.data.get(field, [])) &&
+           request.resource.data[field].hasAny([request.auth.uid])) ||
+          (request.resource.data[field].size() == resource.data.get(field, []).size() - 1 &&
+           resource.data.get(field, []).hasAll(request.resource.data[field]) &&
+           !request.resource.data[field].hasAny([request.auth.uid]))
+        );
+    }
+
+    // Forum: lets ANY authenticated user bump a thread's reply-count bookkeeping when THEY
+    // post a reply to it (createForumReply) — not just the thread's own author. Restricted to
+    // exactly these 3 fields, replyCount incrementing by exactly 1, and the caller's own uid
+    // being added to participantUids (never someone else's).
+    function isForumReplyBump() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replyCount', 'lastActivityAt', 'participantUids']) &&
+        request.resource.data.replyCount == resource.data.get('replyCount', 0) + 1 &&
+        request.resource.data.participantUids.hasAll(resource.data.get('participantUids', [])) &&
+        request.resource.data.participantUids.hasAny([request.auth.uid]);
+    }
+
+    // Forum: is the caller the AUTHOR of the thread a reply belongs to (not the reply's own
+    // author) — markBestAnswer/toggleFeynmanBadge are the thread-asker's calls on OTHER
+    // people's replies, not self-actions, so isDocOwner()-style checks don't apply here.
+    function isForumThreadAuthorOf(threadId) {
+      return exists(/databases/$(database)/documents/forum_threads/$(threadId))
+        && get(/databases/$(database)/documents/forum_threads/$(threadId)).data.authorUid == request.auth.uid;
+    }
+
     // ── Кориснички профили (users) ──
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
@@ -459,19 +495,33 @@ service cloud.firestore {
 
     // ── Наставнички форум (forum_threads) ──
     // Автентицирани наставници можат да читаат и создаваат нишки.
-    // Само авторот може да ги уредува/брише своите нишки; admin може се.
+    // Update is field-scoped rather than a single owner-or-admin gate, because a thread is
+    // legitimately mutated by people other than its author: any teacher upvoting/reacting,
+    // any teacher whose reply bumps replyCount/participantUids, not just the original author.
+    // isPinned/moderationStatus are deliberately admin-only — NOT included in the author's
+    // own editable-fields set below, closing a prior gap where an author could self-pin or
+    // self-approve their own thread by writing those fields directly.
     match /forum_threads/{threadId} {
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
       allow update: if isAuthenticated() && (
-        resource.data.authorUid == request.auth.uid || isAdmin()
+        isAdmin() ||
+        (resource.data.authorUid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'body', 'editedAt', 'deleted', 'hasBestAnswer'])) ||
+        isSelfArrayToggle('upvotedBy') ||
+        isSelfArrayToggle('reactionsHelpful') ||
+        isSelfArrayToggle('reactionsSame') ||
+        isSelfArrayToggle('reactionsGreat') ||
+        isForumReplyBump()
       );
       allow delete: if isAdmin();
     }
 
     // ── Одговори на нишките (forum_replies) ──
     // Автентицирани наставници можат да читаат и создаваат одговори.
-    // Само авторот или admin може да ги менува/брише.
+    // isBestAnswer/feynmanBadge are set by the PARENT THREAD's author on someone ELSE's
+    // reply (markBestAnswer/toggleFeynmanBadge) — not a self-action, so they get their own
+    // isForumThreadAuthorOf() branch rather than the reply-author-only edit branch.
     match /forum_replies/{replyId} {
       allow read:   if isAuthenticated();
       // 'ai-expert' is a sentinel UID for AI-generated replies posted by authenticated teachers
@@ -480,9 +530,15 @@ service cloud.firestore {
         request.resource.data.authorUid == 'ai-expert'
       );
       allow update: if isAuthenticated() && (
-        resource.data.authorUid == request.auth.uid ||
-        resource.data.authorUid == 'ai-expert' ||
-        isAdmin()
+        isAdmin() ||
+        ((resource.data.authorUid == request.auth.uid || resource.data.authorUid == 'ai-expert') &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'editedAt'])) ||
+        isSelfArrayToggle('upvotedBy') ||
+        isSelfArrayToggle('reactionsHelpful') ||
+        isSelfArrayToggle('reactionsSame') ||
+        isSelfArrayToggle('reactionsGreat') ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isBestAnswer']) && isForumThreadAuthorOf(resource.data.threadId)) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feynmanBadge']) && isForumThreadAuthorOf(resource.data.threadId))
       );
       allow delete: if isAdmin();
     }
