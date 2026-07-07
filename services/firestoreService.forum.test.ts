@@ -19,11 +19,14 @@ import {
   updateForumReply,
   toggleFeynmanBadge,
   markBestAnswer,
+  reportForumThread,
+  reportForumReply,
+  deleteForumReply,
   type ForumThread,
   type ForumReply,
 } from './firestoreService.forum';
 import {
-  doc, addDoc, getDoc, getDocs, updateDoc,
+  doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
   where, orderBy, limit,
   getCountFromServer,
 } from 'firebase/firestore';
@@ -36,6 +39,7 @@ vi.mock('firebase/firestore', () => ({
   getDoc: vi.fn(),
   getDocs: vi.fn(),
   updateDoc: vi.fn().mockResolvedValue(undefined),
+  deleteDoc: vi.fn().mockResolvedValue(undefined),
   onSnapshot: vi.fn(),
   collection: vi.fn(() => 'col-ref'),
   query: vi.fn((...args) => ['query-ref', ...args]),
@@ -148,14 +152,47 @@ describe('createForumThread', () => {
 // ─── moderation actions ─────────────────────────────────────────────────────────
 
 describe('approveForumThread / rejectForumThread', () => {
-  it('approveForumThread sets moderationStatus to approved', async () => {
+  it('approveForumThread sets moderationStatus to approved and clears any report', async () => {
     await approveForumThread('t-1');
-    expect(updateDoc).toHaveBeenCalledWith('doc-ref', { moderationStatus: 'approved' });
+    // Also clears reportedBy/reportReason — approveForumThread doubles as "clear a
+    // report" (see reportForumThread), not just the legacy new-thread approval path.
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', { moderationStatus: 'approved', reportedBy: [], reportReason: null });
   });
 
   it('rejectForumThread soft-deletes and marks rejected', async () => {
     await rejectForumThread('t-1');
     expect(updateDoc).toHaveBeenCalledWith('doc-ref', { deleted: true, moderationStatus: 'rejected' });
+  });
+});
+
+// ─── report/flag + admin reply delete ──────────────────────────────────────────
+
+describe('reportForumThread / reportForumReply / deleteForumReply', () => {
+  it('reportForumThread sets moderationStatus=pending and adds the reporter to reportedBy', async () => {
+    await reportForumThread('t-1', 'reporter-uid');
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', {
+      moderationStatus: 'pending',
+      reportedBy: ['arrayUnion', 'reporter-uid'],
+    });
+  });
+
+  it('reportForumThread includes reportReason only when provided', async () => {
+    await reportForumThread('t-1', 'reporter-uid', 'Несоодветна содржина');
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', {
+      moderationStatus: 'pending',
+      reportedBy: ['arrayUnion', 'reporter-uid'],
+      reportReason: 'Несоодветна содржина',
+    });
+  });
+
+  it('reportForumReply adds the reporter to reportedBy without touching moderationStatus (replies have none)', async () => {
+    await reportForumReply('r-1', 'reporter-uid');
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', { reportedBy: ['arrayUnion', 'reporter-uid'] });
+  });
+
+  it('deleteForumReply deletes the reply doc', async () => {
+    await deleteForumReply('r-1');
+    expect(deleteDoc).toHaveBeenCalledWith('doc-ref');
   });
 });
 

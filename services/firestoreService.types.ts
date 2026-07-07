@@ -32,7 +32,14 @@ export interface LiveSession {
   conceptId?: string;
   status: 'active' | 'ended';
   joinCode: string;
+  /**
+   * Keyed by the student's anonymous Firebase Auth uid — NOT their display name. A prior
+   * version keyed this by raw name, so two students with the same/similar name in one
+   * session would silently overwrite each other's response. `displayName` carries the
+   * name for host/projector UI, which still needs to show something human-readable.
+   */
   studentResponses: Record<string, {
+    displayName: string;
     status: 'joined' | 'in_progress' | 'completed';
     percentage?: number;
     completedAt?: Timestamp;
@@ -253,7 +260,7 @@ export interface ExamResponse {
   timeRemainingOnSubmit?: number;
   score?: number;
   maxScore?: number;
-  aiFeedback?: { questionId: string; correct: boolean; points: number; feedback: string }[];
+  aiFeedback?: { questionId: string; correct: boolean; points: number; feedback: string; manuallyOverriddenBy?: string }[];
   gradedAt?: Timestamp;
 }
 

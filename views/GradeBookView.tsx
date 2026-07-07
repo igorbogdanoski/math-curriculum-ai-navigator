@@ -6,15 +6,17 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useParentSharing } from '../hooks/useParentSharing';
 import { GradeModel, GradeEntry } from '../types';
 import { MobileGradeEntryModal } from '../components/gradebook/MobileGradeEntryModal';
+import { ImportFromResultsModal } from '../components/gradebook/ImportFromResultsModal';
 import { BROCoveragePanel } from '../components/gradebook/BROCoveragePanel';
 import { MaturaReadinessPanel } from '../components/gradebook/MaturaReadinessPanel';
 import { EarlyWarningPanel } from '../components/gradebook/EarlyWarningPanel';
 import { NewEntryForm } from '../components/gradebook/NewEntryForm';
 import { GradebookPrintShell } from '../components/gradebook/GradebookPrintShell';
+import { saveGradeBook } from '../services/firestoreService.gradeBooks';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
   Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle2,
-  Users, FileDown, Sparkles, Share2, Copy, MessageCircle, Smartphone,
+  Users, FileDown, Sparkles, Share2, Copy, MessageCircle, Smartphone, Download,
 } from 'lucide-react';
 
 // ── Model metadata ────────────────────────────────────────────────────────────
@@ -87,6 +89,8 @@ export const GradeBookView: React.FC = () => {
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
   const [showMobileEntry, setShowMobileEntry] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   const sharing = useParentSharing();
 
@@ -106,17 +110,8 @@ export const GradeBookView: React.FC = () => {
     if (!firebaseUser || !className.trim() || entries.length === 0) return;
     setSaving(true);
     try {
-      const { db } = await import('../firebaseConfig');
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-      await addDoc(collection(db, 'grade_books'), {
-        teacherUid: firebaseUser.uid,
-        className,
-        gradeLevel,
-        model: activeModel,
-        entries,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      const id = await saveGradeBook(firebaseUser.uid, className, gradeLevel, activeModel, entries, savedId ?? undefined);
+      setSavedId(id);
       addNotification('Тетратката е зачувана! ✅', 'success');
     } catch {
       addNotification('Грешка при зачувување.', 'error');
@@ -241,9 +236,20 @@ export const GradeBookView: React.FC = () => {
 
       {/* Add entry form */}
       <Card className="p-5 space-y-3">
-        <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Додај резултат
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Додај резултат
+          </p>
+          {firebaseUser && (
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Увези од резултати
+            </button>
+          )}
+        </div>
         <NewEntryForm
           activeModel={activeModel}
           gradeLevel={gradeLevel}
@@ -486,6 +492,18 @@ export const GradeBookView: React.FC = () => {
             addNotification(`✓ ${name} — ${pct}% внесено!`, 'success');
           }}
           onClose={() => setShowMobileEntry(false)}
+        />
+      )}
+
+      {/* Import from quiz/exam results modal */}
+      {showImportModal && firebaseUser && (
+        <ImportFromResultsModal
+          teacherUid={firebaseUser.uid}
+          onImport={imported => {
+            setEntries(prev => [...prev, ...imported]);
+            addNotification(`✓ ${imported.length} резултат${imported.length !== 1 ? 'и' : ''} увезени!`, 'success');
+          }}
+          onClose={() => setShowImportModal(false)}
         />
       )}
     </div>

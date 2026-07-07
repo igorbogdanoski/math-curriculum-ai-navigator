@@ -173,9 +173,9 @@ const LiveTabInner: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {studentEntries.map(([name, resp]) => (
-                                            <tr key={name} className="border-b border-red-50 hover:bg-white/60 transition-colors">
-                                                <td className="py-2.5 px-3 font-semibold text-slate-700">{name}</td>
+                                        {studentEntries.map(([uid, resp]) => (
+                                            <tr key={uid} className="border-b border-red-50 hover:bg-white/60 transition-colors">
+                                                <td className="py-2.5 px-3 font-semibold text-slate-700">{resp.displayName}</td>
                                                 <td className="py-2.5 px-3 text-center">
                                                     <span className="text-sm">{STATUS_ICON[resp.status] ?? '?'}</span>
                                                     <span className="ml-1.5 text-xs text-slate-500">{STATUS_LABEL_KEYS[resp.status] ? t(STATUS_LABEL_KEYS[resp.status]) : resp.status}</span>

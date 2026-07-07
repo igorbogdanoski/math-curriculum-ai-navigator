@@ -407,6 +407,31 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('math_expressions/{doc} — owner-only', () => {
+    it('the owning teacher can read/update their own saved expression; another teacher cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('math_expressions/e1').set({ teacherUid: 'teacher1', latex: '\\frac{1}{2}' });
+      });
+      const owner = testEnv.authenticatedContext('teacher1');
+      const intruder = testEnv.authenticatedContext('teacher2');
+      const fOwner = owner.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      const fIntruder = intruder.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(fOwner.doc('math_expressions/e1').get());
+      await assertSucceeds(fOwner.doc('math_expressions/e1').update({ latex: 'x^2' }));
+      await assertFails(fIntruder.doc('math_expressions/e1').get());
+      await assertFails(fIntruder.doc('math_expressions/e1').update({ latex: 'hijacked' }));
+    });
+  });
+
   describe('scenario_bank/{docId} — moderation fields scoping', () => {
     it('any authenticated teacher may bump community counters, but not flip deleted/isFeatured', async () => {
       if (!testEnv) return;
@@ -741,6 +766,127 @@ d('SEC-2 — Firestore rules coverage', () => {
       const f = voter.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
       await assertSucceeds(f.doc('forum_replies/r4').update({ upvotedBy: ['voter1'] }));
       await assertFails(f.doc('forum_replies/r4').update({ upvotedBy: ['someoneElse'] }));
+    });
+  });
+
+  describe('live_sessions/{doc} — studentResponses scoped to the caller\'s own uid', () => {
+    it('the host can update session status/timer even though they never appear in studentResponses', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_sessions/s1').set({ hostUid: 'host1', quizId: 'q1', quizTitle: 'Т', status: 'active', joinCode: 'AB12', studentResponses: {} });
+      });
+      const host = testEnv.authenticatedContext('host1');
+      const f = host.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('live_sessions/s1').update({ status: 'ended' }));
+    });
+
+    it('a student can write only their own uid-keyed entry inside studentResponses', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_sessions/s2').set({ hostUid: 'host1', quizId: 'q1', quizTitle: 'Т', status: 'active', joinCode: 'AB12', studentResponses: {} });
+      });
+      const student = testEnv.authenticatedContext('student-uid-1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('live_sessions/s2').update({
+        'studentResponses.student-uid-1': { displayName: 'Марко', status: 'joined' },
+      }));
+      // Same student later submitting a completed response — still only touching their own key.
+      await assertSucceeds(f.doc('live_sessions/s2').update({
+        studentResponses: { 'student-uid-1': { displayName: 'Марко', status: 'completed', percentage: 80 } },
+      }));
+    });
+
+    it('a student cannot overwrite another student\'s entry, and cannot touch other session fields', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_sessions/s3').set({
+          hostUid: 'host1', quizId: 'q1', quizTitle: 'Т', status: 'active', joinCode: 'AB12',
+          studentResponses: { 'other-student-uid': { displayName: 'Ана', status: 'joined' } },
+        });
+      });
+      const impostor = testEnv.authenticatedContext('impostor-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = impostor.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      // Trying to overwrite someone else's entry.
+      await assertFails(f.doc('live_sessions/s3').update({
+        studentResponses: { 'other-student-uid': { displayName: 'hijacked', status: 'completed', percentage: 100 } },
+      }));
+      // Trying to end the session as a non-host.
+      await assertFails(f.doc('live_sessions/s3').update({ status: 'ended' }));
+    });
+  });
+
+  describe('forum_threads/forum_replies — report/flag', () => {
+    it('a non-author can report a thread (sets moderationStatus=pending + their own uid in reportedBy) but cannot self-approve through the same write', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t10').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'approved',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'], reportedBy: [],
+        });
+      });
+      const reporter = testEnv.authenticatedContext('reporter1');
+      const f = reporter.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t10').update({ moderationStatus: 'pending', reportedBy: ['reporter1'] }));
+      // Trying to sneak an 'approved' status through the report path must fail.
+      await assertFails(f.doc('forum_threads/t10').update({ moderationStatus: 'approved', reportedBy: ['reporter1', 'reporter2'] }));
+      // Trying to add someone else's uid instead of their own must fail.
+      await assertFails(f.doc('forum_threads/t10').update({ moderationStatus: 'pending', reportedBy: ['someoneElse'] }));
+    });
+
+    it('an admin approving a thread clears reportedBy/reportReason', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/admin1').set({ role: 'admin' });
+        await f.doc('forum_threads/t11').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'pending',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'], reportedBy: ['reporter1'],
+        });
+      });
+      const admin = testEnv.authenticatedContext('admin1');
+      const f = admin.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t11').update({ moderationStatus: 'approved', reportedBy: [], reportReason: null }));
+    });
+
+    it('a non-author can report a reply, but cannot add someone else\'s uid or touch other fields', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('forum_threads/t12').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r5').set({ threadId: 't12', authorUid: 'answerer1', body: 'Одговор', reportedBy: [] });
+      });
+      const reporter = testEnv.authenticatedContext('reporter1');
+      const f = reporter.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_replies/r5').update({ reportedBy: ['reporter1'] }));
+      await assertFails(f.doc('forum_replies/r5').update({ reportedBy: ['someoneElse'] }));
+      await assertFails(f.doc('forum_replies/r5').update({ reportedBy: ['reporter1'], body: 'hijacked' }));
+    });
+
+    it('an admin can delete a reported reply; a non-admin cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/admin2').set({ role: 'admin' });
+        await f.doc('forum_threads/t13').set({ authorUid: 'asker1', title: 'Т', body: 'Б' });
+        await f.doc('forum_replies/r6').set({ threadId: 't13', authorUid: 'answerer1', body: 'Лош одговор', reportedBy: ['reporter1'] });
+      });
+      const stranger = testEnv.authenticatedContext('stranger1');
+      const admin = testEnv.authenticatedContext('admin2');
+      const fStranger = stranger.firestore() as unknown as { doc(p: string): { delete(): Promise<unknown> } };
+      const fAdmin = admin.firestore() as unknown as { doc(p: string): { delete(): Promise<unknown> } };
+      await assertFails(fStranger.doc('forum_replies/r6').delete());
+      await assertSucceeds(fAdmin.doc('forum_replies/r6').delete());
     });
   });
 });

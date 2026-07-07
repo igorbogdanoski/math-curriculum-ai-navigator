@@ -352,6 +352,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
           thread={activeThread}
           myUid={myUid}
           myName={myName}
+          isAdmin={isAdmin}
           onBack={closeThread}
           onUpvoteThread={() => handleUpvoteThread(activeThread)}
           onReactThread={(field) => handleReactThread(activeThread, field)}

@@ -73,6 +73,12 @@ export const StudentLiveView: React.FC = () => {
             if (!auth.currentUser) {
                 try { await signInAnonymously(auth); } catch { /* non-fatal */ }
             }
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                setError('Грешка при автентикација. Обиди се повторно.');
+                setLoading(false);
+                return;
+            }
             const session = await firestoreService.getLiveSessionByCode(code);
             if (!session) {
                 recordFailedAttempt();
@@ -83,7 +89,7 @@ export const StudentLiveView: React.FC = () => {
             // Successful join — reset rate limit
             clearRateLimit();
             localStorage.setItem('studentName', name);
-            await firestoreService.joinLiveSession(session.id, name);
+            await firestoreService.joinLiveSession(session.id, uid, name);
             // Navigate to quiz with sessionId + teacher-tag params
             window.location.hash = `/play/${session.quizId}?sessionId=${encodeURIComponent(session.id)}&tid=${encodeURIComponent(session.hostUid)}`;
         } catch {

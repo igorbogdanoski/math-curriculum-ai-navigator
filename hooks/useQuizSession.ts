@@ -24,6 +24,8 @@ interface UseQuizSessionParams {
   deviceId: string;
   classId: string | null;
   sessionId: string | null;
+  /** Anonymous Firebase Auth uid — required to key live_sessions.studentResponses (not the name, which can collide). */
+  liveUid: string | null;
   assignId: string | undefined;
   getConceptDetails: (id: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
 }
@@ -35,6 +37,7 @@ export function useQuizSession({
   deviceId,
   classId,
   sessionId,
+  liveUid,
   assignId,
   getConceptDetails,
 }: UseQuizSessionParams) {
@@ -255,8 +258,8 @@ export function useQuizSession({
     }
 
     // 4. Live session response
-    if (!isE2E && sessionId && studentName) {
-      firestoreService.submitLiveResponse(sessionId, studentName, percentage, answers)
+    if (!isE2E && sessionId && liveUid && studentName) {
+      firestoreService.submitLiveResponse(sessionId, liveUid, studentName, percentage, answers)
         .catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
     }
 

@@ -17,6 +17,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   orderBy,
@@ -83,9 +84,14 @@ export interface ForumThread {
   scenarioTitle?: string | null;
   /** Soft-delete */
   deleted?: boolean;
-  /** Moderation: 'pending' = awaiting admin review, 'approved' = visible to all.
-   *  Absent on legacy threads → treated as approved. */
-  moderationStatus?: 'pending' | 'approved';
+  /** Moderation: 'pending' = new-thread queue (legacy) OR flagged-for-review after a
+   *  report (see reportForumThread); 'approved' = visible/cleared; 'rejected' = admin
+   *  rejected it (also soft-deletes). Absent on legacy threads → treated as approved. */
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  /** Teacher UIDs who reported this thread — surfaces it in the admin moderation queue
+   *  without hiding it (avoids a report-abuse vector where one flag insta-hides a post). */
+  reportedBy?: string[];
+  reportReason?: string;
   /** Webb's DoK level tag (optional) */
   dokLevel?: 1 | 2 | 3 | 4;
   /** Attached Algebra Tiles PNG (Firebase Storage URL) */
@@ -113,6 +119,9 @@ export interface ForumReply {
   editedAt?: Timestamp | null;
   /** S63 — marked as an excellent Feynman-style explanation by admin/thread-author */
   feynmanBadge?: boolean;
+  /** Teacher UIDs who reported this reply (see reportForumReply) */
+  reportedBy?: string[];
+  reportReason?: string;
 }
 
 export interface ForumStats {
@@ -178,11 +187,36 @@ export const createForumThread = async (data: {
 };
 
 export const approveForumThread = async (threadId: string): Promise<void> => {
-  await updateDoc(doc(db, 'forum_threads', threadId), { moderationStatus: 'approved' });
+  // Clears reportedBy/reportReason too — this doubles as "clear a report" (see
+  // reportForumThread), not just the legacy new-thread approval path.
+  await updateDoc(doc(db, 'forum_threads', threadId), { moderationStatus: 'approved', reportedBy: [], reportReason: null });
 };
 
 export const rejectForumThread = async (threadId: string): Promise<void> => {
   await updateDoc(doc(db, 'forum_threads', threadId), { deleted: true, moderationStatus: 'rejected' });
+};
+
+/**
+ * Flags a thread for admin review WITHOUT hiding it — a report insta-hiding a
+ * legitimate post would be a real abuse vector in a small teacher community. Reuses the
+ * existing moderationStatus='pending' admin queue (fetchPendingForumThreads) rather than
+ * building a parallel review system: before this, the queue's only real trigger was new
+ * threads via ForumShareButton (which just started skipping moderation like
+ * TeacherForumView's primary flow), so it needed a genuine second way to populate.
+ */
+export const reportForumThread = async (threadId: string, reporterUid: string, reason?: string): Promise<void> => {
+  await updateDoc(doc(db, 'forum_threads', threadId), {
+    moderationStatus: 'pending',
+    reportedBy: arrayUnion(reporterUid),
+    ...(reason ? { reportReason: reason } : {}),
+  });
+};
+
+export const reportForumReply = async (replyId: string, reporterUid: string, reason?: string): Promise<void> => {
+  await updateDoc(doc(db, 'forum_replies', replyId), {
+    reportedBy: arrayUnion(reporterUid),
+    ...(reason ? { reportReason: reason } : {}),
+  });
 };
 
 export const fetchForumThreads = async (opts?: {
@@ -475,6 +509,12 @@ export const updateForumReply = async (
 /** Toggle "Поучи ги другите" Feynman badge on a reply. */
 export const toggleFeynmanBadge = async (replyId: string, current: boolean): Promise<void> => {
   await updateDoc(doc(db, 'forum_replies', replyId), { feynmanBadge: !current });
+};
+
+/** Admin-only (enforced by firestore.rules) — the counterpart to reportForumReply: there
+ *  was no way at all to remove a bad reply before this, report or not. */
+export const deleteForumReply = async (replyId: string): Promise<void> => {
+  await deleteDoc(doc(db, 'forum_replies', replyId));
 };
 
 export const markBestAnswer = async (replyId: string, threadId: string): Promise<void> => {

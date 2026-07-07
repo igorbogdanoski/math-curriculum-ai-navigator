@@ -4,9 +4,13 @@ import type { MathfieldElement } from 'mathlive';
 import {
   Sigma, Copy, Trash2, History, Lightbulb, Calculator,
   CheckCircle2, Shuffle, ChevronDown, Loader2, Check,
-  Printer, Download, Zap,
+  Printer, Download, Zap, Save, ArrowLeftCircle,
 } from 'lucide-react';
 import { duggaAPI } from '../services/gemini/dugga';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { saveExpression, fetchMyExpressions, type SavedMathExpression } from '../services/firestoreService.mathExpressions';
+import { readAndClearMathEditorReturn, writeMathEditorResult } from '../utils/mathEditorBridge';
 
 // ─── Symbol palette ───────────────────────────────────────────────────────────
 const SYMBOL_GROUPS = [
@@ -105,16 +109,47 @@ function useCopyToClipboard(): [boolean, (text: string) => void] {
 }
 
 export function MathEditorView() {
+  const { firebaseUser } = useAuth();
+  const { navigate } = useNavigation();
   const mfRef = useRef<MathfieldElement>(null);
   const [latex, setLatex] = useState('');
   const [activeSymGroup, setActiveSymGroup] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
+  const [savedExpressions, setSavedExpressions] = useState<SavedMathExpression[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [aiMode, setAiMode] = useState<AIMode>('explain');
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [latexCopied, copyLatex] = useCopyToClipboard();
   const settingRef = useRef(false);
+
+  // Set only when this view was opened from another view's "🧮 Отвори Математички
+  // Уредник" button (utils/mathEditorBridge.ts) — shows an "Вметни" action that writes
+  // the current expression back and returns, instead of the plain standalone editor.
+  const [returnPath] = useState<string | null>(() => readAndClearMathEditorReturn());
+
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    fetchMyExpressions(firebaseUser.uid).then(setSavedExpressions);
+  }, [firebaseUser?.uid]);
+
+  const handleSaveExpression = useCallback(async () => {
+    if (!firebaseUser?.uid || !latex.trim() || saving) return;
+    setSaving(true);
+    try {
+      await saveExpression(firebaseUser.uid, latex);
+      setSavedExpressions(await fetchMyExpressions(firebaseUser.uid));
+    } finally {
+      setSaving(false);
+    }
+  }, [firebaseUser?.uid, latex, saving]);
+
+  const handleInsertAndReturn = useCallback(() => {
+    if (!returnPath || !latex.trim()) return;
+    writeMathEditorResult(latex);
+    navigate(returnPath);
+  }, [returnPath, latex, navigate]);
 
   // Wire MathLive event
   useEffect(() => {
@@ -212,6 +247,16 @@ export function MathEditorView() {
             <p className="text-xs text-gray-400 mt-0.5">MathLive · LaTeX · AI Анализа · Печати</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {firebaseUser && (
+              <button
+                onClick={handleSaveExpression}
+                disabled={!latex.trim() || saving}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition-colors disabled:opacity-40"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Зачувај
+              </button>
+            )}
             <button
               onClick={handlePrint}
               disabled={!latex.trim()}
@@ -220,6 +265,16 @@ export function MathEditorView() {
               <Printer className="w-4 h-4" />
               Печати
             </button>
+            {returnPath && (
+              <button
+                onClick={handleInsertAndReturn}
+                disabled={!latex.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition-colors disabled:opacity-40 shadow-sm"
+              >
+                <ArrowLeftCircle className="w-4 h-4" />
+                Вметни и врати се
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -258,21 +313,42 @@ export function MathEditorView() {
           </div>
 
           {/* History dropdown */}
-          {showHistory && history.length > 0 && (
-            <div className="border-b border-gray-100 px-4 py-2 bg-gray-50">
-              <p className="text-xs text-gray-400 mb-2 font-semibold">Последни изрази</p>
-              <div className="flex flex-wrap gap-1.5">
-                {history.map((h, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setMFValue(h); setShowHistory(false); }}
-                    className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs text-gray-600 hover:border-indigo-300 hover:text-indigo-700 transition-colors font-mono max-w-[200px] truncate"
-                    title={h}
-                  >
-                    {h.length > 30 ? h.slice(0, 30) + '…' : h}
-                  </button>
-                ))}
-              </div>
+          {showHistory && (history.length > 0 || savedExpressions.length > 0) && (
+            <div className="border-b border-gray-100 px-4 py-2 bg-gray-50 space-y-3">
+              {history.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-2 font-semibold">Последни изрази (оваа сесија)</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {history.map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setMFValue(h); setShowHistory(false); }}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs text-gray-600 hover:border-indigo-300 hover:text-indigo-700 transition-colors font-mono max-w-[200px] truncate"
+                        title={h}
+                      >
+                        {h.length > 30 ? h.slice(0, 30) + '…' : h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {savedExpressions.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-2 font-semibold">Зачувани изрази</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {savedExpressions.map(e => (
+                      <button
+                        key={e.id}
+                        onClick={() => { setMFValue(e.latex); setShowHistory(false); }}
+                        className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-xs text-indigo-700 hover:border-indigo-400 transition-colors font-mono max-w-[200px] truncate"
+                        title={e.latex}
+                      >
+                        {e.latex.length > 30 ? e.latex.slice(0, 30) + '…' : e.latex}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

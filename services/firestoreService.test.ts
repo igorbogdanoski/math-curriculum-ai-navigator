@@ -64,6 +64,45 @@ describe('firestoreService tests with mocked firestore layer', () => {
         });
     });
 
+    describe('joinLiveSession/markLiveInProgress/submitLiveResponse — keyed by uid, not name', () => {
+        it('joinLiveSession writes studentResponses.{uid} with displayName, not studentResponses.{name}', async () => {
+            (doc as ReturnType<typeof vi.fn>).mockReturnValue('session-doc-ref');
+
+            await firestoreService.joinLiveSession('sess_1', 'uid-abc', 'Марко Марковски');
+
+            expect(doc).toHaveBeenCalledWith({}, 'live_sessions', 'sess_1');
+            expect(updateDoc).toHaveBeenCalledWith('session-doc-ref', {
+                'studentResponses.uid-abc': { displayName: 'Марко Марковски', status: 'joined' },
+            });
+        });
+
+        it('markLiveInProgress writes studentResponses.{uid} with displayName', async () => {
+            (doc as ReturnType<typeof vi.fn>).mockReturnValue('session-doc-ref');
+
+            await firestoreService.markLiveInProgress('sess_1', 'uid-abc', 'Марко Марковски');
+
+            expect(updateDoc).toHaveBeenCalledWith('session-doc-ref', {
+                'studentResponses.uid-abc': { displayName: 'Марко Марковски', status: 'in_progress' },
+            });
+        });
+
+        it('submitLiveResponse writes studentResponses.{uid} including percentage/answers, keyed by uid', async () => {
+            (doc as ReturnType<typeof vi.fn>).mockReturnValue('session-doc-ref');
+
+            await firestoreService.submitLiveResponse('sess_1', 'uid-abc', 'Марко Марковски', 80, { '0': true });
+
+            expect(updateDoc).toHaveBeenCalledWith('session-doc-ref', {
+                'studentResponses.uid-abc': {
+                    displayName: 'Марко Марковски',
+                    status: 'completed',
+                    percentage: 80,
+                    completedAt: 'SERVER_TIMESTAMP',
+                    answers: { '0': true },
+                },
+            });
+        });
+    });
+
     describe('deleteStudentGroup', () => {
         it('calls deleteDoc for the specific group ID', async () => {
              (doc as ReturnType<typeof vi.fn>).mockReturnValue('group-delete-ref');

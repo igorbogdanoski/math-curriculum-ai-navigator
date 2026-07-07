@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { examService } from '../services/firestoreService.exam';
 import { geminiService } from '../services/geminiService';
 import type { ExamSession, ExamResponse } from '../services/firestoreService.types';
 import { useRouter } from '../hooks/useRouter';
+import { applyManualGradeOverride } from '../utils/examGrading';
 import {
   Loader2, Wand2, Download, CheckCircle, XCircle, BarChart2,
-  ChevronDown, ChevronUp, ArrowLeft,
+  ChevronDown, ChevronUp, ArrowLeft, UserCog,
 } from 'lucide-react';
 
 const VARIANT_BADGE: Record<string, string> = {
@@ -40,6 +42,7 @@ function gradeColor(p: number): string {
 export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
+  const { firebaseUser } = useAuth();
   const { params } = useRouter([]);
 
   const sessionId = id ?? params?.id ?? '';
@@ -93,6 +96,21 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     const ungraded = responses.filter(r => r.status === 'submitted' && !r.gradedAt);
     for (const r of ungraded) {
       await handleGradeOne(r);
+    }
+  };
+
+  /** Lets a teacher correct an AI-assigned score — the AI grades every question type
+   *  (even multiple-choice) via one LLM call with no deterministic cross-check, and
+   *  until this there was no way to fix a wrong score short of re-running AI grading. */
+  const handleOverridePoints = async (response: ExamResponse, questionId: string, points: number, maxPoints: number) => {
+    if (!session || !response.aiFeedback || !firebaseUser?.uid) return;
+    const clamped = Math.max(0, Math.min(points, maxPoints));
+    const { feedback, score } = applyManualGradeOverride(response.aiFeedback, questionId, clamped, firebaseUser.uid);
+    setResponses(prev => prev.map(r => r.id === response.id ? { ...r, score, aiFeedback: feedback } : r));
+    try {
+      await examService.saveGradingResult(session.id, response.id, { score, maxScore: response.maxScore ?? 0, aiFeedback: feedback });
+    } catch {
+      addNotification('Грешка при зачувување на измената.', 'error');
     }
   };
 
@@ -231,8 +249,20 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                               <div className="flex items-start justify-between gap-2">
                                 <p className="text-gray-700 flex-1">{qi + 1}. {q.question}</p>
                                 {fb && (
-                                  <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${fb.correct ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                    {fb.points}/{q.points}
+                                  <span
+                                    className={`shrink-0 flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${fb.correct ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={q.points}
+                                      value={fb.points}
+                                      aria-label={`Поени за прашање ${qi + 1}`}
+                                      onChange={e => handleOverridePoints(r, q.id, Number(e.target.value), q.points)}
+                                      className="w-10 bg-transparent text-right font-bold focus:outline-none focus:underline"
+                                    />
+                                    /{q.points}
                                   </span>
                                 )}
                               </div>
@@ -247,6 +277,11 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                                   <span className="text-gray-500 flex items-center gap-1">
                                     {fb.correct ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <XCircle className="w-3 h-3 text-red-500" />}
                                     {fb.feedback}
+                                  </span>
+                                )}
+                                {fb?.manuallyOverriddenBy && (
+                                  <span className="text-indigo-600 flex items-center gap-1 font-semibold">
+                                    <UserCog className="w-3 h-3" /> Рачно изменето
                                   </span>
                                 )}
                               </div>

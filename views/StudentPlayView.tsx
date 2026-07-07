@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, AlertCircle, Home, User } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -66,6 +67,10 @@ export const StudentPlayView: React.FC = () => {
 
   // ── Hooks ────────────────────────────────────────────────────────────────────
   const identity = useStudentIdentity();
+  // Live sessions key studentResponses by this uid, not the name (which can collide
+  // between two students) — set once StudentLiveView's signInAnonymously() completes,
+  // already persisted by the time this view mounts.
+  const liveUid = sessionId ? (auth.currentUser?.uid ?? null) : null;
   const { quizData, loading, error, usingCachedContent } = useStudentQuiz(id, tid);
   const { session, dispatch, handleQuizComplete, isMountedRef } = useQuizSession({
     quizData,
@@ -74,6 +79,7 @@ export const StudentPlayView: React.FC = () => {
     deviceId: identity.deviceId,
     classId: identity.classId,
     sessionId,
+    liveUid,
     assignId,
     getConceptDetails,
   });
@@ -81,12 +87,12 @@ export const StudentPlayView: React.FC = () => {
   // ── Live session: mark in_progress once quiz + name are ready ────────────────
   const inProgressMarkedRef = useRef(false);
   useEffect(() => {
-    if (!quizData || !sessionId || !identity.studentName || !identity.nameConfirmed || inProgressMarkedRef.current) return;
+    if (!quizData || !sessionId || !liveUid || !identity.studentName || !identity.nameConfirmed || inProgressMarkedRef.current) return;
     inProgressMarkedRef.current = true;
     if (!window.__E2E_MODE__) {
-      firestoreService.markLiveInProgress(sessionId, identity.studentName).catch(() => {});
+      firestoreService.markLiveInProgress(sessionId, liveUid, identity.studentName).catch(() => {});
     }
-  }, [quizData, sessionId, identity.studentName, identity.nameConfirmed]);
+  }, [quizData, sessionId, liveUid, identity.studentName, identity.nameConfirmed]);
 
   // ── Loading state ─────────────────────────────────────────────────────────────
   if (loading) {

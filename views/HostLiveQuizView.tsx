@@ -260,19 +260,19 @@ export const HostLiveQuizView: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {participants.map(([name, data], idx) => {
+                                    {participants.map(([uid, data], idx) => {
                                         const isTop3 = data.status === 'completed' && idx < 3;
                                         return (
-                                        <tr key={name} className={`border-b border-slate-50 transition-colors ${isTop3 ? 'bg-yellow-50/50' : 'hover:bg-slate-50'}`}>
+                                        <tr key={uid} className={`border-b border-slate-50 transition-colors ${isTop3 ? 'bg-yellow-50/50' : 'hover:bg-slate-50'}`}>
                                             <td className="py-3 px-4 text-center text-base">
                                                 {isTop3 ? MEDALS[idx] : <span className="text-slate-300 text-xs font-bold">{idx + 1}</span>}
                                             </td>
                                             <td className="py-3 px-6 font-semibold text-slate-800">
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${isTop3 ? 'bg-yellow-100 text-yellow-700' : 'bg-indigo-100 text-indigo-600'}`}>
-                                                        {name.charAt(0).toUpperCase()}
+                                                        {data.displayName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    {name}
+                                                    {data.displayName}
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4 text-center">
@@ -326,8 +326,8 @@ export const HostLiveQuizView: React.FC = () => {
             const qHeaders = perQStats.map((_, i) => `П${i + 1}`);
             const rows: string[][] = [
                 ['Ученик', 'Резултат (%)', ...qHeaders],
-                ...completed.map(([name, v]) => [
-                    name,
+                ...completed.map(([, v]) => [
+                    v.displayName,
                     String(v.percentage ?? 0),
                     ...perQStats.map((_, i) => {
                         if (!v.answers || !(String(i) in v.answers)) return '—';
@@ -383,12 +383,12 @@ export const HostLiveQuizView: React.FC = () => {
                             </button>
                         </div>
                         <ul className="divide-y divide-slate-50">
-                            {completed.map(([name, data], idx) => (
-                                <li key={name} className={`flex items-center gap-4 px-5 py-3 ${idx < 3 ? 'bg-yellow-50/50' : ''}`}>
+                            {completed.map(([uid, data], idx) => (
+                                <li key={uid} className={`flex items-center gap-4 px-5 py-3 ${idx < 3 ? 'bg-yellow-50/50' : ''}`}>
                                     <span className="text-xl w-8 text-center flex-shrink-0">
                                         {idx < 3 ? MEDALS[idx] : <span className="text-slate-300 text-sm font-bold">{idx + 1}</span>}
                                     </span>
-                                    <span className="flex-1 font-semibold text-slate-800 text-sm truncate">{name}</span>
+                                    <span className="flex-1 font-semibold text-slate-800 text-sm truncate">{data.displayName}</span>
                                     {/* Per-Q mini dots (if answers available) */}
                                     {data.answers && perQStats.length > 0 && (
                                         <div className="hidden sm:flex gap-0.5">

@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Loader2, Gamepad2, Timer, Check, ChevronRight, AlertCircle, Zap,
   ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Upload, Lightbulb,
-  FileText, Brain, ArrowUp, ArrowDown, RefreshCw, BookOpen,
+  FileText, Brain, ArrowUp, ArrowDown, RefreshCw, BookOpen, FileSpreadsheet,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -421,6 +421,19 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
     }
   };
 
+  /**
+   * "Kahoot Maker" only ever launched into this app's OWN Live Class before this —
+   * despite the name, it never produced anything a teacher could import into real
+   * kahoot.com. This exports a .xlsx matching kahoot.com's own "Import from
+   * spreadsheet" column format.
+   */
+  const handleExportKahootXlsx = async () => {
+    const valid = questions.filter(q => q.question.trim() && q.options.every((o: string) => o.trim()));
+    if (valid.length === 0) return;
+    const { exportKahootXlsx } = await import('../utils/exportKahootXlsx');
+    await exportKahootXlsx(title.trim() || 'Kahoot квиз', valid, timerSeconds);
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER: Generating spinner
   // ─────────────────────────────────────────────────────────────────────────
@@ -589,6 +602,15 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Зачувување...</>
                 : <><Zap className="w-4 h-4" /> Зачувај и стартувај LIVE <ChevronRight className="w-4 h-4" /></>
               }
+            </button>
+            <button
+              type="button"
+              onClick={handleExportKahootXlsx}
+              disabled={validCount === 0}
+              title="Извези .xlsx во форматот што kahoot.com прифаќа за 'Import from spreadsheet'"
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 font-bold rounded-2xl transition disabled:opacity-40 text-xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Извези .xlsx за увоз во kahoot.com
             </button>
           </div>
         </div>

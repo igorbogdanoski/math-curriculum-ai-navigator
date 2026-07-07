@@ -72,6 +72,12 @@ export const ForumShareButton: React.FC<Props> = ({
         category,
         title: title.trim(),
         body:  body.trim(),
+        // Matches TeacherForumView's primary "new thread" flow, which always publishes
+        // instantly — without this, sharing a material to the forum via this button (used
+        // throughout the app) silently queued it into a pending-moderation state that the
+        // admin review UI never actually surfaced in practice, while the primary flow
+        // bypassed moderation entirely. Same small teacher community either way.
+        skipModeration: true,
       });
       addNotification('Успешно споделено во Форумот! 🎉', 'success');
       setOpen(false);

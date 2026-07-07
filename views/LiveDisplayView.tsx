@@ -87,14 +87,14 @@ export const LiveDisplayView: React.FC = () => {
         const podiumSlot = (rank: 0 | 1 | 2, heightClass: string, crownVisible: boolean, avatarSizeClass: string, bgClass: string) => {
             const entry = top3[rank];
             if (!entry) return <div className={`w-36 ${heightClass}`} />;
-            const [name, data] = entry;
+            const [, data] = entry;
             return (
                 <div className="flex flex-col items-center gap-2">
                     {crownVisible && <Crown className="w-10 h-10 text-yellow-400 animate-bounce" />}
-                    <div className={`${avatarSizeClass} ${avatarColor(name)} rounded-full flex items-center justify-center font-black text-3xl shadow-2xl`}>
-                        {initials(name)}
+                    <div className={`${avatarSizeClass} ${avatarColor(data.displayName)} rounded-full flex items-center justify-center font-black text-3xl shadow-2xl`}>
+                        {initials(data.displayName)}
                     </div>
-                    <p className={`font-black text-center max-w-[140px] truncate ${rank === 0 ? 'text-yellow-300 text-xl' : 'text-white text-lg'}`}>{name}</p>
+                    <p className={`font-black text-center max-w-[140px] truncate ${rank === 0 ? 'text-yellow-300 text-xl' : 'text-white text-lg'}`}>{data.displayName}</p>
                     <p className={`font-black ${rank === 0 ? 'text-2xl text-yellow-200' : 'text-xl text-white/80'}`}>{data.percentage}%</p>
                     <div className={`${bgClass} w-36 ${heightClass} rounded-t-3xl flex items-end justify-center pb-4 shadow-xl`}>
                         <span className="text-white/60 font-black text-5xl">{rank + 1}</span>
@@ -125,14 +125,14 @@ export const LiveDisplayView: React.FC = () => {
                 {/* Rest of leaderboard */}
                 {rest.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-3xl w-full">
-                        {rest.map(([name, data], i) => (
-                            <div key={name} className="bg-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 border border-white/10">
+                        {rest.map(([uid, data], i) => (
+                            <div key={uid} className="bg-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 border border-white/10">
                                 <span className="text-white/40 font-black w-6 text-center text-sm">{i + 4}</span>
-                                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 ${avatarColor(name)}`}>
-                                    {initials(name)}
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 ${avatarColor(data.displayName)}`}>
+                                    {initials(data.displayName)}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="font-semibold text-sm truncate">{name}</p>
+                                    <p className="font-semibold text-sm truncate">{data.displayName}</p>
                                     <p className="text-xs text-indigo-300">{data.percentage}%</p>
                                 </div>
                             </div>
@@ -205,9 +205,9 @@ export const LiveDisplayView: React.FC = () => {
                 </div>
             ) : (
                 <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 content-start">
-                    {sortedEntries.map(([name, data]) => (
+                    {sortedEntries.map(([uid, data]) => (
                         <div
-                            key={name}
+                            key={uid}
                             className={`rounded-2xl p-3 flex flex-col items-center gap-2 transition-all duration-500 border ${
                                 data.status === 'completed'
                                     ? 'bg-green-500/25 border-green-400/40'
@@ -216,10 +216,10 @@ export const LiveDisplayView: React.FC = () => {
                                     : 'bg-white/5 border-white/10'
                             }`}
                         >
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl shadow-lg ${avatarColor(name)}`}>
-                                {initials(name)}
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xl shadow-lg ${avatarColor(data.displayName)}`}>
+                                {initials(data.displayName)}
                             </div>
-                            <p className="font-semibold text-xs text-center truncate w-full" title={name}>{name}</p>
+                            <p className="font-semibold text-xs text-center truncate w-full" title={data.displayName}>{data.displayName}</p>
                             {data.status === 'completed' && (
                                 <span className="text-xs font-black text-green-300">{data.percentage}% ✓</span>
                             )}

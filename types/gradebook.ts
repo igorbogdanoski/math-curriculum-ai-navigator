@@ -1,5 +1,3 @@
-import type { AssessmentQuestion } from './aiContent';
-
 // ── Grade Book ────────────────────────────────────────────────────────────────
 
 export type GradeModel = 'traditional' | 'mastery' | 'sbg';
@@ -18,6 +16,11 @@ export interface GradeEntry {
   standardScores?: Record<string, 1 | 2 | 3 | 4>;
   gradedAt: string;
   notes?: string;
+  /** Set only when this entry was imported from a real quiz_results doc (not manually typed) — testId is the real quizId in that case, not a random UUID. */
+  sourceQuizId?: string;
+  /** Set only when imported from a Digital Exam session. */
+  sourceExamSessionId?: string;
+  conceptId?: string;
 }
 
 export interface GradeBookClass {
@@ -29,22 +32,4 @@ export interface GradeBookClass {
   entries: GradeEntry[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface LiveQuizSession {
-    pin: string;
-    teacherId: string;
-    status: 'waiting' | 'active' | 'finished';
-    questions: AssessmentQuestion[];
-    currentQuestionIndex: number;
-    title: string;
-    createdAt: any;
-}
-
-export interface LiveQuizParticipant {
-    id: string;
-    name: string;
-    score: number;
-    answers: Record<string, string>; // questionId or index -> answer string
-    joinedAt: any;
 }

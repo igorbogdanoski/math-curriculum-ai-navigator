@@ -62,6 +62,9 @@ describe('ForumShareButton', () => {
         category: 'resource',
         title: 'Квиз: Питагора',
         body: 'Генерирав квиз со 10 прашања.',
+        // Matches TeacherForumView's primary new-thread flow, which always publishes
+        // instantly — see the ForumShareButton.tsx fix this session.
+        skipModeration: true,
       });
     });
     expect(mockAddNotification).toHaveBeenCalledWith(expect.stringContaining('Успешно'), 'success');

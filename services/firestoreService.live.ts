@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, where, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -85,20 +85,28 @@ export const updateLiveSessionStatus = async (sessionId: string, status: 'active
     await updateDoc(doc(db, 'live_sessions', sessionId), { status });
   };
 
-export const joinLiveSession = async (sessionId: string, studentName: string): Promise<void> => {
+/**
+ * Joins a live session — keyed by the student's anonymous Firebase Auth uid, NOT their
+ * display name (a prior version keyed studentResponses by raw name, so two students with
+ * the same/similar name in one session would silently overwrite each other's record).
+ * `displayName` is stored once here and reused by every subsequent write for this uid.
+ */
+export const joinLiveSession = async (sessionId: string, uid: string, displayName: string): Promise<void> => {
     await updateDoc(doc(db, 'live_sessions', sessionId), {
-      [`studentResponses.${studentName}`]: { status: 'joined' },
+      [`studentResponses.${uid}`]: { displayName, status: 'joined' },
     });
   };
 
 export const submitLiveResponse = async (
   sessionId: string,
-  studentName: string,
+  uid: string,
+  displayName: string,
   percentage: number,
   answers?: Record<string, boolean>,
 ): Promise<void> => {
     await updateDoc(doc(db, 'live_sessions', sessionId), {
-      [`studentResponses.${studentName}`]: {
+      [`studentResponses.${uid}`]: {
+        displayName,
         status: 'completed',
         percentage,
         completedAt: serverTimestamp(),
@@ -107,9 +115,9 @@ export const submitLiveResponse = async (
     }).catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
   };
 
-export const markLiveInProgress = async (sessionId: string, studentName: string): Promise<void> => {
+export const markLiveInProgress = async (sessionId: string, uid: string, displayName: string): Promise<void> => {
     await updateDoc(doc(db, 'live_sessions', sessionId), {
-      [`studentResponses.${studentName}`]: { status: 'in_progress' },
+      [`studentResponses.${uid}`]: { displayName, status: 'in_progress' },
     }).catch(() => { /* non-fatal */ });
   };
 
@@ -117,68 +125,6 @@ export const subscribeLiveSession = (sessionId: string, callback: (session: Live
     const ref = doc(db, 'live_sessions', sessionId);
     return onSnapshot(ref, snap => {
       callback(snap.exists() ? ({ id: snap.id, ...snap.data() } as LiveSession) : null);
-    });
-  };
-
-export const createLiveQuizSession = async (teacherId: string, title: string, questions: any[]): Promise<string> => {
-    // Generate a random 6-digit pin
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const sessionRef = doc(db, 'live_quizzes', pin);
-    
-    await setDoc(sessionRef, {
-        pin,
-        teacherId,
-        status: 'waiting',
-        title,
-        questions,
-        currentQuestionIndex: -1,
-        createdAt: serverTimestamp()
-    });
-    
-    return pin;
-  };
-
-export const updateLiveQuizState = async (pin: string, data: Partial<{ status: 'waiting' | 'active' | 'finished', currentQuestionIndex: number }>): Promise<void> => {
-    const sessionRef = doc(db, 'live_quizzes', pin);
-    await updateDoc(sessionRef, data);
-  };
-
-export const joinLiveQuiz = async (pin: string, studentName: string): Promise<string> => {
-    const participantRef = doc(collection(db, 'live_quizzes', pin, 'participants'));
-    await setDoc(participantRef, {
-        id: participantRef.id,
-        name: studentName,
-        score: 0,
-        answers: {},
-        joinedAt: serverTimestamp()
-    });
-    return participantRef.id;
-  };
-
-export const submitLiveQuizAnswer = async (pin: string, participantId: string, questionIndex: number, answer: string, isCorrect: boolean): Promise<void> => {
-    const participantRef = doc(db, 'live_quizzes', pin, 'participants', participantId);
-    
-    // Instead of simple update, if it's correct we increment score. 
-    // We update answers map.
-    await updateDoc(participantRef, {
-        [`answers.${questionIndex}`]: answer,
-        ...(isCorrect ? { score: increment(1) } : {})
-    });
-  };
-
-export const subscribeToLiveQuiz = (pin: string, callback: (data: any) => void) => {
-    return onSnapshot(doc(db, 'live_quizzes', pin), (doc) => {
-        if (doc.exists()) {
-            callback(doc.data());
-        } else {
-            callback(null);
-        }
-    });
-  };
-
-export const subscribeToLiveQuizParticipants = (pin: string, callback: (participants: any[]) => void) => {
-    return onSnapshot(collection(db, 'live_quizzes', pin, 'participants'), (snap) => {
-        callback(snap.docs.map(d => d.data()));
     });
   };
 

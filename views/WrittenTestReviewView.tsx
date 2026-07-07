@@ -2,13 +2,14 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   Upload, Camera, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle,
   Brain, Sparkles, ChevronDown, ChevronUp, Trash2, Plus, Eye,
-  Users, BarChart3, Flame, User, Wand2, Lightbulb,
+  Users, BarChart3, Flame, User, Wand2, Lightbulb, RotateCw,
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../utils/logger';
 import { CloudImportMenu } from '../components/common/CloudImportMenu';
+import { retryWithBackoff } from '../utils/retryWithBackoff';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -272,6 +273,28 @@ export const WrittenTestReviewView: React.FC = () => {
     setSubmissions(prev => [...prev, ...newSubs]);
   }, []);
 
+  // Uses the shared rate-limit/network-aware retry helper (utils/retryWithBackoff.ts) —
+  // a submission that fails outright gets up to 2 more attempts before being marked
+  // 'error', instead of the batch silently leaving a gap the teacher only discovers by
+  // scanning thumbnails. Deterministic failures (e.g. the AI genuinely returning no
+  // gradable results) aren't retried — same philosophy as the shared helper: retrying a
+  // non-transient failure just wastes time.
+  const gradeSubmissionWithRetry = useCallback(async (
+    sub: StudentSubmission,
+    qList: { id: string; text: string; points: number; correctAnswer: string }[],
+  ): Promise<GradeResult[] | null> => {
+    const base64 = sub.preview.split(',')[1];
+    try {
+      const results = await retryWithBackoff(
+        () => geminiService.gradeTestWithVision(base64, sub.file.type, qList),
+        { maxRetries: 2, baseDelayMs: 1000 },
+      );
+      return results.length ? results : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const handleBatchGrade = async () => {
     if (submissions.length === 0 || validQuestions.length === 0) {
       setError('Додајте слики и пополнете ги прашањата.');
@@ -286,17 +309,15 @@ export const WrittenTestReviewView: React.FC = () => {
     for (let i = 0; i < submissions.length; i++) {
       const sub = submissions[i];
       setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'processing' } : s));
-      try {
-        const base64 = sub.preview.split(',')[1];
-        const results = await geminiService.gradeTestWithVision(base64, sub.file.type, qList);
-        if (!results.length) throw new Error('empty-grades');
+      const results = await gradeSubmissionWithRetry(sub, qList);
+      if (results) {
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'done', results } : s));
         try {
           await persistTestArtifact(sub.file.type, results);
         } catch (persistErr) {
           logger.warn('Failed to persist batch written-test artifact', persistErr);
         }
-      } catch {
+      } else {
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'error' } : s));
       }
       setBatchProgress(i + 1);
@@ -305,6 +326,25 @@ export const WrittenTestReviewView: React.FC = () => {
     }
     setIsBatchGrading(false);
     setExpandedSetup(false);
+  };
+
+  /** Retries a single failed submission without re-running the whole batch. */
+  const handleRetryOne = async (subId: string) => {
+    const sub = submissions.find(s => s.id === subId);
+    if (!sub || validQuestions.length === 0) return;
+    const qList = validQuestions.map(q => ({ id: q.id, text: q.text, points: q.points, correctAnswer: q.correctAnswer }));
+    setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'processing' } : s));
+    const results = await gradeSubmissionWithRetry(sub, qList);
+    if (results) {
+      setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'done', results } : s));
+      try {
+        await persistTestArtifact(sub.file.type, results);
+      } catch (persistErr) {
+        logger.warn('Failed to persist retried written-test artifact', persistErr);
+      }
+    } else {
+      setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'error' } : s));
+    }
   };
 
   // ── Computed class stats ──
@@ -510,6 +550,17 @@ export const WrittenTestReviewView: React.FC = () => {
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
+                        {sub.status === 'error' && (
+                          <button
+                            type="button"
+                            title="Обиди се повторно"
+                            onClick={() => handleRetryOne(sub.id)}
+                            disabled={isBatchGrading}
+                            className="absolute bottom-1 right-1 flex items-center gap-1 px-1.5 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
+                          >
+                            <RotateCw className="w-2.5 h-2.5" /> Повтори
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

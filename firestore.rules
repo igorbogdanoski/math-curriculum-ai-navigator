@@ -107,6 +107,40 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/forum_threads/$(threadId)).data.authorUid == request.auth.uid;
     }
 
+    // Forum: lets any authenticated (non-admin) caller flag a thread for review —
+    // touches ONLY moderationStatus/reportedBy/reportReason, forces moderationStatus to
+    // 'pending' (can't self-approve through this branch), and reportedBy may only ever
+    // gain exactly the caller's own uid (can't add/remove someone else's, can't clear it —
+    // clearing is approveForumThread's job, admin-only).
+    function isForumThreadReport() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['moderationStatus', 'reportedBy', 'reportReason']) &&
+        request.resource.data.moderationStatus == 'pending' &&
+        request.resource.data.reportedBy.size() == resource.data.get('reportedBy', []).size() + 1 &&
+        request.resource.data.reportedBy.hasAll(resource.data.get('reportedBy', [])) &&
+        request.resource.data.reportedBy.hasAny([request.auth.uid]);
+    }
+
+    // Same as isForumThreadReport() but for forum_replies, which has no moderationStatus
+    // field of its own — reported replies are surfaced via a visible badge (see
+    // ForumInternals.tsx) rather than a separate admin queue, with admin delete as the
+    // resolution action.
+    function isForumReplyReport() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportedBy', 'reportReason']) &&
+        request.resource.data.reportedBy.size() == resource.data.get('reportedBy', []).size() + 1 &&
+        request.resource.data.reportedBy.hasAll(resource.data.get('reportedBy', [])) &&
+        request.resource.data.reportedBy.hasAny([request.auth.uid]);
+    }
+
+    // Live sessions: a student may only ever write their OWN key inside studentResponses —
+    // keyed by their anonymous Auth uid, not their display name (two students with the same
+    // name used to silently overwrite each other's response before this fix) — never another
+    // student's entry, and never any other top-level field (status/timerPerQuestion/etc. stay
+    // host-only, checked separately via isOwner(resource.data.hostUid)).
+    function isOwnLiveResponseWrite() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentResponses'])
+        && request.resource.data.studentResponses.diff(resource.data.studentResponses).affectedKeys().hasOnly([request.auth.uid]);
+    }
+
     // ── Кориснички профили (users) ──
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
@@ -277,34 +311,18 @@ service cloud.firestore {
     // ── Live сесии (live_sessions) ──
     // get: public — students need to read session by join code before they authenticate
     // list: authenticated only — prevents enumeration of all active sessions
+    // update: the host (hostUid) can change anything (status/timerPerQuestion/etc.); any
+    // other authenticated caller (students) may ONLY write their own uid-keyed entry inside
+    // studentResponses — closes a prior gap where ANY authenticated caller could overwrite
+    // ANY student's response on an active session (the old rule checked a nonexistent
+    // `teacherUid` field — the real field is `hostUid` — so the owner-branch never actually
+    // matched; fixed here too).
     match /live_sessions/{doc} {
       allow get:    if true;
       allow list:   if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (resource.data.status != 'ended' || isOwner(resource.data.teacherUid));
-      allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
-    }
-
-    // ── Live квизови (live_quizzes) ──
-    // get: public — students join by PIN (direct doc access only; PIN is the doc ID)
-    // list: authenticated only — prevents brute-force enumeration of all active PINs
-    // participants subcollection: any authenticated user can add themselves
-    match /live_quizzes/{pin} {
-      allow get:    if true;
-      allow list:   if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAdmin();
-
-      match /participants/{participantId} {
-        // Restrict to authenticated users — all participants are authenticated (incl. anonymous auth)
-        allow read:   if isAuthenticated();
-        allow create: if isAuthenticated();
-        allow update: if isAuthenticated() && (
-          resource.data.participantId == participantId || isAdmin()
-        );
-        allow delete: if isAdmin();
-      }
+      allow update: if isAuthenticated() && (isOwner(resource.data.hostUid) || isOwnLiveResponseWrite());
+      allow delete: if isOwner(resource.data.hostUid) || isAdmin();
     }
 
     // ── Класови (classes) ──
@@ -451,6 +469,14 @@ service cloud.firestore {
       allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
     }
 
+    // ── Математички изрази (math_expressions) — приватни, само сопственикот ──
+    match /math_expressions/{doc} {
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
+    }
+
     // ── AI Chat сесии (chat_sessions) ──
     // Private to the owning teacher.
     match /chat_sessions/{doc} {
@@ -512,7 +538,8 @@ service cloud.firestore {
         isSelfArrayToggle('reactionsHelpful') ||
         isSelfArrayToggle('reactionsSame') ||
         isSelfArrayToggle('reactionsGreat') ||
-        isForumReplyBump()
+        isForumReplyBump() ||
+        isForumThreadReport()
       );
       allow delete: if isAdmin();
     }
@@ -538,7 +565,8 @@ service cloud.firestore {
         isSelfArrayToggle('reactionsSame') ||
         isSelfArrayToggle('reactionsGreat') ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isBestAnswer']) && isForumThreadAuthorOf(resource.data.threadId)) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feynmanBadge']) && isForumThreadAuthorOf(resource.data.threadId))
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feynmanBadge']) && isForumThreadAuthorOf(resource.data.threadId)) ||
+        isForumReplyReport()
       );
       allow delete: if isAdmin();
     }
