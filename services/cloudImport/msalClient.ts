@@ -16,7 +16,11 @@ export async function getMsalInstance(): Promise<IPublicClientApplication> {
       clientId: CLIENT_ID!,
       // 'common' supports both personal Microsoft accounts and organizational/school tenants.
       authority: 'https://login.microsoftonline.com/common',
-      redirectUri: window.location.origin,
+      // A dedicated blank page, not the SPA root — landing the popup on the app's own
+      // HashRouter root would let the auth response's URL hash (#code=...) collide with
+      // app routing and re-trigger the full SPA bootstrap inside the popup, which produced
+      // an `interaction_in_progress` MSAL error in practice (public/msal-redirect.html).
+      redirectUri: `${window.location.origin}/msal-redirect.html`,
     },
   });
   return instance;

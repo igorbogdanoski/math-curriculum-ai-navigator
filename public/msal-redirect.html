@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Се поврзувам…</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F9FAFB;
+      font-family: system-ui, sans-serif;
+      color: #64748b;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <p>Се поврзувам…</p>
+  <!--
+    Dedicated blank landing page for MSAL.js popup auth (services/cloudImport/msalClient.ts).
+    MSAL's opener-side code detects the popup navigating to this exact redirectUri and extracts
+    the auth response directly from the URL — this page's own content never needs to run any
+    MSAL code itself. Deliberately NOT the SPA root: if the popup landed on the app's own
+    HashRouter root, the auth response's URL hash (#code=...&client_info=...) would collide with
+    the app's own hash-based routing and re-trigger the full app bootstrap inside the popup,
+    which is exactly what caused an `interaction_in_progress` MSAL error in practice. Same
+    root-cause class as the old OneDrive.js v7.2 picker needing its own dedicated redirect page.
+  -->
+</body>
+</html>

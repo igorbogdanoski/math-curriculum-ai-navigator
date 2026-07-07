@@ -7,6 +7,7 @@
   "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
   "rewrites": [
     { "source": "/service-worker.js", "destination": "/service-worker.js" },
+    { "source": "/msal-redirect.html", "destination": "/msal-redirect.html" },
     { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
