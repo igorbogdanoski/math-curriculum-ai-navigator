@@ -60,6 +60,7 @@ describe('pickFromOneDrive', () => {
   let windowMessageListeners: Array<(e: unknown) => void>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.stubEnv('VITE_ONEDRIVE_CLIENT_ID', 'test-client-id');
     vi.stubGlobal('fetch', vi.fn());
     vi.stubGlobal('crypto', { randomUUID: () => 'fixed-channel-id' });
@@ -107,6 +108,34 @@ describe('pickFromOneDrive', () => {
     acquireTokenPopup.mockRejectedValue(new Error('user closed the login popup'));
     const { pickFromOneDrive } = await importFresh();
     await expect(pickFromOneDrive()).rejects.toThrow(/автентикацијата не успеа/);
+  });
+
+  it('self-heals from a stale interaction_in_progress lock by clearing it and retrying once', async () => {
+    sessionStorage.setItem('msal.some-client-id.interaction.status', '{"clientId":"some-client-id"}');
+    const stuckError = Object.assign(new Error('Interaction is currently in progress.'), { errorCode: 'interaction_in_progress' });
+    acquireTokenPopup.mockRejectedValueOnce(stuckError);
+    acquireTokenPopup.mockResolvedValueOnce({ accessToken: 'popup-token', account: { homeAccountId: 'acc1' } });
+    mockDriveInfo('https://onedrive.live.com/drive/personal-id');
+
+    const { pickFromOneDrive } = await importFresh();
+    const resultPromise = pickFromOneDrive();
+    const port = await completeHandshake();
+    port.dispatch({ type: 'command', data: { id: 'cmd1', data: { command: 'close' } } });
+
+    await expect(resultPromise).resolves.toBeNull();
+    expect(sessionStorage.getItem('msal.some-client-id.interaction.status')).toBeNull();
+    // 2 calls for the Graph-scope token (stuck + retry) + 1 more for openPicker's own
+    // driveOrigin-scope token acquisition, which succeeds immediately via the base mock.
+    expect(acquireTokenPopup).toHaveBeenCalledTimes(3);
+  });
+
+  it('throws CloudImportError if the retry after clearing a stuck lock also fails', async () => {
+    const stuckError = Object.assign(new Error('Interaction is currently in progress.'), { errorCode: 'interaction_in_progress' });
+    acquireTokenPopup.mockRejectedValueOnce(stuckError);
+    acquireTokenPopup.mockRejectedValueOnce(new Error('still failing'));
+    const { pickFromOneDrive } = await importFresh();
+    await expect(pickFromOneDrive()).rejects.toThrow(/автентикацијата не успеа/);
+    expect(acquireTokenPopup).toHaveBeenCalledTimes(2);
   });
 
   it('resolves null when the popup sends a close command', async () => {

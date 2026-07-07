@@ -45,6 +45,28 @@ function detectMimeType(name: string): string {
 }
 
 /**
+ * MSAL records an 'interaction.status' lock in sessionStorage (key suffix
+ * "msal.<clientId>.interaction.status") before opening a popup, and refuses any new
+ * acquireTokenPopup call while it's set — throwing `interaction_in_progress` immediately,
+ * before ever opening a popup. If a previous attempt was interrupted (user closed the popup,
+ * a network error, a page reload mid-flow) without MSAL's own cleanup running, this lock is
+ * left stuck, breaking every subsequent attempt until it's cleared. MSAL doesn't expose a
+ * public API to clear just this lock, so we remove the sessionStorage key directly — a
+ * documented workaround for this exact class of bug — rather than requiring the user to
+ * manually clear browser storage.
+ */
+function clearStaleMsalInteractionLock(): void {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const key = sessionStorage.key(i);
+      if (key?.endsWith('interaction.status')) sessionStorage.removeItem(key);
+    }
+  } catch {
+    // sessionStorage inaccessible (privacy mode, etc.) — nothing to clear.
+  }
+}
+
+/**
  * Acquires a token for an arbitrary resource (Microsoft Graph up front to discover the user's
  * drive, then whatever resource the picker itself asks for via its 'authenticate' port commands —
  * these can differ, e.g. the SharePoint/OneDrive host directly rather than Graph). Tries a
@@ -67,6 +89,16 @@ async function getToken(scopes: string[]): Promise<string> {
     pca.setActiveAccount(result.account);
     return result.accessToken;
   } catch (err) {
+    if ((err as { errorCode?: string })?.errorCode === 'interaction_in_progress') {
+      clearStaleMsalInteractionLock();
+      try {
+        const retryResult = await pca.acquireTokenPopup({ scopes });
+        pca.setActiveAccount(retryResult.account);
+        return retryResult.accessToken;
+      } catch (retryErr) {
+        throw new CloudImportError(`OneDrive автентикацијата не успеа: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`, 'onedrive');
+      }
+    }
     throw new CloudImportError(`OneDrive автентикацијата не успеа: ${err instanceof Error ? err.message : String(err)}`, 'onedrive');
   }
 }
