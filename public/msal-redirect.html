@@ -22,13 +22,18 @@
   <p>Се поврзувам…</p>
   <!--
     Dedicated blank landing page for MSAL.js popup auth (services/cloudImport/msalClient.ts).
-    MSAL's opener-side code detects the popup navigating to this exact redirectUri and extracts
-    the auth response directly from the URL — this page's own content never needs to run any
-    MSAL code itself. Deliberately NOT the SPA root: if the popup landed on the app's own
-    HashRouter root, the auth response's URL hash (#code=...&client_info=...) would collide with
-    the app's own hash-based routing and re-trigger the full app bootstrap inside the popup,
-    which is exactly what caused an `interaction_in_progress` MSAL error in practice. Same
-    root-cause class as the old OneDrive.js v7.2 picker needing its own dedicated redirect page.
+    Deliberately NOT the SPA root: if the popup landed on the app's own HashRouter root, the
+    auth response's URL hash (#code=...&client_info=...) would collide with the app's own
+    hash-based routing and re-trigger the full app bootstrap inside the popup — which is exactly
+    what caused an `interaction_in_progress` MSAL error in practice. Same root-cause class as the
+    old OneDrive.js v7.2 picker needing its own dedicated redirect page.
+
+    The script below (msalRedirectBridge.ts, built to a stable filename by vite.config.ts) is
+    NOT optional: this msal-browser version communicates the auth response back to the opener
+    via a BroadcastChannel "redirect bridge", not by the opener polling this popup's URL — without
+    running this script, the popup lands here successfully (auth code and all) but never reports
+    back, and the opener's acquireTokenPopup() eventually rejects with a `timed_out` error.
   -->
+  <script type="module" src="/msal-redirect-bridge.js"></script>
 </body>
 </html>

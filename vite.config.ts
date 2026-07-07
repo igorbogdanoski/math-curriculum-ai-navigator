@@ -375,7 +375,17 @@ export default defineConfig(({ mode }) => {
         sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Enable source maps when Sentry is configured
         chunkSizeWarningLimit: 2600, // data-matura (~2.5MB) and vendor fallback (~2.1MB) are expected large chunks
         rollupOptions: {
+          input: {
+            main: path.resolve(__dirname, 'index.html'),
+            // Standalone entry for public/msal-redirect.html (MSAL popup auth's redirect
+            // bridge — see msalRedirectBridge.ts's doc comment). Needs a stable, predictable
+            // filename since that static HTML page (unprocessed by Vite) references it by a
+            // hardcoded <script src>, unlike the main app's hashed chunks.
+            'msal-redirect-bridge': path.resolve(__dirname, 'msalRedirectBridge.ts'),
+          },
           output: {
+            entryFileNames: (chunkInfo) =>
+              chunkInfo.name === 'msal-redirect-bridge' ? 'msal-redirect-bridge.js' : 'assets/[name]-[hash].js',
             // manualChunks — targeted vendor splitting for large libraries.
             //
             // View-based manual grouping remains disabled to avoid TDZ runtime errors
@@ -402,6 +412,10 @@ export default defineConfig(({ mode }) => {
               if (id.includes('pptxgenjs')) return 'vendor-pptx';
               if (id.includes('mathjs')) return 'vendor-mathjs';
               if (id.includes('@cortex-js/compute-engine')) return 'vendor-compute-engine';
+              // Dedicated bucket (not the generic 'vendor' catch-all below) — the lightweight
+              // msal-redirect-bridge entry only needs this small slice of code and must not
+              // pull in the much larger shared vendor chunk just to broadcast one message.
+              if (id.includes('@azure/msal-browser') || id.includes('@azure/msal-common')) return 'vendor-msal';
               if (id.includes('mathlive')) return 'vendor-mathlive';
               if (id.includes('docx')) return 'vendor-docx';
               if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
