@@ -84,6 +84,10 @@ export async function generateAndParseJSON<T>(
         safetySettings: SAFETY_SETTINGS,
         userTier,
         costKey: generationOverrides?.costKey,
+        // Without this, callGeminiOnce's own internal 60s timeout (core.proxy.ts) always fires
+        // before this function's outer AbortController override could ever matter, silently
+        // capping every generation at 60s regardless of any timeoutMs passed in above.
+        timeoutMs: generationOverrides?.timeoutMs,
       }, _controller.signal);
 
       const rawText = response.text || "";

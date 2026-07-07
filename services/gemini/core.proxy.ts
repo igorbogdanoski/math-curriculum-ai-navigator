@@ -92,9 +92,13 @@ async function callGeminiOnce(params: {
   tools?: unknown[];
   /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
   costKey?: string;
+  /** Overrides the default 60s per-attempt timeout — for callers whose prompt/output is large
+   *  enough that 60s is routinely too tight (e.g. generateAnnualPlan's full curriculum grounding). */
+  timeoutMs?: number;
 }, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
+  const effectiveTimeoutMs = params.timeoutMs ?? GENERATION_TIMEOUT_MS;
   const timeoutController = new AbortController();
-  const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => timeoutController.abort(new Error(`Request timed out after ${effectiveTimeoutMs / 1000}s`)), effectiveTimeoutMs);
   const effectiveSignal = signal ? anySignalAborted([signal, timeoutController.signal]) : timeoutController.signal;
   try {
     const token = await getAuthToken();
@@ -161,6 +165,8 @@ export async function callGeminiProxy(params: {
   tools?: unknown[];
   /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
   costKey?: string;
+  /** Overrides the default 60s per-attempt timeout — see callGeminiOnce's matching field. */
+  timeoutMs?: number;
 }, signal?: AbortSignal): Promise<{ text: string; candidates: unknown[]; groundingMetadata?: unknown }> {
   return queueRequest(() =>
     circuitBreakerCall('gemini', () =>

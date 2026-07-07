@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { normalizeContents } from './core.proxy';
+
+vi.mock('firebase/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('firebase/auth')>()),
+  getAuth: vi.fn(() => ({ currentUser: { getIdToken: vi.fn().mockResolvedValue('test-token') } })),
+}));
 
 describe('normalizeContents', () => {
   it('returns [] for null/undefined/empty input', () => {
@@ -90,5 +95,51 @@ describe('normalizeContents', () => {
     const weird = { foo: 'bar' };
     const result = normalizeContents([weird]);
     expect(result).toEqual([{ role: 'user', parts: [{ text: JSON.stringify(weird) }] }]);
+  });
+});
+
+describe('callGeminiProxy — per-attempt timeout override', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted.');
+        err.name = 'AbortError';
+        reject(err);
+      });
+    })));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('honors a custom timeoutMs instead of silently capping every attempt at the default 60s', async () => {
+    const { callGeminiProxy } = await import('./core.proxy');
+    const call = callGeminiProxy({ model: 'test-model', contents: 'hi', timeoutMs: 90_000 });
+    const settled = vi.fn();
+    call.then(settled, settled);
+
+    // Past the old hardcoded 60s default — must NOT have aborted yet.
+    await vi.advanceTimersByTimeAsync(61_000);
+    expect(settled).not.toHaveBeenCalled();
+
+    // Past the custom 90s override — must abort now, with a message reflecting 90s.
+    await vi.advanceTimersByTimeAsync(30_000);
+    await expect(call).rejects.toThrow(/aborted|90s/i);
+  });
+
+  it('still defaults to 60s when no timeoutMs override is given', async () => {
+    const { callGeminiProxy } = await import('./core.proxy');
+    const call = callGeminiProxy({ model: 'test-model', contents: 'hi' });
+    const settled = vi.fn();
+    call.then(settled, settled);
+
+    await vi.advanceTimersByTimeAsync(59_000);
+    expect(settled).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(call).rejects.toThrow();
   });
 });
