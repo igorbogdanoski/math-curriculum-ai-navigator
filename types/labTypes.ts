@@ -17,6 +17,10 @@ export type LabExEntry = Omit<LabExercise, 'id'>;
 
 /** Maps a pool's raw curriculumRef string to a human-readable teaching-unit label. */
 export const CURRICULUM_STANDARD_MAP: Record<string, string> = {
+  'МОН III одд.':         'Запознавање со дропки — III одделение',
+  'МОН IV одд.':          'Читање, запишување и споредба на дропки — IV одделение',
+  'МОН V одд.':           'Собирање дропки и скратување — V одделение',
+  'МОН VI одд.':          'Мешани броеви и децимален запис на дропки — VI одделение',
   'МОН V–VI одд.':        'Броеви и делливост — V–VI одделение',
   'МОН VI–VII одд.':      'Низи и прогресии — VI–VII одделение',
   'МОН VII':              'Простори фигури — VII одделение',

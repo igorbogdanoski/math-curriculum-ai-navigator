@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
-  FlaskConical, FunctionSquare, Layers, Box, Shapes, LayoutGrid
+  FlaskConical, FunctionSquare, Layers, Box, Shapes, LayoutGrid, PieChart
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -43,6 +43,9 @@ const NumberTheoryLabLazy = lazy(() =>
 );
 const PlaceValueLabLazy = lazy(() =>
   import('../components/dataviz/PlaceValueLab').then(m => ({ default: m.PlaceValueLab }))
+);
+const FractionsLabLazy = lazy(() =>
+  import('../components/dataviz/FractionsLab').then(m => ({ default: m.FractionsLab }))
 );
 
 const LabLoading: React.FC = () => (
@@ -85,7 +88,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -132,7 +135,7 @@ export const DataVizStudioView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>(() => {
     const hash = window.location.hash;
     const tabParam = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '').get('tab');
-    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig', 'numtheory', 'placevalue'];
+    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig', 'numtheory', 'placevalue', 'fractions'];
     return (validTabs.includes(tabParam as StudioTab) ? tabParam : 'chart') as StudioTab;
   });
 
@@ -234,6 +237,7 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'trig'      as StudioTab, label: 'Тригонометрија',         icon: Sigma,         color: 'violet'  },
     { id: 'numtheory'  as StudioTab, label: 'Теорија на броеви',     icon: Sigma,         color: 'emerald' },
     { id: 'placevalue' as StudioTab, label: 'Месна вредност',         icon: Layers,        color: 'green'   },
+    { id: 'fractions'  as StudioTab, label: 'Дропки',                 icon: PieChart,      color: 'blue'    },
   ];
 
   return (
@@ -730,6 +734,17 @@ export const DataVizStudioView: React.FC = () => {
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <PlaceValueLabLazy />
+              </Suspense>
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: FRACTIONS LAB (Бар, круг, бројна права) ═════════════════════ */}
+        {activeTab === 'fractions' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <SilentErrorBoundary>
+              <Suspense fallback={<LabLoading />}>
+                <FractionsLabLazy />
               </Suspense>
             </SilentErrorBoundary>
           </div>
