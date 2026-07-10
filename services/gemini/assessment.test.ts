@@ -47,3 +47,19 @@ describe('generateABCTest — server cost matches the single disclosed AI_COSTS.
     expect(total).toBe(AI_COSTS.VARIANTS);
   });
 });
+
+describe('generateAssessment — cache key includes tier', () => {
+  it('caches Free and Pro tier generations under different keys, not one shared key', async () => {
+    const { setCached } = await import('./core');
+    const questionTypes = ['multiple-choice'] as unknown as Parameters<typeof assessmentAPI.generateAssessment>[1];
+
+    await assessmentAPI.generateAssessment('ASSESSMENT', questionTypes, 5, context, { tier: 'Free' } as never);
+    await assessmentAPI.generateAssessment('ASSESSMENT', questionTypes, 5, context, { tier: 'Pro' } as never);
+
+    const keysUsed = vi.mocked(setCached).mock.calls.map(call => call[0]);
+    expect(keysUsed).toHaveLength(2);
+    expect(keysUsed[0]).not.toEqual(keysUsed[1]);
+    expect(keysUsed[0]).toContain('_Free');
+    expect(keysUsed[1]).toContain('_Pro');
+  });
+});

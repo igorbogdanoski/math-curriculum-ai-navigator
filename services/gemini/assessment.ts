@@ -109,7 +109,11 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
 
     const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image && !isGeometry && !isStatistics;
     const conceptCacheId = context.concepts?.[0]?.id || 'gen';
-    const cacheKey = canCache ? `assessment_${type}_${conceptCacheId}_g${context.grade.level}_${[...questionTypes].sort().join('_')}_n${numQuestions}` : '';
+    // Tier is part of the key because different tiers resolve to different models
+    // (see callGeminiOnce's tier override) — without it, whichever teacher's tier
+    // hits a given concept/grade/type/count combination first gets their model's
+    // output cached and served identically to every other tier.
+    const cacheKey = canCache ? `assessment_${type}_${conceptCacheId}_g${context.grade.level}_${[...questionTypes].sort().join('_')}_n${numQuestions}_${profile?.tier ?? 'Free'}` : '';
     
     if (canCache && cacheKey) {
         const cached = await getCached<AIGeneratedAssessment>(cacheKey);
