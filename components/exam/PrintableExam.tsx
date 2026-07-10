@@ -2,6 +2,38 @@ import React from 'react';
 import DOMPurify from 'dompurify';
 import { parseInlineSelection } from '../../utils/printExam';
 
+// Same strict allowlist as GeometryDiagramRenderer.tsx — includes text/tspan since AI-generated
+// geometry diagrams label vertices (A, B, C...) via <text>, unlike SlideSVGRenderer's dark-slide
+// variant which excludes text entirely.
+const SVG_ALLOWED_TAGS = [
+  'svg', 'g', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon',
+  'path', 'text', 'tspan', 'defs', 'marker', 'title',
+];
+const SVG_ALLOWED_ATTR = [
+  'viewBox', 'width', 'height', 'xmlns',
+  'cx', 'cy', 'r', 'rx', 'ry',
+  'x', 'y', 'x1', 'y1', 'x2', 'y2',
+  'points', 'd',
+  'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin',
+  'opacity', 'font-size', 'font-weight', 'text-anchor', 'dominant-baseline',
+  'transform', 'id', 'class',
+  'markerWidth', 'markerHeight', 'orient', 'refX', 'refY',
+  'marker-end', 'marker-start',
+];
+
+function sanitizeSvgDiagram(raw: string): string {
+  return DOMPurify.sanitize(raw.trim(), {
+    USE_PROFILES: { svg: true },
+    ALLOWED_TAGS: SVG_ALLOWED_TAGS,
+    ALLOWED_ATTR: SVG_ALLOWED_ATTR,
+    FORBID_TAGS: ['style', 'script', 'foreignObject', 'image', 'use', 'animate'],
+    FORBID_ATTR: ['style'],
+    FORCE_BODY: false,
+  });
+}
+
+export const __testables = { sanitizeSvgDiagram };
+
 // ─── Print question type definitions ─────────────────────────────────────────
 
 export type PrintQuestionType =
@@ -283,7 +315,7 @@ const QuestionBlock: React.FC<{ q: PrintQuestion; showAnswers: boolean }> = ({ q
         return (
           <div className="mt-2 ml-4">
             {q.svgDiagram ? (
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.svgDiagram, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['script','style'] }) }} className="mb-2" />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeSvgDiagram(q.svgDiagram) }} className="mb-2" />
             ) : null}
             <GridArea rows={q.gridRows ?? 10} cols={q.gridCols ?? 14} />
             {show && q.answer && <AnswerKey answer={q.answer} />}
@@ -294,7 +326,7 @@ const QuestionBlock: React.FC<{ q: PrintQuestion; showAnswers: boolean }> = ({ q
         return (
           <div className="mt-2 ml-4">
             {q.svgDiagram ? (
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.svgDiagram, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['script','style'] }) }} className="mb-2" />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeSvgDiagram(q.svgDiagram) }} className="mb-2" />
             ) : (
               <div className="border border-dashed border-gray-300 h-32 rounded flex items-center justify-center text-gray-300 text-xs">
                 [Дијаграм]
