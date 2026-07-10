@@ -133,14 +133,18 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     if (found) {
       setActiveThread(found);
     } else {
-      fetchForumThread(threadIdProp).then(t => { if (t) setActiveThread(t); });
+      fetchForumThread(threadIdProp)
+        .then(t => { if (t) setActiveThread(t); })
+        .catch(() => addNotification('Не можев да ја вчитам нишката.', 'error'));
     }
-  }, [threadIdProp, loading, threads]);
+  }, [threadIdProp, loading, threads, addNotification]);
 
   useEffect(() => {
     if (!showModerationTab) return;
-    fetchPendingForumThreads().then(setPendingThreads);
-  }, [showModerationTab]);
+    fetchPendingForumThreads()
+      .then(setPendingThreads)
+      .catch(() => addNotification('Не можев да ги вчитам нишките на модерирање.', 'error'));
+  }, [showModerationTab, addNotification]);
 
   const handleApprove = async (thread: ForumThread) => {
     setModeratingId(thread.id);

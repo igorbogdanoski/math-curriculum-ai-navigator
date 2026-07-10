@@ -7,6 +7,7 @@ import type { MaturaQuestion } from '../../services/firestoreService.matura';
 import type { MaturaChoice, DokLevel } from '../../types';
 import { downloadAsPdf }    from '../../utils/pdfDownload';
 import { TOPIC_LABELS, isOpen } from './maturaLibrary.constants';
+import { logger } from '../../utils/logger';
 
 interface TeacherTestBuilderProps {
   questions: MaturaQuestion[];
@@ -28,7 +29,7 @@ export function TeacherTestBuilder({ questions }: TeacherTestBuilderProps) {
     if (!firebaseUser) return;
     firestoreService.fetchClasses(firebaseUser.uid)
       .then(setClasses)
-      .catch(() => {});
+      .catch(err => logger.warn('[TeacherTestBuilder] fetchClasses failed:', err));
   }, [firebaseUser]);
 
   const topicAreas = useMemo(

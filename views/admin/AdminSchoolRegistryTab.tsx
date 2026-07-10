@@ -3,6 +3,7 @@ import { Card } from '../../components/common/Card';
 import { Building2, Search, Mail, CheckCircle2 } from 'lucide-react';
 import { SCHOOL_REGISTRY, type SchoolRegistryEntry } from '../../data/schoolRegistry';
 import { firestoreService } from '../../services/firestoreService';
+import { logger } from '../../utils/logger';
 
 interface AdminSchoolRegistryTabProps {
     users: Array<{ schoolRegistryId?: string }>;
@@ -42,6 +43,7 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
     useEffect(() => {
         firestoreService.fetchSchoolOutreachLog()
             .then(setOutreachLog)
+            .catch(err => logger.warn('[AdminSchoolRegistryTab] fetchSchoolOutreachLog failed:', err))
             .finally(() => setIsLoadingOutreach(false));
     }, []);
 

@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { saveExpression, fetchMyExpressions, type SavedMathExpression } from '../services/firestoreService.mathExpressions';
 import { readAndClearMathEditorReturn, writeMathEditorResult } from '../utils/mathEditorBridge';
+import { logger } from '../utils/logger';
 
 // ─── Symbol palette ───────────────────────────────────────────────────────────
 const SYMBOL_GROUPS = [
@@ -131,7 +132,11 @@ export function MathEditorView() {
 
   useEffect(() => {
     if (!firebaseUser?.uid) return;
-    fetchMyExpressions(firebaseUser.uid).then(setSavedExpressions);
+    let cancelled = false;
+    fetchMyExpressions(firebaseUser.uid)
+      .then(list => { if (!cancelled) setSavedExpressions(list); })
+      .catch(err => { if (!cancelled) logger.warn('[MathEditorView] fetchMyExpressions failed:', err); });
+    return () => { cancelled = true; };
   }, [firebaseUser?.uid]);
 
   const handleSaveExpression = useCallback(async () => {

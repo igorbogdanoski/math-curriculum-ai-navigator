@@ -31,8 +31,10 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
 
   useEffect(() => {
     if (!firebaseUser?.uid) return;
-    firestoreService.fetchClasses(firebaseUser.uid).then(setClasses);
-  }, [firebaseUser?.uid]);
+    firestoreService.fetchClasses(firebaseUser.uid)
+      .then(setClasses)
+      .catch(() => addNotification('Не можев да ги вчитам класовите.', 'error'));
+  }, [firebaseUser?.uid, addNotification]);
 
   const toggleClass = (id: string) => {
     setSelectedIds(prev => {

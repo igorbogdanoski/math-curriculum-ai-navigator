@@ -233,6 +233,7 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
     const { navigate } = useNavigation();
     const { communityLessonPlans } = usePlanner();
     const { allConcepts } = useCurriculum();
+    const { addNotification } = useNotification();
     const [searchQuery, setSearchQuery] = useState('');
     const [gradeFilter, setGradeFilter] = useState<string>('all');
     const [activeTab, setActiveTab] = useState<TabType>('community');
@@ -244,9 +245,10 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
             setIsLoadingAI(true);
             firestoreService.fetchCachedMaterials(60)
                 .then(setCachedMaterials)
+                .catch(() => addNotification('Не можев да ги вчитам AI материјалите.', 'error'))
                 .finally(() => setIsLoadingAI(false));
         }
-    }, [activeTab]);
+    }, [activeTab, addNotification]);
 
     const filteredPlans = useMemo(() => {
         const globalPlans = communityLessonPlans.filter(p => !p.shareScope || p.shareScope === 'public' || (p.shareScope === 'school' && p.schoolName === user?.schoolName));

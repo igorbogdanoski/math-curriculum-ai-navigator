@@ -178,7 +178,9 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
 
   useEffect(() => {
     if (!teacherUid || !sendOpen || classes.length > 0) return;
-    fetchClasses(teacherUid).then(setClasses);
+    fetchClasses(teacherUid)
+      .then(setClasses)
+      .catch(() => setError('Не можев да ги вчитам класовите.'));
   }, [teacherUid, sendOpen, classes.length]);
 
   const selectedClass = classes.find(c => c.id === selectedClassId);

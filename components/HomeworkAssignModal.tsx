@@ -32,8 +32,9 @@ export const HomeworkAssignModal: React.FC<Props> = ({
         if (!firebaseUser?.uid) return;
         fetchClasses(firebaseUser.uid)
             .then(cls => { setClasses(cls); if (cls.length > 0) setSelectedClassId(cls[0].id); })
+            .catch(() => addNotification('Не можев да ги вчитам класовите.', 'error'))
             .finally(() => setIsLoadingClasses(false));
-    }, [firebaseUser?.uid]);
+    }, [firebaseUser?.uid, addNotification]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
