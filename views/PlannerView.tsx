@@ -47,7 +47,7 @@ export const PlannerView: React.FC = () => {
     const [viewMode, setViewMode] = useState<'month' | 'week' | 'agenda'>('week');
     const [currentDate, setCurrentDate] = useState(new Date()); // Default to today
     const { items, updateItem, addItem, deleteItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
-    const { showModal } = useModal();
+    const { showModal, hideModal } = useModal();
     const { addNotification } = useNotification();
     const { user } = useAuth();
     useTour('planner', plannerTourSteps, !isLoading);
@@ -72,15 +72,23 @@ export const PlannerView: React.FC = () => {
 
     const clearSelection = useCallback(() => setSelectedItems(new Set()), []);
 
-    const handleBulkDelete = useCallback(async () => {
+    const handleBulkDelete = useCallback(() => {
       if (selectedItems.size === 0) return;
       const count = selectedItems.size;
-      const confirmed = window.confirm(`Избриши ${count} ставки?`);
-      if (!confirmed) return;
-      await Promise.all(Array.from(selectedItems).map(id => deleteItem(id)));
-      clearSelection();
-      addNotification(`Избришани ${count} ставки`, 'success');
-    }, [selectedItems, deleteItem, clearSelection, addNotification]);
+      showModal(ModalType.Confirm, {
+        title: 'Бришење ставки',
+        message: `Избриши ${count} ставки?`,
+        variant: 'danger',
+        confirmLabel: 'Да, избриши',
+        onConfirm: async () => {
+          hideModal();
+          await Promise.all(Array.from(selectedItems).map(id => deleteItem(id)));
+          clearSelection();
+          addNotification(`Избришани ${count} ставки`, 'success');
+        },
+        onCancel: hideModal,
+      });
+    }, [selectedItems, deleteItem, clearSelection, addNotification, showModal, hideModal]);
 
     const handleBulkDuplicate = useCallback(async () => {
       if (selectedItems.size === 0) return;
