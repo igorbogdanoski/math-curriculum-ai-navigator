@@ -10,6 +10,7 @@ import { markDailyQuotaExhausted } from './core.quota';
 import { callGeminiProxy } from './core.proxy';
 import { handleGeminiError } from './core.utils';
 import { JSON_SYSTEM_INSTRUCTION } from './core.instructions';
+import { recoverTruncatedJson } from '../../utils/jsonRecovery';
 
 export const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
@@ -18,26 +19,6 @@ export const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
     { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_ONLY_HIGH' },
 ];
-
-function recoverTruncatedJson(raw: string): unknown | null {
-  let s = raw.trim();
-  s = s.replace(/"[^"]*$/, '');
-  s = s.replace(/,\s*$/, '').replace(/:\s*$/, '');
-  const opens: string[] = [];
-  let inString = false;
-  let escape = false;
-  for (const ch of s) {
-    if (escape) { escape = false; continue; }
-    if (ch === '\\' && inString) { escape = true; continue; }
-    if (ch === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (ch === '{') opens.push('}');
-    else if (ch === '[') opens.push(']');
-    else if (ch === '}' || ch === ']') opens.pop();
-  }
-  const closing = opens.reverse().join('');
-  try { return JSON.parse(s + closing); } catch { return null; }
-}
 
 export async function generateAndParseJSON<T>(
   contents: Part[],

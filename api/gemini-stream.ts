@@ -4,6 +4,7 @@ import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getR
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
 import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { isUsableJson } from '../utils/jsonRecovery.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
@@ -89,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.setHeader('Connection', 'keep-alive');
       }
 
+      let fullText = '';
       for await (const chunk of result.stream) {
         const parts = (chunk.candidates?.[0]?.content?.parts ?? []) as { text?: string; thought?: boolean }[];
         if (parts.length > 0) {
@@ -98,12 +100,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               res.write(`data: ${JSON.stringify({ thinking: part.text })}\n\n`);
             } else {
               res.write(`data: ${JSON.stringify({ text: part.text })}\n\n`);
+              fullText += part.text;
             }
           }
         } else {
           // Fallback for models that don't expose parts
           const chunkText = chunk.text();
-          if (chunkText) res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+          if (chunkText) {
+            res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+            fullText += chunkText;
+          }
         }
       }
 
@@ -122,7 +128,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
-      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
+      // Same "don't bill an unusable response" guard as api/gemini.ts — see its comment.
+      const expectsJson = (generationConfig as { responseMimeType?: string }).responseMimeType === 'application/json';
+      if (!expectsJson || isUsableJson(fullText)) {
+        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
+      }
 
       res.write('data: [DONE]\n\n');
       res.end();

@@ -4,6 +4,7 @@ import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal, requireSu
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
 import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { isUsableJson } from '../utils/jsonRecovery.js';
 
 // Increase body size limit to 10 MB to support PDF inline data uploads
 export const config = {
@@ -117,8 +118,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-proxy', Date.now() - handlerStart);
-      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
-      return res.status(200).json({ text: response.text(), candidates: response.candidates, groundingMetadata });
+      const responseText = response.text();
+      // Only deduct once the response is actually usable. Previously this billed on any 200,
+      // so a client-side retry-on-malformed-JSON (core.json.ts) issued a brand-new billed
+      // request for the same logical action every time — up to MAX_RETRIES+1 charges with no
+      // refund. Non-JSON responses (responseMimeType unset/'text/plain') keep prior behavior.
+      const expectsJson = (generationConfig as { responseMimeType?: string }).responseMimeType === 'application/json';
+      const isUsable = !expectsJson || isUsableJson(responseText);
+      if (isUsable) {
+        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
+      }
+      return res.status(200).json({ text: responseText, candidates: response.candidates, groundingMetadata });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;
