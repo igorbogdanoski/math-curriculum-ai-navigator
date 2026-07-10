@@ -157,14 +157,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
   console.error('[/api/gemini-stream] Error:', lastError);
   const message = lastError?.message ?? 'Internal server error';
+  // Never forward the raw upstream SDK error text (message) to the client — see
+  // api/gemini.ts's matching fix for the same principle applied to the non-streaming route.
   if (!res.headersSent) {
     const status = message.includes('429') ? 429 : message.includes('403') ? 403 : 500;
     const isDailyQuota = status === 429 && (
       message.includes('PerDay') || message.includes('per_day') ||
       message.includes('free_tier') || message.includes('quota')
     );
-    return res.status(status).json({ error: message, quotaType: isDailyQuota ? 'daily' : 'rate' });
+    const clientError = status === 403 ? 'Проблем со автентикација.' : `Серверска грешка (${status}).`;
+    return res.status(status).json({ error: clientError, quotaType: isDailyQuota ? 'daily' : 'rate' });
   }
-  res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+  res.write(`data: ${JSON.stringify({ error: 'Грешка при генерирање. Обидете се повторно.' })}\n\n`);
   res.end();
 }

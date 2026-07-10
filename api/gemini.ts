@@ -163,9 +163,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isRateLimit = status === 429 && !isDailyQuota;
   const quotaType = isDailyQuota ? 'daily' : isRateLimit ? 'rate_limit' : 'rate';
 
+  // Never forward the raw upstream SDK error text (message) to the client — only the
+  // already-categorized status/quotaType, matching the client's own fallback wording in
+  // core.proxy.ts (AuthError/ServerError/ApiError) so behavior is unchanged, just not leaking.
+  const clientError = status === 401 || status === 403 ? 'Проблем со автентикација.'
+    : status >= 500 ? `Серверска грешка (${status}).`
+    : `Грешка: ${status}`;
+
   recordLatency('gemini-proxy', Date.now() - handlerStart);
   res.status(status).json({
-    error: message,
+    error: clientError,
     quotaType,
     keysExhausted: apiKeys.length,
     retryAfterMs: isRateLimit ? 60_000 : undefined,

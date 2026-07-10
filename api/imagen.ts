@@ -132,5 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   recordLatency('imagen-proxy', Date.now() - handlerStart);
   console.error('[/api/imagen] Error:', lastError);
-  res.status(500).json({ error: lastError?.message || 'Internal server error' });
+  // Never forward the raw upstream SDK error text to the client — same "never leak
+  // internals" principle already applied to validation errors in sharedUtils.ts.
+  res.status(500).json({ error: 'Серверска грешка при генерирање слика.' });
 }
