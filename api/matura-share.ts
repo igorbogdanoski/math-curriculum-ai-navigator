@@ -4,6 +4,13 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { checkSlidingWindow, extractClientIp } from './_lib/rateLimitInMemory.js';
 
+// Reimplements auth/CORS locally instead of importing api/_lib/sharedUtils.ts — deliberate,
+// not an oversight: this route's body shape doesn't match GeminiRequestSchema, and its CORS
+// needs an origin-echo allowlist (multiple allowed origins) rather than sharedUtils.ts's
+// single fixed ALLOWED_ORIGIN. Audited 2026-07 alongside the other AI routes' shared-helper
+// consolidation; kept separate on purpose. (Rate limiting itself now reuses the shared
+// checkSlidingWindow/extractClientIp helpers directly — see handleSign below.)
+
 // Sign mints a signed share token — rate-limit it like every other paid/mutating route.
 // (handleVerify is a free, read-only, side-effect-free check — not worth limiting.)
 const signRateLimitMap = new Map<string, number[]>();

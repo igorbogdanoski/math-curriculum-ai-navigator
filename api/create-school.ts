@@ -15,6 +15,11 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
+// Reimplements auth/CORS locally instead of importing api/_lib/sharedUtils.ts — deliberate,
+// not an oversight: this route's body shape (schoolName/city/...) doesn't match
+// GeminiRequestSchema, and this endpoint has no per-user credit/rate concept (it's a one-shot
+// onboarding action, not a metered AI call). Audited 2026-07 alongside the other AI routes'
+// shared-helper consolidation; kept separate on purpose.
 function setCors(res: VercelResponse): void {
   const origin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', origin);
