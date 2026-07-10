@@ -4,6 +4,8 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Hand, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 import { MathRenderer } from '../components/common/MathRenderer';
 import {
   subscribeGammaSession,
@@ -17,13 +19,30 @@ interface Props {
   pin: string;
 }
 
+/** Returns the student's real Firebase Auth uid (anonymous), signing in if needed —
+ *  empty string while the sign-in is still pending. Firestore rules scope
+ *  live_gamma writes to `request.auth.uid`, so this MUST be a real auth uid, not a
+ *  client-generated random string (mirrors the established pattern already used
+ *  for live_sessions in StudentLiveView.tsx). */
 function useStudentId(): string {
-  const key = 'gamma_student_id';
-  const existing = sessionStorage.getItem(key);
-  if (existing) return existing;
-  const id = `s_${Math.random().toString(36).slice(2, 10)}`;
-  sessionStorage.setItem(key, id);
-  return id;
+  const [studentId, setStudentId] = useState<string>(() => auth.currentUser?.uid ?? '');
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      setStudentId(auth.currentUser.uid);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const cred = await signInAnonymously(auth);
+        if (!cancelled) setStudentId(cred.user.uid);
+      } catch { /* non-fatal — student stays unable to submit/raise hand until retried */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return studentId;
 }
 
 export const GammaStudentView: React.FC<Props> = ({ pin }) => {
@@ -54,7 +73,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
   }, [pin]);
 
   const submit = useCallback(async () => {
-    if (!answer.trim() || submitted || isSubmitting || !session) return;
+    if (!answer.trim() || submitted || isSubmitting || !session || !studentId) return;
     setIsSubmitting(true);
     await submitGammaResponse(pin, studentId, studentName, session.slideIdx, answer.trim());
     setSubmitted(true);
@@ -62,7 +81,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
   }, [answer, submitted, isSubmitting, session, pin, studentId, studentName]);
 
   const toggleHand = useCallback(async () => {
-    if (!session) return;
+    if (!session || !studentId) return;
     if (handRaised) {
       await lowerGammaHand(pin, studentId);
       setHandRaised(false);
@@ -163,7 +182,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
             <button
               type="button"
               onClick={submit}
-              disabled={!answer.trim() || isSubmitting}
+              disabled={!answer.trim() || isSubmitting || !studentId}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition disabled:opacity-40"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

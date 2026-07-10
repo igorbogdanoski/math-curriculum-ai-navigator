@@ -835,16 +835,29 @@ service cloud.firestore {
     }
 
     // ── Gamma Live sessions (gammaLiveService) — S88+ ──
-    // PIN-based; any authenticated user may read/update (students respond during class)
+    // PIN-based. Previously `update`/`responses` write were wide open to any authenticated
+    // caller — any student (or anyone else) could overwrite the host's session state or another
+    // student's response doc. Same bug class already fixed for live_sessions, scoped here the
+    // same way: host owns the session doc, a student may only self-toggle `handsUids` or write
+    // their own `responses/{uid}` doc (GammaStudentView.tsx's useStudentId() now returns a real
+    // Firebase Auth uid via signInAnonymously, not a client-generated random string, so
+    // request.auth.uid == studentId is finally a meaningful check).
     match /live_gamma/{pin} {
       allow read:   if isAuthenticated();
-      allow create: if isAuthenticated() && !isAnonymousStudent();
-      allow update: if isAuthenticated();
+      allow create: if isAuthenticated() && !isAnonymousStudent() && request.resource.data.hostUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.hostUid) ||
+        isSelfArrayToggle('handsUids') ||
+        // responseCount is a display-only counter always reset to 0 by the client after a
+        // submit (gammaLiveService.ts submitGammaResponse) — the real count comes from the
+        // responses subcollection below, so this field doesn't need per-user scoping.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responseCount'])
+      );
       allow delete: if isAdmin();
 
       match /responses/{studentId} {
         allow read:   if isAuthenticated();
-        allow create, update: if isAuthenticated();
+        allow create, update: if isAuthenticated() && request.auth.uid == studentId;
         allow delete: if isAdmin();
       }
     }

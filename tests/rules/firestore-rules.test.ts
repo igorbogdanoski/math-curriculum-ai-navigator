@@ -821,6 +821,79 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('live_gamma/{pin} — host-owned session, student self-scoped writes', () => {
+    it('the host can create their own session and update session state (e.g. slideIdx)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const host = testEnv.authenticatedContext('host1');
+      const f = host.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertSucceeds(f.doc('live_gamma/111111').set({
+        pin: '111111', hostUid: 'host1', topic: 'Т', gradeLevel: 5, slideIdx: 0,
+        slides: [], isActive: true, responseCount: 0, handsUids: [],
+      }));
+      await assertSucceeds(f.doc('live_gamma/111111').update({ slideIdx: 1 }));
+    });
+
+    it('cannot create a session claiming a hostUid that is not the caller', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const impostor = testEnv.authenticatedContext('impostor-uid');
+      const f = impostor.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('live_gamma/222222').set({
+        pin: '222222', hostUid: 'someone-else', topic: 'Т', gradeLevel: 5, slideIdx: 0,
+        slides: [], isActive: true, responseCount: 0, handsUids: [],
+      }));
+    });
+
+    it('a student can toggle only their own uid in handsUids, and can update responseCount alone', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_gamma/333333').set({
+          pin: '333333', hostUid: 'host1', topic: 'Т', gradeLevel: 5, slideIdx: 0,
+          slides: [], isActive: true, responseCount: 0, handsUids: [],
+        });
+      });
+      const student = testEnv.authenticatedContext('student-uid-1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('live_gamma/333333').update({ handsUids: ['student-uid-1'] }));
+      await assertSucceeds(f.doc('live_gamma/333333').update({ responseCount: 0 }));
+    });
+
+    it('a student cannot raise another student\'s hand, and cannot touch host-only fields', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_gamma/444444').set({
+          pin: '444444', hostUid: 'host1', topic: 'Т', gradeLevel: 5, slideIdx: 0,
+          slides: [], isActive: true, responseCount: 0, handsUids: [],
+        });
+      });
+      const impostor = testEnv.authenticatedContext('impostor-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = impostor.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('live_gamma/444444').update({ handsUids: ['someone-else'] }));
+      await assertFails(f.doc('live_gamma/444444').update({ slideIdx: 5 }));
+      await assertFails(f.doc('live_gamma/444444').update({ isActive: false }));
+    });
+
+    it('a student can only write their own responses/{uid} doc, never another student\'s', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const student = testEnv.authenticatedContext('student-uid-1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('live_gamma/555555/responses/student-uid-1').set({
+        studentName: 'Марко', answer: '42', slideIdx: 0,
+      }));
+      await assertFails(f.doc('live_gamma/555555/responses/other-student-uid').set({
+        studentName: 'hijacked', answer: '0', slideIdx: 0,
+      }));
+    });
+  });
+
   describe('forum_threads/forum_replies — report/flag', () => {
     it('a non-author can report a thread (sets moderationStatus=pending + their own uid in reportedBy) but cannot self-approve through the same write', async () => {
       if (!testEnv) return;
