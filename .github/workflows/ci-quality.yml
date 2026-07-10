@@ -39,11 +39,7 @@ jobs:
         run: npm run -s lint
 
       - name: Unit tests
-        run: |
-          npm run -s test || (
-            echo "Unit tests failed on first attempt. Retrying once..." &&
-            npm run -s test
-          )
+        run: npm run -s test
         env:
           VITE_FIREBASE_API_KEY: dummy-key
           VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
@@ -371,3 +367,100 @@ jobs:
           name: playwright-emulator-report
           path: playwright-report/
           retention-days: 7
+
+  # ── Deploy — gated on the quality gates above, not a standalone workflow ──
+  # Previously `deploy.yml` was a separate workflow with no relationship to this one, so a push
+  # to main that failed typecheck/lint/tests/rules-tests could still deploy to production as
+  # long as `npm run build` itself succeeded. Moved in here so `needs:` can enforce the real gate.
+  # Deliberately depends on `quality-gate` + `firestore-rules-test` only (not
+  # `reliability-baseline`, which tracks a rolling historical pass-rate unrelated to whether the
+  # current commit is broken, or the informational `a11y-axe`/`e2e-emulator-smoke` jobs).
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality-gate, firestore-rules-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'dummy-key' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'dummy.firebaseapp.com' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'dummy-project' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'dummy.appspot.com' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000000000' }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:000000000000:web:0000000000000000' }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY || 'dummy-gemini-key' }}
+          # Sentry — gracefully omitted in forks/PRs without secrets; initSentry() no-ops when DSN absent
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN || '' }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN || '' }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG || '' }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT || '' }}
+        run: npm run build
+
+      - name: Bundle size report
+        run: |
+          echo "### Bundle Sizes" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh dist/assets/*.js 2>/dev/null | sort -h | tail -20 >> $GITHUB_STEP_SUMMARY || true
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo "Total JS: $(du -sh dist/assets/*.js 2>/dev/null | awk '{sum += $1} END {print sum}' || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  deploy-firebase:
+    name: Deploy to Firebase Hosting + Firestore Rules
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          channelId: live
+
+      - name: Deploy Firestore Rules + Indexes
+        run: |
+          npm install -g firebase-tools
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
+          GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json firebase deploy \
+            --only firestore:rules,firestore:indexes \
+            --project ${{ secrets.VITE_FIREBASE_PROJECT_ID }} \
+            --non-interactive
