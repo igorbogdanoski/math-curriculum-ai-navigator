@@ -240,10 +240,18 @@ async function checkRateLimit(identifier: string): Promise<boolean> {
 // Auth + Validation middleware
 // Returns the validated body or sends an error response and returns null.
 // ---------------------------------------------------------------------------
-export async function authenticateAndValidate(
+/**
+ * Auth + dual rate-limit (per-UID + per-IP), without body-schema validation — shared by every
+ * route that needs the same "reject unauthenticated/rate-limited callers" gate but has its own
+ * request body shape (e.g. `matura-grade.ts`, whose body doesn't match `GeminiRequestSchema`).
+ * Returns the authenticated uid (or the rate-limit identifier fallback) on success, `null` if a
+ * response was already sent. Also stamps `__authUid`/`__rateLimitId` on `req` so
+ * `getRequestPrincipal`/`requireSufficientCredits` work unchanged for callers of this function.
+ */
+export async function authenticateAndRateLimit(
   req: VercelRequest,
   res: VercelResponse
-): Promise<GeminiRequest | null> {
+): Promise<string | null> {
   // 1. Check HTTP method
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -307,13 +315,28 @@ export async function authenticateAndValidate(
     }
   }
 
-  // 3. Validate request body with Zod
+  // Attach the resolved identifier on the request so downstream handlers
+  // (cost tracker, audit logger, requireSufficientCredits) can correlate without re-decoding.
+  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__rateLimitId = rlIdentifier;
+  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__authUid = authenticatedUid;
+
+  return authenticatedUid ?? rlIdentifier;
+}
+
+export async function authenticateAndValidate(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<GeminiRequest | null> {
+  const authResult = await authenticateAndRateLimit(req, res);
+  if (authResult === null) return null; // response already sent
+
+  // Validate request body with Zod
   const parsed = GeminiRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     const issues = parsed.error.issues.map(
       (i) => `${i.path.join('.')}: ${i.message}`
     ).join('; ');
-    
+
     // П37 — Never log full request body or return it in response (may contain tokens/content)
     // Only log the field-level issues, not the actual values
     console.error('[validation] Request validation failed. Issues:', issues);
@@ -326,11 +349,6 @@ export async function authenticateAndValidate(
     });
     return null;
   }
-
-  // Attach the resolved identifier on the request so downstream handlers
-  // (cost tracker, audit logger) can correlate without re-decoding.
-  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__rateLimitId = rlIdentifier;
-  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__authUid = authenticatedUid;
 
   return parsed.data;
 }

@@ -11,10 +11,11 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { setCorsHeaders, getFirebaseAdmin } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndRateLimit, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { deductCreditsServerSide } from './_lib/aiCredits.js';
 import { verifyExpressionEquivalence } from '../utils/cas/casEngine.js';
+import { DEFAULT_MODEL } from '../services/gemini/core.constants.js';
 
 // Must match firestoreService.matura.ts's hashAnswer exactly — the cache key format is
 // shared with pre-existing (pre-fix) client-written entries and must stay byte-identical.
@@ -106,7 +107,7 @@ async function callGeminiForGrade(prompt: string, image?: { data: string; mimeTy
   for (const apiKey of apiKeys) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+      const model = genAI.getGenerativeModel({ model: DEFAULT_MODEL });
       const result = await model.generateContent({
         contents: [{ role: 'user', parts }],
         generationConfig: { temperature: 0, maxOutputTokens: 512 },
@@ -123,23 +124,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+  const authResult = await authenticateAndRateLimit(req, res);
+  if (authResult === null) { recordLatency('matura-grade', Date.now() - handlerStart); return; } // response already sent
+  const uid = authResult;
 
-  const admin = getFirebaseAdmin();
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid Authorization header' });
-    return;
-  }
-  let uid: string;
-  try {
-    if (!admin) throw new Error('Server auth not configured');
-    const decoded = await admin.verifyIdToken(authHeader.slice(7));
-    uid = decoded.uid;
-  } catch (err) {
-    console.error('[matura-grade] Token verification failed:', err);
-    res.status(401).json({ error: 'Invalid or expired authentication token' });
+  if (!(await requireSufficientCredits(req, res))) {
+    recordLatency('matura-grade', Date.now() - handlerStart);
     return;
   }
 
@@ -274,3 +264,11 @@ ${hasImage ? `Ученикот испратил фотографија на св
     res.status(500).json({ error: err instanceof Error ? err.message : 'Grading failed.' });
   }
 }
+
+export const __testables = {
+  hashAnswer,
+  buildGradeCacheKey,
+  clampScore,
+  safeParseJSON,
+  splitTwoPartAnswer,
+};
