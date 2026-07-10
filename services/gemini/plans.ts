@@ -720,6 +720,55 @@ export async function regenerateSlide(
   return generateAndParseJSON<PresentationSlide>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr, profile?.tier);
 }
 
+interface PollOptionsResult {
+  options: string[];
+}
+
+/**
+ * Generates up to 4 short multiple-choice poll options (one correct + plausible distractors)
+ * from a Gamma Mode slide's title/content, for the teacher's "AI предложи" one-click button
+ * on the live-poll launcher. Small, fast generation — billed at AI_COSTS.TEXT_BASIC (1 credit),
+ * matching regenerateSlide's own implicit default for this kind of lightweight call.
+ */
+export async function generatePollOptions(
+  slideTitle: string,
+  slideContent: string[],
+  gradeLevel: number,
+): Promise<string[]> {
+  const safeTitle = sanitizePromptInput(slideTitle, 200);
+  const safeContent = sanitizePromptInput(slideContent.join(' | '), 500);
+
+  const prompt = `### УЛОГА
+Ти си наставник по математика кој брзо создава анкета (poll) за учениците за време на час.
+
+### ЗАДАЧА
+Врз основа на слајдот подолу, создади точно 4 кратки опции за анкета со повеќе избори. Точно една опција треба да биде точен одговор, останатите 3 треба да бидат веродостојни (типични грешки на ученици), не апсурдни.
+
+### СЛАЈД
+Наслов: ${safeTitle}
+Содржина: ${safeContent}
+Одделение: ${gradeLevel}
+
+### ПРАВИЛА
+- Точно 4 опции
+- Секоја опција до 6 збора
+- Точно една е точна, останатите се веродостојни дистрактори`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      options: { type: Type.ARRAY, items: { type: Type.STRING } },
+    },
+    required: ['options'],
+  };
+
+  const result = await generateAndParseJSON<PollOptionsResult>(
+    [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, undefined,
+    { costKey: 'TEXT_BASIC' },
+  );
+  return (result.options ?? []).slice(0, 4);
+}
+
 /**
  * Streaming variant of plansAPI.generateLessonPlanIdeas.
  * Yields raw text chunks (JSON fragments) as they arrive from the model.

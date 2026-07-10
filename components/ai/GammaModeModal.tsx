@@ -12,7 +12,7 @@ import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
 import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
 import { useGammaExitTicket } from './gamma/useGammaExitTicket';
-import { regenerateSlide } from '../../services/gemini/plans';
+import { regenerateSlide, generatePollOptions } from '../../services/gemini/plans';
 import {
   startGammaLive,
   broadcastGammaSlide,
@@ -122,6 +122,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [activePollOptions, setActivePollOptions] = useState<string[] | null>(null);
   const [showPollEditor, setShowPollEditor] = useState(false);
   const [pollDraft, setPollDraft] = useState<string[]>(['', '']);
+  const [isGeneratingPoll, setIsGeneratingPoll] = useState(false);
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
   const handleExportPPTX = useCallback(async () => {
@@ -275,6 +276,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
   // Responses for the slide currently on screen — used for both the "Живи одговори" list and poll tallies
   const slideResponses = useMemo(() => liveResponses.filter(r => r.slideIdx === idx), [liveResponses, idx]);
+
+  const generateAiPollOptions = useCallback(async () => {
+    if (isGeneratingPoll) return;
+    setIsGeneratingPoll(true);
+    try {
+      const options = await generatePollOptions(slide.title, slide.content, data.gradeLevel);
+      if (options.length >= 2) {
+        setPollDraft(options);
+      } else {
+        addNotification('Не успеа генерирањето — внеси рачно.', 'error');
+      }
+    } catch {
+      addNotification('Не успеа генерирањето — внеси рачно.', 'error');
+    } finally {
+      setIsGeneratingPoll(false);
+    }
+  }, [isGeneratingPoll, slide, data.gradeLevel, addNotification]);
 
   // ── Task timer logic ──────────────────────────────────────────────────────
   const startTimer = useCallback((seconds: number) => {
@@ -689,7 +707,19 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       {/* Poll editor popover */}
       {showPollEditor && (
         <div className="absolute top-14 right-4 z-50 w-72 bg-slate-900 border border-violet-500/30 rounded-2xl p-4 shadow-2xl">
-          <p className="text-xs font-black text-violet-300 uppercase tracking-widest mb-2">Направи анкета</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-black text-violet-300 uppercase tracking-widest">Направи анкета</p>
+            <button
+              type="button"
+              onClick={generateAiPollOptions}
+              disabled={isGeneratingPoll}
+              title="AI предложи опции врз основа на овој слајд"
+              className="flex items-center gap-1 text-[11px] font-bold text-violet-300 hover:text-violet-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              {isGeneratingPoll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              AI предложи
+            </button>
+          </div>
           <div className="space-y-2">
             {pollDraft.map((opt, i) => (
               <input
