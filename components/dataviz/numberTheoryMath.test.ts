@@ -3,6 +3,8 @@ import {
   isPrime,
   primeFactors,
   sieve,
+  sieveSteps,
+  radialPos,
   euclideanSteps,
   gcd,
   lcm,
@@ -79,6 +81,77 @@ describe('sieve', () => {
     const result = sieve(10);
     expect(result[0]).toBe(false);
     expect(result[1]).toBe(false);
+  });
+});
+
+describe('sieveSteps', () => {
+  it('produces one step per prime up to √limit, agreeing with sieve()\'s final state', () => {
+    const limit = 100;
+    const steps = sieveSteps(limit);
+    const primesUpToSqrt = Array.from({ length: limit + 1 }, (_, n) => n)
+      .filter(n => n * n <= limit && isPrime(n));
+    expect(steps.map(s => s.prime)).toEqual(primesUpToSqrt);
+  });
+
+  it('every crossedOut entry is an actual multiple of that step\'s prime, and composite', () => {
+    const steps = sieveSteps(100);
+    for (const step of steps) {
+      for (const n of step.crossedOut) {
+        expect(n % step.prime).toBe(0);
+        expect(isPrime(n)).toBe(false);
+      }
+    }
+  });
+
+  it('never re-crosses-out a number already eliminated by an earlier, smaller prime', () => {
+    const steps = sieveSteps(100);
+    const seen = new Set<number>();
+    for (const step of steps) {
+      for (const n of step.crossedOut) {
+        expect(seen.has(n)).toBe(false);
+        seen.add(n);
+      }
+    }
+  });
+
+  it('the union of all crossedOut numbers plus the remaining primes covers 2..limit exactly once each', () => {
+    const limit = 100;
+    const steps = sieveSteps(limit);
+    const sieveResult = sieve(limit);
+    const crossedOutAll = steps.flatMap(s => s.crossedOut);
+    const primesAll = Array.from({ length: limit - 1 }, (_, i) => i + 2).filter(n => sieveResult[n]);
+
+    const covered = [...crossedOutAll, ...primesAll].sort((a, b) => a - b);
+    const expected = Array.from({ length: limit - 1 }, (_, i) => i + 2);
+    expect(covered).toEqual(expected);
+  });
+});
+
+describe('radialPos', () => {
+  it('places rank 0 at 12 o\'clock (directly above center)', () => {
+    const p = radialPos(0, 4, 100, 100, 50);
+    expect(p.x).toBeCloseTo(100, 5);
+    expect(p.y).toBeCloseTo(50, 5);
+  });
+
+  it('spaces points evenly by angle around the circle', () => {
+    const total = 4;
+    const points = Array.from({ length: total }, (_, i) => radialPos(i, total, 0, 0, 10));
+    // rank 1 of 4 (quarter turn clockwise from 12 o'clock) lands at 3 o'clock
+    expect(points[1].x).toBeCloseTo(10, 5);
+    expect(points[1].y).toBeCloseTo(0, 5);
+    // rank 2 of 4 (half turn) lands at 6 o'clock
+    expect(points[2].x).toBeCloseTo(0, 5);
+    expect(points[2].y).toBeCloseTo(10, 5);
+  });
+
+  it('every point sits exactly r away from the center', () => {
+    const cx = 5, cy = -3, r = 42;
+    for (let rank = 0; rank < 7; rank++) {
+      const p = radialPos(rank, 7, cx, cy, r);
+      const dist = Math.hypot(p.x - cx, p.y - cy);
+      expect(dist).toBeCloseTo(r, 5);
+    }
   });
 });
 

@@ -57,6 +57,41 @@ export function sieve(limit: number): boolean[] {
   return isP;
 }
 
+export interface SieveStep {
+  prime: number;
+  /** Multiples of `prime` newly marked non-prime at this step (excludes numbers already
+   *  crossed out by an earlier, smaller prime). */
+  crossedOut: number[];
+}
+
+/** Same algorithm as sieve(), but records one step per prime found, capturing exactly
+ *  which multiples it newly eliminates — for an animated step-by-step reveal. */
+export function sieveSteps(limit: number): SieveStep[] {
+  const isP = new Array(limit + 1).fill(true);
+  isP[0] = isP[1] = false;
+  const steps: SieveStep[] = [];
+  for (let i = 2; i * i <= limit; i++) {
+    if (!isP[i]) continue;
+    const crossedOut: number[] = [];
+    for (let j = i * i; j <= limit; j += i) {
+      if (isP[j]) {
+        isP[j] = false;
+        crossedOut.push(j);
+      }
+    }
+    steps.push({ prime: i, crossedOut });
+  }
+  return steps;
+}
+
+/** Places `rank` (0-indexed) of `total` points evenly around a circle, rank 0 at
+ *  12-o'clock, going clockwise. Shared by the modular-arithmetic clock and the radial
+ *  sieve view. */
+export function radialPos(rank: number, total: number, cx: number, cy: number, r: number): { x: number; y: number } {
+  const angle = (2 * Math.PI * rank) / total - Math.PI / 2;
+  return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+}
+
 // ── GCD / LCM ────────────────────────────────────────────────────────────────
 
 export interface EuclidStep {

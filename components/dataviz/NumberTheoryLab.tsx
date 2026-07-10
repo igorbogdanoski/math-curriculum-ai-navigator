@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  isPrime, primeFactors, sieve, euclideanSteps, gcd, lcm,
+  isPrime, primeFactors, sieve, sieveSteps, radialPos, euclideanSteps, gcd, lcm,
   modTable, fibonacci, arithmeticSeq, geometricSeq,
   generateNumberTheorySet,
   NUMTHEORY_CURRICULUM, type CurriculumRef,
@@ -39,8 +39,99 @@ function getCellStyle(n: number, sieveMap: boolean[]): string {
   return 'bg-slate-100 text-slate-500 line-through';
 }
 
+// Animated radial reveal of the Sieve of Eratosthenes — numbers 2-100 placed around a
+// ring, stepping through sieveSteps() one prime at a time. Auto-play uses the same
+// boolean-flag + effect-scheduled-loop pattern as Geometry3DLab's PolyhedraExplorer
+// auto-spin, adapted from a continuous rAF angle to a discrete step index.
+const RADIAL_LIMIT = 100;
+const RADIAL_CX = 180, RADIAL_CY = 180, RADIAL_R = 150;
+const RADIAL_STEP_MS = 900;
+
+function RadialSieveView() {
+  const steps = useMemo(() => sieveSteps(RADIAL_LIMIT), []);
+  const numbers = useMemo(() => Array.from({ length: RADIAL_LIMIT - 1 }, (_, i) => i + 2), []);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const finished = stepIdx >= steps.length;
+
+  useEffect(() => {
+    if (!playing) return;
+    if (finished) { setPlaying(false); return; }
+    const t = setTimeout(() => setStepIdx(i => i + 1), RADIAL_STEP_MS);
+    return () => clearTimeout(t);
+  }, [playing, finished, stepIdx]);
+
+  const crossedOut = useMemo(() => {
+    const s = new Set<number>();
+    for (let i = 0; i < stepIdx; i++) {
+      for (const n of steps[i].crossedOut) s.add(n);
+    }
+    return s;
+  }, [stepIdx, steps]);
+
+  const currentPrime = stepIdx > 0 && stepIdx <= steps.length ? steps[stepIdx - 1].prime : null;
+  const primeCount = numbers.filter(n => !crossedOut.has(n)).length;
+
+  const togglePlay = useCallback(() => {
+    if (finished) setStepIdx(0);
+    setPlaying(p => !p);
+  }, [finished]);
+  const reset = useCallback(() => { setStepIdx(0); setPlaying(false); }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        <button type="button" onClick={togglePlay}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+            playing ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {playing ? '⏸ Пауза' : finished ? '▶ Прегледај повторно' : '▶ Играј'}
+        </button>
+        <button type="button" onClick={reset}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+          ↺ Ресетирај
+        </button>
+        {currentPrime !== null && !finished && (
+          <span className="text-xs font-bold text-amber-600">Тековен прост број: {currentPrime}</span>
+        )}
+        {finished && (
+          <span className="text-xs font-bold text-emerald-700">Готово — {primeCount} прости броеви до 100</span>
+        )}
+      </div>
+      <svg viewBox="0 0 360 360" role="img" aria-label="Анимирано решето на Ератостен, кружен приказ" className="w-full max-w-[380px]">
+        {numbers.map((n, i) => {
+          const pos = radialPos(i, numbers.length, RADIAL_CX, RADIAL_CY, RADIAL_R);
+          const isCrossed = crossedOut.has(n);
+          const isCurrentPrime = n === currentPrime;
+          const fill = isCurrentPrime ? '#f59e0b' : isCrossed ? '#e2e8f0' : '#10b981';
+          return (
+            <g key={n}>
+              <circle
+                cx={pos.x} cy={pos.y} r={isCurrentPrime ? 13 : 10}
+                fill={fill}
+                stroke={isCurrentPrime ? '#b45309' : 'none'} strokeWidth={2}
+                className="transition-all duration-500"
+              />
+              <text
+                x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle"
+                fontSize={8} fontWeight="bold"
+                fill={isCrossed ? '#94a3b8' : 'white'}
+                className="transition-colors duration-500"
+              >
+                {n}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function PrimesTab() {
   const [checkN, setCheckN] = useState('');
+  const [sieveView, setSieveView] = useState<'grid' | 'radial'>('grid');
 
   const sieveMap = useMemo(() => sieve(100), []);
   const primesTo100 = useMemo(
@@ -56,29 +147,53 @@ function PrimesTab() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-sm font-bold text-slate-700 mb-2">🔢 Решето на Ератостен (2–100)</h3>
-        <div className="flex flex-wrap gap-1">
-          {Array.from({ length: 99 }, (_, i) => i + 2).map(n => (
-            <span
-              key={n}
-              title={
-                sieveMap[n]
-                  ? `${n} е прост`
-                  : `${n} = ${primeFactors(n).map(f => f.exp > 1 ? `${f.base}^${f.exp}` : `${f.base}`).join('·')}`
-              }
-              className={`inline-flex items-center justify-center w-8 h-8 rounded text-xs cursor-default transition-transform hover:scale-110 ${getCellStyle(n, sieveMap)}`}
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <h3 className="text-sm font-bold text-slate-700">🔢 Решето на Ератостен (2–100)</h3>
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+            <button type="button" onClick={() => setSieveView('grid')}
+              className={`px-2.5 py-1 rounded text-xs font-bold transition ${
+                sieveView === 'grid' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
+              }`}
             >
-              {n}
-            </span>
-          ))}
+              🔲 Мрежа
+            </button>
+            <button type="button" onClick={() => setSieveView('radial')}
+              className={`px-2.5 py-1 rounded text-xs font-bold transition ${
+                sieveView === 'radial' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              ⭕ Кружен приказ
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3 mt-3 text-[11px] text-slate-600">
-          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-200 ring-1 ring-emerald-300" /> Прост</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-200" /> Делив со 2</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200" /> Делив со 3</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-200" /> Делив со 5</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-violet-200" /> Делив со 7</span>
-        </div>
+        {sieveView === 'grid' ? (
+          <>
+            <div className="flex flex-wrap gap-1">
+              {Array.from({ length: 99 }, (_, i) => i + 2).map(n => (
+                <span
+                  key={n}
+                  title={
+                    sieveMap[n]
+                      ? `${n} е прост`
+                      : `${n} = ${primeFactors(n).map(f => f.exp > 1 ? `${f.base}^${f.exp}` : `${f.base}`).join('·')}`
+                  }
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded text-xs cursor-default transition-transform hover:scale-110 ${getCellStyle(n, sieveMap)}`}
+                >
+                  {n}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3 mt-3 text-[11px] text-slate-600">
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-200 ring-1 ring-emerald-300" /> Прост</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-200" /> Делив со 2</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200" /> Делив со 3</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-200" /> Делив со 5</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-violet-200" /> Делив со 7</span>
+            </div>
+          </>
+        ) : (
+          <RadialSieveView />
+        )}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -240,8 +355,7 @@ function GcdLcmTab() {
 const CX = 120, CY = 120, CR = 90;
 
 function clockPos(val: number, m: number) {
-  const angle = (2 * Math.PI * val) / m - Math.PI / 2;
-  return { x: CX + CR * Math.cos(angle), y: CY + CR * Math.sin(angle) };
+  return radialPos(val, m, CX, CY, CR);
 }
 
 function ModularTab() {
