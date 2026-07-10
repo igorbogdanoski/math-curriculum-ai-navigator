@@ -286,11 +286,24 @@ ${lessonSummaries}
 
 async parsePlannerInput(input: string): Promise<{ title: string; date: string; type: string; description: string }> {
     const safeInput = sanitizePromptInput(input, 600);
-    const prompt = `Extract details: "${safeInput}".`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, type: { type: Type.STRING }, description: { type: Type.STRING } }, required: ['title', 'date', 'type'] };
-    const plannerModel = shouldUseLiteModel('planner_parse') ? LITE_MODEL : DEFAULT_MODEL;
+    // Schema embedded as a text hint (not a structured API field) — matches
+    // generateAndParseJSON's own technique in core.json.ts.
+    const prompt = `Extract details: "${safeInput}".\n\nFollow this JSON schema exactly: ${JSON.stringify(schema)}`;
+    const useLitePlanner = shouldUseLiteModel('planner_parse');
+    const plannerModel = useLitePlanner ? LITE_MODEL : DEFAULT_MODEL;
     logRouterDecision('planner_parse', plannerModel);
-    return generateAndParseJSON<{ title: string; date: string; type: string; description: string }>([{ text: prompt }], schema, plannerModel);
+    // Deliberately bypasses generateAndParseJSON: that helper never forwards
+    // skipTierOverride, so callGeminiOnce's tier override would silently force
+    // DEFAULT_MODEL back regardless of the LITE_MODEL choice above (matches the
+    // already-correct pattern in generateAnalogy/generateSmartQuizTitle).
+    const response = await callGeminiProxy({
+      model: plannerModel,
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+      skipTierOverride: useLitePlanner,
+    });
+    return JSON.parse(response.text || '{}');
   },
 
 async generateClassRecommendations(analyticsData: { totalAttempts: number; avgScore: number; passRate: number; weakConcepts: Array<{ conceptId: string; title: string; avgPct: number; attempts: number }>; masteredCount: number; inProgressCount: number; strugglingCount: number; uniqueStudentCount: number }, profile?: TeachingProfile): Promise<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>> {
