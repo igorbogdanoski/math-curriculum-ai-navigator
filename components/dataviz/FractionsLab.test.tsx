@@ -70,6 +70,22 @@ describe('FractionsLab — Show mode', () => {
     expect(screen.getByRole('img', { name: /Бројна права, точка на 4\/4/ })).toBeTruthy();
     expect(screen.getByRole('img', { name: /Бар модел, 4 од 4/ })).toBeTruthy();
   });
+
+  it('clicking a wedge of the circle model updates num via polar hit-testing, staying in sync with the bar', () => {
+    // scale = 1 (viewBox 160x160, mocked rendered size 160x160) — clientX/Y map 1:1 to SVG coords
+    mockSvgBoundingRect(160, 160);
+    renderLab();
+    const circle = screen.getByRole('img', { name: /Круг модел, 3 од 4/ });
+
+    // Point straight down from center (6 o'clock, dx=0, dy=+68) falls in wedge index 2 (den=4) → num=3
+    fireEvent.click(circle, { clientX: 80, clientY: 148 });
+    expect(screen.getByRole('img', { name: /Круг модел, 3 од 4/ })).toBeTruthy();
+
+    // Point to the left of center (9 o'clock, dx=-68, dy=0) falls in wedge index 3 → num=4
+    fireEvent.click(circle, { clientX: 12, clientY: 80 });
+    expect(screen.getByRole('img', { name: /Круг модел, 4 од 4/ })).toBeTruthy();
+    expect(screen.getByRole('img', { name: /Бар модел, 4 од 4/ })).toBeTruthy();
+  });
 });
 
 describe('FractionsLab — Build mode', () => {

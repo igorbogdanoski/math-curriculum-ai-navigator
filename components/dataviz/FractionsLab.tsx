@@ -65,8 +65,8 @@ const BarModel: React.FC<BarModelProps> = ({ num, den, onChange }) => {
   );
 };
 
-// ─── Circle model — synced read-only view (wedge geometry) ──────────────────
-const CIRCLE_R = 68, CIRCLE_CX = 80, CIRCLE_CY = 80;
+// ─── Circle model — draggable wedge picker (polar hit-testing) ──────────────
+const CIRCLE_R = 68, CIRCLE_CX = 80, CIRCLE_CY = 80, CIRCLE_VB = 160;
 
 function wedgePath(startFrac: number, endFrac: number): string {
   const a0 = startFrac * 2 * Math.PI - Math.PI / 2;
@@ -77,20 +77,60 @@ function wedgePath(startFrac: number, endFrac: number): string {
   return `M ${CIRCLE_CX} ${CIRCLE_CY} L ${x0} ${y0} A ${CIRCLE_R} ${CIRCLE_R} 0 ${largeArc} 1 ${x1} ${y1} Z`;
 }
 
-const CircleModel: React.FC<{ num: number; den: number }> = ({ num, den }) => (
-  <svg viewBox="0 0 160 160" role="img" aria-label={`Круг модел, ${num} од ${den} засенчени`} className="w-full max-w-[180px]">
-    {Array.from({ length: den }, (_, i) => (
-      <path
-        key={i}
-        d={wedgePath(i / den, (i + 1) / den)}
-        fill={i < num ? '#4f46e5' : '#eef2ff'}
-        stroke="#c7d2fe" strokeWidth={1.5}
-        className="transition-colors"
-      />
-    ))}
-    <circle cx={CIRCLE_CX} cy={CIRCLE_CY} r={CIRCLE_R} fill="none" stroke="#4338ca" strokeWidth={2} />
-  </svg>
-);
+interface CircleModelProps { num: number; den: number; onChange?: (num: number) => void }
+
+const CircleModel: React.FC<CircleModelProps> = ({ num, den, onChange }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragging = useRef(false);
+
+  const emitFromPoint = useCallback((clientX: number, clientY: number) => {
+    if (!onChange) return;
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const scale = CIRCLE_VB / rect.width;
+    const x = (clientX - rect.left) * scale;
+    const y = (clientY - rect.top) * scale;
+    const dx = x - CIRCLE_CX, dy = y - CIRCLE_CY;
+    // Undo wedgePath's -π/2 start offset so angle 0 lands on wedge 0 (12 o'clock, clockwise).
+    const angle = (Math.atan2(dy, dx) + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+    const wedgeIndex = Math.min(den - 1, Math.floor((angle / (2 * Math.PI)) * den));
+    onChange(wedgeIndex + 1);
+  }, [onChange, den]);
+
+  const onDown = useCallback(() => { if (onChange) dragging.current = true; }, [onChange]);
+  const onMove = useCallback((e: React.MouseEvent) => { if (!dragging.current) return; emitFromPoint(e.clientX, e.clientY); }, [emitFromPoint]);
+  const onUp = useCallback(() => { dragging.current = false; }, []);
+  const onTouchMove = useCallback((e: React.TouchEvent) => { e.preventDefault(); emitFromPoint(e.touches[0].clientX, e.touches[0].clientY); }, [emitFromPoint]);
+  const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => { emitFromPoint(e.clientX, e.clientY); }, [emitFromPoint]);
+
+  return (
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${CIRCLE_VB} ${CIRCLE_VB}`}
+      role="img"
+      aria-label={`Круг модел, ${num} од ${den} засенчени`}
+      className={`w-full max-w-[180px] select-none ${onChange ? 'cursor-pointer' : ''}`}
+      onMouseDown={onDown}
+      onMouseMove={onMove}
+      onMouseUp={onUp}
+      onMouseLeave={onUp}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onUp}
+      onClick={onChange ? onSvgClick : undefined}
+    >
+      {Array.from({ length: den }, (_, i) => (
+        <path
+          key={i}
+          d={wedgePath(i / den, (i + 1) / den)}
+          fill={i < num ? '#4f46e5' : '#eef2ff'}
+          stroke="#c7d2fe" strokeWidth={1.5}
+          className="transition-colors"
+        />
+      ))}
+      <circle cx={CIRCLE_CX} cy={CIRCLE_CY} r={CIRCLE_R} fill="none" stroke="#4338ca" strokeWidth={2} />
+    </svg>
+  );
+};
 
 // ─── Number line model — draggable marker, snaps to nearest 1/den tick ──────
 const LINE_W = 320, TICK_H = 10;
@@ -263,7 +303,7 @@ export const FractionsLab: React.FC = () => {
             </div>
           </div>
 
-          <p className="text-xs text-gray-500">Влечи ја портокаловата линија на барот или точката на бројната права:</p>
+          <p className="text-xs text-gray-500">Влечи ги барот, кругот или точката на бројната права:</p>
 
           <div className="flex flex-wrap items-start gap-6">
             <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
@@ -272,7 +312,7 @@ export const FractionsLab: React.FC = () => {
             </div>
             <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
               <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Круг модел</p>
-              <CircleModel num={clampedFrac.num} den={clampedFrac.den} />
+              <CircleModel num={clampedFrac.num} den={clampedFrac.den} onChange={setNum} />
             </div>
           </div>
           <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
