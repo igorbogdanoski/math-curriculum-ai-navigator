@@ -80,6 +80,15 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
     setIsSubmitting(false);
   }, [answer, submitted, isSubmitting, session, pin, studentId, studentName]);
 
+  const submitPollOption = useCallback(async (option: string) => {
+    if (submitted || isSubmitting || !session || !studentId) return;
+    setIsSubmitting(true);
+    setAnswer(option);
+    await submitGammaResponse(pin, studentId, studentName, session.slideIdx, option);
+    setSubmitted(true);
+    setIsSubmitting(false);
+  }, [submitted, isSubmitting, session, pin, studentId, studentName]);
+
   const toggleHand = useCallback(async () => {
     if (!session || !studentId) return;
     if (handRaised) {
@@ -169,8 +178,28 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
           </div>
         ))}
 
+        {/* Live poll — takes priority over free-text when the teacher has one active */}
+        {isTask && !submitted && session.pollOptions && session.pollOptions.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {session.pollOptions.map((option, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => submitPollOption(option)}
+                disabled={isSubmitting || !studentId}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-800 border border-white/10 text-left text-sm font-semibold text-white hover:bg-indigo-600 hover:border-indigo-500 transition disabled:opacity-40"
+              >
+                <span className="w-6 h-6 flex items-center justify-center rounded-full bg-white/10 text-xs font-black shrink-0">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <MathRenderer text={option} />
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Answer input for task/example slides */}
-        {isTask && !submitted && (
+        {isTask && !submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
           <div className="mt-2 space-y-3">
             <textarea
               value={answer}
@@ -194,7 +223,11 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
         {isTask && submitted && (
           <div className="flex items-center gap-3 bg-emerald-900/30 border border-emerald-700/30 rounded-2xl px-5 py-4">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <p className="text-sm text-emerald-300 font-semibold">Одговорот е испратен!</p>
+            <p className="text-sm text-emerald-300 font-semibold">
+              {session.pollOptions && session.pollOptions.length > 0
+                ? `Гласаше: ${answer}`
+                : 'Одговорот е испратен!'}
+            </p>
           </div>
         )}
       </div>

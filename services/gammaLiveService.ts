@@ -23,6 +23,8 @@ export interface GammaLiveSession {
   startedAt: unknown;
   responseCount: number;
   handsUids: string[];
+  /** Live poll options for the current slide, set ad-hoc by the host; null when no poll is active. */
+  pollOptions?: string[] | null;
 }
 
 export interface GammaLiveResponse {
@@ -63,10 +65,30 @@ export async function startGammaLive(
 
 export async function broadcastGammaSlide(pin: string, slideIdx: number): Promise<void> {
   try {
-    await updateDoc(doc(db, 'live_gamma', pin), { slideIdx, responseCount: 0, handsUids: [] });
+    await updateDoc(doc(db, 'live_gamma', pin), { slideIdx, responseCount: 0, handsUids: [], pollOptions: null });
   } catch (err) {
     logger.warn('[GammaLive] broadcastSlide failed:', err);
   }
+}
+
+/** Sets (or clears, with null) the live poll options for the current slide. Host-only —
+ *  covered by firestore.rules' isOwner(hostUid) full-write branch on the session doc. */
+export async function setGammaPollOptions(pin: string, options: string[] | null): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { pollOptions: options });
+  } catch (err) {
+    logger.warn('[GammaLive] setPollOptions failed:', err);
+  }
+}
+
+/** Tallies vote counts per option label from the responses submitted to a given slide. */
+export function tallyPollResponses(responses: GammaLiveResponse[], slideIdx: number): Record<string, number> {
+  const tally: Record<string, number> = {};
+  for (const r of responses) {
+    if (r.slideIdx !== slideIdx) continue;
+    tally[r.answer] = (tally[r.answer] ?? 0) + 1;
+  }
+  return tally;
 }
 
 export async function endGammaLive(pin: string): Promise<void> {

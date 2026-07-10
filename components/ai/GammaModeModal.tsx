@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote } from 'lucide-react';
 import { DokBadge } from '../common/DokBadge';
 import type { DokLevel } from '../../types';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -19,6 +19,8 @@ import {
   endGammaLive,
   subscribeGammaSession,
   subscribeGammaResponses,
+  setGammaPollOptions,
+  tallyPollResponses,
   type GammaLiveResponse,
 } from '../../services/gammaLiveService';
 
@@ -46,6 +48,30 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
   'comparison':      { label: 'Споредба',         color: 'text-sky-300',     bg: 'bg-sky-900/40'     },
   'proof':           { label: 'Доказ',            color: 'text-purple-300',  bg: 'bg-purple-900/40'  },
 };
+
+// ── Live poll results bar ──────────────────────────────────────────────────────
+function PollResultsBar({ options, tally }: { options: string[]; tally: Record<string, number> }) {
+  const total = Object.values(tally).reduce((s, n) => s + n, 0);
+  return (
+    <div className="mt-2 space-y-1.5 text-left">
+      {options.map((opt, i) => {
+        const count = tally[opt] ?? 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return (
+          <div key={i}>
+            <div className="flex items-center justify-between text-[10px] text-slate-300 mb-0.5">
+              <span className="truncate pr-2">{String.fromCharCode(65 + i)}. {opt}</span>
+              <span className="font-bold text-white shrink-0">{count}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose }) => {
@@ -93,6 +119,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
   const [liveHandsCount, setLiveHandsCount] = useState(0);
   const [showResponsesPanel, setShowResponsesPanel] = useState(false);
+  const [activePollOptions, setActivePollOptions] = useState<string[] | null>(null);
+  const [showPollEditor, setShowPollEditor] = useState(false);
+  const [pollDraft, setPollDraft] = useState<string[]>(['', '']);
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
   const handleExportPPTX = useCallback(async () => {
@@ -121,6 +150,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       });
       liveSessionUnsubRef.current = subscribeGammaSession(pin, session => {
         setLiveHandsCount(session?.handsUids?.length ?? 0);
+        setActivePollOptions(session?.pollOptions ?? null);
       });
     } catch {
       addNotification('Gamma Live: грешка при старт', 'error');
@@ -140,6 +170,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     setLiveResponses([]);
     setLiveHandsCount(0);
     setShowResponsesPanel(false);
+    setActivePollOptions(null);
+    setShowPollEditor(false);
+    setPollDraft(['', '']);
+  }, [gammaLivePin]);
+
+  const startPoll = useCallback(async () => {
+    if (!gammaLivePin) return;
+    const options = pollDraft.map(o => o.trim()).filter(Boolean);
+    if (options.length < 2) return;
+    await setGammaPollOptions(gammaLivePin, options);
+    setShowPollEditor(false);
+  }, [gammaLivePin, pollDraft]);
+
+  const stopPoll = useCallback(async () => {
+    if (!gammaLivePin) return;
+    await setGammaPollOptions(gammaLivePin, null);
+    setPollDraft(['', '']);
   }, [gammaLivePin]);
 
   // Broadcast slide to students when live
@@ -172,7 +219,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   }, []);
 
   // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation)
-  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); }, [idx]);
+  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); setShowPollEditor(false); setPollDraft(['', '']); }, [idx]);
 
   // ── Presenter Mode ────────────────────────────────────────────────────────
   const presenterChannelRef = useRef<BroadcastChannel | null>(null);
@@ -223,7 +270,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
   const isStepSlide = slide.type === 'step-by-step' || slide.type === 'proof';
-  const hasReveal   = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
+  const isTaskSlide = slide.type === 'task' || slide.type === 'example';
+  const hasReveal   = isTaskSlide && (slide.solution?.length ?? 0) > 0;
 
   // Responses for the slide currently on screen — used for both the "Живи одговори" list and poll tallies
   const slideResponses = useMemo(() => liveResponses.filter(r => r.slideIdx === idx), [liveResponses, idx]);
@@ -570,6 +618,19 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               {liveHandsCount > 0 && (
                 <span className="text-[10px] text-amber-400 font-bold">✋{liveHandsCount}</span>
               )}
+              {isTaskSlide && (
+                activePollOptions ? (
+                  <button type="button" onClick={stopPoll} title="Прекини анкета"
+                    className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition">
+                    <Vote className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => setShowPollEditor(v => !v)} title="Направи анкета"
+                    className={`p-1.5 rounded-lg transition ${showPollEditor ? 'bg-violet-500/20 text-violet-300' : 'text-slate-500 hover:text-violet-300 hover:bg-violet-500/10'}`}>
+                    <Vote className="w-3.5 h-3.5" />
+                  </button>
+                )
+              )}
               <button type="button" onClick={endLiveSession} title="Заврши Gamma Live сесија"
                 className="px-2 py-1 rounded-lg bg-red-600/30 hover:bg-red-600/50 text-red-400 text-[10px] font-black transition">
                 Крај
@@ -624,6 +685,42 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </button>
         </div>
       </div>
+
+      {/* Poll editor popover */}
+      {showPollEditor && (
+        <div className="absolute top-14 right-4 z-50 w-72 bg-slate-900 border border-violet-500/30 rounded-2xl p-4 shadow-2xl">
+          <p className="text-xs font-black text-violet-300 uppercase tracking-widest mb-2">Направи анкета</p>
+          <div className="space-y-2">
+            {pollDraft.map((opt, i) => (
+              <input
+                key={i}
+                type="text"
+                value={opt}
+                onChange={e => setPollDraft(d => d.map((v, j) => j === i ? e.target.value : v))}
+                placeholder={`Опција ${String.fromCharCode(65 + i)}`}
+                maxLength={80}
+                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+            ))}
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            {pollDraft.length < 4 ? (
+              <button type="button" onClick={() => setPollDraft(d => [...d, ''])}
+                className="text-[11px] font-bold text-slate-400 hover:text-white transition">
+                + Опција
+              </button>
+            ) : <span />}
+            <button
+              type="button"
+              onClick={startPoll}
+              disabled={pollDraft.map(o => o.trim()).filter(Boolean).length < 2}
+              className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition"
+            >
+              Стартувај
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Slide canvas ───────────────────────────────────────────────────── */}
       <div
@@ -840,26 +937,32 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-0.5">Gamma Live</p>
               <p className="text-2xl font-black text-white tracking-[0.25em]">{gammaLivePin}</p>
               <p className="text-[9px] text-slate-500 mt-0.5">ai.mismath.net/#/gamma/join</p>
-              {slideResponses.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowResponsesPanel(v => !v)}
-                  className="text-[10px] text-emerald-400 font-bold mt-1 hover:text-emerald-300 transition"
-                >
-                  ✓ {slideResponses.length} одговори {showResponsesPanel ? '▲' : '▼'}
-                </button>
-              )}
               {liveHandsCount > 0 && (
                 <p className="text-[10px] text-amber-400 font-bold">✋ {liveHandsCount} крена рака</p>
               )}
-              {showResponsesPanel && slideResponses.length > 0 && (
-                <ul className="mt-2 max-h-40 overflow-y-auto text-left space-y-1 border-t border-white/10 pt-2">
-                  {slideResponses.map(r => (
-                    <li key={r.studentId} className="text-[10px] text-slate-300 leading-snug">
-                      <span className="font-bold text-white">{r.studentName}:</span> {r.answer}
-                    </li>
-                  ))}
-                </ul>
+              {activePollOptions && activePollOptions.length > 0 ? (
+                <PollResultsBar options={activePollOptions} tally={tallyPollResponses(liveResponses, idx)} />
+              ) : (
+                <>
+                  {slideResponses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowResponsesPanel(v => !v)}
+                      className="text-[10px] text-emerald-400 font-bold mt-1 hover:text-emerald-300 transition"
+                    >
+                      ✓ {slideResponses.length} одговори {showResponsesPanel ? '▲' : '▼'}
+                    </button>
+                  )}
+                  {showResponsesPanel && slideResponses.length > 0 && (
+                    <ul className="mt-2 max-h-40 overflow-y-auto text-left space-y-1 border-t border-white/10 pt-2">
+                      {slideResponses.map(r => (
+                        <li key={r.studentId} className="text-[10px] text-slate-300 leading-snug">
+                          <span className="font-bold text-white">{r.studentName}:</span> {r.answer}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
           </div>
