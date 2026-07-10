@@ -139,10 +139,13 @@ export const examService = {
     questionIndex: number,
     answer: string,
   ): Promise<void> {
+    // Deliberately propagates failures (unlike a swallow-and-log) so the caller
+    // (ExamPlayerView.handleAnswer) can track which answers haven't reached the
+    // server and warn the student, instead of silently believing every answer synced.
     await updateDoc(doc(db, SESSIONS, sessionId, RESPONSES, responseDocId), {
       [`answers.q${questionIndex}`]: answer,
       status: 'solving',
-    }).catch(err => logger.warn('[exam] saveExamAnswer:', err));
+    });
   },
 
   async submitExamFinal(

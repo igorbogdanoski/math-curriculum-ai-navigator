@@ -3,6 +3,7 @@ import { examService } from '../services/firestoreService.exam';
 import type { ExamSession, ExamVariantKey } from '../services/firestoreService.types';
 import { ExamTimer } from '../components/exam/ExamTimer';
 import { ExamVariantPlayer } from '../components/exam/ExamVariantPlayer';
+import { useNotification } from '../contexts/NotificationContext';
 import { CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 
 const LS_KEY = (sessionId: string, deviceId: string) => `exam_backup_${sessionId}_${deviceId}`;
@@ -20,6 +21,7 @@ type Phase = 'join' | 'waiting' | 'solving' | 'submitted';
 
 export const ExamPlayerView: React.FC = () => {
   const deviceId = useRef(getDeviceId()).current;
+  const { addNotification } = useNotification();
 
   const [phase, setPhase] = useState<Phase>('join');
   const [joinCode, setJoinCode] = useState('');
@@ -34,6 +36,10 @@ export const ExamPlayerView: React.FC = () => {
   const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  // Question keys (e.g. "q3") whose latest answer failed to sync to the server —
+  // still safe locally (localStorage backup below), but the teacher's server-side
+  // copy is stale until this clears. Surfaced as a small warning banner.
+  const [unsyncedAnswers, setUnsyncedAnswers] = useState<Set<string>>(new Set());
 
   // Load backup — only if student hasn't already submitted this session
   useEffect(() => {
@@ -80,21 +86,25 @@ export const ExamPlayerView: React.FC = () => {
     }
     setJoining(true);
     setJoinError('');
-    const found = await examService.getExamSessionByCode(joinCode.trim().toUpperCase());
-    if (!found) {
-      setJoinError('Невалиден код или испитот не е отворен.');
+    try {
+      const found = await examService.getExamSessionByCode(joinCode.trim().toUpperCase());
+      if (!found) {
+        setJoinError('Невалиден код или испитот не е отворен.');
+        return;
+      }
+      const vk = await examService.joinExamSession(found.id, studentName.trim(), deviceId);
+      // Find the response doc id — list and find matching deviceId
+      const responses = await examService.getExamResponses(found.id);
+      const myResponse = responses.find(r => (r as any).id === deviceId || r.studentName === studentName.trim());
+      setSession(found);
+      setVariantKey(vk);
+      setResponseDocId(myResponse?.id ?? deviceId);
+      setPhase(found.status === 'active' ? 'solving' : 'waiting');
+    } catch {
+      setJoinError('Грешка при приклучување. Проверете ја интернет врската и обидете се повторно.');
+    } finally {
       setJoining(false);
-      return;
     }
-    const vk = await examService.joinExamSession(found.id, studentName.trim(), deviceId);
-    // Find the response doc id — list and find matching deviceId
-    const responses = await examService.getExamResponses(found.id);
-    const myResponse = responses.find(r => (r as any).id === deviceId || r.studentName === studentName.trim());
-    setSession(found);
-    setVariantKey(vk);
-    setResponseDocId(myResponse?.id ?? deviceId);
-    setPhase(found.status === 'active' ? 'solving' : 'waiting');
-    setJoining(false);
   };
 
   const handleSolutionImage = useCallback((questionIndex: number, url: string) => {
@@ -102,20 +112,39 @@ export const ExamPlayerView: React.FC = () => {
   }, []);
 
   const handleAnswer = useCallback(async (questionIndex: number, value: string) => {
+    // Update local state (and its localStorage backup, via the effect above) immediately
+    // for responsive typing — the question is whether the SERVER copy stays in sync, not
+    // whether the student sees their own keystroke.
     setAnswers(prev => ({ ...prev, [`q${questionIndex}`]: value }));
     if (session && responseDocId) {
-      await examService.saveExamAnswer(session.id, responseDocId, questionIndex, value);
+      const key = `q${questionIndex}`;
+      try {
+        await examService.saveExamAnswer(session.id, responseDocId, questionIndex, value);
+        setUnsyncedAnswers(prev => {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      } catch {
+        setUnsyncedAnswers(prev => new Set(prev).add(key));
+      }
     }
   }, [session, responseDocId]);
 
   const handleSubmit = useCallback(async () => {
     if (!session || !responseDocId || submitting) return;
     setSubmitting(true);
-    await examService.submitExamFinal(session.id, responseDocId, timeRemaining);
-    if (session) localStorage.removeItem(LS_KEY(session.id, deviceId));
-    setPhase('submitted');
-    setSubmitting(false);
-  }, [session, responseDocId, submitting, timeRemaining, deviceId]);
+    try {
+      await examService.submitExamFinal(session.id, responseDocId, timeRemaining);
+      localStorage.removeItem(LS_KEY(session.id, deviceId));
+      setPhase('submitted');
+    } catch {
+      addNotification('Предавањето не успеа. Проверете ја интернет врската и обидете се повторно.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [session, responseDocId, submitting, timeRemaining, deviceId, addNotification]);
 
   const endsAt = session?.endsAt
     ? (session.endsAt as unknown as { toDate: () => Date }).toDate?.() ?? new Date(session.endsAt as unknown as number)
@@ -233,6 +262,12 @@ export const ExamPlayerView: React.FC = () => {
         <p className="text-sm text-gray-500 mb-4">
           {studentName} · {questions.length} прашања
         </p>
+        {unsyncedAnswers.size > 0 && (
+          <p className="mb-4 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            Некои одговори сè уште не се зачувани на серверот — сепак се безбедни на овој уред. Проверете ја интернет врската.
+          </p>
+        )}
         <ExamVariantPlayer
           questions={questions}
           answers={answers}
