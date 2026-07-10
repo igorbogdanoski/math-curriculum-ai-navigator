@@ -268,6 +268,47 @@ export async function callGeminiEmbed(params: { model?: string; contents: unknow
   });
 }
 
+/**
+ * Shared SSE chunk parser for both `/api/gemini-stream` consumers below. Always yields the
+ * richer `StreamChunk` shape (kind: 'text' | 'thinking'); `streamGeminiProxy` filters this
+ * down to plain text. Matches the two call sites' identical buffer/line-splitting logic that
+ * previously existed as two ~50-line copies.
+ */
+async function* parseSSEStream(reader: ReadableStreamDefaultReader<Uint8Array>, logLabel: string): AsyncGenerator<StreamChunk, void, unknown> {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]') return;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
+          else if (data.text) yield { kind: 'text', text: data.text };
+          if (data.error) throw new AIServiceError(data.error);
+        } catch (e) { logger.error(logLabel, e); }
+      }
+    }
+    if (buffer.startsWith('data: ')) {
+      const dataStr = buffer.slice(6).trim();
+      if (dataStr !== '[DONE]') {
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
+          else if (data.text) yield { kind: 'text', text: data.text };
+        } catch { /* partial */ }
+      }
+    }
+  } finally { reader.releaseLock(); }
+}
+
 export async function* streamGeminiProxy(params: {
   model: string; contents: unknown; generationConfig?: Record<string, unknown>; systemInstruction?: string; safetySettings?: SafetySetting[]; userTier?: string;
   /** AI_COSTS bucket name for server-side credit deduction. Omit to default to TEXT_BASIC. */
@@ -295,33 +336,9 @@ export async function* streamGeminiProxy(params: {
     }
     const reader = response.body?.getReader();
     if (!reader) throw new AIServiceError('No response body');
-    const decoder = new TextDecoder();
-    let buffer = '';
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const dataStr = line.slice(6).trim();
-          if (dataStr === '[DONE]') return;
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.text) yield data.text;
-            if (data.error) throw new AIServiceError(data.error);
-          } catch (e) { logger.error("Error parsing stream chunk:", e); }
-        }
-      }
-      if (buffer.startsWith('data: ')) {
-        const dataStr = buffer.slice(6).trim();
-        if (dataStr !== '[DONE]') {
-          try { const data = JSON.parse(dataStr); if (data.text) yield data.text; } catch { /* partial */ }
-        }
-      }
-    } finally { reader.releaseLock(); }
+    for await (const chunk of parseSSEStream(reader, 'Error parsing stream chunk:')) {
+      if (chunk.kind === 'text') yield chunk.text;
+    }
   } finally { clearTimeout(timeoutId); }
 }
 
@@ -346,36 +363,5 @@ export async function* streamGeminiProxyRich(params: {
   }
   const reader = response.body?.getReader();
   if (!reader) throw new AIServiceError('No response body');
-  const decoder = new TextDecoder();
-  let buffer = '';
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const dataStr = line.slice(6).trim();
-        if (dataStr === '[DONE]') return;
-        try {
-          const data = JSON.parse(dataStr);
-          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
-          else if (data.text) yield { kind: 'text', text: data.text };
-          if (data.error) throw new AIServiceError(data.error);
-        } catch (e) { logger.error("Error parsing rich stream chunk:", e); }
-      }
-    }
-    if (buffer.startsWith('data: ')) {
-      const dataStr = buffer.slice(6).trim();
-      if (dataStr !== '[DONE]') {
-        try {
-          const data = JSON.parse(dataStr);
-          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
-          else if (data.text) yield { kind: 'text', text: data.text };
-        } catch { /* partial */ }
-      }
-    }
-  } finally { reader.releaseLock(); }
+  yield* parseSSEStream(reader, 'Error parsing rich stream chunk:');
 }
