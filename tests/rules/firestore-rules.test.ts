@@ -545,6 +545,40 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('quiz_results/concept_mastery — numeric bounds on score fields', () => {
+    it('rejects an out-of-range percentage but accepts a realistic one', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('anonStudent2', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.collection('quiz_results').add({ studentName: 'Ана', percentage: 150, conceptId: 'c1' }));
+      await assertFails(f.collection('quiz_results').add({ studentName: 'Ана', percentage: -5, conceptId: 'c1' }));
+      await assertSucceeds(f.collection('quiz_results').add({ studentName: 'Ана', percentage: 95, conceptId: 'c1' }));
+    });
+
+    it('rejects correctCount exceeding totalQuestions when both are present', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('anonStudent3', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.collection('quiz_results').add({ studentName: 'Ана', percentage: 50, conceptId: 'c1', correctCount: 12, totalQuestions: 10 }));
+      await assertSucceeds(f.collection('quiz_results').add({ studentName: 'Ана', percentage: 50, conceptId: 'c1', correctCount: 5, totalQuestions: 10 }));
+    });
+
+    it('rejects an out-of-range bestScore/lastScore on concept_mastery but accepts realistic ones', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('anonStudent4', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.collection('concept_mastery').add({ studentName: 'Ана', conceptId: 'c1', bestScore: 250 }));
+      await assertFails(f.collection('concept_mastery').add({ studentName: 'Ана', conceptId: 'c1', lastScore: -10 }));
+      await assertSucceeds(f.collection('concept_mastery').add({ studentName: 'Ана', conceptId: 'c1', bestScore: 90, lastScore: 80, attempts: 3 }));
+    });
+  });
+
   describe('quiz_results/concept_mastery/student_gamification — deviceId bound to student_identity', () => {
     it('an anonymous student cannot claim a deviceId already bound to a different uid', async () => {
       if (!testEnv) return;
@@ -960,6 +994,128 @@ d('SEC-2 — Firestore rules coverage', () => {
       const fAdmin = admin.firestore() as unknown as { doc(p: string): { delete(): Promise<unknown> } };
       await assertFails(fStranger.doc('forum_replies/r6').delete());
       await assertSucceeds(fAdmin.doc('forum_replies/r6').delete());
+    });
+  });
+
+  describe('dugga_submissions/{subId} — bounds-checked create, teacher/admin-only update', () => {
+    it('the submitting student can create their own submission within bounds; the score cannot exceed totalPoints', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const student = testEnv.authenticatedContext('student1');
+      const f = student.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.doc('dugga_submissions/sub1').set({
+        testId: 'test1', teacherUid: 'teacher1', studentUid: 'student1', studentName: 'Марко',
+        score: 8, totalPoints: 10, percentage: 80,
+      }));
+      await assertFails(f.doc('dugga_submissions/sub2').set({
+        testId: 'test1', teacherUid: 'teacher1', studentUid: 'student1', studentName: 'Марко',
+        score: 15, totalPoints: 10, percentage: 150,
+      }));
+    });
+
+    it('a student cannot create a submission claiming to be a different student', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const impostor = testEnv.authenticatedContext('impostor1');
+      const f = impostor.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('dugga_submissions/sub3').set({
+        testId: 'test1', teacherUid: 'teacher1', studentUid: 'the-real-student', studentName: 'Марко',
+        score: 8, totalPoints: 10, percentage: 80,
+      }));
+    });
+
+    it('the owning teacher can update; a random other teacher cannot; a student can never update', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('dugga_submissions/sub4').set({
+          testId: 'test1', teacherUid: 'teacher1', studentUid: 'student1', studentName: 'Марко',
+          score: 8, totalPoints: 10, percentage: 80,
+        });
+      });
+      const owningTeacher = testEnv.authenticatedContext('teacher1');
+      const otherTeacher = testEnv.authenticatedContext('teacher2');
+      const student = testEnv.authenticatedContext('student1');
+      const fOwner = owningTeacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      const fOther = otherTeacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      const fStudent = student.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fOwner.doc('dugga_submissions/sub4').update({ score: 9 }));
+      await assertFails(fOther.doc('dugga_submissions/sub4').update({ score: 10 }));
+      await assertFails(fStudent.doc('dugga_submissions/sub4').update({ score: 10 }));
+    });
+  });
+
+  describe('matura_exams / matura_questions — teacher/school_admin/admin write, any authenticated read', () => {
+    it('a teacher can create and update; a plain authenticated (non-teacher) user cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/teacherX').set({ role: 'teacher' });
+        await f.doc('users/plainUserX').set({ role: 'student' });
+      });
+      const teacher = testEnv.authenticatedContext('teacherX');
+      const plain = testEnv.authenticatedContext('plainUserX');
+      const fTeacher = teacher.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      const fPlain = plain.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(fTeacher.doc('matura_exams/exam1').set({ title: 'Матура 2026' }));
+      await assertFails(fPlain.doc('matura_exams/exam2').set({ title: 'Фабрикувано' }));
+      await assertSucceeds(fTeacher.doc('matura_questions/exam1_q1').set({ examId: 'exam1', text: 'Прашање 1' }));
+      await assertFails(fPlain.doc('matura_questions/exam1_q2').set({ examId: 'exam1', text: 'Фабрикувано' }));
+    });
+
+    it('any authenticated user can read, but only admin can delete', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('matura_exams/exam3').set({ title: 'Матура' });
+        await f.doc('users/admin3').set({ role: 'admin' });
+      });
+      const reader = testEnv.authenticatedContext('anyReader1');
+      const admin = testEnv.authenticatedContext('admin3');
+      const fReader = reader.firestore() as unknown as { doc(p: string): { get(): Promise<unknown>; delete(): Promise<unknown> } };
+      const fAdmin = admin.firestore() as unknown as { doc(p: string): { delete(): Promise<unknown> } };
+      await assertSucceeds(fReader.doc('matura_exams/exam3').get());
+      await assertFails(fReader.doc('matura_exams/exam3').delete());
+      await assertSucceeds(fAdmin.doc('matura_exams/exam3').delete());
+    });
+  });
+
+  describe('referrals/{newUid} — self-claim only, credit-adjacent', () => {
+    it('a new user can create their own referral doc with bonusGranted=false, but not on behalf of someone else', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const newUser = testEnv.authenticatedContext('newUser1');
+      const f = newUser.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertSucceeds(f.doc('referrals/newUser1').set({ newUserUid: 'newUser1', refCode: 'referrer1', bonusGranted: false }));
+      await assertFails(f.doc('referrals/someone-else').set({ newUserUid: 'someone-else', refCode: 'referrer1', bonusGranted: false }));
+    });
+
+    it('cannot self-refer, and cannot create with bonusGranted already true (client can never self-grant the bonus)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const newUser = testEnv.authenticatedContext('newUser2');
+      const f = newUser.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+
+      await assertFails(f.doc('referrals/newUser2').set({ newUserUid: 'newUser2', refCode: 'newUser2', bonusGranted: false }));
+      await assertFails(f.doc('referrals/newUser2').set({ newUserUid: 'newUser2', refCode: 'referrer1', bonusGranted: true }));
+    });
+
+    it('only admin (i.e. the grantReferralBonus Cloud Function via Admin SDK) can update — never the client', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('referrals/newUser3').set({ newUserUid: 'newUser3', refCode: 'referrer1', bonusGranted: false });
+      });
+      const newUser = testEnv.authenticatedContext('newUser3');
+      const f = newUser.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('referrals/newUser3').update({ bonusGranted: true }));
     });
   });
 });

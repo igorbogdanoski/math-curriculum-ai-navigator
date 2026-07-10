@@ -71,6 +71,16 @@ service cloud.firestore {
         (!('longestStreak' in request.resource.data) || (request.resource.data.longestStreak is number && request.resource.data.longestStreak >= 0 && request.resource.data.longestStreak <= 3650));
     }
 
+    // concept_mastery numeric bounds — same "close the trivial fabricate-an-absurd-value case"
+    // intent as isValidGamificationNumbers(), applied to bestScore/lastScore (percentages) and
+    // the attempt counters. Each bound only applies when its field is present.
+    function conceptMasteryScoresOk() {
+      return (!('bestScore' in request.resource.data) || (request.resource.data.bestScore is number && request.resource.data.bestScore >= 0 && request.resource.data.bestScore <= 100)) &&
+        (!('lastScore' in request.resource.data) || (request.resource.data.lastScore is number && request.resource.data.lastScore >= 0 && request.resource.data.lastScore <= 100)) &&
+        (!('attempts' in request.resource.data) || (request.resource.data.attempts is number && request.resource.data.attempts >= 0)) &&
+        (!('consecutiveHighScores' in request.resource.data) || (request.resource.data.consecutiveHighScores is number && request.resource.data.consecutiveHighScores >= 0));
+    }
+
     // Forum: lets ANY authenticated user toggle only their own uid in a single string-array
     // field (upvotedBy / reactionsHelpful / reactionsSame / reactionsGreat) — add or remove
     // exactly one entry, exactly their own, with every other field and array member untouched.
@@ -183,9 +193,22 @@ service cloud.firestore {
         isAnonymousStudent() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
+      // Bounds only (mirrors dugga_submissions' pattern) — can't verify percentage is actually
+      // correct for the real quiz without server-side re-grading, but closes the trivial
+      // "fabricate an out-of-range value" case. correctCount/totalQuestions are bounded only
+      // when both are present, since not every write path supplies them.
       allow create: if isAuthenticated()
                     && request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId'])
-                    && deviceOwnershipOk();
+                    && deviceOwnershipOk()
+                    && request.resource.data.percentage is number
+                    && request.resource.data.percentage >= 0 && request.resource.data.percentage <= 100
+                    && (
+                      !('correctCount' in request.resource.data) || !('totalQuestions' in request.resource.data) || (
+                        request.resource.data.correctCount is number && request.resource.data.correctCount >= 0 &&
+                        request.resource.data.totalQuestions is number && request.resource.data.totalQuestions >= 0 &&
+                        request.resource.data.correctCount <= request.resource.data.totalQuestions
+                      )
+                    );
       // Allow students to self-assess (confidence 1-5) or save metacognitive notes — gated
       // by deviceOwnershipOk() so only the quiz's own device-bound student (or a teacher/
       // lab write with no deviceId) can set these, not any authenticated caller.
@@ -267,13 +290,18 @@ service cloud.firestore {
         isAnonymousStudent() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
-      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk();
+      // bestScore/lastScore bounded to 0-100 (and attempts/consecutiveHighScores to >= 0) only
+      // when present — closes the trivial "fabricate an out-of-range value" case without
+      // requiring every write path to supply every field (mirrors quiz_results' pattern).
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk()
+                    && conceptMasteryScoresOk();
       // Only the owning teacher, anonymous students (quiz completion), or admin may update
       allow update: if isAuthenticated() && (
         isDocOwner() ||
         isAnonymousStudent() ||
         isAdmin()
-      ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk();
+      ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk()
+        && conceptMasteryScoresOk();
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
