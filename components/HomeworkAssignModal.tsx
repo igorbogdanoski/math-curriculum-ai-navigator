@@ -36,6 +36,12 @@ export const HomeworkAssignModal: React.FC<Props> = ({
             .finally(() => setIsLoadingClasses(false));
     }, [firebaseUser?.uid, addNotification]);
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedClassId || !firebaseUser?.uid) return;
@@ -65,7 +71,7 @@ export const HomeworkAssignModal: React.FC<Props> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="homework-assign-modal-title">
             <div
                 className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
                 onClick={e => e.stopPropagation()}
@@ -73,7 +79,7 @@ export const HomeworkAssignModal: React.FC<Props> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-gray-100">
                     <div>
-                        <h2 className="font-bold text-lg text-gray-900">📚 Задај домашна задача</h2>
+                        <h2 id="homework-assign-modal-title" className="font-bold text-lg text-gray-900">📚 Задај домашна задача</h2>
                         <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{materialTitle}</p>
                     </div>
                     <button type="button" onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">

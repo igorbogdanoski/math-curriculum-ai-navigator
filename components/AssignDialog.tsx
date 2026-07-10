@@ -36,6 +36,12 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
       .catch(() => addNotification('Не можев да ги вчитам класовите.', 'error'));
   }, [firebaseUser?.uid, addNotification]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const toggleClass = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -117,12 +123,12 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
   // ── Success / share panel ──────────────────────────────────────────────────
   if (savedCacheId) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="assign-dialog-success-title">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
           <div className="flex items-center justify-between p-5 border-b">
             <div className="flex items-center gap-2">
               <Check className="w-5 h-5 text-emerald-600" />
-              <h2 className="text-lg font-bold text-gray-800">Задачата е зададена!</h2>
+              <h2 id="assign-dialog-success-title" className="text-lg font-bold text-gray-800">Задачата е зададена!</h2>
             </div>
             <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Затвори">
               <X className="w-5 h-5 text-gray-500" />
@@ -191,12 +197,12 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
 
   // ── Assign form ───────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="assign-dialog-title">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-5 border-b">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-bold text-gray-800">Задај на одделение</h2>
+            <h2 id="assign-dialog-title" className="text-lg font-bold text-gray-800">Задај на одделение</h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Затвори">
             <X className="w-5 h-5 text-gray-500" />
