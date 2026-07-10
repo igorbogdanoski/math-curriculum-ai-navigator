@@ -2,6 +2,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { checkSlidingWindow, extractClientIp } from './_lib/rateLimitInMemory.js';
+
+// Sign mints a signed share token — rate-limit it like every other paid/mutating route.
+// (handleVerify is a free, read-only, side-effect-free check — not worth limiting.)
+const signRateLimitMap = new Map<string, number[]>();
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -43,7 +48,7 @@ function getFirebaseAdminAuth() {
   return getAuth();
 }
 
-async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true; uid: string } | { ok: false; status: number; error: string }> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return { ok: false, status: 401, error: 'Missing Authorization header' };
@@ -55,8 +60,8 @@ async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true } | { ok
   }
 
   try {
-    await adminAuth.verifyIdToken(authHeader.slice(7), false);
-    return { ok: true };
+    const decoded = await adminAuth.verifyIdToken(authHeader.slice(7), false);
+    return { ok: true, uid: decoded.uid };
   } catch {
     return { ok: false, status: 401, error: 'Invalid authentication token' };
   }
@@ -81,6 +86,11 @@ async function handleSign(req: VercelRequest, res: VercelResponse, secret: strin
   const authz = await authorizeAnyUser(req);
   if (authz.ok === false) {
     return res.status(authz.status).json({ error: authz.error });
+  }
+
+  const rlIdentifier = authz.uid || extractClientIp(req.headers, req.socket?.remoteAddress) || 'anonymous';
+  if (!checkSlidingWindow(signRateLimitMap, rlIdentifier, { windowMs: 60_000, maxRequests: 20 })) {
+    return res.status(429).json({ error: 'Rate limit exceeded. Please wait a minute before requesting again.', quotaType: 'rate' });
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
@@ -171,3 +181,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   return res.status(400).json({ error: 'Unknown action' });
 }
+
+export const __testables = {
+  toBase64Url,
+  safeSigEquals,
+  resetSignRateLimitState: () => signRateLimitMap.clear(),
+};
