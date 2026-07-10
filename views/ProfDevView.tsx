@@ -13,9 +13,9 @@ import {
 import {
   CHAPTERS, AI_TOOLS, GLOSSARY, TEACHER_PROMPTS,
   CHAPTER_CATEGORIES, TOOL_CATEGORIES, GLOSSARY_CATEGORIES,
-  PROMPT_SUBJECTS, PROMPT_GRADES,
+  PROMPT_SUBJECTS, PROMPT_GRADES, COMPETENCE_DOMAINS, COMPETENCE_META,
   type ChapterCategory, type ToolCategory, type GlossaryCategory,
-  type PromptSubject, type PromptGrade,
+  type PromptSubject, type PromptGrade, type CompetenceDomain,
 } from '../data/profDev/index';
 import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 
@@ -24,7 +24,7 @@ import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 type Tab = 'guide' | 'tools' | 'glossary' | 'prompts';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
-  { id: 'guide',    label: 'Водич',     icon: BookOpen,   count: 17 },
+  { id: 'guide',    label: 'Водич',     icon: BookOpen,   count: 23 },
   { id: 'tools',    label: 'AI Алатки', icon: Wrench,     count: 47 },
   { id: 'glossary', label: 'Речник',    icon: BookMarked, count: 37 },
   { id: 'prompts',  label: 'Промптови', icon: Lightbulb,  count: 19 },
@@ -44,9 +44,30 @@ const GuideTab: React.FC = () => {
           <div>
             <p className="font-semibold text-indigo-900 text-sm">Содржина адаптирана од AINOW Society</p>
             <p className="text-indigo-700 text-xs mt-0.5">
-              17 поглавја за AI писменост, специјализирани за наставници во Македонија.
+              23 поглавја за AI писменост, специјализирани за наставници во Македонија.
               Оригинален проект: <span className="font-medium">AINOW-Society/edu</span> (GPL v3)
             </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="flex items-start gap-3">
+          <GraduationCap className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-gray-900 text-sm">Усогласено со EU-OECD AI Literacy Framework</p>
+            <p className="text-gray-600 text-xs mt-0.5">
+              Секое поглавје е означено со компетенциите (E/C/M/S) кои ги покрива од официјалната
+              рамка на Европската комисија и OECD (4 домени, 19 компетенции, објавена јуни 2026).
+              Ознаките се гледаат при отворање на секое поглавје подолу.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {(Object.keys(COMPETENCE_DOMAINS) as CompetenceDomain[]).map(d => (
+                <span key={d} className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${COMPETENCE_DOMAINS[d].color}`}>
+                  {COMPETENCE_DOMAINS[d].label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -92,6 +113,23 @@ const GuideTab: React.FC = () => {
                             </li>
                           ))}
                         </ul>
+                        {ch.competences && ch.competences.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {ch.competences.map(code => {
+                              const domain = code[0] as CompetenceDomain;
+                              const meta = COMPETENCE_DOMAINS[domain];
+                              return (
+                                <span
+                                  key={code}
+                                  title={COMPETENCE_META[code] ?? code}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}
+                                >
+                                  {code} · {meta.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                         <AcademyQuiz item={{ id: ch.id, title: ch.title, contentText: [ch.description, ...ch.keyPoints].join(' ') }} />
                       </div>
                     )}

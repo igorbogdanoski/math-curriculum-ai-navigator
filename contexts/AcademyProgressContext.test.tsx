@@ -76,7 +76,8 @@ describe('AcademyProgressContext — earnedSpecializationIds + badge sync', () =
 
   it('earns a quizOnly specialization from quizzes alone, with zero appliedLessons', async () => {
     const AI_LITERATE_CHAPTERS = [
-      'ch-01-intro', 'ch-03-what-is-ai', 'ch-07-prompt-engineering',
+      'ch-01-intro', 'ch-02-literacy', 'ch-03-what-is-ai', 'ch-04-types',
+      'ch-06-applications', 'ch-07-prompt-engineering', 'ch-09-architecture',
       'ch-14-limitations', 'ch-16-mk-schools', 'ch-17-integrity',
     ];
     const { result } = renderHook(() => useAcademyProgress(), { wrapper });

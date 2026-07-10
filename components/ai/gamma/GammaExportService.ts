@@ -1,10 +1,44 @@
 import { logger } from '../../../utils/logger';
 import { AIGeneratedPresentation } from '../../../types';
+import { HAS_MATH, renderBulletToImg, resolveImgRatio, isPureMathExpr } from '../presentation/presentationMathUtils';
 
 export interface GammaExportOptions {
   isPro: boolean;
   logoUrl: string | null;
   schoolName: string | null;
+}
+
+/** Adds `text` to a PPTX slide as a rendered-formula image if it contains LaTeX
+ *  ($...$ / $$...$$), otherwise as plain text — same pipeline already used by
+ *  the non-Gamma presentation exporter (`presentationPptxExport.ts`). Returns
+ *  the vertical space actually consumed, so callers can keep stacking content. */
+async function addMathAwareText(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pptSlide: any,
+  text: string,
+  box: { x: number; y: number; w: number; h: number },
+  hexColor: string,
+  fontOpts: { fontSize: number; bold?: boolean; align?: 'left' | 'center' | 'right'; fontFace?: string },
+  imgOpts?: { maxImgW?: number; centerImg?: boolean },
+): Promise<number> {
+  if (HAS_MATH.test(text)) {
+    try {
+      const entry = await renderBulletToImg(text, hexColor);
+      const ratio = await resolveImgRatio(entry);
+      const imgW = Math.min(imgOpts?.maxImgW ?? box.w, box.w);
+      const imgH = Math.min(imgW * ratio, box.h);
+      const x = imgOpts?.centerImg ? box.x + (box.w - imgW) / 2 : box.x;
+      const y = imgOpts?.centerImg ? box.y + (box.h - imgH) / 2 : box.y;
+      pptSlide.addImage({ data: entry.data, x, y, w: imgW, h: imgH });
+      return imgH;
+    } catch { /* fall through to plain text below */ }
+  }
+  pptSlide.addText(text, {
+    x: box.x, y: box.y, w: box.w, h: box.h,
+    fontSize: fontOpts.fontSize, bold: fontOpts.bold, color: hexColor,
+    align: fontOpts.align, fontFace: fontOpts.fontFace ?? 'Arial',
+  });
+  return box.h;
 }
 
 export async function exportGammaPPTX(
@@ -71,29 +105,38 @@ export async function exportGammaPPTX(
           x: 1.0, y: contentY + 0.4, w: W - 2, h: 1.6,
           fill: { color: '1E1B4B' }, line: { color: LINE, width: 2 },
         });
-        pptSlide.addText(slide.content[0] ?? slide.title ?? '', {
-          x: 1.0, y: contentY + 0.6, w: W - 2, h: 1.2,
-          fontSize: 24, bold: true, color: TITLE, align: 'center', fontFace: 'Courier New',
-        });
+        await addMathAwareText(
+          pptSlide, slide.content[0] ?? slide.title ?? '',
+          { x: 1.0, y: contentY + 0.6, w: W - 2, h: 1.2 }, TITLE,
+          { fontSize: 24, bold: true, align: 'center', fontFace: 'Courier New' },
+          { maxImgW: W - 2.4, centerImg: true },
+        );
         let noteY = contentY + 2.3;
         for (const note of slide.content.slice(1)) {
-          pptSlide.addText(`• ${note}`, { x: 1.0, y: noteY, w: W - 2, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
-          noteY += lineH;
+          const consumed = await addMathAwareText(
+            pptSlide, `• ${note}`, { x: 1.0, y: noteY, w: W - 2, h: lineH }, BODY,
+            { fontSize: 14, fontFace: 'Arial' },
+          );
+          noteY += Math.max(consumed, lineH);
           if (noteY > contentY + contentH) break;
         }
 
       } else if (slide.type === 'step-by-step' || slide.type === 'proof') {
         let curY = contentY;
-        slide.content.forEach((step, si) => {
+        for (let si = 0; si < slide.content.length; si++) {
+          const step = slide.content[si];
           pptSlide.addShape('roundRect', {
             x: 0.4, y: curY, w: 0.5, h: 0.36,
             fill: { color: si === 0 ? '4F46E5' : '1E1B4B' }, line: { color: LINE, width: 1 },
           });
           pptSlide.addText(String(si + 1), { x: 0.4, y: curY + 0.02, w: 0.5, h: 0.32, fontSize: 11, bold: true, color: 'FFFFFF', align: 'center' });
-          pptSlide.addText(step, { x: 1.1, y: curY, w: W - 1.5, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
-          curY += lineH + 0.04;
-          if (curY > contentY + contentH) return;
-        });
+          const consumed = await addMathAwareText(
+            pptSlide, step, { x: 1.1, y: curY, w: W - 1.5, h: lineH }, BODY,
+            { fontSize: 14, fontFace: 'Arial' },
+          );
+          curY += Math.max(consumed, lineH) + 0.04;
+          if (curY > contentY + contentH) break;
+        }
 
       } else if (slide.type === 'task' || slide.type === 'example') {
         const isTask   = slide.type === 'task';
@@ -106,16 +149,22 @@ export async function exportGammaPPTX(
         pptSlide.addText(isTask ? '📝 Задача' : '💡 Пример', {
           x: 0.8, y: contentY + 0.15, w: 3, h: 0.35, fontSize: 11, bold: true, color: lblColor,
         });
-        pptSlide.addText(slide.content[0] ?? '', {
-          x: 0.8, y: contentY + 0.55, w: W - 1.6, h: 1.5, fontSize: 15, color: '#E2E8F0', fontFace: 'Arial', wrap: true,
-        });
+        await addMathAwareText(
+          pptSlide, slide.content[0] ?? '',
+          { x: 0.8, y: contentY + 0.55, w: W - 1.6, h: 1.5 }, '#E2E8F0',
+          { fontSize: 15, fontFace: 'Arial' },
+          { maxImgW: W - 2.0 },
+        );
         if (slide.solution && slide.solution.length > 0) {
           let solY = contentY + 2.45;
           pptSlide.addText('Решение:', { x: 0.5, y: solY, w: 2, h: 0.32, fontSize: 11, bold: true, color: '6EE7B7' });
           solY += 0.34;
           for (const sol of slide.solution) {
-            pptSlide.addText(`• ${sol}`, { x: 0.5, y: solY, w: W - 1, h: lineH, fontSize: 13, color: BODY, fontFace: 'Arial' });
-            solY += lineH;
+            const consumed = await addMathAwareText(
+              pptSlide, `• ${sol}`, { x: 0.5, y: solY, w: W - 1, h: lineH }, BODY,
+              { fontSize: 13, fontFace: 'Arial' },
+            );
+            solY += Math.max(consumed, lineH);
             if (solY > 5.1) break;
           }
         }
@@ -124,8 +173,11 @@ export async function exportGammaPPTX(
         let curY = contentY;
         for (const line of slide.content) {
           pptSlide.addShape('ellipse', { x: 0.4, y: curY + 0.14, w: 0.12, h: 0.12, fill: { color: ACCT } });
-          pptSlide.addText(line, { x: 0.65, y: curY, w: W - 1.1, h: lineH, fontSize: 15, color: BODY, fontFace: 'Arial' });
-          curY += lineH + 0.04;
+          const consumed = await addMathAwareText(
+            pptSlide, line, { x: 0.65, y: curY, w: W - 1.1, h: lineH }, BODY,
+            { fontSize: 15, fontFace: 'Arial' },
+          );
+          curY += Math.max(consumed, lineH) + 0.04;
           if (curY > contentY + contentH) break;
         }
       }
@@ -159,60 +211,85 @@ export async function exportGammaPPTX(
 }
 
 // ── Handout PDF (Г10) ─────────────────────────────────────────────────────────
-function stripLatex(text: string): string {
-  return text.replace(/\$\$?[^$]+\$\$?/g, '[формула]').replace(/\\[a-zA-Z]+\{[^}]*\}/g, '').trim();
+
+/** Renders `text` for the printable handout: a LaTeX formula ($...$/$$...$$)
+ *  becomes an embedded KaTeX/PNG image (same pipeline as the PPTX export),
+ *  plain text passes through unchanged. Falls back to the raw text (never a
+ *  "[формула]" placeholder) if rendering fails. */
+async function renderLatexToHtml(text: string, hexColor = '1e1b4b'): Promise<string> {
+  if (!HAS_MATH.test(text)) return text;
+  try {
+    const entry = await renderBulletToImg(text, hexColor);
+    const ratio = await resolveImgRatio(entry);
+    if (isPureMathExpr(text)) {
+      const h = 26;
+      return `<img src="${entry.data}" alt="формула" style="height:${h}px;width:${Math.round(h / ratio)}px;vertical-align:middle;">`;
+    }
+    const w = 460;
+    return `<img src="${entry.data}" alt="формула" style="max-width:100%;width:${w}px;height:${Math.round(w * ratio)}px;display:block;margin:4px 0;">`;
+  } catch {
+    return text;
+  }
 }
 
 function blankLines(n: number): string {
   return Array.from({ length: n }, () => '<div class="blank-line"></div>').join('');
 }
 
-export function printGammaHandout(data: AIGeneratedPresentation, options?: Pick<GammaExportOptions, 'isPro' | 'schoolName' | 'logoUrl'>): void {
+export async function printGammaHandout(data: AIGeneratedPresentation, options?: Pick<GammaExportOptions, 'isPro' | 'schoolName' | 'logoUrl'>): Promise<void> {
   const brandText = options?.isPro && options.schoolName ? options.schoolName : 'ai.mismath.net';
+  // window.open must run synchronously in the click handler (before any `await`)
+  // or popup blockers will kill it — the window is populated asynchronously below.
   const win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return;
 
-  const slidesHtml = data.slides.map((slide, i) => {
+  const slidesHtml = (await Promise.all(data.slides.map(async (slide, i) => {
     let body = '';
 
     if (slide.type === 'formula-centered') {
-      const formula = stripLatex(slide.content[0] ?? slide.title ?? '');
+      const formula = await renderLatexToHtml(slide.content[0] ?? slide.title ?? '');
+      const notes = await Promise.all(slide.content.slice(1).map(async l => `<p class="note-item">• ${await renderLatexToHtml(l, '4b5563')}</p>`));
       body = `
         <div class="formula-box">${formula}</div>
         <p class="notes-label">Белешки:</p>
         ${blankLines(4)}
-        ${slide.content.slice(1).map(l => `<p class="note-item">• ${stripLatex(l)}</p>`).join('')}
+        ${notes.join('')}
       `;
     } else if (slide.type === 'task' || slide.type === 'example') {
       const isTask = slide.type === 'task';
+      const taskText = await renderLatexToHtml(slide.content[0] ?? '', '1a1a1a');
       body = `
         <div class="task-box ${isTask ? 'task' : 'example'}">
           <span class="task-label">${isTask ? '📝 Задача' : '💡 Пример'}</span>
-          <p>${stripLatex(slide.content[0] ?? '')}</p>
+          <p>${taskText}</p>
         </div>
         <p class="notes-label">${isTask ? 'Решение:' : 'Забелешки:'}</p>
         ${blankLines(isTask ? 8 : 4)}
       `;
     } else if (slide.type === 'step-by-step' || slide.type === 'proof') {
-      body = `<ol class="steps">${slide.content.map(s => `<li>${stripLatex(s)}</li>`).join('')}</ol>
+      const steps = await Promise.all(slide.content.map(async s => `<li>${await renderLatexToHtml(s, '1a1a1a')}</li>`));
+      body = `<ol class="steps">${steps.join('')}</ol>
         <p class="notes-label">Белешки:</p>${blankLines(3)}`;
     } else if (slide.type === 'summary') {
-      body = `<ul class="summary-list">${slide.content.map(l => `<li>${stripLatex(l)}</li>`).join('')}</ul>
+      const items = await Promise.all(slide.content.map(async l => `<li>${await renderLatexToHtml(l, '1a1a1a')}</li>`));
+      body = `<ul class="summary-list">${items.join('')}</ul>
         <div class="qr-hint">🔗 ai.mismath.net</div>`;
     } else {
-      body = `<ul class="content-list">${slide.content.map(l => `<li>${stripLatex(l)}</li>`).join('')}</ul>`;
+      const items = await Promise.all(slide.content.map(async l => `<li>${await renderLatexToHtml(l, '1a1a1a')}</li>`));
+      body = `<ul class="content-list">${items.join('')}</ul>`;
     }
 
+    const title = await renderLatexToHtml(slide.title ?? '');
     return `
       <div class="slide-page">
         <div class="slide-header">
           <span class="slide-num">${i + 1}</span>
-          <span class="slide-title">${stripLatex(slide.title ?? '')}</span>
+          <span class="slide-title">${title}</span>
         </div>
         <div class="slide-body">${body}</div>
       </div>
     `;
-  }).join('');
+  }))).join('');
 
   win.document.write(`<!DOCTYPE html><html lang="mk"><head>
   <meta charset="utf-8">

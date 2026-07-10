@@ -12,15 +12,27 @@ describe('SPECIALIZATIONS data integrity', () => {
     }
   });
 
-  it('ai-literate-teacher is quizOnly with exactly 6 lessonIds, all real profDev chapter ids', () => {
+  it('ai-literate-teacher is quizOnly with exactly 10 lessonIds, all real profDev chapter ids', () => {
     const spec = SPECIALIZATIONS.find(s => s.id === 'ai-literate-teacher');
+    expect(spec).toBeTruthy();
+    expect(spec!.quizOnly).toBe(true);
+    expect(spec!.lessonIds).toHaveLength(10);
+
+    const chapterIds = new Set(CHAPTERS.map(c => c.id));
+    for (const id of spec!.lessonIds) {
+      expect(chapterIds.has(id), `ai-literate-teacher references unknown chapter id "${id}"`).toBe(true);
+    }
+  });
+
+  it('ai-responsible-manager is quizOnly with exactly 6 lessonIds, all real profDev chapter ids', () => {
+    const spec = SPECIALIZATIONS.find(s => s.id === 'ai-responsible-manager');
     expect(spec).toBeTruthy();
     expect(spec!.quizOnly).toBe(true);
     expect(spec!.lessonIds).toHaveLength(6);
 
     const chapterIds = new Set(CHAPTERS.map(c => c.id));
     for (const id of spec!.lessonIds) {
-      expect(chapterIds.has(id), `ai-literate-teacher references unknown chapter id "${id}"`).toBe(true);
+      expect(chapterIds.has(id), `ai-responsible-manager references unknown chapter id "${id}"`).toBe(true);
     }
   });
 
