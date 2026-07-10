@@ -88,6 +88,33 @@ describe('FractionsLab — Show mode', () => {
   });
 });
 
+describe('FractionsLab — Compare mode', () => {
+  it('shows the correct comparison symbol for the default pair, and updates it live when a bar is dragged', () => {
+    mockSvgBoundingRect(340, 64);
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Спореди' }));
+
+    // Defaults: A = 1/2, B = 2/3 → 1/2 < 2/3
+    expect(screen.getByText('1/2 < 2/3')).toBeTruthy();
+
+    // Drag bar A to its right edge (num = den = 2) → 2/2 > 2/3
+    const barA = screen.getByRole('img', { name: /Бар модел, 1 од 2/ });
+    fireEvent.click(barA, { clientX: 340, clientY: 32 });
+    expect(screen.getByText('2/2 > 2/3')).toBeTruthy();
+  });
+
+  it('changing fraction B\'s denominator only affects bar B, not bar A', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Спореди' }));
+
+    const cardB = screen.getByText('Дропка Б').closest('div')!.parentElement!;
+    fireEvent.click(within(cardB).getByText('5'));
+
+    expect(screen.getByRole('img', { name: /Бар модел, 1 од 2/ })).toBeTruthy(); // A unchanged
+    expect(screen.getByRole('img', { name: /Бар модел, \d+ од 5/ })).toBeTruthy(); // B now den=5
+  });
+});
+
 describe('FractionsLab — Build mode', () => {
   it('shows incorrect feedback when the constructed fraction does not match the target, correct when it does', () => {
     mockSvgBoundingRect(340, 64);

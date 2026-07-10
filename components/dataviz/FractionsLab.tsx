@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Eye, PenLine, Target, RefreshCw } from 'lucide-react';
+import { Eye, PenLine, Target, RefreshCw, GitCompare } from 'lucide-react';
 import {
   type Fraction, type FractionGradeRange, GRADE_CONFIGS,
   simplifyFraction, toDecimal, fractionToString, generateFractionsSet, randomProperFraction,
+  compareFractions,
 } from './fractionsMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
@@ -188,7 +189,7 @@ const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type Mode = 'show' | 'practice' | 'build';
+type Mode = 'show' | 'compare' | 'practice' | 'build';
 
 export const FractionsLab: React.FC = () => {
   const [grade, setGrade] = useState<FractionGradeRange>('g4');
@@ -203,6 +204,19 @@ export const FractionsLab: React.FC = () => {
 
   const setNum = useCallback((n: number) => setFrac(f => ({ ...f, num: n })), []);
   const setDen = useCallback((d: number) => setFrac(f => ({ num: Math.min(f.num, d), den: d })), []);
+
+  // Compare mode — two independent fractions, compared live via compareFractions
+  const [fracA, setFracA] = useState<Fraction>({ num: 1, den: 2 });
+  const [fracB, setFracB] = useState<Fraction>({ num: 2, den: 3 });
+  const clampedA = { num: Math.min(fracA.num, fracA.den), den: fracA.den };
+  const clampedB = { num: Math.min(fracB.num, fracB.den), den: fracB.den };
+  const cmp = compareFractions(clampedA, clampedB);
+  const cmpSymbol = cmp < 0 ? '<' : cmp > 0 ? '>' : '=';
+
+  const setNumA = useCallback((n: number) => setFracA(f => ({ ...f, num: n })), []);
+  const setDenA = useCallback((d: number) => setFracA(f => ({ num: Math.min(f.num, d), den: d })), []);
+  const setNumB = useCallback((n: number) => setFracB(f => ({ ...f, num: n })), []);
+  const setDenB = useCallback((d: number) => setFracB(f => ({ num: Math.min(f.num, d), den: d })), []);
 
   // Practice mode — connected to quiz_results via useLabSession
   const session = useLabSession('fractions', 'Дропки — Бар, Круг и Бројна права');
@@ -228,9 +242,10 @@ export const FractionsLab: React.FC = () => {
   }, [cfg.maxDenominator]);
 
   const MODES: { id: Mode; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'show',     label: 'Прикажи',  icon: Eye     },
-    { id: 'practice', label: 'Вежбај',   icon: PenLine },
-    { id: 'build',    label: 'Состави',  icon: Target  },
+    { id: 'show',     label: 'Прикажи',  icon: Eye        },
+    { id: 'compare',  label: 'Спореди',  icon: GitCompare },
+    { id: 'practice', label: 'Вежбај',   icon: PenLine    },
+    { id: 'build',    label: 'Состави',  icon: Target     },
   ];
 
   const GRADES: FractionGradeRange[] = ['g3', 'g4', 'g5', 'g6'];
@@ -318,6 +333,59 @@ export const FractionsLab: React.FC = () => {
           <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
             <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Бројна права</p>
             <NumberLineModel num={clampedFrac.num} den={clampedFrac.den} onChange={setNum} />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODE: COMPARE ───────────────────────────────────────────────────── */}
+      {mode === 'compare' && (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">Влечи ги баровите за да спореди две дропки:</p>
+          <div className="flex flex-wrap items-start gap-6">
+            <div className="bg-gradient-to-br from-slate-50 to-sky-50 rounded-2xl border border-sky-100 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка А</p>
+                <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+                  {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
+                    <button key={d} type="button" onClick={() => setDenA(d)}
+                      className={`w-5 h-5 rounded text-[10px] font-bold transition ${
+                        clampedA.den === d ? 'bg-white shadow text-sky-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarModel num={clampedA.num} den={clampedA.den} onChange={setNumA} />
+              <p className="text-center text-lg font-black text-sky-700 mt-2">{fractionToString(clampedA)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-50 to-rose-50 rounded-2xl border border-rose-100 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка Б</p>
+                <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+                  {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
+                    <button key={d} type="button" onClick={() => setDenB(d)}
+                      className={`w-5 h-5 rounded text-[10px] font-bold transition ${
+                        clampedB.den === d ? 'bg-white shadow text-rose-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarModel num={clampedB.num} den={clampedB.den} onChange={setNumB} />
+              <p className="text-center text-lg font-black text-rose-700 mt-2">{fractionToString(clampedB)}</p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3 text-center">
+            <p className="text-2xl font-black text-indigo-700">
+              {fractionToString(clampedA)} {cmpSymbol} {fractionToString(clampedB)}
+            </p>
+            <p className="text-xs text-indigo-500 mt-1">
+              {fractionToString(clampedA)} = {toDecimal(clampedA).toFixed(2)}, {fractionToString(clampedB)} = {toDecimal(clampedB).toFixed(2)}
+            </p>
           </div>
         </div>
       )}
