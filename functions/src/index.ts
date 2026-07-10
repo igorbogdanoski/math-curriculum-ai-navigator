@@ -950,11 +950,19 @@ export const onAnnualPlanForked = functions.firestore
  * Re-derives the score for every deterministic-type question (see
  * duggaVerification.ts for exactly which types) from the test's real answer key
  * and the student's stored raw answers, instead of trusting the client-submitted
- * score/percentage outright. Does NOT overwrite the trusted score automatically —
- * a bug in this re-implementation could otherwise corrupt a legitimate result.
- * Instead it stamps a `serverVerification` field a teacher can use to spot
- * fabricated submissions; CAS/complex-grader question types are listed as
- * unverified rather than guessed at.
+ * score/percentage outright.
+ *
+ * Auto-corrects score/percentage ONLY when the entire test is deterministically
+ * verifiable (no CAS/complex-grader questions, so verifiedMax accounts for every
+ * point on the test) AND the submission seal (if this is a final-exam-mode test)
+ * checks out — the zero-ambiguity case where a mismatch can only mean the client
+ * submitted a fabricated score, not "our partial re-verification might be wrong."
+ * When the test mixes in unverified question types, or the seal is invalid
+ * (possible answer tampering, not just a wrong score), stays flag-only via
+ * `serverVerification` — correcting there would mean trusting an incomplete
+ * re-computation or an already-suspect submission, which risks silently
+ * corrupting a legitimate result worse than leaving a flagged fabrication for a
+ * teacher to review.
  */
 export const verifyDuggaSubmission = functions.firestore
   .document('dugga_submissions/{subId}')
@@ -999,6 +1007,11 @@ export const verifyDuggaSubmission = functions.firestore
         );
       }
 
+      // Only a fully-deterministic test (nothing excluded from verification) with a valid
+      // (or inapplicable) seal is safe to auto-correct — see docstring above.
+      const fullyVerifiable = unverifiedQuestionIds.length === 0;
+      const shouldCorrect = fullyVerifiable && !matches && sealValid !== false;
+
       await snap.ref.update({
         serverVerification: {
           checkedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1007,13 +1020,22 @@ export const verifyDuggaSubmission = functions.firestore
           matches,
           unverifiedQuestionIds,
           ...(sealValid !== null ? { sealValid } : {}),
+          ...(shouldCorrect ? {
+            corrected: true,
+            clientReportedScore: clientScore,
+            clientReportedPercentage: submission.percentage ?? null,
+          } : {}),
         },
+        ...(shouldCorrect ? {
+          score: verifiedEarned,
+          percentage: verifiedMax > 0 ? Math.round((verifiedEarned / verifiedMax) * 10000) / 100 : 0,
+        } : {}),
       });
 
       if (!matches || sealValid === false) {
         console.warn('[verifyDuggaSubmission] discrepancy or seal mismatch', {
           subId: snap.id, testId: submission.testId, studentUid: submission.studentUid,
-          clientScore, verifiedEarned, verifiedMax, sealValid,
+          clientScore, verifiedEarned, verifiedMax, sealValid, corrected: shouldCorrect,
         });
       }
       return null;
