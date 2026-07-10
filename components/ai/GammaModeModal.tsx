@@ -92,6 +92,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [isStartingLive, setIsStartingLive] = useState(false);
   const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
   const [liveHandsCount, setLiveHandsCount] = useState(0);
+  const [showResponsesPanel, setShowResponsesPanel] = useState(false);
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
   const handleExportPPTX = useCallback(async () => {
@@ -138,6 +139,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     setGammaLivePin(null);
     setLiveResponses([]);
     setLiveHandsCount(0);
+    setShowResponsesPanel(false);
   }, [gammaLivePin]);
 
   // Broadcast slide to students when live
@@ -170,7 +172,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   }, []);
 
   // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation)
-  useEffect(() => { setFormulaZoom(1); setEditMode(false); }, [idx]);
+  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); }, [idx]);
 
   // ── Presenter Mode ────────────────────────────────────────────────────────
   const presenterChannelRef = useRef<BroadcastChannel | null>(null);
@@ -222,6 +224,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const meta   = SLIDE_META[slide.type];
   const isStepSlide = slide.type === 'step-by-step' || slide.type === 'proof';
   const hasReveal   = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
+
+  // Responses for the slide currently on screen — used for both the "Живи одговори" list and poll tallies
+  const slideResponses = useMemo(() => liveResponses.filter(r => r.slideIdx === idx), [liveResponses, idx]);
 
   // ── Task timer logic ──────────────────────────────────────────────────────
   const startTimer = useCallback((seconds: number) => {
@@ -557,9 +562,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                 <RadioTower className="w-3 h-3" />
                 {gammaLivePin}
               </span>
-              {liveResponses.length > 0 && (
+              {slideResponses.length > 0 && (
                 <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold">
-                  <Users className="w-3 h-3" />{liveResponses.length}
+                  <Users className="w-3 h-3" />{slideResponses.length}
                 </span>
               )}
               {liveHandsCount > 0 && (
@@ -831,15 +836,30 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         {/* Gamma Live PIN overlay */}
         {gammaLivePin && (
           <div className="absolute bottom-4 right-4 z-40 pointer-events-none">
-            <div className="bg-slate-950/90 border border-red-500/40 rounded-2xl px-4 py-3 text-center shadow-2xl">
+            <div className="bg-slate-950/90 border border-red-500/40 rounded-2xl px-4 py-3 text-center shadow-2xl max-w-[260px] pointer-events-auto">
               <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-0.5">Gamma Live</p>
               <p className="text-2xl font-black text-white tracking-[0.25em]">{gammaLivePin}</p>
               <p className="text-[9px] text-slate-500 mt-0.5">ai.mismath.net/#/gamma/join</p>
-              {liveResponses.length > 0 && (
-                <p className="text-[10px] text-emerald-400 font-bold mt-1">✓ {liveResponses.length} одговори</p>
+              {slideResponses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowResponsesPanel(v => !v)}
+                  className="text-[10px] text-emerald-400 font-bold mt-1 hover:text-emerald-300 transition"
+                >
+                  ✓ {slideResponses.length} одговори {showResponsesPanel ? '▲' : '▼'}
+                </button>
               )}
               {liveHandsCount > 0 && (
                 <p className="text-[10px] text-amber-400 font-bold">✋ {liveHandsCount} крена рака</p>
+              )}
+              {showResponsesPanel && slideResponses.length > 0 && (
+                <ul className="mt-2 max-h-40 overflow-y-auto text-left space-y-1 border-t border-white/10 pt-2">
+                  {slideResponses.map(r => (
+                    <li key={r.studentId} className="text-[10px] text-slate-300 leading-snug">
+                      <span className="font-bold text-white">{r.studentName}:</span> {r.answer}
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
