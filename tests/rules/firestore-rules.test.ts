@@ -516,6 +516,47 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('class_memberships/{deviceDoc} — scoped to the claimed device owner, not any anonymous session', () => {
+    it('the legitimate owning anonymous uid (per student_identity) can read/write their own device\'s membership', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceX').set({ deviceId: 'deviceX', name: 'Марко', anonymousUid: 'owner-uid' });
+      });
+      const owner = testEnv.authenticatedContext('owner-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = owner.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> } };
+      await assertSucceeds(f.doc('class_memberships/deviceX').set({ teacherUid: 'teacher1', classId: 'c1', studentName: 'Марко' }));
+      await assertSucceeds(f.doc('class_memberships/deviceX').get());
+    });
+
+    it('a different anonymous session cannot read/write a device\'s membership once that device is claimed', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceY').set({ deviceId: 'deviceY', name: 'Ана', anonymousUid: 'real-owner-uid' });
+        await f.doc('class_memberships/deviceY').set({ teacherUid: 'teacher1', classId: 'c1', studentName: 'Ана' });
+      });
+      const impostor = testEnv.authenticatedContext('impostor-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = impostor.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> } };
+      await assertFails(f.doc('class_memberships/deviceY').set({ teacherUid: 'teacher1', classId: 'c1', studentName: 'hijacked' }));
+      await assertFails(f.doc('class_memberships/deviceY').get());
+    });
+
+    it('a brand-new (unclaimed) device is first-come-first-served, and the owning teacher can always read', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const firstComer = testEnv.authenticatedContext('brand-new-anon-uid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = firstComer.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('class_memberships/deviceZ').set({ teacherUid: 'teacher2', classId: 'c2', studentName: 'Дарко' }));
+
+      const teacher = testEnv.authenticatedContext('teacher2');
+      const fTeacher = teacher.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(fTeacher.doc('class_memberships/deviceZ').get());
+    });
+  });
+
   describe('saved_questions/{doc} — school-admin null-guard consistency', () => {
     it('a school_admin without their own schoolId set cannot read/delete a question missing schoolId', async () => {
       if (!testEnv) return;

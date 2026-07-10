@@ -368,11 +368,13 @@ service cloud.firestore {
     // Документ ID = deviceId на ученикот.
     // Ученикот (anonymous auth) може сам да ги чита/пишува своите.
     // Наставникот може да чита (за analytics).
-    // Student-only, self-service (join-class-by-code); doc ID = deviceId (client-generated,
-    // unverifiable — this only narrows from "any authenticated principal" to "any anonymous
-    // student session", it cannot verify a session owns a *specific* deviceId).
+    // doc ID = deviceId — now checked against student_identity/{deviceId}'s recorded
+    // anonymousUid via ownsClaimedDevice() (same mechanism already used for quiz_results/
+    // concept_mastery), instead of "any anonymous student session". First-come-first-served:
+    // if no student_identity doc exists yet for this deviceId (e.g. live-PIN-join before the
+    // first confirm completes), the write is still allowed — nothing to violate yet.
     match /class_memberships/{deviceDoc} {
-      allow read, write: if isAnonymousStudent() || isAdmin() ||
+      allow read, write: if (isAnonymousStudent() && ownsClaimedDevice(deviceDoc)) || isAdmin() ||
         (isAuthenticated() && resource.data.teacherUid == request.auth.uid);
     }
 
