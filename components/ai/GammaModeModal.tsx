@@ -23,8 +23,11 @@ import {
   revealGammaPollResults,
   sendGammaExitTicket,
   setGammaPacingMode,
+  addGammaAnnotationStroke,
+  clearGammaAnnotationStrokes,
   tallyPollResponses,
   type GammaLiveResponse,
+  type GammaAnnotationStroke,
 } from '../../services/gammaLiveService';
 import { saveGammaPresentation } from '../../services/gammaPresentationService';
 
@@ -265,7 +268,15 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
   useEffect(() => () => { liveUnsubRef.current?.(); liveSessionUnsubRef.current?.(); }, []);
 
   // ── Annotation tools ───────────────────────────────────────────────────────
-  const { canvasRef, annotMode, hasAnnotations, laserPos, undoCount, toggleAnnot, clearCanvas, undoAnnotation, onCanvasMouseDown, onCanvasMouseMove, onCanvasMouseUp, onCanvasMouseLeave } = useGammaAnnotation(idx);
+  // Only broadcasts when a live session is actually running — otherwise the annotation
+  // canvas behaves exactly as it always has (local-only scratch drawing on a static slide).
+  const onAnnotationStroke = useCallback((stroke: GammaAnnotationStroke) => {
+    if (gammaLivePin) addGammaAnnotationStroke(gammaLivePin, stroke);
+  }, [gammaLivePin]);
+  const onAnnotationClear = useCallback(() => {
+    if (gammaLivePin) clearGammaAnnotationStrokes(gammaLivePin);
+  }, [gammaLivePin]);
+  const { canvasRef, annotMode, hasAnnotations, laserPos, undoCount, toggleAnnot, clearCanvas, undoAnnotation, onCanvasMouseDown, onCanvasMouseMove, onCanvasMouseUp, onCanvasMouseLeave } = useGammaAnnotation(idx, onAnnotationStroke, onAnnotationClear);
 
   useEffect(() => {
     previousActiveElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, setGammaPacingMode, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
+import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, setGammaPacingMode, addGammaAnnotationStroke, clearGammaAnnotationStrokes, tallyPollResponses, type GammaLiveResponse, type GammaAnnotationStroke } from './gammaLiveService';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { AIGeneratedAssessment } from '../types';
 
@@ -61,12 +61,41 @@ describe('revealGammaPollResults', () => {
 });
 
 describe('broadcastGammaSlide', () => {
-  it('resets pollOptions, pollCorrectIndex, and pollRevealed alongside responseCount and handsUids', async () => {
+  it('resets pollOptions, pollCorrectIndex, pollRevealed, and annotationStrokes alongside responseCount and handsUids', async () => {
     await broadcastGammaSlide('123456', 3);
     expect(updateDoc).toHaveBeenCalledWith(
       ['doc-ref', {}, 'live_gamma', '123456'],
-      { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null, pollCorrectIndex: null, pollRevealed: false },
+      { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null, pollCorrectIndex: null, pollRevealed: false, annotationStrokes: [] },
     );
+  });
+});
+
+describe('addGammaAnnotationStroke', () => {
+  const stroke: GammaAnnotationStroke = { mode: 'draw', points: [{ x: 0.1, y: 0.1 }, { x: 0.5, y: 0.5 }], color: '#ef4444', width: 3 };
+
+  it('array-unions the stroke onto annotationStrokes', async () => {
+    await addGammaAnnotationStroke('123456', stroke);
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { annotationStrokes: { __op: 'arrayUnion', v: stroke } },
+    );
+  });
+
+  it('swallows write failures', async () => {
+    vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
+    await expect(addGammaAnnotationStroke('123456', stroke)).resolves.toBeUndefined();
+  });
+});
+
+describe('clearGammaAnnotationStrokes', () => {
+  it('resets annotationStrokes to an empty array', async () => {
+    await clearGammaAnnotationStrokes('123456');
+    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { annotationStrokes: [] });
+  });
+
+  it('swallows write failures', async () => {
+    vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
+    await expect(clearGammaAnnotationStrokes('123456')).resolves.toBeUndefined();
   });
 });
 

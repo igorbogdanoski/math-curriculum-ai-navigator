@@ -216,6 +216,56 @@ describe('GammaStudentView — free pacing mode (F2)', () => {
   });
 });
 
+describe('GammaStudentView — live annotation overlay (F1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionCallback = null;
+    responsesCallback = null;
+  });
+
+  it('renders the host\'s annotation strokes as an SVG overlay on the current slide', () => {
+    const { container } = render(<GammaStudentView pin="123456" />);
+    act(() => {
+      sessionCallback?.(baseSession({
+        annotationStrokes: [
+          { mode: 'draw', points: [{ x: 0.1, y: 0.1 }, { x: 0.5, y: 0.5 }], color: '#ef4444', width: 3 },
+        ],
+      }));
+    });
+
+    const polyline = container.querySelector('polyline');
+    expect(polyline).toBeTruthy();
+    expect(polyline?.getAttribute('points')).toBe('0.1,0.1 0.5,0.5');
+    expect(polyline?.getAttribute('stroke')).toBe('#ef4444');
+  });
+
+  it('renders no overlay when there are no strokes', () => {
+    const { container } = render(<GammaStudentView pin="123456" />);
+    act(() => { sessionCallback?.(baseSession({ annotationStrokes: [] })); });
+
+    expect(container.querySelector('polyline')).toBeNull();
+  });
+
+  it('hides the overlay while free-roaming away from the host\'s current slide', () => {
+    const twoSlides = [
+      { type: 'content', title: 'Слајд 1', content: ['Прв'] },
+      { type: 'task', title: 'Слајд 2', content: ['Втор'] },
+    ] as GammaLiveSession['slides'];
+    const { container } = render(<GammaStudentView pin="123456" />);
+    act(() => {
+      sessionCallback?.(baseSession({
+        slides: twoSlides,
+        slideIdx: 1,
+        pacingMode: 'free',
+        annotationStrokes: [{ mode: 'draw', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#ef4444', width: 3 }],
+      }));
+    });
+
+    fireEvent.click(screen.getByText('Претходен'));
+    expect(container.querySelector('polyline')).toBeNull();
+  });
+});
+
 describe('GammaStudentView — broadcast exit ticket', () => {
   beforeEach(() => {
     vi.clearAllMocks();

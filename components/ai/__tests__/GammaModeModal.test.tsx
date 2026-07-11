@@ -69,6 +69,8 @@ vi.mock('../../../services/gammaLiveService', () => ({
   revealGammaPollResults: vi.fn().mockResolvedValue(undefined),
   sendGammaExitTicket: (...args: unknown[]) => mockSendGammaExitTicket(...args),
   setGammaPacingMode: (...args: unknown[]) => mockSetGammaPacingMode(...args),
+  addGammaAnnotationStroke: vi.fn().mockResolvedValue(undefined),
+  clearGammaAnnotationStrokes: vi.fn().mockResolvedValue(undefined),
   tallyPollResponses: vi.fn(() => ({})),
 }));
 

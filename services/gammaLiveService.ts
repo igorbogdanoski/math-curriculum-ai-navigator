@@ -35,6 +35,20 @@ export interface GammaLiveSession {
   /** Absent or 'locked' (default) = today's exact behavior — every student mirrors slideIdx.
    *  'free' lets students navigate independently (GammaStudentView tracks its own local index). */
   pacingMode?: 'locked' | 'free';
+  /** Completed annotation strokes for the current slide, rendered as an SVG overlay on
+   *  every student's screen. Reset whenever the host moves to a different slide. */
+  annotationStrokes?: GammaAnnotationStroke[];
+}
+
+/** A single completed draw/highlight stroke, in coordinates normalized 0-1 relative to the
+ *  presenter's own canvas — an inherent cross-device approximation, since a student's screen
+ *  is rarely the exact same aspect ratio as the teacher's. Laser-pointer moves are ephemeral
+ *  and never recorded here. */
+export interface GammaAnnotationStroke {
+  mode: 'draw' | 'highlight';
+  points: { x: number; y: number }[];
+  color: string;
+  width: number;
 }
 
 export interface GammaLiveResponse {
@@ -78,9 +92,31 @@ export async function broadcastGammaSlide(pin: string, slideIdx: number): Promis
     await updateDoc(doc(db, 'live_gamma', pin), {
       slideIdx, responseCount: 0, handsUids: [],
       pollOptions: null, pollCorrectIndex: null, pollRevealed: false,
+      annotationStrokes: [],
     });
   } catch (err) {
     logger.warn('[GammaLive] broadcastSlide failed:', err);
+  }
+}
+
+/** Appends one completed stroke to the current slide's annotation overlay — host-only,
+ *  covered by isOwner(hostUid). Best-effort like every other live-sync write here; only
+ *  called when a live session is actually running. */
+export async function addGammaAnnotationStroke(pin: string, stroke: GammaAnnotationStroke): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { annotationStrokes: arrayUnion(stroke) });
+  } catch (err) {
+    logger.warn('[GammaLive] addAnnotationStroke failed:', err);
+  }
+}
+
+/** Clears the broadcast annotation overlay — called when the host clears their own canvas,
+ *  so students don't keep seeing marks the teacher has already erased. */
+export async function clearGammaAnnotationStrokes(pin: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { annotationStrokes: [] });
+  } catch (err) {
+    logger.warn('[GammaLive] clearAnnotationStrokes failed:', err);
   }
 }
 

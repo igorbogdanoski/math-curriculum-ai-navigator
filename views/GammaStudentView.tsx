@@ -321,7 +321,29 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
       )}
 
       {/* Slide content */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-6 gap-5 max-w-2xl mx-auto w-full">
+      <div className="relative flex-1 flex flex-col justify-center px-6 py-6 gap-5 max-w-2xl mx-auto w-full">
+        {/* Teacher's live annotations — approximate overlay, normalized to the presenter's own
+            canvas; only meaningful while looking at the slide the host is actually presenting. */}
+        {canRespond && session.annotationStrokes && session.annotationStrokes.length > 0 && (
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-10"
+            viewBox="0 0 1 1"
+            preserveAspectRatio="none"
+          >
+            {session.annotationStrokes.map((stroke, i) => (
+              <polyline
+                key={i}
+                points={stroke.points.map(p => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                stroke={stroke.color}
+                strokeWidth={stroke.width}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </svg>
+        )}
         {slide.title && (
           <h2 className="text-xl font-black text-white leading-tight">
             <MathRenderer text={slide.title} />
