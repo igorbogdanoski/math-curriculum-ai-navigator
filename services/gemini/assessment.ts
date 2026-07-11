@@ -163,11 +163,17 @@ async generateABCTest(
   numQuestions: number,
   context: GenerationContext,
   profile?: TeachingProfile,
+  extraInstruction?: string,
 ): Promise<{ a: AIGeneratedAssessment; b: AIGeneratedAssessment; c: AIGeneratedAssessment }> {
   // Longer per-call timeout than a single generateAssessment call — these 3 requests fire
   // in parallel against the same rate-limited API key pool, so each is more likely to hit
   // retries/backoff than a lone call, and the default timeout was observed to trip in practice.
   const ABC_TIMEOUT_MS = 90_000;
+  // extraInstruction carries the caller's teacher note / Macedonian-context hint / custom
+  // instruction (see hooks/useVariantGenerate.ts) — appended to each variant's own differentiation
+  // descriptor so it reaches the model for all three parallel calls, not just a single-variant
+  // generateAssessment call. generateAssessment sanitizes the combined string internally.
+  const withExtra = (base: string) => extraInstruction ? `${base} ${extraInstruction}` : base;
   // The client gates/discloses this whole operation at AI_COSTS.VARIANTS (one bundle price) —
   // only the first of the 3 parallel calls actually carries that cost; the other two ride for
   // free (BUNDLE_PART=0) so the server doesn't silently charge 3x ASSESSMENT on top of it.
@@ -181,7 +187,7 @@ async generateABCTest(
       'support',
       undefined,
       undefined,
-      'ВАРИЈАНТА А — ПОДДРШКА: Едноставни прашања со детални упатства. Нека бидат постепени, со многу структура.',
+      withExtra('ВАРИЈАНТА А — ПОДДРШКА: Едноставни прашања со детални упатства. Нека бидат постепени, со многу структура.'),
       undefined,
       undefined,
       undefined,
@@ -197,7 +203,7 @@ async generateABCTest(
       'standard',
       undefined,
       undefined,
-      'ВАРИЈАНТА Б — СТАНДАРДНО: Прашања на просечно ниво без дополнителни помагала.',
+      withExtra('ВАРИЈАНТА Б — СТАНДАРДНО: Прашања на просечно ниво без дополнителни помагала.'),
       undefined,
       undefined,
       undefined,
@@ -213,7 +219,7 @@ async generateABCTest(
       'advanced',
       undefined,
       undefined,
-      'ВАРИЈАНТА В — НАПРЕДНО: Предизвикувачки прашања со повеќечекорно решавање, апликација во реален контекст и критичко размислување.',
+      withExtra('ВАРИЈАНТА В — НАПРЕДНО: Предизвикувачки прашања со повеќечекорно решавање, апликација во реален контекст и критичко размислување.'),
       undefined,
       undefined,
       undefined,

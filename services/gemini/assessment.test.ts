@@ -46,6 +46,23 @@ describe('generateABCTest — server cost matches the single disclosed AI_COSTS.
 
     expect(total).toBe(AI_COSTS.VARIANTS);
   });
+
+  it('appends the caller\'s extraInstruction (teacher note / MK-context hint / custom instruction) to all 3 variant prompts', async () => {
+    await assessmentAPI.generateABCTest(5, context, undefined, 'БЕЛЕШКИ НА НАСТАВНИКОТ: фокус на негативни броеви');
+
+    expect(mockGenerateAndParseJSON).toHaveBeenCalledTimes(3);
+    for (const call of mockGenerateAndParseJSON.mock.calls) {
+      const promptText = (call[0] as { text: string }[])[0].text;
+      expect(promptText).toContain('БЕЛЕШКИ НА НАСТАВНИКОТ: фокус на негативни броеви');
+    }
+  });
+
+  it('omits any trailing instruction text when no extraInstruction is passed', async () => {
+    await assessmentAPI.generateABCTest(5, context);
+
+    const promptText = (mockGenerateAndParseJSON.mock.calls[0][0] as { text: string }[])[0].text;
+    expect(promptText).not.toContain('undefined');
+  });
 });
 
 describe('generateAssessment — cache key includes tier', () => {

@@ -71,6 +71,7 @@ export function useVariantGenerate({
         state.numQuestions,
         finalContext,
         user ?? undefined,
+        effectiveInstruction || undefined,
       );
       setVariants({ support: a, standard: b, advanced: c });
       if (typeof deductCredits === 'function') {
