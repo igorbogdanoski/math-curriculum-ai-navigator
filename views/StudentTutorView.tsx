@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { detectMathDomain, DOMAIN_TOOLS } from '../utils/mathDomainDetector';
 import { SolutionChecker } from '../components/common/SolutionChecker';
+import { PhotoWorksheetSolver } from '../components/common/PhotoWorksheetSolver';
 
 const DOK_TUTOR_HINTS: Record<DokLevel, string> = {
   1: 'Се потсетуваме на дефиниции и факти',
@@ -78,6 +79,7 @@ export const StudentTutorView: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showChecker, setShowChecker] = useState(false);
+  const [showPhotoSolver, setShowPhotoSolver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -250,6 +252,13 @@ export const StudentTutorView: React.FC = () => {
             >
               🔍 Провери го решението
             </button>
+            <button
+              type="button"
+              onClick={() => setShowPhotoSolver(v => !v)}
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${showPhotoSolver ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+            >
+              📷 Фотографирај домашна
+            </button>
             {/* DoK level strip */}
             <div className="hidden md:flex items-center gap-1.5">
               {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
@@ -265,6 +274,12 @@ export const StudentTutorView: React.FC = () => {
         {showChecker && (
           <div className="p-4 bg-indigo-50/50 border-b border-brand-100">
             <SolutionChecker />
+          </div>
+        )}
+
+        {showPhotoSolver && (
+          <div className="p-4 bg-indigo-50/50 border-b border-brand-100">
+            <PhotoWorksheetSolver />
           </div>
         )}
 
