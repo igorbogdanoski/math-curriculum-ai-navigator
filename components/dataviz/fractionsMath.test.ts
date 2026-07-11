@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   simplifyFraction, toDecimal, fractionToString, compareFractions, addFractions,
+  subtractFractions, multiplyFractions, divideFractions, toPercent, fractionFromPercent,
   toMixedNumber, fromMixedNumber, generateFractionsSet,
   GRADE_CONFIGS, type Fraction, type FractionGradeRange,
 } from './fractionsMath';
@@ -45,6 +46,53 @@ describe('addFractions', () => {
     expect(addFractions({ num: 1, den: 2 }, { num: 1, den: 4 })).toEqual({ num: 3, den: 4 });
     // 1/2 + 1/2 = 1 → simplifies to 1/1
     expect(addFractions({ num: 1, den: 2 }, { num: 1, den: 2 })).toEqual({ num: 1, den: 1 });
+  });
+});
+
+describe('subtractFractions', () => {
+  it('subtracts same-denominator fractions', () => {
+    expect(subtractFractions({ num: 3, den: 4 }, { num: 1, den: 4 })).toEqual({ num: 1, den: 2 });
+  });
+
+  it('subtracts different-denominator fractions and simplifies', () => {
+    expect(subtractFractions({ num: 1, den: 2 }, { num: 1, den: 4 })).toEqual({ num: 1, den: 4 });
+  });
+
+  it('can produce a negative result (caller is responsible for a>=b in a teaching context)', () => {
+    expect(subtractFractions({ num: 1, den: 4 }, { num: 1, den: 2 })).toEqual({ num: -1, den: 4 });
+  });
+});
+
+describe('multiplyFractions', () => {
+  it('multiplies numerators and denominators, then simplifies', () => {
+    expect(multiplyFractions({ num: 1, den: 2 }, { num: 2, den: 3 })).toEqual({ num: 1, den: 3 });
+  });
+
+  it('multiplying by a whole-number-equivalent fraction works', () => {
+    expect(multiplyFractions({ num: 3, den: 4 }, { num: 2, den: 1 })).toEqual({ num: 3, den: 2 });
+  });
+});
+
+describe('divideFractions', () => {
+  it('divides by multiplying by the reciprocal, then simplifies', () => {
+    expect(divideFractions({ num: 1, den: 2 }, { num: 1, den: 4 })).toEqual({ num: 2, den: 1 });
+  });
+
+  it('dividing a fraction by itself gives 1/1', () => {
+    expect(divideFractions({ num: 3, den: 5 }, { num: 3, den: 5 })).toEqual({ num: 1, den: 1 });
+  });
+});
+
+describe('toPercent / fractionFromPercent', () => {
+  it('converts common fractions to whole-number percents', () => {
+    expect(toPercent({ num: 1, den: 2 })).toBe(50);
+    expect(toPercent({ num: 1, den: 4 })).toBe(25);
+    expect(toPercent({ num: 3, den: 4 })).toBe(75);
+  });
+
+  it('round-trips a percent through fractionFromPercent', () => {
+    expect(fractionFromPercent(50)).toEqual({ num: 1, den: 2 });
+    expect(fractionFromPercent(25)).toEqual({ num: 1, den: 4 });
   });
 });
 
@@ -106,5 +154,18 @@ describe('generateFractionsSet', () => {
         expect(ex.question).not.toMatch(/мешаниот број/);
       }
     }
+  });
+
+  it('difficulty 2 pool covers subtraction and percent conversion alongside compare/add/decimal', () => {
+    const exs = generateFractionsSet('g6', 2, 20); // 20 exercises, 5 qTypes → each appears 4x
+    expect(exs.some(e => e.question.includes('−'))).toBe(true);
+    expect(exs.some(e => e.question.includes('процент'))).toBe(true);
+  });
+
+  it('difficulty 3 pool covers subtraction, multiplication, and division alongside mixed/add', () => {
+    const exs = generateFractionsSet('g6', 3, 20);
+    expect(exs.some(e => e.question.includes('−'))).toBe(true);
+    expect(exs.some(e => e.question.includes('×'))).toBe(true);
+    expect(exs.some(e => e.question.includes('÷'))).toBe(true);
   });
 });

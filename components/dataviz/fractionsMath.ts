@@ -36,6 +36,31 @@ export function addFractions(a: Fraction, b: Fraction): Fraction {
   return simplifyFraction({ num: a.num * b.den + b.num * a.den, den: a.den * b.den });
 }
 
+/** Subtracts b from a (any denominators) and simplifies the result. */
+export function subtractFractions(a: Fraction, b: Fraction): Fraction {
+  return simplifyFraction({ num: a.num * b.den - b.num * a.den, den: a.den * b.den });
+}
+
+/** Multiplies two fractions and simplifies the result. */
+export function multiplyFractions(a: Fraction, b: Fraction): Fraction {
+  return simplifyFraction({ num: a.num * b.num, den: a.den * b.den });
+}
+
+/** Divides a by b — multiplies by b's reciprocal — and simplifies the result. */
+export function divideFractions(a: Fraction, b: Fraction): Fraction {
+  return simplifyFraction({ num: a.num * b.den, den: a.den * b.num });
+}
+
+/** Converts a fraction to a whole-number percent (rounded). */
+export function toPercent(f: Fraction): number {
+  return Math.round(toDecimal(f) * 100);
+}
+
+/** Converts a whole-number percent to a simplified fraction (pct/100). */
+export function fractionFromPercent(pct: number): Fraction {
+  return simplifyFraction({ num: pct, den: 100 });
+}
+
 /** Converts an improper fraction to a mixed-number pair (whole, remainder-as-Fraction). */
 export function toMixedNumber(f: Fraction): { whole: number; remainder: Fraction } {
   const whole = Math.floor(f.num / f.den);
@@ -91,7 +116,9 @@ export function generateFractionsSet(
 
   for (let i = 0; i < count; i++) {
     const id = `fr-${grade}-${difficulty}-${i}`;
-    const qType = i % 3;
+    // Difficulty 1 sticks to 3 identification-style qTypes; 2 and 3 have 5 slots each
+    // (added subtraction/multiplication/division/percent alongside the original set).
+    const qType = difficulty === 1 ? i % 3 : i % 5;
 
     if (difficulty === 1) {
       if (qType === 0) {
@@ -178,7 +205,22 @@ export function generateFractionsSet(
           explanation: `${numA}/${den} + ${numB}/${den} = ${numA + numB}/${den} = ${fractionToString(sum)}`,
           difficulty: 2, curriculumRef: cur,
         });
-      } else {
+      } else if (qType === 2) {
+        // Subtract two same-denominator fractions (numA >= numB so the result stays non-negative)
+        const den = fRand(3, cfg.maxDenominator);
+        const numA = fRand(2, den - 1);
+        const numB = fRand(1, numA - 1);
+        const diff = simplifyFraction({ num: numA - numB, den });
+        exs.push({
+          id,
+          question: `${numA}/${den} − ${numB}/${den} = ?`,
+          type: 'fill_blank',
+          correctAnswer: fractionToString(diff),
+          hint: `Одземи ги броителите, именителот останува ист.`,
+          explanation: `${numA}/${den} − ${numB}/${den} = ${numA - numB}/${den} = ${fractionToString(diff)}`,
+          difficulty: 2, curriculumRef: cur,
+        });
+      } else if (qType === 3) {
         // Fraction → decimal
         const denPool = [2, 4, 5, 10];
         const den = denPool[fRand(0, denPool.length - 1)];
@@ -192,6 +234,22 @@ export function generateFractionsSet(
           correctAnswer: String(dec),
           hint: `Подели: ${num} ÷ ${den}`,
           explanation: `${fractionToString(f)} = ${num} ÷ ${den} = ${dec}`,
+          difficulty: 2, curriculumRef: cur,
+        });
+      } else {
+        // Fraction → percent
+        const denPool = [2, 4, 5, 10, 20];
+        const den = denPool[fRand(0, denPool.length - 1)];
+        const num = fRand(1, den - 1);
+        const f: Fraction = { num, den };
+        const pct = toPercent(f);
+        exs.push({
+          id,
+          question: `Колку изнесува ${fractionToString(f)} како процент?`,
+          type: 'numeric',
+          correctAnswer: String(pct),
+          hint: `Претвори во децимален број и помножи со 100: ${num} ÷ ${den} × 100`,
+          explanation: `${fractionToString(f)} = ${toDecimal(f)} = ${pct}%`,
           difficulty: 2, curriculumRef: cur,
         });
       }
@@ -242,20 +300,51 @@ export function generateFractionsSet(
           explanation: `${fractionToString(a)} = ${a.num * (bigDen / smallDen)}/${bigDen}. Собери: (${a.num * (bigDen / smallDen)} + ${b.num})/${bigDen} = ${fractionToString(sum)}`,
           difficulty: 3, curriculumRef: cur,
         });
-      } else {
-        // Fraction → decimal (harder denominators)
-        const denPool = [5, 8, 10, 20, 25];
-        const den = denPool[fRand(0, denPool.length - 1)];
-        const num = fRand(1, den - 1);
-        const f: Fraction = { num, den };
-        const dec = toDecimal(f);
+      } else if (qType === 2) {
+        // Subtract two fractions where one denominator divides the other (a >= b)
+        const smallDen = fRand(2, Math.max(2, Math.floor(cfg.maxDenominator / 2)));
+        const bigDen = smallDen * fRand(2, 3);
+        const a: Fraction = { num: fRand(1, smallDen - 1), den: smallDen };
+        const b: Fraction = { num: fRand(1, bigDen - 1), den: bigDen };
+        // Ensure a - b is non-negative for a teaching-friendly result: sort by decimal value.
+        const [big, small] = toDecimal(a) >= toDecimal(b) ? [a, b] : [b, a];
+        const diff = subtractFractions(big, small);
         exs.push({
           id,
-          question: `Колку изнесува ${fractionToString(f)} како децимален број?`,
-          type: 'numeric',
-          correctAnswer: String(dec),
-          hint: `Подели: ${num} ÷ ${den}`,
-          explanation: `${fractionToString(f)} = ${num} ÷ ${den} = ${dec}`,
+          question: `${fractionToString(big)} − ${fractionToString(small)} = ?`,
+          type: 'fill_blank',
+          correctAnswer: fractionToString(diff),
+          hint: `Доведи ги на заеднички именител пред да одземеш.`,
+          explanation: `${fractionToString(big)} − ${fractionToString(small)} = ${fractionToString(diff)}`,
+          difficulty: 3, curriculumRef: cur,
+        });
+      } else if (qType === 3) {
+        // Multiply two fractions
+        const a = randomProperFraction(Math.min(cfg.maxDenominator, 6));
+        const b = randomProperFraction(Math.min(cfg.maxDenominator, 6));
+        const product = multiplyFractions(a, b);
+        exs.push({
+          id,
+          question: `${fractionToString(a)} × ${fractionToString(b)} = ?`,
+          type: 'fill_blank',
+          correctAnswer: fractionToString(product),
+          hint: `Помножи ги броителите меѓу себе и именителите меѓу себе.`,
+          explanation: `${fractionToString(a)} × ${fractionToString(b)} = (${a.num}×${b.num})/(${a.den}×${b.den}) = ${fractionToString(product)}`,
+          difficulty: 3, curriculumRef: cur,
+        });
+      } else {
+        // Divide two fractions
+        const a = randomProperFraction(Math.min(cfg.maxDenominator, 6));
+        const b = randomProperFraction(Math.min(cfg.maxDenominator, 6));
+        const reciprocal: Fraction = { num: b.den, den: b.num };
+        const quotient = divideFractions(a, b);
+        exs.push({
+          id,
+          question: `${fractionToString(a)} ÷ ${fractionToString(b)} = ?`,
+          type: 'fill_blank',
+          correctAnswer: fractionToString(quotient),
+          hint: `Делењето со дропка е множење со нејзиниот реципрочен број: ${fractionToString(a)} × ${fractionToString(reciprocal)}`,
+          explanation: `${fractionToString(a)} ÷ ${fractionToString(b)} = ${fractionToString(a)} × ${fractionToString(reciprocal)} = ${fractionToString(quotient)}`,
           difficulty: 3, curriculumRef: cur,
         });
       }

@@ -115,6 +115,49 @@ describe('FractionsLab — Compare mode', () => {
   });
 });
 
+describe('FractionsLab — Operations mode', () => {
+  it('defaults to addition and shows the correct result for the default pair (1/2 + 1/4 = 3/4)', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    expect(screen.getByText('1/2 + 1/4 = 3/4')).toBeTruthy();
+  });
+
+  it('switching to × shows the area model and the correct product (1/2 × 1/4 = 1/8)', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '×' }));
+
+    expect(screen.getByRole('img', { name: /Модел на површина/ })).toBeTruthy();
+    expect(screen.getByText('1/2 × 1/4 = 1/8')).toBeTruthy();
+  });
+
+  it('switching to ÷ shows the reciprocal explanation and the correct quotient (1/2 ÷ 1/4 = 2/1)', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '÷' }));
+
+    expect(screen.getByText(/реципрочен број/)).toBeTruthy();
+    expect(screen.getByText('1/2 ÷ 1/4 = 2/1')).toBeTruthy();
+  });
+
+  it('switching to − updates the result live (1/2 − 1/4 = 1/4)', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '-' }));
+    expect(screen.getByText('1/2 - 1/4 = 1/4')).toBeTruthy();
+  });
+
+  it('dragging fraction A updates the result live', () => {
+    mockSvgBoundingRect(340, 64);
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+
+    const barA = screen.getByRole('img', { name: /Бар модел, 1 од 2/ });
+    fireEvent.click(barA, { clientX: 340, clientY: 32 }); // drag to num=den=2 → fraction A becomes 2/2
+    expect(screen.getByText('2/2 + 1/4 = 5/4')).toBeTruthy();
+  });
+});
+
 describe('FractionsLab — Build mode', () => {
   it('shows incorrect feedback when the constructed fraction does not match the target, correct when it does', () => {
     mockSvgBoundingRect(340, 64);

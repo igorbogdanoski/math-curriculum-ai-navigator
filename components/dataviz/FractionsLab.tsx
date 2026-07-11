@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Eye, PenLine, Target, RefreshCw, GitCompare } from 'lucide-react';
+import { Eye, PenLine, Target, RefreshCw, GitCompare, Divide } from 'lucide-react';
 import {
   type Fraction, type FractionGradeRange, GRADE_CONFIGS,
-  simplifyFraction, toDecimal, fractionToString, generateFractionsSet, randomProperFraction,
-  compareFractions,
+  simplifyFraction, toDecimal, toPercent, fractionToString, generateFractionsSet, randomProperFraction,
+  compareFractions, addFractions, subtractFractions, multiplyFractions, divideFractions,
 } from './fractionsMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
@@ -187,9 +187,45 @@ const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
   );
 };
 
+// ─── Area model — visualizes multiplication as overlapping row/column shading ────
+const AREA_W = 240, AREA_H = 180;
+
+interface AreaModelProps { fracA: Fraction; fracB: Fraction }
+
+/** fracA shades rows (denA rows, numA shaded), fracB shades columns (denB columns, numB
+ *  shaded) — the overlap of both shadings is the product's numerator, out of denA×denB
+ *  total cells. Standard fraction-multiplication area model. Read-only (no drag) —
+ *  driven entirely by the two fraction pickers above it. */
+const AreaModel: React.FC<AreaModelProps> = ({ fracA, fracB }) => {
+  const rows = fracA.den, cols = fracB.den;
+  const rowH = AREA_H / rows, colW = AREA_W / cols;
+  const cells: React.ReactNode[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const rowShaded = r < fracA.num;
+      const colShaded = c < fracB.num;
+      const fill = rowShaded && colShaded ? '#7c3aed' : rowShaded ? '#ddd6fe' : colShaded ? '#fbcfe8' : '#f8fafc';
+      cells.push(
+        <rect key={`${r}-${c}`} x={c * colW} y={r * rowH} width={colW} height={rowH}
+          fill={fill} stroke="#e2e8f0" strokeWidth={1} className="transition-colors" />
+      );
+    }
+  }
+  return (
+    <svg viewBox={`0 0 ${AREA_W} ${AREA_H}`} role="img"
+      aria-label={`Модел на површина, ${fracA.num}/${fracA.den} и ${fracB.num}/${fracB.den}`}
+      className="w-full max-w-[260px]"
+    >
+      {cells}
+      <rect x={0} y={0} width={AREA_W} height={AREA_H} fill="none" stroke="#6d28d9" strokeWidth={2} />
+    </svg>
+  );
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type Mode = 'show' | 'compare' | 'practice' | 'build';
+type Operation = '+' | '-' | '×' | '÷';
+type Mode = 'show' | 'compare' | 'operations' | 'practice' | 'build';
 
 export const FractionsLab: React.FC = () => {
   const [grade, setGrade] = useState<FractionGradeRange>('g4');
@@ -218,6 +254,24 @@ export const FractionsLab: React.FC = () => {
   const setNumB = useCallback((n: number) => setFracB(f => ({ ...f, num: n })), []);
   const setDenB = useCallback((d: number) => setFracB(f => ({ num: Math.min(f.num, d), den: d })), []);
 
+  // Operations mode — independent {num,den} pair + a selected operation, own state so
+  // dragging here never affects Compare mode's fracA/fracB and vice versa.
+  const [opFracA, setOpFracA] = useState<Fraction>({ num: 1, den: 2 });
+  const [opFracB, setOpFracB] = useState<Fraction>({ num: 1, den: 4 });
+  const [operation, setOperation] = useState<Operation>('+');
+  const clampedOpA = { num: Math.min(opFracA.num, opFracA.den), den: opFracA.den };
+  const clampedOpB = { num: Math.min(opFracB.num, opFracB.den), den: opFracB.den };
+  const opResult = operation === '+' ? addFractions(clampedOpA, clampedOpB)
+    : operation === '-' ? subtractFractions(clampedOpA, clampedOpB)
+    : operation === '×' ? multiplyFractions(clampedOpA, clampedOpB)
+    : divideFractions(clampedOpA, clampedOpB);
+  const opReciprocalB: Fraction = { num: clampedOpB.den, den: clampedOpB.num };
+
+  const setOpNumA = useCallback((n: number) => setOpFracA(f => ({ ...f, num: n })), []);
+  const setOpDenA = useCallback((d: number) => setOpFracA(f => ({ num: Math.min(f.num, d), den: d })), []);
+  const setOpNumB = useCallback((n: number) => setOpFracB(f => ({ ...f, num: n })), []);
+  const setOpDenB = useCallback((d: number) => setOpFracB(f => ({ num: Math.min(f.num, d), den: d })), []);
+
   // Practice mode — connected to quiz_results via useLabSession
   const session = useLabSession('fractions', 'Дропки — Бар, Круг и Бројна права');
   const [difficulty, setDifficulty] = useLabDifficulty('fractions');
@@ -242,10 +296,11 @@ export const FractionsLab: React.FC = () => {
   }, [cfg.maxDenominator]);
 
   const MODES: { id: Mode; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'show',     label: 'Прикажи',  icon: Eye        },
-    { id: 'compare',  label: 'Спореди',  icon: GitCompare },
-    { id: 'practice', label: 'Вежбај',   icon: PenLine    },
-    { id: 'build',    label: 'Состави',  icon: Target     },
+    { id: 'show',       label: 'Прикажи',   icon: Eye        },
+    { id: 'compare',    label: 'Спореди',   icon: GitCompare },
+    { id: 'operations', label: 'Операции',  icon: Divide     },
+    { id: 'practice',   label: 'Вежбај',    icon: PenLine    },
+    { id: 'build',      label: 'Состави',   icon: Target     },
   ];
 
   const GRADES: FractionGradeRange[] = ['g3', 'g4', 'g5', 'g6'];
@@ -313,7 +368,7 @@ export const FractionsLab: React.FC = () => {
             <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-2 text-center">
               <p className="text-2xl font-black text-indigo-700">{fractionToString(clampedFrac)}</p>
               <p className="text-xs text-indigo-500">
-                = {fractionToString(simplified)} = {decimal.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}
+                = {fractionToString(simplified)} = {decimal.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')} = {toPercent(clampedFrac)}%
               </p>
             </div>
           </div>
@@ -385,6 +440,92 @@ export const FractionsLab: React.FC = () => {
             </p>
             <p className="text-xs text-indigo-500 mt-1">
               {fractionToString(clampedA)} = {toDecimal(clampedA).toFixed(2)}, {fractionToString(clampedB)} = {toDecimal(clampedB).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODE: OPERATIONS ────────────────────────────────────────────────── */}
+      {mode === 'operations' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-700">Операција:</span>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+              {(['+', '-', '×', '÷'] as Operation[]).map(op => (
+                <button key={op} type="button" onClick={() => setOperation(op)}
+                  className={`w-9 h-9 rounded-lg text-base font-black transition ${
+                    operation === op ? 'bg-white shadow text-violet-700' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-6">
+            <div className="bg-gradient-to-br from-slate-50 to-violet-50 rounded-2xl border border-violet-100 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка А</p>
+                <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+                  {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
+                    <button key={d} type="button" onClick={() => setOpDenA(d)}
+                      className={`w-5 h-5 rounded text-[10px] font-bold transition ${
+                        clampedOpA.den === d ? 'bg-white shadow text-violet-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarModel num={clampedOpA.num} den={clampedOpA.den} onChange={setOpNumA} />
+              <p className="text-center text-lg font-black text-violet-700 mt-2">{fractionToString(clampedOpA)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-50 to-pink-50 rounded-2xl border border-pink-100 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка Б</p>
+                <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+                  {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
+                    <button key={d} type="button" onClick={() => setOpDenB(d)}
+                      className={`w-5 h-5 rounded text-[10px] font-bold transition ${
+                        clampedOpB.den === d ? 'bg-white shadow text-pink-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarModel num={clampedOpB.num} den={clampedOpB.den} onChange={setOpNumB} />
+              <p className="text-center text-lg font-black text-pink-700 mt-2">{fractionToString(clampedOpB)}</p>
+            </div>
+          </div>
+
+          {(operation === '+' || operation === '-') && (
+            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-700">
+              За да {operation === '+' ? 'собереш' : 'одземеш'} дропки со различен именител, прво доведи ги
+              на заеднички именител ({clampedOpA.den} × {clampedOpB.den} = {clampedOpA.den * clampedOpB.den}
+              {' '}е секогаш валиден заеднички именител), а потоа {operation === '+' ? 'собери' : 'одземи'} ги броителите.
+            </div>
+          )}
+
+          {(operation === '×' || operation === '÷') && (
+            <div className="bg-gradient-to-br from-slate-50 to-violet-50 rounded-2xl border border-violet-100 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Модел на површина</p>
+              <AreaModel fracA={clampedOpA} fracB={operation === '÷' ? opReciprocalB : clampedOpB} />
+              {operation === '÷' && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Делењето со дропка е множење со нејзиниот реципрочен број: {fractionToString(clampedOpA)} ÷ {fractionToString(clampedOpB)}
+                  {' '}= {fractionToString(clampedOpA)} × {fractionToString(opReciprocalB)}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 text-center">
+            <p className="text-2xl font-black text-violet-700">
+              {fractionToString(clampedOpA)} {operation} {fractionToString(clampedOpB)} = {fractionToString(opResult)}
             </p>
           </div>
         </div>
