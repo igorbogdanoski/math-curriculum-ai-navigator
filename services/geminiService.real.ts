@@ -7,6 +7,7 @@ import { chatAPI } from './gemini/chat';
 import { tutorAPI } from './gemini/tutor';
 import { pedagogyAPI } from './gemini/pedagogy';
 import { visionAPI } from './gemini/vision';
+import { coachingAPI } from './gemini/coaching';
 import { reportsAPI } from './gemini/reports';
 import { testgenAPI } from './gemini/testgen';
 import { annualAPI } from './gemini/annual';
@@ -48,6 +49,7 @@ export const realGeminiService = {
   ...tutorAPI,
   ...pedagogyAPI,
   ...visionAPI,
+  ...coachingAPI,
   ...reportsAPI,
   ...testgenAPI,
   ...annualAPI,

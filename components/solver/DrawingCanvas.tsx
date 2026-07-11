@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 import type Konva from 'konva';
 import { Pencil, Eraser, Trash2, Undo2, Download } from 'lucide-react';
@@ -17,9 +17,17 @@ const WIDTHS = [2, 4, 8, 16];
 
 export interface DrawingCanvasProps {
   height?: number;
+  /** Fires once per completed stroke (pointer-up) — never for laser/hover, only actual drawing. */
+  onStrokeEnd?: () => void;
 }
 
-export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ height = 320 }) => {
+export interface DrawingCanvasRef {
+  /** Base64 PNG of the current canvas contents (no data-URL prefix), or null if empty/unready. */
+  getSnapshot: () => string | null;
+  hasWork: () => boolean;
+}
+
+export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({ height = 320, onStrokeEnd }, ref) => {
   const [tool, setTool] = useState<Tool>('pencil');
   const [color, setColor] = useState('#1e293b');
   const [lineWidth, setLineWidth] = useState(4);
@@ -88,7 +96,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ height = 320 }) =>
       setCanUndo(snapIdxRef.current > 0);
       return current;
     });
-  }, []);
+    onStrokeEnd?.();
+  }, [onStrokeEnd]);
 
   const undo = () => {
     if (snapIdxRef.current <= 0) return;
@@ -113,6 +122,16 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ height = 320 }) =>
     a.download = 'drawing.png';
     a.click();
   };
+
+  useImperativeHandle(ref, () => ({
+    getSnapshot: () => {
+      const uri = stageRef.current?.toDataURL({ pixelRatio: 2 });
+      if (!uri) return null;
+      const [, base64] = uri.split(',');
+      return base64 ?? null;
+    },
+    hasWork: () => lines.length > 0,
+  }), [lines.length]);
 
   return (
     <div className="rounded-2xl border border-indigo-200 bg-white overflow-hidden shadow-sm">
@@ -232,4 +251,6 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ height = 320 }) =>
       </div>
     </div>
   );
-};
+});
+
+DrawingCanvas.displayName = 'DrawingCanvas';

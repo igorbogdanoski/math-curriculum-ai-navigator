@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   ArrowDown,
   CheckCircle,
@@ -11,8 +11,9 @@ import {
   Send,
   XCircle,
   PenLine,
+  Sparkles,
 } from 'lucide-react';
-import { DrawingCanvas } from './solver/DrawingCanvas';
+import { DrawingCanvas, type DrawingCanvasRef } from './solver/DrawingCanvas';
 
 import { geminiService } from '../services/geminiService';
 import { useVoice } from '../hooks/useVoice';
@@ -54,6 +55,16 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
 
   const [showCanvas, setShowCanvas] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Live AI-coached scratchpad — the drawing canvas gets a short Socratic hint on the
+  // student's in-progress work, without ever revealing the final answer.
+  const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
+  const [coachHint, setCoachHint] = useState<string | null>(null);
+  const [isCoaching, setIsCoaching] = useState(false);
+  const [coachError, setCoachError] = useState<string | null>(null);
+  const [hintsGivenCount, setHintsGivenCount] = useState(0);
+  const [autoCoach, setAutoCoach] = useState(false);
+  const autoCoachTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cognitive telemetry — per-step timing + hints + attempts
   const stepStartRef = useRef<number>(Date.now());
@@ -124,6 +135,9 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     attemptsRef.current = 0;
     setUserAttempt('');
     setVerifyResult(null);
+    setCoachHint(null);
+    setCoachError(null);
+    setHintsGivenCount(0);
   };
 
   const reset = () => {
@@ -132,6 +146,9 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setDeepExplanations({});
     setUserAttempt('');
     setVerifyResult(null);
+    setCoachHint(null);
+    setCoachError(null);
+    setHintsGivenCount(0);
     stepStartRef.current = Date.now();
     hintsRef.current = 0;
     attemptsRef.current = 0;
@@ -157,6 +174,32 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
       setVerifying(false);
     }
   };
+
+  const requestCoaching = useCallback(async () => {
+    if (isCoaching || !drawingCanvasRef.current?.hasWork()) return;
+    const snapshot = drawingCanvasRef.current.getSnapshot();
+    if (!snapshot) return;
+    setIsCoaching(true);
+    setCoachError(null);
+    try {
+      const { hint } = await geminiService.coachLiveWork(snapshot, 'image/png', problem, hintsGivenCount);
+      setCoachHint(hint);
+      setHintsGivenCount(prev => prev + 1);
+    } catch (error) {
+      logger.error('coachLiveWork error', error);
+      setCoachError('Не успеавме да го провериме работењето во моментов. Обиди се повторно.');
+    } finally {
+      setIsCoaching(false);
+    }
+  }, [isCoaching, problem, hintsGivenCount]);
+
+  const handleStrokeEnd = useCallback(() => {
+    if (!autoCoach) return;
+    if (autoCoachTimerRef.current) clearTimeout(autoCoachTimerRef.current);
+    autoCoachTimerRef.current = setTimeout(() => { requestCoaching(); }, 4000);
+  }, [autoCoach, requestCoaching]);
+
+  useEffect(() => () => { if (autoCoachTimerRef.current) clearTimeout(autoCoachTimerRef.current); }, []);
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mt-6 transition-all">
@@ -318,8 +361,40 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
           </button>
 
           {showCanvas && (
-            <div ref={canvasContainerRef} className="mt-3">
-              <DrawingCanvas />
+            <div ref={canvasContainerRef} className="mt-3 space-y-3">
+              <DrawingCanvas ref={drawingCanvasRef} onStrokeEnd={handleStrokeEnd} />
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={requestCoaching}
+                  disabled={isCoaching}
+                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 hover:bg-indigo-700 transition"
+                >
+                  {isCoaching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  Провери го моето работење
+                </button>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoCoach}
+                    onChange={e => setAutoCoach(e.target.checked)}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
+                  />
+                  Автоматски преглед
+                </label>
+              </div>
+
+              {coachError && <p className="text-xs text-red-600">{coachError}</p>}
+
+              {coachHint && (
+                <div className="rounded-xl p-4 text-sm bg-indigo-50 border border-indigo-200">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 shrink-0 text-indigo-600 mt-0.5" />
+                    <p className="text-indigo-800 font-medium">{coachHint}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
