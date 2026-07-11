@@ -1,6 +1,6 @@
 import React from 'react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
-import { Award, Download, Loader2 } from 'lucide-react';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Download, Loader2 } from 'lucide-react';
 
 // Create styles for the PDF
 const styles = StyleSheet.create({

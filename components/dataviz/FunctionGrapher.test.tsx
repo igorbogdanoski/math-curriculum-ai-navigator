@@ -3,8 +3,7 @@
  * Tests: safeEval correctness, edge cases, preset rendering, multi-function rendering
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 
 // ── Unit-test the evaluator logic directly ────────────────────────────────────
 

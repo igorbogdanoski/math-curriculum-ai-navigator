@@ -8,9 +8,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import {
-  GraduationCap, Star, Trophy, Brain, Zap, Award, CheckCircle2,
-  BarChart3, BookOpen, Share2, Printer, Copy, Check, Flame,
-  UserCircle2, Building, Sparkles, Target, Loader2, TrendingUp,
+  Star, Trophy, Brain, Zap, Award, CheckCircle2,
+  BookOpen, Share2, Printer, Copy, Check, Flame,
+  Building, Sparkles, Target, Loader2, TrendingUp,
 } from 'lucide-react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';

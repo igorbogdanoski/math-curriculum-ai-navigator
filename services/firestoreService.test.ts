@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { firestoreService } from './firestoreService';
-import { doc, getDoc, collection, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),

@@ -3,7 +3,6 @@ import React, { createContext, useContext, useMemo, useCallback, useState, useEf
 import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgression, Grade, Topic, NationalStandard, SecondaryCurriculumModule } from '../types';
 import { SECONDARY_TRACK_LABELS } from '../types';
 import type { CurriculumModule } from '../data/curriculum';
-import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
 import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../services/firestoreService.curriculumOverrides';
 import { getLocalizedTitle } from '../data/localeOverrides';
@@ -49,11 +48,11 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [personalOverrides, setPersonalOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [error] = useState<string | null>(null);
     const [uiLang, setUiLang] = useState<string>(() => {
         try { return localStorage.getItem('preferred_language') || 'mk'; } catch { return 'mk'; }
     });
-    const { addNotification } = useNotification();
+    useNotification();
     const { user, firebaseUser } = useAuth();
     const secondaryTrack = user?.secondaryTrack;
     // Admins see ALL secondary tracks regardless of their profile setting

@@ -7,7 +7,7 @@ import {
 import type { DuggaTest } from './firestoreService.dugga';
 import {
   doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  collection, query, where, orderBy, onSnapshot, serverTimestamp,
+  collection, query, where,
 } from 'firebase/firestore';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────

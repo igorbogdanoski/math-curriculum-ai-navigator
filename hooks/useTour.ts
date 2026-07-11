@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+﻿import { useEffect } from 'react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useTourStore } from './useTourStore';
 
@@ -8,12 +8,11 @@ export function useTour(
   tourName: string,
   steps: any[],
   readyToStart: boolean = true,
-  onStepChange?: (element: HTMLElement) => void
+  _onStepChange?: (element: HTMLElement) => void
 ) {
   const { toursSeen, isPreferencesLoaded } = useUserPreferences();
   const startTour = useTourStore((state) => state.startTour);
-  const currentTourName = useTourStore((state) => state.tourName);
-  
+
   useEffect(() => {
     if (!isPreferencesLoaded) return;
     if (!readyToStart) return;

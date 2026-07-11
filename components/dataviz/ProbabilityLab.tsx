@@ -5,8 +5,8 @@ import type { ChartConfig } from './ChartPreview';
 import {
   type ExperimentType, type SpinnerSector,
   SPINNER_COLORS, DEFAULT_SECTORS, DIE_FACES, EXPERIMENTS, EXP_LABEL,
-  wilsonCI, factorial, combinations, permutations, binomCoeff,
-  binomialPMF, normalPDF, getOutcomes, theoretical, rollOne,
+  wilsonCI, combinations, permutations,
+  getOutcomes, theoretical, rollOne,
   generateProbabilitySet,
 } from './probabilityMath';
 import { ConditionalProbabilityVenn, ProbabilityTreeBuilder, BinomialDistributionChart } from './ProbabilityLabPanels';

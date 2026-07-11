@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { BookOpen, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
 import {
   SM2Card,
@@ -12,10 +12,6 @@ import {
   conceptCardId,
   upsertCard,
 } from '../../utils/sm2';
-
-function todayStr() {
-  return new Date().toISOString().split('T')[0];
-}
 
 function conceptFront(theory: string): string {
   const dot = theory.indexOf('.');

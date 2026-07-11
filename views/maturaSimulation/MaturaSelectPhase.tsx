@@ -3,8 +3,8 @@ import { GraduationCap, Play, BookOpen } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import type { MaturaExamMeta } from '../../services/firestoreService.matura';
 import {
-    SESSION_LABELS, LANG_FLAGS, TRACK_ACCENT,
-    DURATION_SECONDS, gradeFromPercent, examLabel,
+    SESSION_LABELS, LANG_FLAGS,
+    gradeFromPercent,
 } from './maturaSimUtils';
 import type { SimResult } from './maturaSimUtils';
 

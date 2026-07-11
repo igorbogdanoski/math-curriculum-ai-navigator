@@ -53,7 +53,7 @@ export function useBreadcrumbs(path: string): Breadcrumb[] {
             } else {
                 crumbs.push({ label: 'Вчитувам...', path: cleanPath });
             }
-        } catch (e) {
+        } catch {
             crumbs.push({ label: 'Грешка во патека', path: '/explore' });
         }
         return crumbs;
@@ -72,7 +72,7 @@ export function useBreadcrumbs(path: string): Breadcrumb[] {
             } else {
                 crumbs.push({ label: 'Вчитувам...', path: cleanPath });
             }
-        } catch (e) {
+        } catch {
              crumbs.push({ label: 'Мисловна Мапа', path: cleanPath });
         }
         return crumbs;
@@ -92,7 +92,7 @@ export function useBreadcrumbs(path: string): Breadcrumb[] {
             } else {
                 crumbs.push({ label: 'Вчитувам поим...', path: cleanPath });
             }
-        } catch (e) {
+        } catch {
             crumbs.push({ label: 'Детали за поим', path: cleanPath });
         }
         return crumbs;
