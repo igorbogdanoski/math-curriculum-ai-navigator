@@ -14,6 +14,8 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { libraryTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
+import { publishScenario } from '../services/firestoreService.scenarioBank';
+import { PublishScenarioDialog, type PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 
 
 
@@ -81,16 +83,17 @@ const LessonPlanCard: React.FC<{
 
 export const LessonPlanLibraryView: React.FC = () => {
     const { navigate } = useNavigation();
-    const { lessonPlans, deleteLessonPlan, publishLessonPlan, isLoading } = usePlanner();
-    const { user } = useAuth();
+    const { lessonPlans, deleteLessonPlan, updateLessonPlan, isLoading } = usePlanner();
+    const { user, firebaseUser } = useAuth();
     const { addNotification } = useNotification();
     const { allConcepts, allNationalStandards } = useCurriculum();
     useTour('library', libraryTourSteps, lessonPlans.length > 0 && !isLoading);
     useUserPreferences();
     const { showModal, hideModal } = useModal();
-    
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [publishingPlan, setPublishingPlan] = useState<any>(null);
+    const [publishingPlan, setPublishingPlan] = useState<LessonPlan | null>(null);
+    const [isPublishingToBank, setIsPublishingToBank] = useState(false);
     const [gradeFilter, setGradeFilter] = useState<string>('all');
     const [conceptStandardFilter, setConceptStandardFilter] = useState<string>('all');
     const [tagFilters, setTagFilters] = useState<string[]>([]);
@@ -151,19 +154,37 @@ const handlePublish = (plan: LessonPlan) => {
         setPublishingPlan(plan);
     };
 
-    // _visibility: publishLessonPlan doesn't yet accept a visibility param, so
-    // confirmPublish('school') and confirmPublish('public') currently publish identically —
-    // the choice isn't applied. Flagged 2026-07-12, not fixed here (behavior change, not lint).
-    const confirmPublish = async (_visibility: 'school' | 'public') => {
-        if (!publishingPlan || !user) return;
-        setPublishingPlan(null);
+    // Was writing to communityLessonPlans (a collection Firestore rules have locked read-only
+    // since the S102 migration to scenario_bank — every publish attempt failed with a silent
+    // permission-denied). Fixed 2026-07-12 to reuse the same publishScenario() → scenario_bank
+    // path LessonPlanEditorView.tsx's "Publish to Bank" flow already uses successfully. Note:
+    // scenario_bank only has a public/private distinction (isPublic), not a school-only scope —
+    // the old "само за моето училиште" option had no backing rule to actually restrict reads to
+    // one school, so this dialog now offers the real public/private choice instead of one that
+    // silently did nothing.
+    const handleConfirmPublish = async (opts: PublishScenarioOptions) => {
+        if (!publishingPlan || !firebaseUser?.uid || !user) return;
+        setIsPublishingToBank(true);
         try {
-            await publishLessonPlan(publishingPlan.id, user.name);
-            const message = publishingPlan.isPublished ? 'Подготовката е успешно ажурирана во галеријата!' : 'Подготовката е успешно објавена!';
-            addNotification(message, 'success');
+            const bankId = await publishScenario({
+                plan: publishingPlan,
+                authorUid: firebaseUser.uid,
+                authorName: user.name ?? 'Наставник',
+                schoolName: user.schoolName,
+                teachingModel: opts.teachingModel ?? undefined,
+                dokLevel: opts.dokLevel ?? undefined,
+                isPublic: opts.isPublic,
+                authorNotes: opts.authorNotes,
+                originalAuthorName: publishingPlan.originalAuthor || undefined,
+            });
+            await updateLessonPlan({ ...publishingPlan, isPublished: true, scenarioBankId: bankId, authorName: user.name, schoolName: user.schoolName });
+            addNotification(opts.isPublic ? '✅ Подготовката е јавно споделена во Банката!' : '🔒 Подготовката е зачувана приватно во Банката.', 'success');
+            setPublishingPlan(null);
         } catch (error) {
             addNotification('Грешка при објавување на подготовката.', 'error');
             logger.error("Publishing failed:", error);
+        } finally {
+            setIsPublishingToBank(false);
         }
     };
 
@@ -304,55 +325,13 @@ const handlePublish = (plan: LessonPlan) => {
                  </EmptyState>
             )}
             {publishingPlan && (
-                <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center p-4 z-50">
-                    <Card className="max-w-md w-full !p-6">
-                        <h2 className="text-xl font-bold mb-4 text-gray-800">
-                            Објавување на подготовката
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Изберете каде сакате да ја објавите вашата подготовка: <strong>{publishingPlan.title}</strong>
-                        </p>
-                        
-                        <div className="space-y-4">
-                            {user?.schoolName && (
-                                <button 
-                                    onClick={() => confirmPublish('school')}
-                                    className="w-full text-left p-4 border rounded-xl hover:border-brand-primary hover:bg-brand-50 transition-colors flex items-start gap-4"
-                                >
-                                    <div className="bg-brand-100 p-2 rounded-lg text-brand-600">
-                                        <ICONS.school className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-800">Само за моето училиште</h3>
-                                        <p className="text-sm text-gray-500">Достапно само за наставници од {user?.schoolName}.</p>
-                                    </div>
-                                </button>
-                            )}
-
-                            <button 
-                                onClick={() => confirmPublish('public')}
-                                className="w-full text-left p-4 border rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition-colors flex items-start gap-4"
-                            >
-                                <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
-                                    <ICONS.globe className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-800">Јавно за сите</h3>
-                                    <p className="text-sm text-gray-500">Достапно во глобалната галерија за сите наставници во Македонија.</p>
-                                </div>
-                            </button>
-                        </div>
-                        
-                        <div className="mt-6 pt-4 border-t flex justify-end">
-                            <button 
-                                onClick={() => setPublishingPlan(null)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-                            >
-                                Откажи
-                            </button>
-                        </div>
-                    </Card>
-                </div>
+                <PublishScenarioDialog
+                    item={publishingPlan}
+                    isPro={user?.role === 'admin'}
+                    onPublish={handleConfirmPublish}
+                    onCancel={() => setPublishingPlan(null)}
+                    isLoading={isPublishingToBank}
+                />
             )}
         </div>
     );
