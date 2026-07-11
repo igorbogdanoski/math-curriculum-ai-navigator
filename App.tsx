@@ -43,6 +43,8 @@ import { CookieConsent } from './components/common/CookieConsent';
 import { DemoBanner } from './components/common/DemoBanner';
 import { ModalManager } from './components/common/ModalManager';
 import { WhatsNewModal } from './components/common/WhatsNewModal';
+import { StudentShell } from './components/student/StudentShell';
+import { isStudentShellRoute } from './utils/studentShellRoutes';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -541,6 +543,26 @@ const AIGeneratorPanelWithBoundary: React.FC = () => {
     );
 };
 
+/** P0 (2026-07-12 nav audit) — resolves the matched route the same way AppContent
+ * does (reusing the shared `routes` array), but renders it inside StudentShell
+ * instead of the teacher Sidebar/BottomNavBar shell. */
+const StudentShellRouter: React.FC = () => {
+    const { path, navigate, Component, params } = useRouter(routes);
+    const RenderComponent = Component || NotFoundView;
+
+    return (
+        <NavigationContext.Provider value={{ navigate }}>
+            <StudentShell path={path}>
+                <ErrorBoundary>
+                    <Suspense fallback={<AppSkeleton />}>
+                        <RenderComponent {...params} />
+                    </Suspense>
+                </ErrorBoundary>
+            </StudentShell>
+        </NavigationContext.Provider>
+    );
+};
+
 const AppCore: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
 
@@ -582,6 +604,16 @@ const AppCore: React.FC = () => {
         return (
             <Suspense fallback={<AppSkeleton />}>
                 <DuggaPlayerView />
+            </Suspense>
+        );
+    }
+
+    // P0 (2026-07-12 nav audit): student-facing routes get StudentShell, not
+    // the full teacher AuthenticatedApp shell.
+    if (isStudentShellRoute(window.location.hash)) {
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <StudentShellRouter />
             </Suspense>
         );
     }
