@@ -722,19 +722,26 @@ export async function regenerateSlide(
 
 interface PollOptionsResult {
   options: string[];
+  correctIndex: number;
+}
+
+export interface GeneratedPollOptions {
+  options: string[];
+  correctIndex: number;
 }
 
 /**
  * Generates up to 4 short multiple-choice poll options (one correct + plausible distractors)
  * from a Gamma Mode slide's title/content, for the teacher's "AI предложи" one-click button
- * on the live-poll launcher. Small, fast generation — billed at AI_COSTS.TEXT_BASIC (1 credit),
+ * on the live-poll launcher. correctIndex lets the teacher's reveal step show correct/incorrect
+ * feedback to students. Small, fast generation — billed at AI_COSTS.TEXT_BASIC (1 credit),
  * matching regenerateSlide's own implicit default for this kind of lightweight call.
  */
 export async function generatePollOptions(
   slideTitle: string,
   slideContent: string[],
   gradeLevel: number,
-): Promise<string[]> {
+): Promise<GeneratedPollOptions> {
   const safeTitle = sanitizePromptInput(slideTitle, 200);
   const safeContent = sanitizePromptInput(slideContent.join(' | '), 500);
 
@@ -742,7 +749,7 @@ export async function generatePollOptions(
 Ти си наставник по математика кој брзо создава анкета (poll) за учениците за време на час.
 
 ### ЗАДАЧА
-Врз основа на слајдот подолу, создади точно 4 кратки опции за анкета со повеќе избори. Точно една опција треба да биде точен одговор, останатите 3 треба да бидат веродостојни (типични грешки на ученици), не апсурдни.
+Врз основа на слајдот подолу, создади точно 4 кратки опции за анкета со повеќе избори. Точно една опција треба да биде точен одговор, останатите 3 треба да бидат веродостојни (типични грешки на ученици), не апсурдни. Наведи го и индексот (0-базиран) на точната опција.
 
 ### СЛАЈД
 Наслов: ${safeTitle}
@@ -752,21 +759,25 @@ export async function generatePollOptions(
 ### ПРАВИЛА
 - Точно 4 опции
 - Секоја опција до 6 збора
-- Точно една е точна, останатите се веродостојни дистрактори`;
+- Точно една е точна, останатите се веродостојни дистрактори
+- correctIndex: 0-базиран индекс на точната опција во низата options`;
 
   const schema = {
     type: Type.OBJECT,
     properties: {
       options: { type: Type.ARRAY, items: { type: Type.STRING } },
+      correctIndex: { type: Type.INTEGER },
     },
-    required: ['options'],
+    required: ['options', 'correctIndex'],
   };
 
   const result = await generateAndParseJSON<PollOptionsResult>(
     [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, undefined,
     { costKey: 'TEXT_BASIC' },
   );
-  return (result.options ?? []).slice(0, 4);
+  const options = (result.options ?? []).slice(0, 4);
+  const correctIndex = Math.min(Math.max(result.correctIndex ?? 0, 0), Math.max(options.length - 1, 0));
+  return { options, correctIndex };
 }
 
 /**

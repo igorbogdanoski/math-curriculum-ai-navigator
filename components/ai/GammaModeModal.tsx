@@ -20,6 +20,7 @@ import {
   subscribeGammaSession,
   subscribeGammaResponses,
   setGammaPollOptions,
+  revealGammaPollResults,
   tallyPollResponses,
   type GammaLiveResponse,
 } from '../../services/gammaLiveService';
@@ -50,21 +51,25 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
 };
 
 // ── Live poll results bar ──────────────────────────────────────────────────────
-function PollResultsBar({ options, tally }: { options: string[]; tally: Record<string, number> }) {
+function PollResultsBar({ options, tally, correctIndex }: { options: string[]; tally: Record<string, number>; correctIndex?: number | null }) {
   const total = Object.values(tally).reduce((s, n) => s + n, 0);
   return (
     <div className="mt-2 space-y-1.5 text-left">
       {options.map((opt, i) => {
         const count = tally[opt] ?? 0;
         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const isCorrect = correctIndex === i;
         return (
           <div key={i}>
             <div className="flex items-center justify-between text-[10px] text-slate-300 mb-0.5">
-              <span className="truncate pr-2">{String.fromCharCode(65 + i)}. {opt}</span>
+              <span className="truncate pr-2">
+                {isCorrect && <span className="text-emerald-400 mr-1">✓</span>}
+                {String.fromCharCode(65 + i)}. {opt}
+              </span>
               <span className="font-bold text-white shrink-0">{count}</span>
             </div>
             <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+              <div className={`h-full transition-all duration-500 ${isCorrect ? 'bg-emerald-500' : 'bg-violet-500'}`} style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -120,8 +125,11 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [liveHandsCount, setLiveHandsCount] = useState(0);
   const [showResponsesPanel, setShowResponsesPanel] = useState(false);
   const [activePollOptions, setActivePollOptions] = useState<string[] | null>(null);
+  const [activePollCorrectIndex, setActivePollCorrectIndex] = useState<number | null>(null);
+  const [activePollRevealed, setActivePollRevealed] = useState(false);
   const [showPollEditor, setShowPollEditor] = useState(false);
   const [pollDraft, setPollDraft] = useState<string[]>(['', '']);
+  const [pollCorrectDraft, setPollCorrectDraft] = useState<number | null>(null);
   const [isGeneratingPoll, setIsGeneratingPoll] = useState(false);
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
@@ -152,6 +160,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       liveSessionUnsubRef.current = subscribeGammaSession(pin, session => {
         setLiveHandsCount(session?.handsUids?.length ?? 0);
         setActivePollOptions(session?.pollOptions ?? null);
+        setActivePollCorrectIndex(session?.pollCorrectIndex ?? null);
+        setActivePollRevealed(session?.pollRevealed ?? false);
       });
     } catch {
       addNotification('Gamma Live: грешка при старт', 'error');
@@ -172,22 +182,37 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     setLiveHandsCount(0);
     setShowResponsesPanel(false);
     setActivePollOptions(null);
+    setActivePollCorrectIndex(null);
+    setActivePollRevealed(false);
     setShowPollEditor(false);
     setPollDraft(['', '']);
+    setPollCorrectDraft(null);
   }, [gammaLivePin]);
 
   const startPoll = useCallback(async () => {
     if (!gammaLivePin) return;
-    const options = pollDraft.map(o => o.trim()).filter(Boolean);
+    const trimmed = pollDraft.map(o => o.trim());
+    const options = trimmed.filter(Boolean);
     if (options.length < 2) return;
-    await setGammaPollOptions(gammaLivePin, options);
+    // Remap the marked-correct index to its position after blanks are filtered out —
+    // otherwise a blank option before it would silently shift which option gets marked correct.
+    const correctIndex = pollCorrectDraft !== null && trimmed[pollCorrectDraft]
+      ? trimmed.slice(0, pollCorrectDraft).filter(Boolean).length
+      : null;
+    await setGammaPollOptions(gammaLivePin, options, correctIndex);
     setShowPollEditor(false);
-  }, [gammaLivePin, pollDraft]);
+  }, [gammaLivePin, pollDraft, pollCorrectDraft]);
 
   const stopPoll = useCallback(async () => {
     if (!gammaLivePin) return;
     await setGammaPollOptions(gammaLivePin, null);
     setPollDraft(['', '']);
+    setPollCorrectDraft(null);
+  }, [gammaLivePin]);
+
+  const revealPoll = useCallback(async () => {
+    if (!gammaLivePin) return;
+    await revealGammaPollResults(gammaLivePin);
   }, [gammaLivePin]);
 
   // Broadcast slide to students when live
@@ -220,7 +245,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   }, []);
 
   // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation)
-  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); setShowPollEditor(false); setPollDraft(['', '']); }, [idx]);
+  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); setShowPollEditor(false); setPollDraft(['', '']); setPollCorrectDraft(null); }, [idx]);
 
   // ── Presenter Mode ────────────────────────────────────────────────────────
   const presenterChannelRef = useRef<BroadcastChannel | null>(null);
@@ -281,9 +306,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     if (isGeneratingPoll) return;
     setIsGeneratingPoll(true);
     try {
-      const options = await generatePollOptions(slide.title, slide.content, data.gradeLevel);
+      const { options, correctIndex } = await generatePollOptions(slide.title, slide.content, data.gradeLevel);
       if (options.length >= 2) {
         setPollDraft(options);
+        setPollCorrectDraft(correctIndex);
       } else {
         addNotification('Не успеа генерирањето — внеси рачно.', 'error');
       }
@@ -638,10 +664,18 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               )}
               {isTaskSlide && (
                 activePollOptions ? (
-                  <button type="button" onClick={stopPoll} title="Прекини анкета"
-                    className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition">
-                    <Vote className="w-3.5 h-3.5" />
-                  </button>
+                  <>
+                    {!activePollRevealed && (
+                      <button type="button" onClick={revealPoll} title="Прикажи резултати на учениците"
+                        className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition">
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button type="button" onClick={stopPoll} title="Прекини анкета"
+                      className="p-1.5 rounded-lg bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition">
+                      <Vote className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 ) : (
                   <button type="button" onClick={() => setShowPollEditor(v => !v)} title="Направи анкета"
                     className={`p-1.5 rounded-lg transition ${showPollEditor ? 'bg-violet-500/20 text-violet-300' : 'text-slate-500 hover:text-violet-300 hover:bg-violet-500/10'}`}>
@@ -722,17 +756,31 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </div>
           <div className="space-y-2">
             {pollDraft.map((opt, i) => (
-              <input
-                key={i}
-                type="text"
-                value={opt}
-                onChange={e => setPollDraft(d => d.map((v, j) => j === i ? e.target.value : v))}
-                placeholder={`Опција ${String.fromCharCode(65 + i)}`}
-                maxLength={80}
-                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
+              <div key={i} className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPollCorrectDraft(c => c === i ? null : i)}
+                  title={pollCorrectDraft === i ? 'Ова е точниот одговор' : 'Означи како точен одговор'}
+                  className={`w-6 h-6 shrink-0 rounded-full border flex items-center justify-center text-xs font-black transition ${
+                    pollCorrectDraft === i
+                      ? 'bg-emerald-500 border-emerald-400 text-white'
+                      : 'border-white/20 text-slate-500 hover:border-emerald-400 hover:text-emerald-400'
+                  }`}
+                >
+                  ✓
+                </button>
+                <input
+                  type="text"
+                  value={opt}
+                  onChange={e => setPollDraft(d => d.map((v, j) => j === i ? e.target.value : v))}
+                  placeholder={`Опција ${String.fromCharCode(65 + i)}`}
+                  maxLength={80}
+                  className="flex-1 min-w-0 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
             ))}
           </div>
+          <p className="text-[10px] text-slate-500 mt-1.5">Означи ✓ ако анкетата има точен одговор (по избор — остави празно за мислење/гласање).</p>
           <div className="flex items-center justify-between mt-3">
             {pollDraft.length < 4 ? (
               <button type="button" onClick={() => setPollDraft(d => [...d, ''])}
@@ -971,7 +1019,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                 <p className="text-[10px] text-amber-400 font-bold">✋ {liveHandsCount} крена рака</p>
               )}
               {activePollOptions && activePollOptions.length > 0 ? (
-                <PollResultsBar options={activePollOptions} tally={tallyPollResponses(liveResponses, idx)} />
+                <PollResultsBar options={activePollOptions} tally={tallyPollResponses(liveResponses, idx)} correctIndex={activePollCorrectIndex} />
               ) : (
                 <>
                   {slideResponses.length > 0 && (

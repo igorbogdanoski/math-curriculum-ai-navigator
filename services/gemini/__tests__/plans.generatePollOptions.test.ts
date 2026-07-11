@@ -19,10 +19,10 @@ vi.mock('../../../firebaseConfig', () => ({
 describe('plansAPI.generatePollOptions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B', 'C', 'D'] });
+    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B', 'C', 'D'], correctIndex: 2 });
   });
 
-  it('sends the sanitized slide title/content in the prompt and requests TEXT_BASIC billing', async () => {
+  it('sends the sanitized slide title/content in the prompt, requests correctIndex in the schema, and TEXT_BASIC billing', async () => {
     const { generatePollOptions } = await import('../plans');
 
     await generatePollOptions('Собирање дропки', ['1/2 + 1/4 = ?', 'Внимавај на именителот'], 5);
@@ -35,24 +35,43 @@ describe('plansAPI.generatePollOptions', () => {
     expect(prompt).toContain('1/2 + 1/4 = ?');
     expect(prompt).toContain('5');
 
-    expect((schema as { properties: { options: unknown } }).properties).toHaveProperty('options');
+    const props = (schema as { properties: Record<string, unknown>; required: string[] });
+    expect(props.properties).toHaveProperty('options');
+    expect(props.properties).toHaveProperty('correctIndex');
+    expect(props.required).toEqual(['options', 'correctIndex']);
     expect(overrides).toEqual({ costKey: 'TEXT_BASIC' });
   });
 
-  it('returns the generated options, capped at 4', async () => {
-    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B', 'C', 'D', 'E'] });
+  it('returns the generated options (capped at 4) and correctIndex', async () => {
+    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B', 'C', 'D', 'E'], correctIndex: 1 });
     const { generatePollOptions } = await import('../plans');
 
-    const options = await generatePollOptions('Тест', ['content'], 6);
-    expect(options).toEqual(['A', 'B', 'C', 'D']);
+    const result = await generatePollOptions('Тест', ['content'], 6);
+    expect(result).toEqual({ options: ['A', 'B', 'C', 'D'], correctIndex: 1 });
   });
 
-  it('returns an empty array if the model returns no options field', async () => {
+  it('returns an empty options array (and correctIndex 0) if the model returns no options field', async () => {
     mockGenerateAndParseJSON.mockResolvedValue({});
     const { generatePollOptions } = await import('../plans');
 
-    const options = await generatePollOptions('Тест', ['content'], 6);
-    expect(options).toEqual([]);
+    const result = await generatePollOptions('Тест', ['content'], 6);
+    expect(result.options).toEqual([]);
+  });
+
+  it('clamps an out-of-range correctIndex from a misbehaving model response', async () => {
+    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B'], correctIndex: 99 });
+    const { generatePollOptions } = await import('../plans');
+
+    const result = await generatePollOptions('Тест', ['content'], 6);
+    expect(result.correctIndex).toBe(1); // clamped to the last valid index (options.length - 1)
+  });
+
+  it('clamps a negative correctIndex up to 0', async () => {
+    mockGenerateAndParseJSON.mockResolvedValue({ options: ['A', 'B'], correctIndex: -3 });
+    const { generatePollOptions } = await import('../plans');
+
+    const result = await generatePollOptions('Тест', ['content'], 6);
+    expect(result.correctIndex).toBe(0);
   });
 
   it('sanitizes prompt-injection attempts in the slide title/content', async () => {

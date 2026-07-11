@@ -2,21 +2,72 @@
  * Gamma Student View — joins a live session via PIN, receives real-time slide sync.
  * Route: /gamma/student/:pin?name=StudentName
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Hand, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Hand, Send, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { MathRenderer } from '../components/common/MathRenderer';
 import {
   subscribeGammaSession,
+  subscribeGammaResponses,
   submitGammaResponse,
   raiseGammaHand,
   lowerGammaHand,
+  tallyPollResponses,
   type GammaLiveSession,
+  type GammaLiveResponse,
 } from '../services/gammaLiveService';
 
 interface Props {
   pin: string;
+}
+
+/** Live poll results, shown once the host reveals them — tally + the student's own vote
+ *  highlighted, plus correct/incorrect feedback when the poll has a designated correct answer. */
+function StudentPollResults({ options, tally, correctIndex, myAnswer }: {
+  options: string[]; tally: Record<string, number>; correctIndex: number | null; myAnswer: string;
+}) {
+  const total = Object.values(tally).reduce((s, n) => s + n, 0);
+  const isCorrect = correctIndex !== null && myAnswer === options[correctIndex];
+  return (
+    <div className="space-y-3">
+      {correctIndex !== null && (
+        <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl border ${
+          isCorrect ? 'bg-emerald-900/30 border-emerald-700/30' : 'bg-red-900/30 border-red-700/30'
+        }`}>
+          {isCorrect ? <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 shrink-0" />}
+          <p className={`text-sm font-semibold ${isCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
+            {isCorrect ? 'Точно! 🎉' : `Точниот одговор беше: ${options[correctIndex]}`}
+          </p>
+        </div>
+      )}
+      <div className="space-y-2">
+        {options.map((opt, i) => {
+          const count = tally[opt] ?? 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          const isMine = opt === myAnswer;
+          const isRight = correctIndex === i;
+          return (
+            <div key={i}>
+              <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                <span className={`truncate ${isRight ? 'text-emerald-400 font-bold' : 'text-slate-300'}`}>
+                  {isRight && '✓ '}{String.fromCharCode(65 + i)}. {opt}
+                  {isMine && <span className="text-indigo-400 font-bold"> (твојот глас)</span>}
+                </span>
+                <span className="font-bold text-white shrink-0">{count}</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${isRight ? 'bg-emerald-500' : isMine ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /** Returns the student's real Firebase Auth uid (anonymous), signing in if needed —
@@ -56,6 +107,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
   const [submitted, setSubmitted] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
   const lastSlideIdxRef = useRef<number>(-1);
 
   useEffect(() => {
@@ -71,6 +123,18 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
     });
     return unsub;
   }, [pin]);
+
+  // Needed for the post-reveal live tally (StudentPollResults) — same subcollection the
+  // teacher already reads; firestore.rules already permits any authenticated user to read it.
+  useEffect(() => {
+    const unsub = subscribeGammaResponses(pin, setLiveResponses);
+    return unsub;
+  }, [pin]);
+
+  const pollTally = useMemo(
+    () => tallyPollResponses(liveResponses, session?.slideIdx ?? -1),
+    [liveResponses, session?.slideIdx],
+  );
 
   const submit = useCallback(async () => {
     if (!answer.trim() || submitted || isSubmitting || !session || !studentId) return;
@@ -220,14 +284,26 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
           </div>
         )}
 
-        {isTask && submitted && (
+        {isTask && submitted && session.pollOptions && session.pollOptions.length > 0 && (
+          session.pollRevealed ? (
+            <StudentPollResults
+              options={session.pollOptions}
+              tally={pollTally}
+              correctIndex={session.pollCorrectIndex ?? null}
+              myAnswer={answer}
+            />
+          ) : (
+            <div className="flex items-center gap-3 bg-slate-800/60 border border-white/10 rounded-2xl px-5 py-4">
+              <div className="w-5 h-5 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin shrink-0" />
+              <p className="text-sm text-slate-300 font-semibold">Гласот е испратен ✓ — чекаме резултати...</p>
+            </div>
+          )
+        )}
+
+        {isTask && submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
           <div className="flex items-center gap-3 bg-emerald-900/30 border border-emerald-700/30 rounded-2xl px-5 py-4">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            <p className="text-sm text-emerald-300 font-semibold">
-              {session.pollOptions && session.pollOptions.length > 0
-                ? `Гласаше: ${answer}`
-                : 'Одговорот е испратен!'}
-            </p>
+            <p className="text-sm text-emerald-300 font-semibold">Одговорот е испратен!</p>
           </div>
         )}
       </div>

@@ -25,6 +25,10 @@ export interface GammaLiveSession {
   handsUids: string[];
   /** Live poll options for the current slide, set ad-hoc by the host; null when no poll is active. */
   pollOptions?: string[] | null;
+  /** Index into pollOptions marking the correct answer; null = opinion poll, no right answer. */
+  pollCorrectIndex?: number | null;
+  /** Whether poll results are currently visible to students (host-controlled reveal moment). */
+  pollRevealed?: boolean;
 }
 
 export interface GammaLiveResponse {
@@ -65,19 +69,38 @@ export async function startGammaLive(
 
 export async function broadcastGammaSlide(pin: string, slideIdx: number): Promise<void> {
   try {
-    await updateDoc(doc(db, 'live_gamma', pin), { slideIdx, responseCount: 0, handsUids: [], pollOptions: null });
+    await updateDoc(doc(db, 'live_gamma', pin), {
+      slideIdx, responseCount: 0, handsUids: [],
+      pollOptions: null, pollCorrectIndex: null, pollRevealed: false,
+    });
   } catch (err) {
     logger.warn('[GammaLive] broadcastSlide failed:', err);
   }
 }
 
-/** Sets (or clears, with null) the live poll options for the current slide. Host-only —
- *  covered by firestore.rules' isOwner(hostUid) full-write branch on the session doc. */
-export async function setGammaPollOptions(pin: string, options: string[] | null): Promise<void> {
+/** Sets (or clears, with null) the live poll options for the current slide. A freshly-started
+ *  poll always starts unrevealed — the host explicitly reveals results via
+ *  revealGammaPollResults(). Host-only — covered by firestore.rules' isOwner(hostUid)
+ *  full-write branch on the session doc. */
+export async function setGammaPollOptions(pin: string, options: string[] | null, correctIndex?: number | null): Promise<void> {
   try {
-    await updateDoc(doc(db, 'live_gamma', pin), { pollOptions: options });
+    await updateDoc(doc(db, 'live_gamma', pin), {
+      pollOptions: options,
+      pollCorrectIndex: correctIndex ?? null,
+      pollRevealed: false,
+    });
   } catch (err) {
     logger.warn('[GammaLive] setPollOptions failed:', err);
+  }
+}
+
+/** Reveals live poll results to students — the Kahoot-style "moment" the host triggers once
+ *  ready, rather than results always being visible immediately after voting. */
+export async function revealGammaPollResults(pin: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { pollRevealed: true });
+  } catch (err) {
+    logger.warn('[GammaLive] revealPollResults failed:', err);
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { setGammaPollOptions, broadcastGammaSlide, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
+import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
 import { doc, updateDoc } from 'firebase/firestore';
 
 vi.mock('../firebaseConfig', () => ({ db: {} }));
@@ -16,15 +16,29 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 describe('setGammaPollOptions', () => {
-  it('writes the given options to the session doc', async () => {
+  it('writes the given options and defaults correctIndex/revealed for an opinion poll (no correctIndex arg)', async () => {
     await setGammaPollOptions('123456', ['А', 'Б']);
     expect(doc).toHaveBeenCalledWith({}, 'live_gamma', '123456');
-    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { pollOptions: ['А', 'Б'] });
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { pollOptions: ['А', 'Б'], pollCorrectIndex: null, pollRevealed: false },
+    );
+  });
+
+  it('writes the given correctIndex when the poll has a designated correct answer', async () => {
+    await setGammaPollOptions('123456', ['А', 'Б', 'В'], 1);
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { pollOptions: ['А', 'Б', 'В'], pollCorrectIndex: 1, pollRevealed: false },
+    );
   });
 
   it('clears the poll by writing null', async () => {
     await setGammaPollOptions('123456', null);
-    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { pollOptions: null });
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { pollOptions: null, pollCorrectIndex: null, pollRevealed: false },
+    );
   });
 
   it('swallows write failures (best-effort, matches every other function in this file)', async () => {
@@ -33,12 +47,24 @@ describe('setGammaPollOptions', () => {
   });
 });
 
+describe('revealGammaPollResults', () => {
+  it('sets pollRevealed to true', async () => {
+    await revealGammaPollResults('123456');
+    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { pollRevealed: true });
+  });
+
+  it('swallows write failures', async () => {
+    vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
+    await expect(revealGammaPollResults('123456')).resolves.toBeUndefined();
+  });
+});
+
 describe('broadcastGammaSlide', () => {
-  it('resets pollOptions to null alongside responseCount and handsUids', async () => {
+  it('resets pollOptions, pollCorrectIndex, and pollRevealed alongside responseCount and handsUids', async () => {
     await broadcastGammaSlide('123456', 3);
     expect(updateDoc).toHaveBeenCalledWith(
       ['doc-ref', {}, 'live_gamma', '123456'],
-      { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null },
+      { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null, pollCorrectIndex: null, pollRevealed: false },
     );
   });
 });
