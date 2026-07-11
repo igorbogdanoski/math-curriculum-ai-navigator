@@ -892,6 +892,14 @@ service cloud.firestore {
       }
     }
 
+    // Teacher's own saved Gamma presentations — auto-saved by GammaModeModal on mount
+    // (2026-07-12), gives the /gamma library route something to list. Owner-scoped, same
+    // pattern as most other "my saved X" collections in this app.
+    match /gamma_presentations/{id} {
+      allow read, update, delete: if isOwner(resource.data.teacherUid) || isAdmin();
+      allow create: if isAuthenticated() && !isAnonymousStudent() && request.resource.data.teacherUid == request.auth.uid;
+    }
+
     // ── Matura spaced rep — S68+ ──
     match /matura_spaced_rep/{docId} {
       allow read, write: if isAuthenticated() && request.auth.uid == docId.split('_')[0];

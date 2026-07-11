@@ -172,7 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     '/explore', '/graph', '/roadmap',
     '/planner', '/annual-planner', '/annual-gallery', '/weekly-plan', '/ai-mindmap',
     '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-    '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
+    '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot', '/gamma',
     '/exam', '/dugga',
     '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
     '/national-library', '/olympiad', '/gallery', '/favorites', '/reports/coverage',

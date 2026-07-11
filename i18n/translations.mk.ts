@@ -96,6 +96,7 @@ export const mk: Record<string, string> = {
   'nav.testReview':        'AI Прегледувач',
   'nav.liveClass':         'Час во живо',
   'nav.kahootMaker':       'Kahoot Maker',
+  'nav.gammaLibrary':      'Gamma Презентации',
   'nav.digitalExam':       'Дигитален испит',
   'nav.dataViz':           'DataViz Studio',
   'nav.mathEditor':        'Математички Уредник',

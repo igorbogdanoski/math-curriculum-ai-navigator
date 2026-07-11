@@ -210,6 +210,7 @@ const MathEditorView = safeLazy(() => import('./views/MathEditorView').then(modu
 const DuggaBuilderView = safeLazy(() => import('./views/DuggaBuilderView').then(module => ({ default: module.DuggaBuilderView })));
 const DuggaPlayerView = safeLazy(() => import('./views/DuggaPlayerView').then(module => ({ default: module.DuggaPlayerView })));
 const DuggaLibraryView = safeLazy(() => import('./views/DuggaLibraryView').then(module => ({ default: module.DuggaLibraryView })));
+const GammaLibraryView = safeLazy(() => import('./views/GammaLibraryView').then(module => ({ default: module.GammaLibraryView })));
 const AIModelCompareView = safeLazy(() => import('./views/AIModelCompareView').then(module => ({ default: module.AIModelCompareView })));
 const AICodeOfConductView = safeLazy(() => import('./views/AICodeOfConductView').then(module => ({ default: module.AICodeOfConductView })));
 const UsageDashboardView = safeLazy(() => import('./views/UsageDashboardView').then(module => ({ default: module.UsageDashboardView })));
@@ -340,6 +341,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/dugga/build', component: DuggaBuilderView },
     { path: '/dugga/play', component: DuggaPlayerView },
     { path: '/dugga', component: DuggaLibraryView },
+    { path: '/gamma', component: GammaLibraryView },
     { path: '/ai/compare', component: AIModelCompareView },
     { path: '/ai/conduct', component: AICodeOfConductView },
     { path: '/usage', component: UsageDashboardView },

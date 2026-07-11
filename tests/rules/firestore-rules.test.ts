@@ -969,6 +969,61 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('gamma_presentations/{id} — owner-scoped Gamma library (2026-07-12)', () => {
+    it('a teacher can create their own presentation and read/update/delete it', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const f = teacher.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown>; delete(): Promise<unknown> };
+      };
+      await assertSucceeds(f.doc('gamma_presentations/p1').set({
+        teacherUid: 'teacher1', title: 'Т', topic: 'Дропки', gradeLevel: 5, slides: [],
+      }));
+      await assertSucceeds(f.doc('gamma_presentations/p1').get());
+      await assertSucceeds(f.doc('gamma_presentations/p1').update({ title: 'Нов наслов' }));
+      await assertSucceeds(f.doc('gamma_presentations/p1').delete());
+    });
+
+    it('cannot create a presentation claiming a teacherUid that is not the caller', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const impostor = testEnv.authenticatedContext('impostor-uid');
+      const f = impostor.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('gamma_presentations/p2').set({
+        teacherUid: 'someone-else', title: 'Т', topic: 'Дропки', gradeLevel: 5, slides: [],
+      }));
+    });
+
+    it('an anonymous student cannot create a presentation', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('gamma_presentations/p3').set({
+        teacherUid: 'student1', title: 'Т', topic: 'Дропки', gradeLevel: 5, slides: [],
+      }));
+    });
+
+    it('a different teacher cannot read, update, or delete someone else\'s saved presentation', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('gamma_presentations/p4').set({
+          teacherUid: 'owner1', title: 'Т', topic: 'Дропки', gradeLevel: 5, slides: [],
+        });
+      });
+      const other = testEnv.authenticatedContext('other-teacher');
+      const f = other.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown>; delete(): Promise<unknown> };
+      };
+      await assertFails(f.doc('gamma_presentations/p4').get());
+      await assertFails(f.doc('gamma_presentations/p4').update({ title: 'Hijacked' }));
+      await assertFails(f.doc('gamma_presentations/p4').delete());
+    });
+  });
+
   describe('forum_threads/forum_replies — report/flag', () => {
     it('a non-author can report a thread (sets moderationStatus=pending + their own uid in reportedBy) but cannot self-approve through the same write', async () => {
       if (!testEnv) return;

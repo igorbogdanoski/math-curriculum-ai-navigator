@@ -96,6 +96,7 @@ export const sq: Record<string, string> = {
   'nav.testReview':        'Rishikues AI',
   'nav.liveClass':         'Mësim live',
   'nav.kahootMaker':       'Kahoot Maker',
+  'nav.gammaLibrary':      'Prezantimet Gamma',
   'nav.digitalExam':       'Provim dixhital',
   'nav.dataViz':           'DataViz Studio',
   'nav.mathEditor':        'Redaktor Matematike',

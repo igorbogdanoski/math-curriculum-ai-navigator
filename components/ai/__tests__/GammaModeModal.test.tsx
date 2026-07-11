@@ -7,12 +7,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { GammaModeModal } from '../GammaModeModal';
 import type { AIGeneratedPresentation } from '../../../types';
 
+const mockUseAuth = vi.fn(() => ({ user: null, firebaseUser: null as { uid: string } | null }));
 vi.mock('../../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: null }),
+  useAuth: () => mockUseAuth(),
 }));
 
 vi.mock('../../../contexts/NotificationContext', () => ({
   useNotification: () => ({ addNotification: vi.fn() }),
+}));
+
+const mockSaveGammaPresentation = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../../services/gammaPresentationService', () => ({
+  saveGammaPresentation: (...args: unknown[]) => mockSaveGammaPresentation(...args),
 }));
 
 vi.mock('../../math/Shape3DViewer', () => ({
@@ -48,6 +54,7 @@ function makePresentation(slides: AIGeneratedPresentation['slides']): AIGenerate
 describe('GammaModeModal hardening', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: null });
 
     window.katex = {
       renderToString: (latex: string) => `<span>${latex}</span>`,
@@ -158,5 +165,41 @@ describe('GammaModeModal hardening', () => {
     const dialog = screen.getByRole('dialog', { name: 'Gamma Mode презентација' });
     expect(dialog).toBeTruthy();
     expect(document.activeElement).toBe(dialog);
+  });
+});
+
+describe('GammaModeModal — auto-save to the Gamma library', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: null });
+    window.katex = { renderToString: (latex: string) => `<span>${latex}</span>` };
+  });
+
+  it('saves the presentation once a logged-in teacher opens it', () => {
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: { uid: 'teacher-1' } });
+    const data = makePresentation([{ title: 'Прв', type: 'content', content: ['x + 1'] }]);
+
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} />);
+
+    expect(mockSaveGammaPresentation).toHaveBeenCalledTimes(1);
+    expect(mockSaveGammaPresentation).toHaveBeenCalledWith('teacher-1', data);
+  });
+
+  it('does not save when there is no logged-in firebaseUser (e.g. an anonymous student view)', () => {
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: null });
+    const data = makePresentation([{ title: 'Прв', type: 'content', content: ['x + 1'] }]);
+
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} />);
+
+    expect(mockSaveGammaPresentation).not.toHaveBeenCalled();
+  });
+
+  it('does not re-save when reopened from the library (skipLibrarySave)', () => {
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: { uid: 'teacher-1' } });
+    const data = makePresentation([{ title: 'Прв', type: 'content', content: ['x + 1'] }]);
+
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} skipLibrarySave />);
+
+    expect(mockSaveGammaPresentation).not.toHaveBeenCalled();
   });
 });

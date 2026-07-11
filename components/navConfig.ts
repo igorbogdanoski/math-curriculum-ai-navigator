@@ -88,10 +88,11 @@ export const SECONDARY_NAV_GROUPS: NavGroupConfig[] = [
         i18nKey: 'nav.liveHub',
         iconKey: 'live',
         badge: 'live',
-        paths: ['/live', '/kahoot'],
+        paths: ['/live', '/kahoot', '/gamma'],
         items: [
-          { i18nKey: 'nav.liveClass',   path: '/live/host',   iconKey: 'live', badge: 'live' },
-          { i18nKey: 'nav.kahootMaker', path: '/kahoot/make', iconKey: 'live', badge: 'new' },
+          { i18nKey: 'nav.liveClass',    path: '/live/host',   iconKey: 'live', badge: 'live' },
+          { i18nKey: 'nav.kahootMaker',  path: '/kahoot/make', iconKey: 'live', badge: 'new' },
+          { i18nKey: 'nav.gammaLibrary', path: '/gamma',       iconKey: 'sparkles', badge: 'new' },
         ],
       },
       {

@@ -96,6 +96,7 @@ export const tr: Record<string, string> = {
   'nav.testReview':        'AI Gözlemci',
   'nav.liveClass':         'Canlı Ders',
   'nav.kahootMaker':       'Kahoot Yapıcı',
+  'nav.gammaLibrary':      'Gamma Sunumları',
   'nav.digitalExam':       'Dijital Sınav',
   'nav.dataViz':           'DataViz Stüdyosu',
   'nav.mathEditor':        'Matematik Editörü',

@@ -24,6 +24,7 @@ import {
   tallyPollResponses,
   type GammaLiveResponse,
 } from '../../services/gammaLiveService';
+import { saveGammaPresentation } from '../../services/gammaPresentationService';
 
 import { SlideBody } from './GammaModeSlideBody';
 
@@ -32,6 +33,9 @@ interface Props {
   data: AIGeneratedPresentation;
   startIndex?: number;
   onClose: () => void;
+  /** Set when reopening a presentation already fetched from the Gamma library (GammaLibraryView)
+   *  — skips the auto-save-on-mount so reopening a saved presentation doesn't duplicate it. */
+  skipLibrarySave?: boolean;
 }
 
 // ── Slide type config ─────────────────────────────────────────────────────────
@@ -79,7 +83,7 @@ function PollResultsBar({ options, tally, correctIndex }: { options: string[]; t
 }
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
-export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose }) => {
+export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose, skipLibrarySave = false }) => {
   const { user, firebaseUser }  = useAuth();
   const { addNotification }     = useNotification();
   const [idx, setIdx]           = useState(startIndex);
@@ -92,6 +96,19 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const containerRef            = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Auto-save a copy of this presentation to the teacher's Gamma library (/gamma) once per
+  // mount — every invocation site (GeneratedPresentation, ConceptDetailView, TopicView,
+  // DataVizStudioView) funnels through this one component, so this is the single choke point
+  // that captures every presentation regardless of where it was generated. Best-effort —
+  // saveGammaPresentation swallows its own errors, never blocks presenting.
+  const savedToLibraryRef = useRef(false);
+  useEffect(() => {
+    if (savedToLibraryRef.current || !firebaseUser || skipLibrarySave) return;
+    savedToLibraryRef.current = true;
+    saveGammaPresentation(firebaseUser.uid, data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser]);
 
   // ── Thumbnail grid ────────────────────────────────────────────────────────
   const [showGrid, setShowGrid] = useState(false);
