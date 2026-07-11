@@ -368,17 +368,109 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # P1 (2026-07-12 e2e-CI audit): 23 of 25 Playwright specs existed on disk
+  # but were referenced nowhere in CI — written, never run. This job runs all
+  # of them so their pass/fail status is at least visible; it stays
+  # informational (not in build's needs:) since specs that have never run
+  # before may have drifted from the app and would false-block every merge
+  # if given gating power on day one.
+  e2e-full:
+    name: E2E Full Suite (informational)
+    runs-on: ubuntu-latest
+    needs: [quality-gate]
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run full Playwright suite
+        run: npx playwright test --reporter=list
+        env:
+          VITE_FIREBASE_API_KEY: dummy-key
+          VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dummy-project
+          VITE_FIREBASE_STORAGE_BUCKET: dummy.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+          VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+          VITE_GEMINI_API_KEY: dummy-gemini-key
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-full-report
+          path: playwright-report/
+          retention-days: 7
+
+  # P1 (2026-07-12 e2e-CI audit): a small, deliberately-curated subset of the
+  # 25 specs — the highest-blast-radius flows (login/auth, the core student
+  # path, the core teacher path) — promoted to actually gate `build`. Not all
+  # 25: e2e-full above surfaces which of the rest are actually green before
+  # any of them earn gating power too.
+  e2e-critical:
+    name: E2E Critical Path (gates build)
+    runs-on: ubuntu-latest
+    needs: [quality-gate]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run critical-path Playwright specs
+        run: npx playwright test tests/auth-guard.spec.ts tests/student-flow.spec.ts tests/happy-path.spec.ts tests/teacher-quiz.spec.ts --reporter=list
+        env:
+          VITE_FIREBASE_API_KEY: dummy-key
+          VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dummy-project
+          VITE_FIREBASE_STORAGE_BUCKET: dummy.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+          VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+          VITE_GEMINI_API_KEY: dummy-gemini-key
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-critical-report
+          path: playwright-report/
+          retention-days: 7
+
   # ── Deploy — gated on the quality gates above, not a standalone workflow ──
   # Previously `deploy.yml` was a separate workflow with no relationship to this one, so a push
   # to main that failed typecheck/lint/tests/rules-tests could still deploy to production as
   # long as `npm run build` itself succeeded. Moved in here so `needs:` can enforce the real gate.
-  # Deliberately depends on `quality-gate` + `firestore-rules-test` only (not
+  # Deliberately depends on `quality-gate` + `firestore-rules-test` + `e2e-critical` only (not
   # `reliability-baseline`, which tracks a rolling historical pass-rate unrelated to whether the
-  # current commit is broken, or the informational `a11y-axe`/`e2e-emulator-smoke` jobs).
+  # current commit is broken, or the informational `a11y-axe`/`e2e-emulator-smoke`/`e2e-full` jobs).
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [quality-gate, firestore-rules-test]
+    needs: [quality-gate, firestore-rules-test, e2e-critical]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:

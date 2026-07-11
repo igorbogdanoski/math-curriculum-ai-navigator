@@ -25,6 +25,8 @@ import { aggregateCognitiveProfile } from '../hooks/useStudentCognitiveProfile';
 import { useStudentRealtime } from '../hooks/useStudentRealtime';
 import { fetchStudentDuggaSubmissionsByName } from '../services/firestoreService.dugga';
 import type { DuggaSubmission } from '../services/firestoreService.dugga';
+import { useTour } from '../hooks/useTour';
+import { studentTourSteps } from '../tours/student-tour-steps';
 
 interface QuickLink {
   href: string;
@@ -108,6 +110,8 @@ export const StudentDashboardView: React.FC = () => {
       navigate('/student/login');
     }
   }, [studentName, navigate]);
+
+  useTour('student-intro', studentTourSteps, !!studentName.trim());
 
   const { data, isLoading, error, refetch, isRefetching } = useStudentProgress(studentName, false);
   const { announcements, assignments } = useStudentRealtime(
@@ -210,7 +214,7 @@ export const StudentDashboardView: React.FC = () => {
       </div>
 
       {/* Gamification stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div data-tour="student-stats" className="grid grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-amber-700">
             <Star className="w-4 h-4" />
@@ -357,7 +361,7 @@ export const StudentDashboardView: React.FC = () => {
       )}
 
       {/* Quick links */}
-      <section>
+      <section data-tour="student-quick-links">
         <h2 className="text-lg font-bold text-gray-800 mb-3">Брзи кратенки</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {QUICK_LINKS.map((q) => (

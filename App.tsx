@@ -186,12 +186,23 @@ const FlashcardPlayerView = safeLazy(() => import('./views/FlashcardPlayerView')
 const ContentReviewView = safeLazy(() => import('./views/ContentReviewView').then(module => ({ default: module.ContentReviewView })));
 const NotFoundView = safeLazy(() => import('./views/NotFoundView').then(module => ({ default: module.NotFoundView })));
 const ProgressionView = safeLazy(() => import('./views/ProgressionView').then(module => ({ default: module.ProgressionView })));
-const ExamplesGalleryView = safeLazy(() => import('./views/ExamplesGalleryView').then(module => ({ default: module.ExamplesGalleryView })));
 const LessonPlanEditorView = safeLazy(() => import('./views/LessonPlanEditorView').then(module => ({ default: module.LessonPlanEditorView })));
 const LessonPlanLibraryView = safeLazy(() => import('./views/LessonPlanLibraryView').then(module => ({ default: module.LessonPlanLibraryView })));
 const ContentLibraryView = safeLazy(() => import('./views/ContentLibraryView').then(module => ({ default: module.ContentLibraryView })));
 // Redirect /library → /scenario-bank (One Hub consolidation)
 const LibraryRedirect: React.FC = () => {
+  const { navigate } = useNavigation();
+  useEffect(() => { navigate('/scenario-bank'); }, [navigate]);
+  return null;
+};
+// P1 (2026-07-12 nav audit): /gallery read from `communityLessonPlans`, a
+// collection Firestore has had `allow write: if false` on since the S102
+// migration — nothing can populate it with fresh content ever again, so it
+// permanently only shows hardcoded seed data. `scenario_bank` (via
+// /scenario-bank) is this app's actual actively-written consolidated hub —
+// redirect here rather than migrate ExamplesGalleryView to read
+// scenario_bank too, which would just create a second parallel gallery UI.
+const GalleryRedirect: React.FC = () => {
   const { navigate } = useNavigation();
   useEffect(() => { navigate('/scenario-bank'); }, [navigate]);
   return null;
@@ -330,7 +341,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/generator', component: GeneratorRouteHandler },
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: LibraryRedirect },
-    { path: '/gallery', component: ExamplesGalleryView },
+    { path: '/gallery', component: GalleryRedirect },
     { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView }, { path: '/school-admin/curriculum', component: CurriculumEditorView },    { path: '/system-admin', component: SystemAdminView }, { path: '/progression', component: ProgressionView },
     { path: '/reviews', component: ContentReviewView },
     { path: '/graph', component: CurriculumGraphView },

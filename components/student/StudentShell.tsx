@@ -50,6 +50,7 @@ export const StudentShell: React.FC<StudentShellProps> = ({ path, children }) =>
         </button>
         <div className="flex items-center gap-2">
           <select
+            data-tour="student-language"
             value={language}
             onChange={(e) => setLanguage(e.target.value as Language)}
             aria-label="Избери јазик на интерфејсот"
@@ -72,6 +73,7 @@ export const StudentShell: React.FC<StudentShellProps> = ({ path, children }) =>
           {!isLogin && (
             <button
               type="button"
+              data-tour="student-logout"
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 border border-gray-200 rounded-md"
               aria-label="Одјави се"
