@@ -58,6 +58,7 @@ vi.mock('../gamma/useGammaExitTicket', () => ({
 
 const mockStartGammaLive = vi.fn().mockResolvedValue('654321');
 const mockSendGammaExitTicket = vi.fn().mockResolvedValue(undefined);
+const mockSetGammaPacingMode = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../../services/gammaLiveService', () => ({
   startGammaLive: (...args: unknown[]) => mockStartGammaLive(...args),
   endGammaLive: vi.fn().mockResolvedValue(undefined),
@@ -67,6 +68,7 @@ vi.mock('../../../services/gammaLiveService', () => ({
   setGammaPollOptions: vi.fn().mockResolvedValue(undefined),
   revealGammaPollResults: vi.fn().mockResolvedValue(undefined),
   sendGammaExitTicket: (...args: unknown[]) => mockSendGammaExitTicket(...args),
+  setGammaPacingMode: (...args: unknown[]) => mockSetGammaPacingMode(...args),
   tallyPollResponses: vi.fn(() => ({})),
 }));
 
@@ -229,6 +231,28 @@ describe('GammaModeModal — auto-save to the Gamma library', () => {
     render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} skipLibrarySave />);
 
     expect(mockSaveGammaPresentation).not.toHaveBeenCalled();
+  });
+});
+
+describe('GammaModeModal — free pacing toggle (F2)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: { uid: 'teacher-1' } });
+    window.katex = { renderToString: (latex: string) => `<span>${latex}</span>` };
+    mockStartGammaLive.mockResolvedValue('654321');
+  });
+
+  it('is hidden until a live session starts, then toggles pacing on click', async () => {
+    const data = makePresentation([{ title: 'Прв', type: 'content', content: ['x + 1'] }]);
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} />);
+
+    expect(screen.queryByTitle('Дозволи им на учениците да напредуваат самостојно')).toBeNull();
+
+    fireEvent.click(screen.getByTitle('Старт Gamma Live — ученици се приклучуваат со PIN'));
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    fireEvent.click(screen.getByTitle('Дозволи им на учениците да напредуваат самостојно'));
+    expect(mockSetGammaPacingMode).toHaveBeenCalledWith('654321', 'free');
   });
 });
 

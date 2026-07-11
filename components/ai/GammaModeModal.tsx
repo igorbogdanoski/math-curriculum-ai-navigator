@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote, Lock, Unlock } from 'lucide-react';
 import { DokBadge } from '../common/DokBadge';
 import type { DokLevel } from '../../types';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -22,6 +22,7 @@ import {
   setGammaPollOptions,
   revealGammaPollResults,
   sendGammaExitTicket,
+  setGammaPacingMode,
   tallyPollResponses,
   type GammaLiveResponse,
 } from '../../services/gammaLiveService';
@@ -150,6 +151,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
   const [pollDraft, setPollDraft] = useState<string[]>(['', '']);
   const [pollCorrectDraft, setPollCorrectDraft] = useState<number | null>(null);
   const [isGeneratingPoll, setIsGeneratingPoll] = useState(false);
+  const [pacingMode, setPacingModeDisplay] = useState<'locked' | 'free'>('locked');
   const liveUnsubRef = useRef<(() => void) | null>(null);
 
   const handleExportPPTX = useCallback(async () => {
@@ -181,6 +183,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
         setActivePollOptions(session?.pollOptions ?? null);
         setActivePollCorrectIndex(session?.pollCorrectIndex ?? null);
         setActivePollRevealed(session?.pollRevealed ?? false);
+        setPacingModeDisplay(session?.pacingMode ?? 'locked');
       });
     } catch {
       addNotification('Gamma Live: грешка при старт', 'error');
@@ -207,6 +210,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     setPollDraft(['', '']);
     setPollCorrectDraft(null);
     setExitTicketSentToStudents(false);
+    setPacingModeDisplay('locked');
   }, [gammaLivePin]);
 
   const sendExitTicketToStudents = useCallback(async () => {
@@ -214,6 +218,11 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     await sendGammaExitTicket(gammaLivePin, exitTicket);
     setExitTicketSentToStudents(true);
   }, [gammaLivePin, exitTicket]);
+
+  const togglePacingMode = useCallback(async () => {
+    if (!gammaLivePin) return;
+    await setGammaPacingMode(gammaLivePin, pacingMode === 'free' ? 'locked' : 'free');
+  }, [gammaLivePin, pacingMode]);
 
   const handleDismissExitTicket = useCallback(() => {
     dismissExitTicket();
@@ -693,6 +702,11 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
               {liveHandsCount > 0 && (
                 <span className="text-[10px] text-amber-400 font-bold">✋{liveHandsCount}</span>
               )}
+              <button type="button" onClick={togglePacingMode}
+                title={pacingMode === 'free' ? 'Врати ги учениците на синхронизирано темпо' : 'Дозволи им на учениците да напредуваат самостојно'}
+                className={`p-1.5 rounded-lg transition ${pacingMode === 'free' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-amber-300 hover:bg-amber-500/10'}`}>
+                {pacingMode === 'free' ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              </button>
               {isTaskSlide && (
                 activePollOptions ? (
                   <>

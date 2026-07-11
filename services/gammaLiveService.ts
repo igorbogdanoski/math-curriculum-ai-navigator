@@ -32,6 +32,9 @@ export interface GammaLiveSession {
   /** Broadcast exit ticket — set by the host once, students then play it via
    *  InteractiveQuizPlayer and their result is saved to the gradebook (quiz_results). */
   exitTicket?: AIGeneratedAssessment | null;
+  /** Absent or 'locked' (default) = today's exact behavior — every student mirrors slideIdx.
+   *  'free' lets students navigate independently (GammaStudentView tracks its own local index). */
+  pacingMode?: 'locked' | 'free';
 }
 
 export interface GammaLiveResponse {
@@ -125,6 +128,15 @@ export async function sendGammaExitTicket(pin: string, exitTicket: AIGeneratedAs
     await updateDoc(doc(db, 'live_gamma', pin), { exitTicket });
   } catch (err) {
     logger.warn('[GammaLive] sendExitTicket failed:', err);
+  }
+}
+
+/** Toggles free-pacing mode — host-only, covered by isOwner(hostUid). */
+export async function setGammaPacingMode(pin: string, mode: 'locked' | 'free'): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { pacingMode: mode });
+  } catch (err) {
+    logger.warn('[GammaLive] setPacingMode failed:', err);
   }
 }
 

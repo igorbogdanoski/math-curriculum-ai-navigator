@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
+import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, setGammaPacingMode, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { AIGeneratedAssessment } from '../types';
 
@@ -84,6 +84,18 @@ describe('sendGammaExitTicket', () => {
   it('swallows write failures', async () => {
     vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
     await expect(sendGammaExitTicket('123456', ticket)).resolves.toBeUndefined();
+  });
+});
+
+describe('setGammaPacingMode', () => {
+  it('writes the pacing mode to the session doc', async () => {
+    await setGammaPacingMode('123456', 'free');
+    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { pacingMode: 'free' });
+  });
+
+  it('swallows write failures', async () => {
+    vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
+    await expect(setGammaPacingMode('123456', 'locked')).resolves.toBeUndefined();
   });
 });
 

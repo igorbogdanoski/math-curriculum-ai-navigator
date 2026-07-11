@@ -151,6 +151,71 @@ describe('GammaStudentView — poll voting, waiting, and reveal', () => {
   });
 });
 
+describe('GammaStudentView — free pacing mode (F2)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionCallback = null;
+    responsesCallback = null;
+  });
+
+  const twoSlides = [
+    { type: 'content', title: 'Слајд 1', content: ['Прв слајд'] },
+    { type: 'task', title: 'Слајд 2', content: ['Одговори точно'] },
+  ] as GammaLiveSession['slides'];
+
+  it('shows no nav buttons and mirrors the host slide exactly when pacingMode is absent (locked default)', () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 0 })); });
+
+    expect(screen.queryByText('Претходен')).toBeNull();
+    expect(screen.queryByText('Следен')).toBeNull();
+    expect(screen.getByText('Слајд 1')).toBeTruthy();
+
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 1 })); });
+    expect(screen.getByText('Слајд 2')).toBeTruthy();
+  });
+
+  it('lets the student navigate independently of the host slide when pacingMode is free', () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 0, pacingMode: 'free' })); });
+
+    expect(screen.getByText('СЛОБОДНО ТЕМПО')).toBeTruthy();
+    fireEvent.click(screen.getByText('Следен'));
+    expect(screen.getByText('Слајд 2')).toBeTruthy();
+
+    // Host is still on slide 0 (unaffected by the student's local navigation)
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 0, pacingMode: 'free' })); });
+    expect(screen.getByText('Слајд 2')).toBeTruthy();
+  });
+
+  it('hides poll/answer UI while free-roaming away from the host\'s current slide, and shows it again once back', () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 1, pacingMode: 'free' })); });
+
+    // Student starts synced (slideIdx 1 = task with poll) — navigate away first
+    fireEvent.click(screen.getByText('Претходен'));
+    expect(screen.getByText('Слајд 1')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /А/ })).toBeNull();
+    expect(screen.getByText(/Наставникот е на слајд 2/)).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Следен'));
+    expect(screen.getByText('Слајд 2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /А/ })).toBeTruthy();
+  });
+
+  it('snaps the student back to the host slide once the teacher re-locks pacing', () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 0, pacingMode: 'free' })); });
+
+    fireEvent.click(screen.getByText('Следен'));
+    expect(screen.getByText('Слајд 2')).toBeTruthy();
+
+    act(() => { sessionCallback?.(baseSession({ slides: twoSlides, slideIdx: 0, pacingMode: 'locked' })); });
+    expect(screen.getByText('Слајд 1')).toBeTruthy();
+    expect(screen.queryByText('Претходен')).toBeNull();
+  });
+});
+
 describe('GammaStudentView — broadcast exit ticket', () => {
   beforeEach(() => {
     vi.clearAllMocks();

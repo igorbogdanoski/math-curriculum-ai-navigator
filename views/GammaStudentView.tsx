@@ -3,7 +3,7 @@
  * Route: /gamma/student/:pin?name=StudentName
  */
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Hand, Send, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Hand, Send, CheckCircle2, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -113,7 +113,9 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
   const [handRaised, setHandRaised] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
+  const [myLocalSlideIdx, setMyLocalSlideIdx] = useState(0);
   const lastSlideIdxRef = useRef<number>(-1);
+  const hasSyncedOnceRef = useRef(false);
 
   useEffect(() => {
     const unsub = subscribeGammaSession(pin, s => {
@@ -125,9 +127,31 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
         setSubmitted(false);
         setHandRaised(false);
       }
+      // Locked (default/absent) pacing keeps mirroring the host exactly as before — free
+      // pacing stops this sync so nav buttons below can move myLocalSlideIdx independently.
+      // Always sync on the very first snapshot though, even if free from the start —
+      // otherwise a student joining an already-free session would start at slide 0
+      // regardless of where the host actually is.
+      if (s && (s.pacingMode !== 'free' || !hasSyncedOnceRef.current)) {
+        setMyLocalSlideIdx(s.slideIdx);
+      }
+      if (s) hasSyncedOnceRef.current = true;
     });
     return unsub;
   }, [pin]);
+
+  const isFreePacing = session?.pacingMode === 'free';
+  const displayedSlideIdx = isFreePacing ? myLocalSlideIdx : (session?.slideIdx ?? 0);
+  // A poll/answer belongs to whichever slide the host is currently presenting — a
+  // free-roaming student simply can't respond until they navigate back to it.
+  const canRespond = !isFreePacing || myLocalSlideIdx === session?.slideIdx;
+
+  const goToPrevSlide = useCallback(() => {
+    setMyLocalSlideIdx(i => Math.max(0, i - 1));
+  }, []);
+  const goToNextSlide = useCallback(() => {
+    setMyLocalSlideIdx(i => Math.min((session?.slides.length ?? 1) - 1, i + 1));
+  }, [session?.slides.length]);
 
   // Needed for the post-reveal live tally (StudentPollResults) — same subcollection the
   // teacher already reads; firestore.rules already permits any authenticated user to read it.
@@ -234,7 +258,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
     );
   }
 
-  const slide = session.slides[session.slideIdx];
+  const slide = session.slides[displayedSlideIdx];
   if (!slide) return null;
 
   const isTask = slide.type === 'task' || slide.type === 'example';
@@ -249,8 +273,13 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
           <p className="text-sm font-bold text-slate-300">{session.topic} · {session.gradeLevel}. одд.</p>
         </div>
         <div className="flex items-center gap-3">
+          {isFreePacing && (
+            <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded-full text-[10px] font-black">
+              СЛОБОДНО ТЕМПО
+            </span>
+          )}
           <span className="text-xs text-slate-500">
-            {session.slideIdx + 1}/{session.slides.length}
+            {displayedSlideIdx + 1}/{session.slides.length}
           </span>
           <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded-full text-[10px] font-black animate-pulse">
             LIVE
@@ -262,9 +291,34 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
       <div className="h-1 bg-slate-800 flex-shrink-0">
         <div
           className="h-full bg-indigo-500 transition-all duration-500"
-          style={{ width: `${((session.slideIdx + 1) / session.slides.length) * 100}%` }}
+          style={{ width: `${((displayedSlideIdx + 1) / session.slides.length) * 100}%` }}
         />
       </div>
+
+      {/* Free-pacing nav */}
+      {isFreePacing && (
+        <div className="flex items-center justify-between px-6 py-2 flex-shrink-0 border-b border-white/5">
+          <button
+            type="button"
+            onClick={goToPrevSlide}
+            disabled={displayedSlideIdx === 0}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" /> Претходен
+          </button>
+          {!canRespond && (
+            <span className="text-[11px] text-slate-500">Наставникот е на слајд {session.slideIdx + 1}</span>
+          )}
+          <button
+            type="button"
+            onClick={goToNextSlide}
+            disabled={displayedSlideIdx === session.slides.length - 1}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition"
+          >
+            Следен <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Slide content */}
       <div className="flex-1 flex flex-col justify-center px-6 py-6 gap-5 max-w-2xl mx-auto w-full">
@@ -295,7 +349,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
         ))}
 
         {/* Live poll — takes priority over free-text when the teacher has one active */}
-        {isTask && !submitted && session.pollOptions && session.pollOptions.length > 0 && (
+        {isTask && canRespond && !submitted && session.pollOptions && session.pollOptions.length > 0 && (
           <div className="mt-2 space-y-2">
             {session.pollOptions.map((option, i) => (
               <button
@@ -315,7 +369,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
         )}
 
         {/* Answer input for task/example slides */}
-        {isTask && !submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
+        {isTask && canRespond && !submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
           <div className="mt-2 space-y-3">
             <textarea
               value={answer}
@@ -336,7 +390,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
           </div>
         )}
 
-        {isTask && submitted && session.pollOptions && session.pollOptions.length > 0 && (
+        {isTask && canRespond && submitted && session.pollOptions && session.pollOptions.length > 0 && (
           session.pollRevealed ? (
             <StudentPollResults
               options={session.pollOptions}
@@ -352,7 +406,7 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
           )
         )}
 
-        {isTask && submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
+        {isTask && canRespond && submitted && !(session.pollOptions && session.pollOptions.length > 0) && (
           <div className="flex items-center gap-3 bg-emerald-900/30 border border-emerald-700/30 rounded-2xl px-5 py-4">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <p className="text-sm text-emerald-300 font-semibold">Одговорот е испратен!</p>
