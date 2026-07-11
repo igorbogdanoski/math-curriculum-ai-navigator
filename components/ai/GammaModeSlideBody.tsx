@@ -36,6 +36,10 @@ export interface SlideBodyProps {
   dismissExitTicket: () => void;
   generateSVGForSlide: (slideIndex: number) => void;
   hasReveal: boolean;
+  /** Set while a Gamma Live session is active — enables broadcasting the exit ticket to students. */
+  gammaLivePin: string | null;
+  onSendExitTicket: () => void;
+  exitTicketSentToStudents: boolean;
 }
 
 export const SlideBody: React.FC<SlideBodyProps> = ({
@@ -46,6 +50,7 @@ export const SlideBody: React.FC<SlideBodyProps> = ({
   stepIdx, setStepIdx,
   exitTicket, generateExitTicket, isGeneratingExitTicket, dismissExitTicket,
   generateSVGForSlide, hasReveal,
+  gammaLivePin, onSendExitTicket, exitTicketSentToStudents,
 }) => {
     switch (slide.type) {
 
@@ -330,6 +335,23 @@ export const SlideBody: React.FC<SlideBodyProps> = ({
                     onClose={dismissExitTicket}
                   />
                 </div>
+                {gammaLivePin && (
+                  <div className="flex justify-center pt-3">
+                    {exitTicketSentToStudents ? (
+                      <span className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600/15 border border-emerald-500/30 text-emerald-300 text-sm font-bold">
+                        <CheckCircle2 className="w-4 h-4" /> Испратено до учениците
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onSendExitTicket}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition"
+                      >
+                        <Sparkles className="w-4 h-4" /> Испрати до учениците
+                      </button>
+                    )}
+                  </div>
+                )}
               </React.Suspense>
             )}
           </div>

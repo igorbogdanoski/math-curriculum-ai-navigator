@@ -17,6 +17,11 @@ import {
   type GammaLiveSession,
   type GammaLiveResponse,
 } from '../services/gammaLiveService';
+import type { QuizCompletionResult } from '../components/ai/InteractiveQuizPlayer';
+
+const InteractiveQuizPlayer = React.lazy(() =>
+  import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer }))
+);
 
 interface Props {
   pin: string;
@@ -164,6 +169,28 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
     }
   }, [handRaised, pin, studentId, session]);
 
+  const handleExitTicketComplete = useCallback(async (result: QuizCompletionResult) => {
+    if (!session) return;
+    const percentage = result.totalQuestions > 0
+      ? Math.round((result.correctCount / result.totalQuestions) * 100)
+      : 0;
+    const { firestoreService } = await import('../services/firestoreService');
+    await firestoreService.saveQuizResult({
+      quizId: `gamma_exit_${pin}`,
+      quizTitle: `Exit Ticket — ${session.topic}`,
+      quizType: 'gamma_exit_ticket',
+      conceptId: session.topic,
+      gradeLevel: session.gradeLevel,
+      studentName,
+      score: result.score,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      percentage,
+      teacherUid: session.hostUid,
+      misconceptions: result.misconceptions,
+    });
+  }, [pin, session, studentName]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -178,6 +205,31 @@ export const GammaStudentView: React.FC<Props> = ({ pin }) => {
         <div className="text-5xl">🏁</div>
         <h2 className="text-xl font-black text-white">Сесијата е завршена</h2>
         <p className="text-slate-400 text-sm">Наставникот ја затворил Gamma Live сесијата.</p>
+      </div>
+    );
+  }
+
+  // Exit ticket takes over the screen once the host broadcasts it — independent of
+  // whichever slide is currently showing, mirrors how a Kahoot-style exit activity
+  // interrupts the class rather than waiting for students to navigate to it.
+  if (session.exitTicket) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-2xl">
+          <div className="text-center mb-4">
+            <p className="text-xs text-rose-400 font-bold uppercase tracking-widest">Exit Ticket</p>
+            <h2 className="text-lg font-black text-white">{session.topic}</h2>
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-rose-500/20">
+            <React.Suspense fallback={<div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-rose-400" /></div>}>
+              <InteractiveQuizPlayer
+                title={`Exit Ticket — ${session.topic}`}
+                quiz={session.exitTicket}
+                onComplete={handleExitTicketComplete}
+              />
+            </React.Suspense>
+          </div>
+        </div>
       </div>
     );
   }

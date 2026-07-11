@@ -19,6 +19,19 @@ vi.mock('firebase/auth', () => ({
   signInAnonymously: vi.fn(),
 }));
 
+const mockSaveQuizResult = vi.fn().mockResolvedValue('doc-id');
+vi.mock('../services/firestoreService', () => ({
+  firestoreService: { saveQuizResult: (...args: unknown[]) => mockSaveQuizResult(...args) },
+}));
+
+vi.mock('../components/ai/InteractiveQuizPlayer', () => ({
+  InteractiveQuizPlayer: ({ onComplete }: { onComplete?: (r: { score: number; correctCount: number; totalQuestions: number }) => void }) => (
+    <button type="button" onClick={() => onComplete?.({ score: 2, correctCount: 2, totalQuestions: 3 })}>
+      MOCK_FINISH_EXIT_TICKET
+    </button>
+  ),
+}));
+
 let sessionCallback: ((s: GammaLiveSession | null) => void) | null = null;
 let responsesCallback: ((r: GammaLiveResponse[]) => void) | null = null;
 const mockSubmitGammaResponse = vi.fn().mockResolvedValue(undefined);
@@ -135,5 +148,51 @@ describe('GammaStudentView — poll voting, waiting, and reveal', () => {
 
     expect(screen.queryByText(/Точно!/)).toBeNull();
     expect(screen.queryByText(/Точниот одговор беше/)).toBeNull();
+  });
+});
+
+describe('GammaStudentView — broadcast exit ticket', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionCallback = null;
+    responsesCallback = null;
+    mockSaveQuizResult.mockClear();
+  });
+
+  it('takes over the screen with the exit ticket once the host broadcasts it', async () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => {
+      sessionCallback?.(baseSession({
+        exitTicket: { title: 'Exit Ticket', questions: [] } as unknown as GammaLiveSession['exitTicket'],
+      }));
+    });
+
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByText('Exit Ticket')).toBeTruthy();
+    expect(screen.getByText('Дропки')).toBeTruthy(); // session.topic, shown as the exit-ticket header
+    expect(screen.queryByRole('button', { name: /А/ })).toBeNull(); // normal slide no longer rendered
+  });
+
+  it('saves the result to the gradebook (quiz_results) via firestoreService on completion', async () => {
+    render(<GammaStudentView pin="123456" />);
+    act(() => {
+      sessionCallback?.(baseSession({
+        exitTicket: { title: 'Exit Ticket', questions: [] } as unknown as GammaLiveSession['exitTicket'],
+      }));
+    });
+    await act(async () => { await Promise.resolve(); });
+
+    fireEvent.click(screen.getByText('MOCK_FINISH_EXIT_TICKET'));
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(mockSaveQuizResult).toHaveBeenCalledWith(expect.objectContaining({
+      quizType: 'gamma_exit_ticket',
+      conceptId: 'Дропки',
+      studentName: 'Ученик',
+      teacherUid: 'teacher-1',
+      correctCount: 2,
+      totalQuestions: 3,
+      percentage: 67,
+    }));
   });
 });

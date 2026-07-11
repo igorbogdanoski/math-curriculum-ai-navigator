@@ -21,6 +21,7 @@ import {
   subscribeGammaResponses,
   setGammaPollOptions,
   revealGammaPollResults,
+  sendGammaExitTicket,
   tallyPollResponses,
   type GammaLiveResponse,
 } from '../../services/gammaLiveService';
@@ -134,6 +135,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
   // ── PPTX export ───────────────────────────────────────────────────────────
   const [isExportingPptx, setIsExportingPptx] = useState(false);
   const { exitTicket, isGenerating: isGeneratingExitTicket, generate: generateExitTicket, dismiss: dismissExitTicket } = useGammaExitTicket();
+  const [exitTicketSentToStudents, setExitTicketSentToStudents] = useState(false);
 
   // ── Gamma Live ────────────────────────────────────────────────────────────
   const [gammaLivePin, setGammaLivePin] = useState<string | null>(null);
@@ -204,7 +206,19 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     setShowPollEditor(false);
     setPollDraft(['', '']);
     setPollCorrectDraft(null);
+    setExitTicketSentToStudents(false);
   }, [gammaLivePin]);
+
+  const sendExitTicketToStudents = useCallback(async () => {
+    if (!gammaLivePin || !exitTicket) return;
+    await sendGammaExitTicket(gammaLivePin, exitTicket);
+    setExitTicketSentToStudents(true);
+  }, [gammaLivePin, exitTicket]);
+
+  const handleDismissExitTicket = useCallback(() => {
+    dismissExitTicket();
+    setExitTicketSentToStudents(false);
+  }, [dismissExitTicket]);
 
   const startPoll = useCallback(async () => {
     if (!gammaLivePin) return;
@@ -988,9 +1002,12 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
           exitTicket={exitTicket}
           generateExitTicket={generateExitTicket}
           isGeneratingExitTicket={isGeneratingExitTicket}
-          dismissExitTicket={dismissExitTicket}
+          dismissExitTicket={handleDismissExitTicket}
           generateSVGForSlide={generateSVGForSlide}
           hasReveal={hasReveal}
+          gammaLivePin={gammaLivePin}
+          onSendExitTicket={sendExitTicketToStudents}
+          exitTicketSentToStudents={exitTicketSentToStudents}
         />
 
         {/* ── Watermark / school logo ─────────────────────────────────────── */}

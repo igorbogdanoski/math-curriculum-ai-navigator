@@ -3,9 +3,9 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { GammaModeModal } from '../GammaModeModal';
-import type { AIGeneratedPresentation } from '../../../types';
+import type { AIGeneratedPresentation, AIGeneratedAssessment } from '../../../types';
 
 const mockUseAuth = vi.fn(() => ({ user: null, firebaseUser: null as { uid: string } | null }));
 vi.mock('../../../contexts/AuthContext', () => ({
@@ -40,6 +40,34 @@ vi.mock('../SlideSVGRenderer', () => ({
 
 vi.mock('../../../services/gemini/svg', () => ({
   generateMathSVG: vi.fn(async () => '<svg></svg>'),
+}));
+
+vi.mock('../InteractiveQuizPlayer', () => ({
+  InteractiveQuizPlayer: () => <div>quiz-player</div>,
+}));
+
+const mockExitTicketState: { exitTicket: AIGeneratedAssessment | null } = { exitTicket: null };
+vi.mock('../gamma/useGammaExitTicket', () => ({
+  useGammaExitTicket: () => ({
+    exitTicket: mockExitTicketState.exitTicket,
+    isGenerating: false,
+    generate: vi.fn(),
+    dismiss: vi.fn(),
+  }),
+}));
+
+const mockStartGammaLive = vi.fn().mockResolvedValue('654321');
+const mockSendGammaExitTicket = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../../services/gammaLiveService', () => ({
+  startGammaLive: (...args: unknown[]) => mockStartGammaLive(...args),
+  endGammaLive: vi.fn().mockResolvedValue(undefined),
+  subscribeGammaSession: vi.fn(() => () => {}),
+  subscribeGammaResponses: vi.fn(() => () => {}),
+  broadcastGammaSlide: vi.fn().mockResolvedValue(undefined),
+  setGammaPollOptions: vi.fn().mockResolvedValue(undefined),
+  revealGammaPollResults: vi.fn().mockResolvedValue(undefined),
+  sendGammaExitTicket: (...args: unknown[]) => mockSendGammaExitTicket(...args),
+  tallyPollResponses: vi.fn(() => ({})),
 }));
 
 function makePresentation(slides: AIGeneratedPresentation['slides']): AIGeneratedPresentation {
@@ -201,5 +229,50 @@ describe('GammaModeModal — auto-save to the Gamma library', () => {
     render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} skipLibrarySave />);
 
     expect(mockSaveGammaPresentation).not.toHaveBeenCalled();
+  });
+});
+
+describe('GammaModeModal — broadcasting the exit ticket to students (F3)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: null, firebaseUser: { uid: 'teacher-1' } });
+    window.katex = { renderToString: (latex: string) => `<span>${latex}</span>` };
+    mockExitTicketState.exitTicket = null;
+    mockStartGammaLive.mockResolvedValue('654321');
+  });
+
+  it('only offers the send button once a live session is running, and marks it sent afterwards', async () => {
+    mockExitTicketState.exitTicket = { title: 'Exit Ticket', questions: [] } as unknown as AIGeneratedAssessment;
+    const data = makePresentation([
+      { title: 'Заклучок', type: 'summary', content: ['Резиме'] },
+    ]);
+
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} />);
+
+    // No live session yet — the exit ticket preview shows, but nowhere to broadcast it to.
+    expect(screen.queryByText('Испрати до учениците')).toBeNull();
+
+    fireEvent.click(screen.getByTitle('Старт Gamma Live — ученици се приклучуваат со PIN'));
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    const sendButton = screen.getByText('Испрати до учениците');
+    fireEvent.click(sendButton);
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockSendGammaExitTicket).toHaveBeenCalledWith('654321', mockExitTicketState.exitTicket);
+    expect(screen.getByText('Испратено до учениците')).toBeTruthy();
+  });
+
+  it('does not show a send button when there is no exit ticket yet, even during a live session', async () => {
+    const data = makePresentation([
+      { title: 'Заклучок', type: 'summary', content: ['Резиме'] },
+    ]);
+
+    render(<GammaModeModal data={data} startIndex={0} onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByTitle('Старт Gamma Live — ученици се приклучуваат со PIN'));
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.queryByText('Испрати до учениците')).toBeNull();
   });
 });

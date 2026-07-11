@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
+import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, tallyPollResponses, type GammaLiveResponse } from './gammaLiveService';
 import { doc, updateDoc } from 'firebase/firestore';
+import type { AIGeneratedAssessment } from '../types';
 
 vi.mock('../firebaseConfig', () => ({ db: {} }));
 vi.mock('firebase/firestore', () => ({
@@ -66,6 +67,23 @@ describe('broadcastGammaSlide', () => {
       ['doc-ref', {}, 'live_gamma', '123456'],
       { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null, pollCorrectIndex: null, pollRevealed: false },
     );
+  });
+});
+
+describe('sendGammaExitTicket', () => {
+  const ticket = { title: 'Exit Ticket', questions: [] } as unknown as AIGeneratedAssessment;
+
+  it('writes the exit ticket to the session doc', async () => {
+    await sendGammaExitTicket('123456', ticket);
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { exitTicket: ticket },
+    );
+  });
+
+  it('swallows write failures', async () => {
+    vi.mocked(updateDoc).mockRejectedValueOnce(new Error('offline'));
+    await expect(sendGammaExitTicket('123456', ticket)).resolves.toBeUndefined();
   });
 });
 

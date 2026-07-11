@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { logger } from '../utils/logger';
-import type { PresentationSlide } from '../types';
+import type { PresentationSlide, AIGeneratedAssessment } from '../types';
 
 export interface GammaLiveSession {
   pin: string;
@@ -29,6 +29,9 @@ export interface GammaLiveSession {
   pollCorrectIndex?: number | null;
   /** Whether poll results are currently visible to students (host-controlled reveal moment). */
   pollRevealed?: boolean;
+  /** Broadcast exit ticket — set by the host once, students then play it via
+   *  InteractiveQuizPlayer and their result is saved to the gradebook (quiz_results). */
+  exitTicket?: AIGeneratedAssessment | null;
 }
 
 export interface GammaLiveResponse {
@@ -112,6 +115,17 @@ export function tallyPollResponses(responses: GammaLiveResponse[], slideIdx: num
     tally[r.answer] = (tally[r.answer] ?? 0) + 1;
   }
   return tally;
+}
+
+/** Broadcasts the teacher's generated exit ticket to every student in the session —
+ *  host-only, covered by firestore.rules' isOwner(hostUid) full-write branch on the
+ *  session doc, no rules change needed. */
+export async function sendGammaExitTicket(pin: string, exitTicket: AIGeneratedAssessment): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'live_gamma', pin), { exitTicket });
+  } catch (err) {
+    logger.warn('[GammaLive] sendExitTicket failed:', err);
+  }
 }
 
 export async function endGammaLive(pin: string): Promise<void> {
