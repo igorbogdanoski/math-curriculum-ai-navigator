@@ -63,6 +63,16 @@ describe('DrawingCanvas — ref API and onStrokeEnd (live-coaching integration p
     expect(ref.current?.hasWork()).toBe(true);
   });
 
+  it('clear() wipes the canvas — hasWork() goes back to false', () => {
+    const ref = React.createRef<DrawingCanvasRef>();
+    render(<DrawingCanvas ref={ref} />);
+    drawOneStroke();
+    expect(ref.current?.hasWork()).toBe(true);
+
+    act(() => { ref.current?.clear(); });
+    expect(ref.current?.hasWork()).toBe(false);
+  });
+
   it('getSnapshot() returns the base64 payload with the data-URL prefix stripped', () => {
     const ref = React.createRef<DrawingCanvasRef>();
     render(<DrawingCanvas ref={ref} />);

@@ -65,6 +65,11 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   const [hintsGivenCount, setHintsGivenCount] = useState(0);
   const [autoCoach, setAutoCoach] = useState(false);
   const autoCoachTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards against setState after this component unmounts mid-coaching-request — it's
+  // rendered inside collapsible panels (SolutionChecker's reveal, PhotoWorksheetSolver's
+  // accordion) that the student can close while a request is still in flight.
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   // Cognitive telemetry — per-step timing + hints + attempts
   const stepStartRef = useRef<number>(Date.now());
@@ -138,6 +143,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setCoachHint(null);
     setCoachError(null);
     setHintsGivenCount(0);
+    // The previous step's drawing shouldn't linger into the next step's coaching context.
+    drawingCanvasRef.current?.clear();
   };
 
   const reset = () => {
@@ -149,6 +156,7 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setCoachHint(null);
     setCoachError(null);
     setHintsGivenCount(0);
+    drawingCanvasRef.current?.clear();
     stepStartRef.current = Date.now();
     hintsRef.current = 0;
     attemptsRef.current = 0;
@@ -183,13 +191,14 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setCoachError(null);
     try {
       const { hint } = await geminiService.coachLiveWork(snapshot, 'image/png', problem, hintsGivenCount);
+      if (!isMountedRef.current) return;
       setCoachHint(hint);
       setHintsGivenCount(prev => prev + 1);
     } catch (error) {
       logger.error('coachLiveWork error', error);
-      setCoachError('Не успеавме да го провериме работењето во моментов. Обиди се повторно.');
+      if (isMountedRef.current) setCoachError('Не успеавме да го провериме работењето во моментов. Обиди се повторно.');
     } finally {
-      setIsCoaching(false);
+      if (isMountedRef.current) setIsCoaching(false);
     }
   }, [isCoaching, problem, hintsGivenCount]);
 

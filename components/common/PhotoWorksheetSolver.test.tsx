@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { PhotoWorksheetSolver } from './PhotoWorksheetSolver';
 
 const mockExtractProblemsFromImage = vi.fn();
@@ -118,5 +118,23 @@ describe('PhotoWorksheetSolver', () => {
     expect(screen.getByText(/Не успеавме да ја решиме оваа задача/)).toBeTruthy();
     fireEvent.click(screen.getByText(/1\. Добра задача/));
     expect(screen.getByTestId('step-solver')).toBeTruthy();
+  });
+
+  it('does not update state (and does not log the React unmounted-component warning) if the panel is closed before extraction resolves', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolveExtract: (v: string[]) => void;
+    mockExtractProblemsFromImage.mockReturnValue(new Promise(resolve => { resolveExtract = resolve; }));
+
+    render(<PhotoWorksheetSolver />);
+    selectFile();
+    await act(async () => { await Promise.resolve(); }); // let compressImage + FileReader settle
+    cleanup();
+
+    await act(async () => { resolveExtract!(['Задача 1']); await Promise.resolve(); await Promise.resolve(); });
+
+    const unmountedWarning = consoleError.mock.calls.some(call =>
+      String(call[0]).includes('unmounted component'));
+    expect(unmountedWarning).toBe(false);
+    consoleError.mockRestore();
   });
 });

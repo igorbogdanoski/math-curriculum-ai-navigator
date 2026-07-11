@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { StepByStepSolver } from './StepByStepSolver';
 
 const mockCoachLiveWork = vi.fn();
@@ -29,11 +29,13 @@ vi.mock('../contexts/AuthContext', () => ({
 
 let mockHasWork = true;
 let mockSnapshot: string | null = 'MOCKSNAPSHOT';
+const mockCanvasClear = vi.fn();
 vi.mock('./solver/DrawingCanvas', () => ({
-  DrawingCanvas: React.forwardRef((props: { onStrokeEnd?: () => void }, ref: React.Ref<{ getSnapshot: () => string | null; hasWork: () => boolean }>) => {
+  DrawingCanvas: React.forwardRef((props: { onStrokeEnd?: () => void }, ref: React.Ref<{ getSnapshot: () => string | null; hasWork: () => boolean; clear: () => void }>) => {
     React.useImperativeHandle(ref, () => ({
       getSnapshot: () => mockSnapshot,
       hasWork: () => mockHasWork,
+      clear: mockCanvasClear,
     }));
     return <button type="button" data-testid="mock-drawing-canvas" onClick={() => props.onStrokeEnd?.()}>canvas</button>;
   }),
@@ -135,5 +137,43 @@ describe('StepByStepSolver — live AI-coached scratchpad', () => {
 
     await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
     expect(mockCoachLiveWork).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the drawing canvas when advancing to the next step, so old ink does not leak into the next step\'s coaching context', () => {
+    renderSolver();
+    openCanvas();
+    fireEvent.click(screen.getByText('ЗАПОЧНИ РЕШАВАЊЕ'));
+    expect(mockCanvasClear).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByText('СЛЕДЕН ЧЕКОР'));
+    expect(mockCanvasClear).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears the drawing canvas on restart', () => {
+    renderSolver();
+    openCanvas();
+    fireEvent.click(screen.getByText('ЗАПОЧНИ РЕШАВАЊЕ')); // step 0 -> 1
+    fireEvent.click(screen.getByText('СЛЕДЕН ЧЕКОР')); // step 1 -> 2
+    fireEvent.click(screen.getByText('СЛЕДЕН ЧЕКОР')); // step 2 == steps.length -> complete
+    fireEvent.click(screen.getByText('РЕСТАРТИРАЈ'));
+    expect(mockCanvasClear).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not update state (and does not log the React unmounted-component warning) if the component unmounts before coachLiveWork resolves', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolveCoach: (v: { hint: string }) => void;
+    mockCoachLiveWork.mockReturnValue(new Promise(resolve => { resolveCoach = resolve; }));
+
+    renderSolver();
+    openCanvas();
+    fireEvent.click(screen.getByText('Провери го моето работење'));
+    cleanup();
+
+    await act(async () => { resolveCoach!({ hint: 'ова треба да се игнорира' }); await Promise.resolve(); });
+
+    const unmountedWarning = consoleError.mock.calls.some(call =>
+      String(call[0]).includes('unmounted component'));
+    expect(unmountedWarning).toBe(false);
+    consoleError.mockRestore();
   });
 });

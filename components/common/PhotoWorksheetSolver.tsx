@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, Image as ImageIcon, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { geminiService, isDailyQuotaKnownExhausted } from '../../services/geminiService';
 import { compressImage } from '../../utils/imageCompression';
@@ -27,6 +27,11 @@ export const PhotoWorksheetSolver: React.FC = () => {
   const [problemStates, setProblemStates] = useState<Record<number, ProblemState>>({});
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Guards against setState after the panel is collapsed/unmounted mid-request — this
+  // component lives inside a toggleable panel in StudentTutorView that the student can
+  // close while an extraction/solve is still in flight.
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   const busy = phase === 'extracting' || phase === 'solving';
 
@@ -63,6 +68,7 @@ export const PhotoWorksheetSolver: React.FC = () => {
         reader.onerror = () => reject(new Error('read failed'));
         reader.readAsDataURL(compressed);
       });
+      if (!isMountedRef.current) return;
       const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
       if (!match) {
         setPhase('error');
@@ -72,6 +78,7 @@ export const PhotoWorksheetSolver: React.FC = () => {
       const [, mimeType, base64] = match;
 
       const extracted = await geminiService.extractProblemsFromImage(base64, mimeType);
+      if (!isMountedRef.current) return;
       if (extracted.length === 0) {
         setPhase('error');
         setErrorMsg('Не успеавме да препознаеме задачи на сликата. Обиди се со појасна фотографија.');
@@ -88,6 +95,7 @@ export const PhotoWorksheetSolver: React.FC = () => {
       setProblemStates(initial);
 
       const results = await Promise.allSettled(capped.map(p => geminiService.solveSpecificProblemStepByStep(p)));
+      if (!isMountedRef.current) return;
       const nextStates: Record<number, ProblemState> = {};
       results.forEach((r, i) => {
         nextStates[i] = r.status === 'fulfilled'
@@ -97,6 +105,7 @@ export const PhotoWorksheetSolver: React.FC = () => {
       setProblemStates(nextStates);
       setPhase('done');
     } catch (e) {
+      if (!isMountedRef.current) return;
       setPhase('error');
       setErrorMsg(e instanceof Error ? e.message : 'Грешка при обработка на сликата.');
     }

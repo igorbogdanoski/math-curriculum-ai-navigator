@@ -25,6 +25,8 @@ export interface DrawingCanvasRef {
   /** Base64 PNG of the current canvas contents (no data-URL prefix), or null if empty/unready. */
   getSnapshot: () => string | null;
   hasWork: () => boolean;
+  /** Wipes the canvas — same as the toolbar's "Исчисти сè" button. */
+  clear: () => void;
 }
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({ height = 320, onStrokeEnd }, ref) => {
@@ -131,6 +133,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       return base64 ?? null;
     },
     hasWork: () => lines.length > 0,
+    clear,
   }), [lines.length]);
 
   return (
