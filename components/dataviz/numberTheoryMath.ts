@@ -92,6 +92,41 @@ export function radialPos(rank: number, total: number, cx: number, cy: number, r
   return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
 }
 
+export interface UlamPoint {
+  n: number;
+  x: number;
+  y: number;
+}
+
+/** Classic Ulam spiral integer-lattice coordinates: n=1 at the origin, spiraling
+ *  counter-clockwise outward (right, up, left, down, growing the segment length every
+ *  2 turns). Single O(limit) walk — call once and reuse, don't re-derive per n. */
+export function ulamSpiralPositions(limit: number): UlamPoint[] {
+  if (limit < 1) return [];
+  const points: UlamPoint[] = [{ n: 1, x: 0, y: 0 }];
+  let x = 0, y = 0;
+  let dx = 1, dy = 0;
+  let segmentLength = 1;
+  let segmentPassed = 0;
+  let turnsAtLength = 0;
+  for (let n = 2; n <= limit; n++) {
+    x += dx; y += dy;
+    points.push({ n, x, y });
+    segmentPassed++;
+    if (segmentPassed === segmentLength) {
+      segmentPassed = 0;
+      const nextDx = -dy, nextDy = dx;
+      dx = nextDx; dy = nextDy;
+      turnsAtLength++;
+      if (turnsAtLength === 2) {
+        segmentLength++;
+        turnsAtLength = 0;
+      }
+    }
+  }
+  return points;
+}
+
 // ── GCD / LCM ────────────────────────────────────────────────────────────────
 
 export interface EuclidStep {

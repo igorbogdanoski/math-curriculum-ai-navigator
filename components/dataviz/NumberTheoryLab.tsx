@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  isPrime, primeFactors, sieve, sieveSteps, radialPos, euclideanSteps, gcd, lcm,
+  isPrime, primeFactors, sieve, sieveSteps, radialPos, ulamSpiralPositions, euclideanSteps, gcd, lcm,
   modTable, fibonacci, arithmeticSeq, geometricSeq,
   generateNumberTheorySet,
   NUMTHEORY_CURRICULUM, type CurriculumRef,
@@ -129,9 +129,56 @@ function RadialSieveView() {
   );
 }
 
+// Static Ulam spiral — unlike the radial reveal, its value is the pattern visible at a
+// glance (primes cluster along diagonals), not a step-by-step animation.
+const ULAM_LIMIT = 400;
+const ULAM_CELL = 9;
+
+function UlamSpiralView() {
+  const points = useMemo(() => ulamSpiralPositions(ULAM_LIMIT), []);
+  const sieveMap = useMemo(() => sieve(ULAM_LIMIT), []);
+
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const width = (maxX - minX + 1) * ULAM_CELL;
+  const height = (maxY - minY + 1) * ULAM_CELL;
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <p className="text-[11px] text-slate-500 text-center max-w-md">
+        Секој број 1–{ULAM_LIMIT} е поставен во спирала; простите броеви се обоени. Забележи ги дијагоналните „траги" — тоа е класичниот Улам-ефект.
+      </p>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Улам спирала на прости броеви" className="w-full max-w-[420px]">
+        {points.map(p => {
+          const isP = sieveMap[p.n];
+          const cx = (p.x - minX) * ULAM_CELL + ULAM_CELL / 2;
+          const cy = (maxY - p.y) * ULAM_CELL + ULAM_CELL / 2;
+          const tooltip = p.n < 2
+            ? `${p.n}`
+            : isP
+              ? `${p.n} е прост`
+              : `${p.n} = ${primeFactors(p.n).map(f => f.exp > 1 ? `${f.base}^${f.exp}` : `${f.base}`).join('·')}`;
+          return (
+            <rect
+              key={p.n}
+              x={cx - ULAM_CELL / 2 + 0.5} y={cy - ULAM_CELL / 2 + 0.5}
+              width={ULAM_CELL - 1} height={ULAM_CELL - 1}
+              fill={isP ? '#10b981' : '#f1f5f9'}
+            >
+              <title>{tooltip}</title>
+            </rect>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function PrimesTab() {
   const [checkN, setCheckN] = useState('');
-  const [sieveView, setSieveView] = useState<'grid' | 'radial'>('grid');
+  const [sieveView, setSieveView] = useState<'grid' | 'radial' | 'spiral'>('grid');
 
   const sieveMap = useMemo(() => sieve(100), []);
   const primesTo100 = useMemo(
@@ -164,9 +211,16 @@ function PrimesTab() {
             >
               ⭕ Кружен приказ
             </button>
+            <button type="button" onClick={() => setSieveView('spiral')}
+              className={`px-2.5 py-1 rounded text-xs font-bold transition ${
+                sieveView === 'spiral' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              🌀 Улам спирала
+            </button>
           </div>
         </div>
-        {sieveView === 'grid' ? (
+        {sieveView === 'grid' && (
           <>
             <div className="flex flex-wrap gap-1">
               {Array.from({ length: 99 }, (_, i) => i + 2).map(n => (
@@ -191,9 +245,9 @@ function PrimesTab() {
               <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-violet-200" /> Делив со 7</span>
             </div>
           </>
-        ) : (
-          <RadialSieveView />
         )}
+        {sieveView === 'radial' && <RadialSieveView />}
+        {sieveView === 'spiral' && <UlamSpiralView />}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">

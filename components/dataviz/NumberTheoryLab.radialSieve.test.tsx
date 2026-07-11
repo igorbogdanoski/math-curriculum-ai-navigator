@@ -64,3 +64,17 @@ describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
     expect(screen.getByText('▶ Прегледај повторно')).toBeTruthy();
   });
 });
+
+describe('NumberTheoryLab — Ulam spiral view', () => {
+  it('toggling to the spiral view hides grid/radial and shows the spiral SVG', () => {
+    render(<NumberTheoryLab />);
+    expect(screen.queryByRole('img', { name: /Улам спирала/ })).toBeNull();
+
+    fireEvent.click(screen.getByText('🌀 Улам спирала'));
+    expect(screen.getByRole('img', { name: /Улам спирала/ })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: /Анимирано решето/ })).toBeNull();
+
+    fireEvent.click(screen.getByText('🔲 Мрежа'));
+    expect(screen.queryByRole('img', { name: /Улам спирала/ })).toBeNull();
+  });
+});

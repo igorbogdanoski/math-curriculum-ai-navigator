@@ -5,6 +5,7 @@ import {
   sieve,
   sieveSteps,
   radialPos,
+  ulamSpiralPositions,
   euclideanSteps,
   gcd,
   lcm,
@@ -152,6 +153,42 @@ describe('radialPos', () => {
       const dist = Math.hypot(p.x - cx, p.y - cy);
       expect(dist).toBeCloseTo(r, 5);
     }
+  });
+});
+
+describe('ulamSpiralPositions', () => {
+  it('returns an empty array for limit < 1', () => {
+    expect(ulamSpiralPositions(0)).toEqual([]);
+    expect(ulamSpiralPositions(-5)).toEqual([]);
+  });
+
+  it('places n=1 at the origin', () => {
+    expect(ulamSpiralPositions(1)).toEqual([{ n: 1, x: 0, y: 0 }]);
+  });
+
+  it('forms the standard counter-clockwise 3x3 ring for n=1..9', () => {
+    const points = ulamSpiralPositions(9);
+    const byN = new Map(points.map(p => [p.n, { x: p.x, y: p.y }]));
+    expect(byN.get(1)).toEqual({ x: 0, y: 0 });
+    expect(byN.get(2)).toEqual({ x: 1, y: 0 });
+    expect(byN.get(3)).toEqual({ x: 1, y: 1 });
+    expect(byN.get(4)).toEqual({ x: 0, y: 1 });
+    expect(byN.get(5)).toEqual({ x: -1, y: 1 });
+    expect(byN.get(6)).toEqual({ x: -1, y: 0 });
+    expect(byN.get(7)).toEqual({ x: -1, y: -1 });
+    expect(byN.get(8)).toEqual({ x: 0, y: -1 });
+    expect(byN.get(9)).toEqual({ x: 1, y: -1 });
+  });
+
+  it('every position is unique — a spiral never revisits a lattice point', () => {
+    const points = ulamSpiralPositions(400);
+    const seen = new Set(points.map(p => `${p.x},${p.y}`));
+    expect(seen.size).toBe(points.length);
+  });
+
+  it('returns exactly `limit` points, one per n from 1 to limit', () => {
+    const points = ulamSpiralPositions(400);
+    expect(points.map(p => p.n)).toEqual(Array.from({ length: 400 }, (_, i) => i + 1));
   });
 });
 
