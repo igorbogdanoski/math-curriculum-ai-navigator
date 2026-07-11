@@ -64,7 +64,7 @@ export const ExploreView: React.FC<{ gradeId?: string }> = ({ gradeId: initialGr
     const { showModal } = useModal();
     const { navigate } = useNavigation();
     useTour('explore', exploreTourSteps, !isLoading);
-    const { toursSeen, markTourAsSeen } = useUserPreferences();
+    useUserPreferences();
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedGradeId, setSelectedGradeId] = useState<string>(initialGradeId ?? '');

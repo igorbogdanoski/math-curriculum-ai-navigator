@@ -17,7 +17,6 @@ import { geminiService } from '../services/geminiService';
 import { useCurriculum } from '../hooks/useCurriculum';
 import type { KahootQuestion } from '../services/geminiService';
 import type { EnrichedWebTask } from '../services/gemini/visionContracts';
-import type { Grade, Topic } from '../types';
 import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
 import { DOK_META, type DokLevel } from '../types';
 

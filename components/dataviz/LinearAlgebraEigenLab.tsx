@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { type Mat2, type Mat3, EMPTY2, EMPTY3, fmt, det2, det3, mul3 } from './linearAlgebraMath';
+import { type Mat2, type Mat3, fmt, det2, det3, mul3 } from './linearAlgebraMath';
 import { MatrixInput } from './LinearAlgebraInputs';
 // ─── S62-H2: Eigenvalue / Eigenvector Lab ────────────────────────────────────
 

@@ -1,11 +1,10 @@
-import { logger } from '../../utils/logger';
 import {
     Concept, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths,
     GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan,
     AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation,
 } from '../../types';
 import {
-    Type, DEFAULT_MODEL, LITE_MODEL, MAX_RETRIES, generateAndParseJSON, CACHE_COLLECTION,
+    Type, DEFAULT_MODEL, LITE_MODEL, MAX_RETRIES, generateAndParseJSON,
     SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     getCached, setCached, minifyContext, sanitizePromptInput,
     getResolvedTextSystemInstruction, getSecondaryTrackContext, getAILanguageRule,

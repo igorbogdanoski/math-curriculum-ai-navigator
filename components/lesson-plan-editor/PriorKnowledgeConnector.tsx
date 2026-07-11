@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
-import type { Concept, Grade, Topic } from '../../types';
+import type { Concept } from '../../types';
 
 interface PriorKnowledgeConnectorProps {
   conceptIds: string[];

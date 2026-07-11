@@ -169,7 +169,6 @@ export function cramer(A: Mat, b: number[]): CramerResult | null {
   const det = determinantCofactor(A);
   if (Math.abs(det) < 1e-12) return null; // singular
 
-  const n = A.length;
   const columns = b.map((_, i) => {
     const Di = A.map((row, r) => row.map((v, c) => (c === i ? b[r] : v)));
     return { Di, detDi: determinantCofactor(Di) };
@@ -697,10 +696,6 @@ export function jordanDecompose(A: Mat): JordanResult {
     const evecs = _nullBasis(AlamI);
     const geomMult = evecs.length;
     if (geomMult === 0) return invalid(`Числена грешка за λ=${lam.toFixed(4)}: null space е празен`);
-
-    // Start one Jordan chain per eigenvector
-    const chains: number[][] = evecs.map(v => [v].flat());
-    // chains[k] = tip of k-th chain (current last generalized eigenvector)
 
     const chainFull: Array<number[][]> = evecs.map(v => [v]);
 

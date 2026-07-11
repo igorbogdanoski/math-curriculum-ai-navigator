@@ -14,7 +14,7 @@
  *     title="Оценки на тестот"
  *   />
  */
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { BarChart2, LineChart, PieChart, Plus, Trash2, Download } from 'lucide-react';
 import type { QuestionTableData } from '../../types';
 
@@ -220,7 +220,7 @@ function PieChartSvg({ labels, values }: { labels: string[]; values: number[] })
 // ── Dot Plot ──────────────────────────────────────────────────────────────────
 
 function DotPlot({ values }: { values: number[] }) {
-  const W = 480, H = 160, padL = 36, padR = 14, padB = 30, padT = 14;
+  const W = 480, padL = 36, padR = 14, padB = 30, padT = 14;
   const chartW = W - padL - padR;
   const sorted = [...values].sort((a, b) => a - b);
   const minV = sorted[0] ?? 0;
@@ -283,7 +283,6 @@ export const StatisticsWorkspace: React.FC<StatisticsWorkspaceProps> = ({
   const [data, setData] = useState<QuestionTableData>(initialData ?? DEFAULT_DATA);
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [activeCol, setActiveCol] = useState<number>(0); // which column to use as values
-  const svgRef = useRef<SVGSVGElement>(null);
 
   // ── data editing ───────────────────────────────────────────────────────────
 

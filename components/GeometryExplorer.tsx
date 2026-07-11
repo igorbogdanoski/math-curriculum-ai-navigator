@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ICONS } from '../constants'; // Или import { Calculator, Ruler } from 'lucide-react';
 
 export const GeometryExplorer = () => {
   const [width, setWidth] = useState(150);
@@ -14,9 +13,6 @@ export const GeometryExplorer = () => {
   const area = shape === 'rectangle' ? width * height : 
                shape === 'triangle' ? (width * height) / 2 : 
                Math.PI * Math.pow(width / 2, 2); // Круг
-
-  // Скалирање за приказ (да не избега од екранот)
-  const scale = 1.5; 
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">

@@ -12,13 +12,12 @@
  *   />
  */
 import React, { useState } from 'react';
-import { Share2, Send, Loader2, X, MessageSquare } from 'lucide-react';
+import { Send, Loader2, X, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { logger } from '../../utils/logger';
 import {
   createForumThread,
-  fetchForumThread,
   CATEGORY_CONFIG,
   type ThreadCategory,
 } from '../../services/firestoreService.forum';

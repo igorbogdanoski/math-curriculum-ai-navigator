@@ -2,7 +2,7 @@
  * Tests for MaturaSessionsList (T2.4).
  */
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MaturaSessionsList } from './MaturaSessionsList';
 import type { MaturaSessionSummary } from '../../hooks/useMaturaSessions';

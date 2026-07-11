@@ -35,7 +35,7 @@ interface Props {
 
 // ─── Gemini prompt ────────────────────────────────────────────────────────────
 
-function buildPrompt(concepts: WeakConceptItem[], lang = 'mk'): string {
+function buildPrompt(concepts: WeakConceptItem[], _lang = 'mk'): string {
   const conceptList = concepts
     .map((c, i) => `${i + 1}. ${c.conceptTitle} (${c.gradeTitle ?? ''}) — успешност: ${c.pct.toFixed(0)}%`)
     .join('\n');
@@ -149,7 +149,7 @@ const PRINT_STYLES = `
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentName, teacherUid, onClose }) => {
+export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentName: _studentName, teacherUid, onClose }) => {
   const [phase, setPhase] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [html, setHtml] = useState<string>('');
   const [error, setError] = useState<string>('');

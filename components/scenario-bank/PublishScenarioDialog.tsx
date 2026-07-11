@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { X, Globe, Lock, BookOpen, Star, Users } from 'lucide-react';
+import { X, Globe, Lock, Star, Users } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
-import type { Language } from '../../i18n';
 import type { TeachingModel } from '../../services/firestoreService.scenarioBank';
 
 export interface PublishScenarioOptions {

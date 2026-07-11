@@ -12,8 +12,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { SilentErrorBoundary } from '../common/SilentErrorBoundary'; // ОВА Е ЛИНИЈАТА ШТО ФАЛЕШЕ
 
 export const Layout = () => {
-  const { user, firebaseUser, logout } = useAuth();
-  const { path, navigate } = useRouter([]);
+  const { firebaseUser, logout } = useAuth();
+  const { path } = useRouter([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navigation = [

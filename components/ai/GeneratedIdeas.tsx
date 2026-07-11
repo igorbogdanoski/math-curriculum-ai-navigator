@@ -219,7 +219,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             addNotification('Подготовката е успешно зачувана! Сега можете да ја доуредите.', 'success');
             trackFeedback('accept_saved', 'target:lesson_plan');
             navigate(`/planner/lesson/${newPlanId}`);
-        } catch (error) {
+        } catch {
             addNotification('Грешка при зачувување на подготовката.', 'error');
         }
     };
@@ -320,7 +320,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                     const blob = new Blob([fullHtml], { type: 'text/html' });
                     const clipboardItem = new ClipboardItem({ 'text/html': blob });
                     navigator.clipboard.write([clipboardItem]).then(() => addNotification('Идеите се копирани со форматирање за Word.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
-                } catch (error) {
+                } catch {
                     addNotification('Копирањето со форматирање не е поддржано.', 'error');
                 }
                 return;

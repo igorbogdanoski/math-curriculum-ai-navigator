@@ -4,7 +4,7 @@ import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiSer
 import { AI_COSTS } from '../services/gemini/core';
 import { isUnlimitedProfile } from './useSubscriptionStatus';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedAssessment, GenerationContext, TeachingProfile } from '../types';
+import type { AIGeneratedAssessment, TeachingProfile } from '../types';
 import type { GeneratorState } from './useGeneratorState';
 
 interface UseVariantGenerateParams {

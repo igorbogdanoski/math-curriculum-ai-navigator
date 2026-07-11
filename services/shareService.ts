@@ -127,7 +127,7 @@ export const shareService = {
       }
       
       const plan = parsed.data as LessonPlan;
-      const { id, ...planWithoutId } = plan;
+      const { id: _id, ...planWithoutId } = plan;
       return planWithoutId;
     } catch (error) {
       logger.error("Error decoding share data:", error);
@@ -201,7 +201,7 @@ export const shareService = {
       if (typeof pako !== 'undefined') {
         try {
           jsonString = pako.inflate(rawData, { to: 'string' });
-        } catch (e) {
+        } catch {
           jsonString = decodeURIComponent(rawData);
         }
       } else {

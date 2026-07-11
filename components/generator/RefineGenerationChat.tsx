@@ -1,5 +1,5 @@
 ﻿import { logger } from '../../utils/logger';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { ICONS } from '../../constants';
 import { geminiService } from '../../services/geminiService';
 import { sanitizePromptInput } from '../../services/gemini/core';
@@ -12,7 +12,7 @@ interface RefineGenerationChatProps {
 }
 
 export function RefineGenerationChat({ material, onUpdateMaterial, materialType }: RefineGenerationChatProps) {
-    const { user } = useAuth();
+    useAuth();
     const [prompt, setPrompt] = useState('');
     const [isRefining, setIsRefining] = useState(false);
     const [error, setError] = useState<string | null>(null);

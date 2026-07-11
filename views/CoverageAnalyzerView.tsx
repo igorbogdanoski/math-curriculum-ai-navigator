@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { usePlanner } from '../contexts/PlannerContext';
@@ -27,11 +27,10 @@ const CoverageDashboard: React.FC<{ reports: GradeCoverageAnalysis[] }> = ({ rep
                     const pct = total === 0 ? 0 : Math.round(((covered + partial * 0.5) / total) * 100);
                     
                     // Tailwind colors based on percentage
-                    let colorClass = "bg-red-500";
                     let textClass = "text-red-600";
-                    if (pct >= 80) { colorClass = "bg-green-500"; textClass = "text-green-600"; }
-                    else if (pct >= 50) { colorClass = "bg-yellow-500"; textClass = "text-yellow-600"; }
-                    else if (pct >= 20) { colorClass = "bg-orange-500"; textClass = "text-orange-600"; }
+                    if (pct >= 80) { textClass = "text-green-600"; }
+                    else if (pct >= 50) { textClass = "text-yellow-600"; }
+                    else if (pct >= 20) { textClass = "text-orange-600"; }
 
                     return (
                         <div key={gradeReport.gradeLevel} className="flex flex-col items-center p-4 border rounded-xl bg-gray-50/50">

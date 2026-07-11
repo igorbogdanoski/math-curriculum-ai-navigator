@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card } from '../common/Card';
 import { Brain, Lightbulb, Target, ArrowRight } from 'lucide-react';
-import type { PlannerItem, LessonPlan, BloomsLevel } from '../../types';
+import type { PlannerItem, LessonPlan } from '../../types';
 import { PlannerItemType } from '../../types';
 
 interface Props {
@@ -52,7 +52,6 @@ export const PlannerMetaAnalysis: React.FC<Props> = ({ items, lessonPlans }) => 
     });
 
     const highOrder = counts['Analyzing'] + counts['Evaluating'] + counts['Creating'];
-    const midOrder = counts['Applying'];
     const lowOrder = counts['Remembering'] + counts['Understanding'];
 
     const tips: string[] = [];

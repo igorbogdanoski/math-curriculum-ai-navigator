@@ -41,7 +41,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ imageFile, dispatch }) =>
                 const base64 = await fileToBase64(file);
                 const payload = { file, base64, previewUrl: URL.createObjectURL(file) };
                 dispatch({ type: 'SET_FIELD', payload: { field: 'imageFile', value: payload } });
-            } catch (error) {
+            } catch {
                 addNotification('Грешка при процесирање на сликата.', 'error');
             }
         }
@@ -116,11 +116,6 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
             }
         }
     }, [activitiesForContext, contextType, dispatch, selectedActivity]);
-
-    const handleConceptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value);
-        dispatch({ type: 'SET_FIELD', payload: { field: 'selectedConcepts', value: selectedOptions } });
-    };
 
     const shouldShowImageUpload = useMemo(() => !['RUBRIC', 'VIDEO_EXTRACTOR', 'IMAGE_EXTRACTOR', 'WEB_EXTRACTOR', 'DOCUMENT_EXTRACTOR'].includes(materialType || ''), [materialType]);
 

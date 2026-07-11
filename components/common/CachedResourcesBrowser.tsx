@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService, type CachedMaterial } from '../../services/firestoreService';
-import { Card } from './Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from './MathRenderer';
 import { SkeletonLoader } from './SkeletonLoader';
@@ -40,7 +39,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
         }
 
         setMaterials(filtered);
-      } catch (err) {
+      } catch {
         setError('Неуспешно вчитување на библиотеката.');
       } finally {
         setIsLoading(false);

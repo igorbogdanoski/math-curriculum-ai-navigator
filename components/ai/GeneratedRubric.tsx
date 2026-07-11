@@ -13,7 +13,7 @@ interface GeneratedRubricProps {
 
 export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-    const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [, setIsPdfLoading] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
@@ -145,7 +145,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                     const clipboardItem = new ClipboardItem({ 'text/html': blob });
                     navigator.clipboard.write([clipboardItem]).then(() => addNotification('Рубриката е копирана со форматирање за Word.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
                     trackFeedback('export:clipboard_word');
-                } catch (error) {
+                } catch {
                     addNotification('Копирањето со форматирање не е поддржано.', 'error');
                 }
                 return;

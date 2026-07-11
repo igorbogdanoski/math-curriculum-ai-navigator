@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteAllUserData, exportUserData, downloadUserDataAsJson } from './firestoreService.gdpr';
 import {
-  collection, query, where, getDocs, deleteDoc, doc, getDoc, writeBatch,
+  collection, where, getDocs, deleteDoc, getDoc, writeBatch,
 } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 

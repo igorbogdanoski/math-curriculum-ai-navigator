@@ -65,7 +65,6 @@ function drawSquareGrid(ctx: CanvasRenderingContext2D, w: number, h: number, cfg
 
 function drawMillimeter(ctx: CanvasRenderingContext2D, w: number, h: number, cfg: PaperConfig) {
   const mm1 = 1 * MM_TO_PX;
-  const mm5 = 5 * MM_TO_PX;
   for (let x = 0; x <= w; x += mm1) {
     const isMajor = Math.round(x / mm1) % 5 === 0;
     ctx.strokeStyle = isMajor ? cfg.majorLineColor : cfg.lineColor;
@@ -89,7 +88,7 @@ function drawIsometric(ctx: CanvasRenderingContext2D, w: number, h: number, cfg:
   for (let y = 0; y <= h; y += step * Math.sin(angle)) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
   }
-  const dx = step; const dy = step * Math.sin(angle);
+  const dx = step;
   // Left-leaning
   for (let startX = -h; startX <= w + h; startX += dx) {
     ctx.beginPath();

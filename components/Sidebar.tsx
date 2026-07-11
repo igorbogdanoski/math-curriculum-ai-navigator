@@ -1,5 +1,4 @@
 import { InstallPWAButton } from './common/InstallPWAButton';
-import { LANGUAGES } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Gift } from 'lucide-react';
@@ -153,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
   const { user, logout, firebaseUser } = useAuth();
   const { navigate } = useNavigation();
   const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
-  const { mission, streakLabel } = useMaturaMissions();
+  const { mission } = useMaturaMissions();
 
   // S39-F4: emit quota_warning_seen once per session when balance is at or below threshold
   const quotaWarningEmittedRef = useRef(false);

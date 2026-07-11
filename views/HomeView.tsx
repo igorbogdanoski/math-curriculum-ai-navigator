@@ -264,7 +264,7 @@ export const HomeView: React.FC = () => {
   const { recommendations, isLoading: isRecsLoading, error: recsError } = usePersonalizedRecommendations(recsEnabled);
   const isQuotaExhausted = isDailyQuotaKnownExhausted();
   useTour('dashboard', dashboardTourSteps, !isStatsLoading);
-  const { toursSeen, markTourAsSeen } = useUserPreferences();
+  useUserPreferences();
   const { suggestion, isLoading: isSuggestionLoading, dismissSuggestion } = useProactiveSuggestions();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { brief, isLoading: isBriefLoading, refresh: refreshBrief, weakConcepts, spacedRepDue } = useDailyBrief();

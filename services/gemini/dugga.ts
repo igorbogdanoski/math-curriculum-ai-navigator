@@ -1,7 +1,6 @@
 import {
   DEFAULT_MODEL, SAFETY_SETTINGS, callGeminiProxy,
   checkDailyQuotaGuard, getResolvedTextSystemInstruction, getAILanguageRule,
-  generateAndParseJSON, Type,
 } from './core';
 import type {
   DuggaQuestion, DuggaQuestionType, DuggaDok, DuggaOption,
