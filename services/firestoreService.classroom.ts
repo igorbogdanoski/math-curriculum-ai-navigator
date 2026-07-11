@@ -1,11 +1,8 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, where, setDoc, addDoc, deleteDoc, serverTimestamp, arrayUnion, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
-import { type CurriculumModule } from '../data/curriculum';
-import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type StudentGroup, type SchoolClass, type ClassMembership, type Announcement } from './firestoreService.types';
 import { parseFirestoreDoc, SchoolClassSchema, ClassMembershipSchema } from '../schemas/firestoreSchemas';
-import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { getE2EMockClasses } from './e2eTesting';
 import { membershipKey } from '../utils/studentIdentity';
 

@@ -1,10 +1,9 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, arrayRemove, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
-import { type DifferentiationLevel, type SavedQuestion, type ScanArtifactRecord } from '../types';
+import { type SavedQuestion, type ScanArtifactRecord } from '../types';
 import { type CachedMaterial, type Assignment, type AIMaterialFeedbackEvent, type AIMaterialFeedbackSummary, type AIMaterialFeedbackSummaryRow, type AIMaterialType, type AIMaterialFeedbackAction, type RecoveryWorksheetApproval } from './firestoreService.types';
-import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
 import { moderateMaterial } from '../utils/contentModeration';

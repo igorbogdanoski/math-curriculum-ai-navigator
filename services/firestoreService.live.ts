@@ -1,10 +1,7 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, where, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, where, addDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
-import { type CurriculumModule } from '../data/curriculum';
-import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type LiveSession } from './firestoreService.types';
-import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 
 export const fetchCachedQuizList = async (): Promise<{ id: string; title: string; conceptId?: string }[]> => {
     try {
