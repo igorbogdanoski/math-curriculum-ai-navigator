@@ -1,5 +1,5 @@
 ﻿import { logger } from '../../utils/logger';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play, ArrowUp, ArrowDown, FileText, X, Zap } from 'lucide-react';
 import { LiveQuizPanel } from './presentation/LiveQuizPanel';
 import { downloadPresentationPPTX } from './presentation/presentationPptxExport';
@@ -14,9 +14,6 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 import { trackCreditConsumed } from '../../services/telemetryService';
-import {
-  HAS_MATH, isPureMathExpr, renderBulletToImg, resolveImgRatio, getPptxgen,
-} from './presentation/presentationMathUtils';
 export { isPureMathExpr } from './presentation/presentationMathUtils';
 import {
   StepByStepSlide, FormulaCenteredSlide, ProofSlide,

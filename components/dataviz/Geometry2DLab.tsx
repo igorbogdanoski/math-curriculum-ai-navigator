@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 
-import { type Pt, type CurRef, dist, angleDeg, triArea, foot, midpoint, clamp, fmtNum, CurrBadges } from './geometry2dUtils';
+import { type Pt, type CurRef, dist, fmtNum, CurrBadges } from './geometry2dUtils';
 import { TriangleExplorer, QuadraticExplorer, QuadrilateralsExplorer } from './Geometry2DExplorers';
 // ─── Pythagorean Theorem Lab ──────────────────────────────────────────────────
 const PYTH_CUR: CurRef = {

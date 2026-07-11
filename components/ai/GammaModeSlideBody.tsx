@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, ZoomIn, ZoomOut, CheckCircle2, Loader2, ClipboardList, ArrowLeftRight, Pencil, Shield, Crosshair, Eraser, BookOpen, Sparkles } from 'lucide-react';
+import { Eye, ZoomIn, ZoomOut, CheckCircle2, Loader2, ClipboardList, ArrowLeftRight, Shield, BookOpen, Sparkles } from 'lucide-react';
 import type { AIGeneratedPresentation, AIGeneratedAssessment, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
@@ -44,10 +44,10 @@ export interface SlideBodyProps {
 
 export const SlideBody: React.FC<SlideBodyProps> = ({
   slide, data, idx,
-  svgCache, setSvgCache, svgLoading, setSvgLoading,
+  svgCache, setSvgCache: _setSvgCache, svgLoading, setSvgLoading: _setSvgLoading,
   formulaZoom, setFormulaZoom,
   revealed, setRevealed,
-  stepIdx, setStepIdx,
+  stepIdx, setStepIdx: _setStepIdx,
   exitTicket, generateExitTicket, isGeneratingExitTicket, dismissExitTicket,
   generateSVGForSlide, hasReveal,
   gammaLivePin, onSendExitTicket, exitTicketSentToStudents,

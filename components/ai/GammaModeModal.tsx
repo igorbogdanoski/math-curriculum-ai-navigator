@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote, Lock, Unlock } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote, Lock, Unlock } from 'lucide-react';
 import { DokBadge } from '../common/DokBadge';
 import type { DokLevel } from '../../types';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -8,7 +8,7 @@ import { generateMathSVG } from '../../services/gemini/svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { deriveContextualFormulas, resolveSlideConcept } from '../../utils/gammaContext';
-import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
+import { useGammaAnnotation } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
 import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
 import { useGammaExitTicket } from './gamma/useGammaExitTicket';
