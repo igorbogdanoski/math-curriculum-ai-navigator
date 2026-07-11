@@ -28,7 +28,9 @@
       "correctAnswer": "В",
       "topic": "Искази",
       "topicArea": "logika",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -49,7 +51,9 @@
       "correctAnswer": "Б",
       "topic": "Реални броеви",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -70,7 +74,9 @@
       "correctAnswer": "А",
       "topic": "Комплексни броеви",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -91,7 +97,10 @@
       "correctAnswer": "Б",
       "topic": "Алгебарски изрази",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2",
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -112,7 +121,9 @@
       "correctAnswer": "Г",
       "topic": "Равенки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -133,7 +144,9 @@
       "correctAnswer": "В",
       "topic": "Степени",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -154,7 +167,9 @@
       "correctAnswer": "Г",
       "topic": "Квадратна функција",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -175,7 +190,9 @@
       "correctAnswer": "Б",
       "topic": "Рационални изрази",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -196,7 +213,9 @@
       "correctAnswer": "Г",
       "topic": "Текстуални задачи",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -238,7 +257,9 @@
       "correctAnswer": "Б",
       "topic": "Многуаголници",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -259,7 +280,9 @@
       "correctAnswer": "А",
       "topic": "Вектори",
       "topicArea": "matrici-vektori",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -280,7 +303,9 @@
       "correctAnswer": "Г",
       "topic": "Агли",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -301,7 +326,10 @@
       "correctAnswer": "А",
       "topic": "Круг",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -322,7 +350,9 @@
       "correctAnswer": "Б",
       "topic": "Тригонометриски идентитети",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -338,7 +368,9 @@
       "correctAnswer": "А. $\\varnothing$   Б. $B$",
       "topic": "Множества",
       "topicArea": "logika",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -354,7 +386,9 @@
       "correctAnswer": "А. $35\\%$   Б. $5:7$",
       "topic": "Проценти и размери",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -370,7 +404,9 @@
       "correctAnswer": "А. $m=-1$   Б. $m=1$",
       "topic": "Линеарна функција",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -386,7 +422,10 @@
       "correctAnswer": "А. $\\alpha=80°$   Б. $16\\ \\text{cm}$",
       "topic": "Круг и паралелограм",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -402,7 +441,9 @@
       "correctAnswer": "А. $\\frac{\\pi}{4}$   Б. $20$",
       "topic": "Правоаголен триаголник",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -418,7 +459,9 @@
       "correctAnswer": "А. $B\\cap C=\\varnothing$ (за $m,n\\notin\\{34,43\\}$; во спротивно $\\{34\\}$, $\\{43\\}$ или $\\{34,43\\}$)   Б. $A\\Delta B=\\{1,4,5,n\\}$ (за $n\\ne1$; $\\{1,4,5\\}$ за $n=1$)   В. $(A\\cap B)\\times C=\\{(m,34),(m,43),(3,34),(3,43)\\}$ за $m\\in\\mathbf{Z}, n\\ne1$ (со дополнителни парови ако $n=1$)",
       "topic": "Операции со множества",
       "topicArea": "logika",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -434,7 +477,9 @@
       "correctAnswer": "$1$",
       "topic": "Неравенки со апсолутна вредност",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -466,7 +511,9 @@
       "correctAnswer": "$45$ и $63$",
       "topic": "Размери",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -482,7 +529,9 @@
       "correctAnswer": "$-\\dfrac{37}{6}$",
       "topic": "Виетови формули",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -498,7 +547,10 @@
       "correctAnswer": "$x=\\dfrac{3}{2}$",
       "topic": "Рационални равенки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3",
+        "gym11-c3-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -514,7 +566,10 @@
       "correctAnswer": "$P=36\\ \\text{cm}^2$",
       "topic": "Трапез",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -530,7 +585,10 @@
       "correctAnswer": "$V_k-V_c=24\\pi\\ \\text{cm}^3$",
       "topic": "Цилиндар и конус",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -546,7 +604,10 @@
       "correctAnswer": "апотема $h=13\\ \\text{cm}$; плоштина на основата $B=96\\sqrt{3}\\ \\text{cm}^2$; плоштина на обвивката $M=312\\ \\text{cm}^2$",
       "topic": "Пирамида",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -562,7 +623,9 @@
       "correctAnswer": "$\\cos\\beta=0{,}4=\\dfrac{2}{5}$",
       "topic": "Правоаголен триаголник",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
