@@ -11,7 +11,6 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { clearDailyQuotaFlag } from '../services/geminiService';
 import { X } from 'lucide-react';
 import type { MaterialType, NationalStandard, Concept, Grade } from '../types';
-import { firestoreService } from '../services/firestoreService';
 import { trackCreditConsumed } from '../services/telemetryService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -109,7 +108,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         else if (step === 'generator-step-3' || step === 'generator-generate-button') setCurrentStep(3);
     }, []);
     useTour('generator', generatorTourSteps, !!generatorTourSteps && !isCurriculumLoading, handleTourStep);
-    const { toursSeen, markTourAsSeen } = useUserPreferences();
+    useUserPreferences();
     const { isOnline } = useNetworkStatus();
     const { showModal, hideModal } = useModal();
 
@@ -153,20 +152,16 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     }, [handleSelectMaterialType]);
 
     const {
-        filteredTopics,
         filteredConcepts,
         isGenerating,
         generatedMaterial,
         setGeneratedMaterial,
         isStreaming,
         streamingText,
-        isPlayingQuiz,
-        setIsPlayingQuiz,
         quotaError,
         setQuotaError,
         quotaCountdown,
         variants,
-        setVariants,
         isGeneratingVariants,
         activeVariantTab,
         setActiveVariantTab,
@@ -182,14 +177,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         isGeneratingBulk,
         bulkStep,
         bulkResults,
-        diffRec,
         verifiedQs,
         isGenerateDisabled,
         handleGenerate,
         handleGenerateVariants,
         handleBulkGenerate,
         handleCancel,
-        handleReset,
         handleSaveAsNote,
         handleSaveTeacherNote,
         handleSaveQuestion,
@@ -198,7 +191,6 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         handleMaterialRate,
         handleGenerateFromBank,
         handleGenerateFromExtraction,
-        handleClearQuota,
     } = useGeneratorActions({
         state,
         dispatch,

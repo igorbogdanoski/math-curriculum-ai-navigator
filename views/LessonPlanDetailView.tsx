@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { ICONS } from '../constants';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -11,7 +11,6 @@ import type { LessonPlan } from '../types';
 import { useLastVisited } from '../contexts/LastVisitedContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useAuth } from '../contexts/AuthContext';
-import { Card } from '../components/common/Card';
 import { exportLessonPlanToWord } from '../utils/wordExport';
 import { AppError, ErrorCode } from '../utils/errors';
 const LessonPlanPDFButton = React.lazy(() =>
@@ -79,7 +78,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
   const { isFavoriteLessonPlan, toggleFavoriteLessonPlan } = useUserPreferences();
   const { addNotification } = useNotification();
   const { setLastVisited } = useLastVisited();
-  const { getConceptDetails } = useCurriculum();
+  useCurriculum();
   const { user } = useAuth();
   
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -151,7 +150,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
           });
           setCommentText('');
           addNotification('Коментарот е објавен.', 'success');
-      } catch (error) {
+      } catch {
           addNotification('Грешка при објавување на коментарот.', 'error');
       } finally {
           setIsSubmittingComment(false);
@@ -162,7 +161,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
     if (!plan) return;
     setIsExportMenuOpen(false);
     
-    const { title, grade, theme, objectives, assessmentStandards, scenario, materials, progressMonitoring, differentiation, reflectionPrompt, selfAssessmentPrompt } = plan;
+    const { title, grade, theme, objectives, assessmentStandards, scenario, materials, progressMonitoring } = plan;
 
     // Modern Client-Side PDF Generation
     if (format === 'pdf') {
@@ -254,7 +253,6 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
     let mimeType = '';
     let extension = '';
     const filename = `${(title || 'plan').replace(/[^a-z0-9а-шѓѕјљњќџч]/gi, '_').toLowerCase()}`;
-    const escapeHtml = (unsafe: string = '') => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     switch(format) {
         case 'md':

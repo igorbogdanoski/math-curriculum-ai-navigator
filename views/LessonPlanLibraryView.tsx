@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import { useTour } from '../hooks/useTour';
-import React, { memo, useMemo, useState, useEffect } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { usePlanner } from '../contexts/PlannerContext';
@@ -86,7 +86,7 @@ export const LessonPlanLibraryView: React.FC = () => {
     const { addNotification } = useNotification();
     const { allConcepts, allNationalStandards } = useCurriculum();
     useTour('library', libraryTourSteps, lessonPlans.length > 0 && !isLoading);
-    const { toursSeen, markTourAsSeen } = useUserPreferences();
+    useUserPreferences();
     const { showModal, hideModal } = useModal();
     
     const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +151,10 @@ const handlePublish = (plan: LessonPlan) => {
         setPublishingPlan(plan);
     };
 
-    const confirmPublish = async (visibility: 'school' | 'public') => {
+    // _visibility: publishLessonPlan doesn't yet accept a visibility param, so
+    // confirmPublish('school') and confirmPublish('public') currently publish identically —
+    // the choice isn't applied. Flagged 2026-07-12, not fixed here (behavior change, not lint).
+    const confirmPublish = async (_visibility: 'school' | 'public') => {
         if (!publishingPlan || !user) return;
         setPublishingPlan(null);
         try {

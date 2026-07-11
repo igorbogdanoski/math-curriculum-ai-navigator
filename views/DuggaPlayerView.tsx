@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Search, Loader2, Award,
-  Clock, User, Shuffle,
+  Clock, User,
   RotateCcw, ChevronRight, Trophy,
 } from 'lucide-react';
 import { QuestionCard } from '../components/dugga/DuggaQuestionCard';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
-import { autoScore, needsAIGrade, buildAIGradingQuestionContext, parseAIEarnedPoints, percentageToMkGrade } from '../utils/duggaScoring';
+import { autoScore, needsAIGrade, buildAIGradingQuestionContext } from '../utils/duggaScoring';
 import type { QResult } from '../utils/duggaScoring';
 import { gradeFeynmanAnswer, feynmanScoreToPoints } from '../utils/duggaFeynmanGrading';
 import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
@@ -60,7 +60,7 @@ export function DuggaPlayerView() {
   const [results, setResults] = useState<Record<string, QResult>>({});
   const [totalScore, setTotalScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const [, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('Оценување...');
 
   // S61-E1/E2 — Final exam mode + visibility pause ----------------------------
@@ -308,7 +308,6 @@ export function DuggaPlayerView() {
 
   const pct = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
   const gradeLabel = pct >= 90 ? 'Одличен (5)' : pct >= 75 ? 'Многу добар (4)' : pct >= 60 ? 'Добар (3)' : pct >= 50 ? 'Задоволителен (2)' : 'Недоволен (1)';
-  const gradeColor = pct >= 90 ? 'text-green-600' : pct >= 75 ? 'text-blue-600' : pct >= 60 ? 'text-amber-600' : pct >= 50 ? 'text-orange-600' : 'text-red-600';
   const answeredCount = test ? test.questions.filter(q => q.type !== 'section_header' && (answers[q.id] ?? '').length > 0).length : 0;
   const totalAnswerable = test ? test.questions.filter(q => q.type !== 'section_header').length : 0;
 
