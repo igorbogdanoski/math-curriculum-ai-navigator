@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useReactToPrint } from 'react-to-print';
 import { logger } from '../utils/logger';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -18,7 +17,7 @@ import { PublishScenarioDialog } from '../components/scenario-bank/PublishScenar
 import type { PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
 import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/AIPedagogicalAnalysisDisplay';
-import { MathToolsPanel, type MathToolTab } from '../components/common/MathToolsPanel';
+import { MathToolsPanel } from '../components/common/MathToolsPanel';
 import { LessonPlanFormFields } from '../components/lesson-plan-editor/LessonPlanFormFields';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
@@ -42,6 +41,7 @@ import type { SecondaryTrack } from '../types';
 import { ReflectionModal, type ReflectionState } from '../components/lesson-plan-editor/ReflectionModal';
 import { OfficialLessonFormModal } from '../components/lesson-plan-editor/OfficialLessonFormModal';
 import { LessonPlanSidebar } from '../components/lesson-plan-editor/LessonPlanSidebar';
+import { usePlanEditorModals } from '../components/lesson-plan-editor/usePlanEditorModals';
 
 
 interface LessonPlanEditorViewProps {
@@ -66,20 +66,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     initialPlanState
   );
 
-  const [execOpen, setExecOpen] = useState(false);
-  const [showMathTools, setShowMathTools] = useState(false);
-  const [mathToolsTab, setMathToolsTab] = useState<MathToolTab>('scratchpad');
+  const modals = usePlanEditorModals({ id });
   const [isSaving, setIsSaving] = useState(false);
   const [savedPlanForCoach, setSavedPlanForCoach] = useState<{ plan: typeof plan; key: string; navigateTo: string } | null>(null);
-  const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
-  const [isPublishingToBank, setIsPublishingToBank] = useState(false);
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [showEditMetadataDialog, setShowEditMetadataDialog] = useState(false);
   const [autoShareToBank, setAutoShareToBank] = useState(false);
-  const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
-  const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
-  const [officialLessonTemplate, setOfficialLessonTemplate] = useState<'mon' | 'bro'>('mon');
-  const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
   const [showUploadBanner, setShowUploadBanner] = useState(false);
   const [pendingUpload, setPendingUpload] = useState<{ parsed: Partial<LessonPlan>; fileName: string } | null>(null);
@@ -95,10 +85,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [postSaveNav, setPostSaveNav] = useState<{ plan: Partial<LessonPlan>; key: string; navigateTo: string } | null>(null);
 
   const isMounted = useRef(true);
-  const lessonOfficialFormRef = useRef<HTMLDivElement>(null);
   const isEditing = useMemo(() => id !== undefined, [id]);
   const [isDirty, setIsDirty] = useState(false);
   const isInitialLoad = useRef(true);
+
+  const { setConfirmDialog } = modals;
 
   // S96.2 — Scenario Bank → Lesson Plan Bridge
   const handleImportScenario = useCallback((entry: ScenarioBankEntry) => {
@@ -119,7 +110,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         addNotification('Сценариото е увезено во планот ✓', 'success');
       },
     });
-  }, [addNotification, setPlan]);
+  }, [addNotification, setPlan, setConfirmDialog]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -144,14 +135,6 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty, isSaving]);
-
-  const handleLessonOfficialPrint = useReactToPrint({
-    contentRef: lessonOfficialFormRef,
-    documentTitle: `Сценарио_на_час_${id ?? 'novo'}`,
-    pageStyle: officialLessonTemplate === 'bro'
-      ? `@page { size: A4 landscape; margin: 10mm 12mm; } * { box-sizing: border-box; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; } body > div { max-width: 100% !important; width: 100% !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; } table { border-collapse: collapse !important; width: 100% !important; } thead { display: table-header-group !important; } tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }`
-      : `@page { size: A4 ${officialLessonOrientation}; margin: 10mm; } * { box-sizing: border-box; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; margin: 0; } body > div { max-width: 100% !important; width: 100% !important; box-shadow: none !important; margin: 0 !important; } table { border-collapse: collapse !important; } thead { display: table-header-group !important; } tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; } textarea, input[type="text"] { border: none !important; outline: none !important; resize: none !important; background: transparent !important; font-family: inherit !important; font-size: inherit !important; padding: 0 !important; } input[type="checkbox"] { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }`,
-  });
 
   useEffect(() => {
     if (isCurriculumLoading || !curriculum) return;
@@ -318,12 +301,12 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const handlePublishToBank = () => {
     if (!plan.title) { addNotification('Треба наслов за да споделите.', 'error'); return; }
     if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'error'); return; }
-    setShowPublishDialog(true);
+    modals.setShowPublishDialog(true);
   };
 
   const handleConfirmPublish = async (opts: PublishScenarioOptions) => {
     if (!firebaseUser?.uid || !user) return;
-    setIsPublishingToBank(true);
+    modals.setIsPublishingToBank(true);
     try {
       const bankId = await publishScenario({
         plan: plan as import('../types').LessonPlan,
@@ -340,31 +323,31 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         originalAuthorName: plan.originalAuthor || undefined,
       });
       setPlan(prev => ({ ...prev, scenarioBankId: bankId }));
-      setShowPublishDialog(false);
+      modals.setShowPublishDialog(false);
       addNotification(opts.isPublic ? '✅ Сценариото е јавно споделено во Банката!' : '🔒 Сценариото е зачувано приватно.', 'success');
       navigate('/scenario-bank');
     } catch {
       addNotification('Грешка при споделување.', 'error');
     } finally {
-      setIsPublishingToBank(false);
+      modals.setIsPublishingToBank(false);
     }
   };
 
   const handleConfirmEditMetadata = async (opts: PublishScenarioOptions) => {
     if (!plan.scenarioBankId) return;
-    setIsPublishingToBank(true);
+    modals.setIsPublishingToBank(true);
     try {
       await updateScenarioMetadata(plan.scenarioBankId, {
         teachingModel: opts.teachingModel,
         dokLevel: opts.dokLevel,
         authorNotes: opts.authorNotes,
       });
-      setShowEditMetadataDialog(false);
+      modals.setShowEditMetadataDialog(false);
       addNotification('✅ Метаподатоците се ажурирани!', 'success');
     } catch {
       addNotification('Грешка при ажурирање.', 'error');
     } finally {
-      setIsPublishingToBank(false);
+      modals.setIsPublishingToBank(false);
     }
   };
 
@@ -529,10 +512,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             <button
               type="button"
               onClick={() => {
-                setConfirmDialog({
+                modals.setConfirmDialog({
                   message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
                   variant: 'danger',
-                  onConfirm: () => { setConfirmDialog(null); clearDraft(); }
+                  onConfirm: () => { modals.setConfirmDialog(null); clearDraft(); }
                 });
               }}
               className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
@@ -615,7 +598,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   )}
                   <button
                     type="button"
-                    onClick={() => setShowOfficialLessonForm(true)}
+                    onClick={() => modals.setShowOfficialLessonForm(true)}
                     disabled={!plan.title}
                     className="flex items-center gap-2 bg-white border border-blue-300 text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold disabled:opacity-40 text-sm"
                     title="Официјален МОН образец за Подготовка за час"
@@ -632,12 +615,12 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   />
                   <button
                     type="button"
-                    disabled={isPublishingToBank || !plan.title}
+                    disabled={modals.isPublishingToBank || !plan.title}
                     onClick={handlePublishToBank}
                     title="Сподели во Банката на Сценарија"
                     className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold disabled:bg-gray-400"
                   >
-                    {isPublishingToBank ? (
+                    {modals.isPublishingToBank ? (
                       <ICONS.spinner className="w-4 h-4 animate-spin" />
                     ) : (
                       <ICONS.share className="w-4 h-4" />
@@ -647,7 +630,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   {plan.scenarioBankId && (
                     <button
                       type="button"
-                      onClick={() => setShowEditMetadataDialog(true)}
+                      onClick={() => modals.setShowEditMetadataDialog(true)}
                       title="Промени педагошки модел / DoK ниво на веќе споделеното сценарио"
                       className="flex items-center gap-2 bg-white border border-emerald-300 text-emerald-700 px-4 py-3 rounded-lg hover:bg-emerald-50 transition-colors font-semibold text-sm"
                     >
@@ -688,7 +671,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   {isEditing && id && (
                     <button
                       type="button"
-                      onClick={() => setExecOpen(true)}
+                      onClick={() => modals.setExecOpen(true)}
                       title="Стартувај ја реализацијата на часот"
                       className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold"
                     >
@@ -707,7 +690,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             setPlan={setPlan}
             firebaseUser={firebaseUser}
             navigate={navigate}
-            onOpenMathTools={(tab) => { setMathToolsTab(tab); setShowMathTools(true); }}
+            onOpenMathTools={modals.openMathTools}
             onImportScenario={handleImportScenario}
           />
         </div>
@@ -723,17 +706,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         <LessonPlanDisplay plan={plan as LessonPlan} />
       </div>
 
-      {showMathTools && (
+      {modals.showMathTools && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
             <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
               <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-              <button type="button" title="Затвори алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+              <button type="button" title="Затвори алатки" onClick={() => modals.setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 relative overflow-hidden bg-slate-50">
               <MathToolsPanel
-                defaultTab={mathToolsTab}
-                onClose={() => setShowMathTools(false)}
+                defaultTab={modals.mathToolsTab}
+                onClose={() => modals.setShowMathTools(false)}
                 className="h-full"
                 onExportImage={(dataUrl, tool) => {
                   setPlan(prev => ({
@@ -762,64 +745,64 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         type="button"
         className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
         title="Математички Алатки (GeoGebra, Desmos, Алгебарски Плочки...)"
-        onClick={() => { setMathToolsTab('scratchpad'); setShowMathTools(true); }}
+        onClick={() => modals.openMathTools('scratchpad')}
       >
         <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
         <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
       </button>
-      {confirmDialog && (
+      {modals.confirmDialog && (
         <ConfirmDialog
-          message={confirmDialog.message}
-          title={confirmDialog.title}
-          variant={confirmDialog.variant ?? 'warning'}
-          onConfirm={confirmDialog.onConfirm}
-          onCancel={() => setConfirmDialog(null)}
+          message={modals.confirmDialog.message}
+          title={modals.confirmDialog.title}
+          variant={modals.confirmDialog.variant ?? 'warning'}
+          onConfirm={modals.confirmDialog.onConfirm}
+          onCancel={() => modals.setConfirmDialog(null)}
         />
       )}
 
       {/* ── Publish to Scenario Bank Dialog ─────────────────────────────── */}
-      {showPublishDialog && (
+      {modals.showPublishDialog && (
         <PublishScenarioDialog
           item={plan}
           isPro={user?.role === 'admin'}
           onPublish={handleConfirmPublish}
-          onCancel={() => setShowPublishDialog(false)}
-          isLoading={isPublishingToBank}
+          onCancel={() => modals.setShowPublishDialog(false)}
+          isLoading={modals.isPublishingToBank}
         />
       )}
 
       {/* ── Edit Scenario Metadata Dialog (pedagogical model on an already-published scenario) ── */}
-      {showEditMetadataDialog && (
+      {modals.showEditMetadataDialog && (
         <PublishScenarioDialog
           item={plan}
           isPro={user?.role === 'admin'}
           mode="edit"
           onPublish={handleConfirmEditMetadata}
-          onCancel={() => setShowEditMetadataDialog(false)}
-          isLoading={isPublishingToBank}
+          onCancel={() => modals.setShowEditMetadataDialog(false)}
+          isLoading={modals.isPublishingToBank}
         />
       )}
 
       {/* ── Official MoN Lesson Plan Form Modal ──────────────────────────── */}
-      {showOfficialLessonForm && (
+      {modals.showOfficialLessonForm && (
         <OfficialLessonFormModal
           plan={plan}
-          template={officialLessonTemplate}
-          setTemplate={setOfficialLessonTemplate}
-          orientation={officialLessonOrientation}
-          setOrientation={setOfficialLessonOrientation}
-          isEditable={officialLessonEditing}
-          setIsEditable={setOfficialLessonEditing}
-          onPrint={() => handleLessonOfficialPrint()}
-          onClose={() => setShowOfficialLessonForm(false)}
-          formRef={lessonOfficialFormRef}
+          template={modals.officialLessonTemplate}
+          setTemplate={modals.setOfficialLessonTemplate}
+          orientation={modals.officialLessonOrientation}
+          setOrientation={modals.setOfficialLessonOrientation}
+          isEditable={modals.officialLessonEditing}
+          setIsEditable={modals.setOfficialLessonEditing}
+          onPrint={() => modals.handleLessonOfficialPrint()}
+          onClose={() => modals.setShowOfficialLessonForm(false)}
+          formRef={modals.lessonOfficialFormRef}
         />
       )}
       {/* C.3 — AI Lesson Execution overlay (inline, no navigation) */}
-      {execOpen && plan && (plan as LessonPlan).id && (
+      {modals.execOpen && plan && (plan as LessonPlan).id && (
         <LessonExecutionOverlay
           plan={plan as LessonPlan}
-          onClose={() => setExecOpen(false)}
+          onClose={() => modals.setExecOpen(false)}
         />
       )}
     </div>
