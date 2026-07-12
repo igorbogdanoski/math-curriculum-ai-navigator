@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findGroundingTopic, clampVbWidth, MIN_VB_W, MAX_VB_W } from './AIMindMapView';
+import { findGroundingTopic, clampVbWidth, MIN_VB_W, MAX_VB_W } from './mindMapLayout';
 import type { Topic } from '../types';
 
 describe('findGroundingTopic', () => {
