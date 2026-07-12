@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote, Lock, Unlock } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Loader2, MessageSquare, Timer, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw, Vote, Lock, Unlock } from 'lucide-react';
 import { DokBadge } from '../common/DokBadge';
 import type { DokLevel } from '../../types';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -12,21 +12,15 @@ import { useGammaAnnotation } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
 import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
 import { useGammaExitTicket } from './gamma/useGammaExitTicket';
-import { regenerateSlide, generatePollOptions } from '../../services/gemini/plans';
+import { useGammaLiveSession } from './gamma/useGammaLiveSession';
+import { PollResultsBar } from './gamma/PollResultsBar';
+import { PollEditorPopover } from './gamma/PollEditorPopover';
+import { regenerateSlide } from '../../services/gemini/plans';
 import {
-  startGammaLive,
-  broadcastGammaSlide,
-  endGammaLive,
-  subscribeGammaSession,
-  subscribeGammaResponses,
-  setGammaPollOptions,
-  revealGammaPollResults,
   sendGammaExitTicket,
-  setGammaPacingMode,
   addGammaAnnotationStroke,
   clearGammaAnnotationStrokes,
   tallyPollResponses,
-  type GammaLiveResponse,
   type GammaAnnotationStroke,
 } from '../../services/gammaLiveService';
 import { saveGammaPresentation } from '../../services/gammaPresentationService';
@@ -59,39 +53,12 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
   'proof':           { label: 'Доказ',            color: 'text-purple-300',  bg: 'bg-purple-900/40'  },
 };
 
-// ── Live poll results bar ──────────────────────────────────────────────────────
-function PollResultsBar({ options, tally, correctIndex }: { options: string[]; tally: Record<string, number>; correctIndex?: number | null }) {
-  const total = Object.values(tally).reduce((s, n) => s + n, 0);
-  return (
-    <div className="mt-2 space-y-1.5 text-left">
-      {options.map((opt, i) => {
-        const count = tally[opt] ?? 0;
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        const isCorrect = correctIndex === i;
-        return (
-          <div key={i}>
-            <div className="flex items-center justify-between text-[10px] text-slate-300 mb-0.5">
-              <span className="truncate pr-2">
-                {isCorrect && <span className="text-emerald-400 mr-1">✓</span>}
-                {String.fromCharCode(65 + i)}. {opt}
-              </span>
-              <span className="font-bold text-white shrink-0">{count}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div className={`h-full transition-all duration-500 ${isCorrect ? 'bg-emerald-500' : 'bg-violet-500'}`} style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose, skipLibrarySave = false }) => {
   const { user, firebaseUser }  = useAuth();
   const { addNotification }     = useNotification();
   const [idx, setIdx]           = useState(startIndex);
+  const [slides, setSlides]     = useState<PresentationSlide[]>(() => [...data.slides]);
   const [revealed, setRevealed] = useState(false);
   const [stepIdx, setStepIdx]   = useState(0);
   const [visible, setVisible]   = useState(true);
@@ -141,22 +108,6 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
   const { exitTicket, isGenerating: isGeneratingExitTicket, generate: generateExitTicket, dismiss: dismissExitTicket } = useGammaExitTicket();
   const [exitTicketSentToStudents, setExitTicketSentToStudents] = useState(false);
 
-  // ── Gamma Live ────────────────────────────────────────────────────────────
-  const [gammaLivePin, setGammaLivePin] = useState<string | null>(null);
-  const [isStartingLive, setIsStartingLive] = useState(false);
-  const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
-  const [liveHandsCount, setLiveHandsCount] = useState(0);
-  const [showResponsesPanel, setShowResponsesPanel] = useState(false);
-  const [activePollOptions, setActivePollOptions] = useState<string[] | null>(null);
-  const [activePollCorrectIndex, setActivePollCorrectIndex] = useState<number | null>(null);
-  const [activePollRevealed, setActivePollRevealed] = useState(false);
-  const [showPollEditor, setShowPollEditor] = useState(false);
-  const [pollDraft, setPollDraft] = useState<string[]>(['', '']);
-  const [pollCorrectDraft, setPollCorrectDraft] = useState<number | null>(null);
-  const [isGeneratingPoll, setIsGeneratingPoll] = useState(false);
-  const [pacingMode, setPacingModeDisplay] = useState<'locked' | 'free'>('locked');
-  const liveUnsubRef = useRef<(() => void) | null>(null);
-
   const handleExportPPTX = useCallback(async () => {
     if (isExportingPptx) return;
     setIsExportingPptx(true);
@@ -170,51 +121,25 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     setIsExportingPptx(false);
   }, [data, user, isExportingPptx, addNotification]);
 
-  const liveSessionUnsubRef = useRef<(() => void) | null>(null);
-
-  const startLiveSession = useCallback(async () => {
-    if (!firebaseUser || isStartingLive || gammaLivePin) return;
-    setIsStartingLive(true);
-    try {
-      const pin = await startGammaLive(firebaseUser.uid, data.topic, data.gradeLevel, data.slides);
-      setGammaLivePin(pin);
-      liveUnsubRef.current = subscribeGammaResponses(pin, responses => {
-        setLiveResponses(responses);
-      });
-      liveSessionUnsubRef.current = subscribeGammaSession(pin, session => {
-        setLiveHandsCount(session?.handsUids?.length ?? 0);
-        setActivePollOptions(session?.pollOptions ?? null);
-        setActivePollCorrectIndex(session?.pollCorrectIndex ?? null);
-        setActivePollRevealed(session?.pollRevealed ?? false);
-        setPacingModeDisplay(session?.pacingMode ?? 'locked');
-      });
-    } catch {
-      addNotification('Gamma Live: грешка при старт', 'error');
-    } finally {
-      setIsStartingLive(false);
-    }
-  }, [firebaseUser, isStartingLive, gammaLivePin, data, addNotification]);
-
-  const endLiveSession = useCallback(async () => {
-    if (!gammaLivePin) return;
-    await endGammaLive(gammaLivePin);
-    liveUnsubRef.current?.();
-    liveUnsubRef.current = null;
-    liveSessionUnsubRef.current?.();
-    liveSessionUnsubRef.current = null;
-    setGammaLivePin(null);
-    setLiveResponses([]);
-    setLiveHandsCount(0);
-    setShowResponsesPanel(false);
-    setActivePollOptions(null);
-    setActivePollCorrectIndex(null);
-    setActivePollRevealed(false);
-    setShowPollEditor(false);
-    setPollDraft(['', '']);
-    setPollCorrectDraft(null);
-    setExitTicketSentToStudents(false);
-    setPacingModeDisplay('locked');
-  }, [gammaLivePin]);
+  // ── Gamma Live + polling ──────────────────────────────────────────────────
+  const {
+    gammaLivePin, isStartingLive, liveResponses, liveHandsCount,
+    showResponsesPanel, setShowResponsesPanel,
+    activePollOptions, activePollCorrectIndex, activePollRevealed,
+    showPollEditor, setShowPollEditor,
+    pollDraft, setPollDraft, pollCorrectDraft, setPollCorrectDraft,
+    isGeneratingPoll, pacingMode,
+    startLiveSession, endLiveSession, togglePacingMode,
+    startPoll, stopPoll, revealPoll, generateAiPollOptions,
+  } = useGammaLiveSession({
+    firebaseUid: firebaseUser?.uid,
+    topic: data.topic,
+    gradeLevel: data.gradeLevel,
+    slides, // local (possibly reordered/edited) slides, not the original data.slides prop
+    currentSlideIdx: idx,
+    addNotification,
+    onLiveSessionEnd: () => setExitTicketSentToStudents(false),
+  });
 
   const sendExitTicketToStudents = useCallback(async () => {
     if (!gammaLivePin || !exitTicket) return;
@@ -222,50 +147,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     setExitTicketSentToStudents(true);
   }, [gammaLivePin, exitTicket]);
 
-  const togglePacingMode = useCallback(async () => {
-    if (!gammaLivePin) return;
-    await setGammaPacingMode(gammaLivePin, pacingMode === 'free' ? 'locked' : 'free');
-  }, [gammaLivePin, pacingMode]);
-
   const handleDismissExitTicket = useCallback(() => {
     dismissExitTicket();
     setExitTicketSentToStudents(false);
   }, [dismissExitTicket]);
-
-  const startPoll = useCallback(async () => {
-    if (!gammaLivePin) return;
-    const trimmed = pollDraft.map(o => o.trim());
-    const options = trimmed.filter(Boolean);
-    if (options.length < 2) return;
-    // Remap the marked-correct index to its position after blanks are filtered out —
-    // otherwise a blank option before it would silently shift which option gets marked correct.
-    const correctIndex = pollCorrectDraft !== null && trimmed[pollCorrectDraft]
-      ? trimmed.slice(0, pollCorrectDraft).filter(Boolean).length
-      : null;
-    await setGammaPollOptions(gammaLivePin, options, correctIndex);
-    setShowPollEditor(false);
-  }, [gammaLivePin, pollDraft, pollCorrectDraft]);
-
-  const stopPoll = useCallback(async () => {
-    if (!gammaLivePin) return;
-    await setGammaPollOptions(gammaLivePin, null);
-    setPollDraft(['', '']);
-    setPollCorrectDraft(null);
-  }, [gammaLivePin]);
-
-  const revealPoll = useCallback(async () => {
-    if (!gammaLivePin) return;
-    await revealGammaPollResults(gammaLivePin);
-  }, [gammaLivePin]);
-
-  // Broadcast slide to students when live
-  useEffect(() => {
-    if (!gammaLivePin) return;
-    broadcastGammaSlide(gammaLivePin, idx);
-  }, [gammaLivePin, idx]);
-
-  // Cleanup live subscriptions on unmount
-  useEffect(() => () => { liveUnsubRef.current?.(); liveSessionUnsubRef.current?.(); }, []);
 
   // ── Annotation tools ───────────────────────────────────────────────────────
   // Only broadcasts when a live session is actually running — otherwise the annotation
@@ -295,8 +180,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
     return () => media.removeEventListener('change', update);
   }, []);
 
-  // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation)
-  useEffect(() => { setFormulaZoom(1); setEditMode(false); setShowResponsesPanel(false); setShowPollEditor(false); setPollDraft(['', '']); setPollCorrectDraft(null); }, [idx]);
+  // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation;
+  // poll/responses-panel reset on slide change is handled inside useGammaLiveSession)
+  useEffect(() => { setFormulaZoom(1); setEditMode(false); }, [idx]);
 
   // ── Presenter Mode ────────────────────────────────────────────────────────
   const presenterChannelRef = useRef<BroadcastChannel | null>(null);
@@ -342,7 +228,6 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
   const [timerRunning, setTimerRunning] = useState(false);
   const timerIntervalRef              = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [slides, setSlides] = useState<PresentationSlide[]>(() => [...data.slides]);
   const slide  = slides[idx];
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
@@ -352,24 +237,6 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
 
   // Responses for the slide currently on screen — used for both the "Живи одговори" list and poll tallies
   const slideResponses = useMemo(() => liveResponses.filter(r => r.slideIdx === idx), [liveResponses, idx]);
-
-  const generateAiPollOptions = useCallback(async () => {
-    if (isGeneratingPoll) return;
-    setIsGeneratingPoll(true);
-    try {
-      const { options, correctIndex } = await generatePollOptions(slide.title, slide.content, data.gradeLevel);
-      if (options.length >= 2) {
-        setPollDraft(options);
-        setPollCorrectDraft(correctIndex);
-      } else {
-        addNotification('Не успеа генерирањето — внеси рачно.', 'error');
-      }
-    } catch {
-      addNotification('Не успеа генерирањето — внеси рачно.', 'error');
-    } finally {
-      setIsGeneratingPoll(false);
-    }
-  }, [isGeneratingPoll, slide, data.gradeLevel, addNotification]);
 
   // ── Task timer logic ──────────────────────────────────────────────────────
   const startTimer = useCallback((seconds: number) => {
@@ -796,64 +663,15 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose,
 
       {/* Poll editor popover */}
       {showPollEditor && (
-        <div className="absolute top-14 right-4 z-50 w-72 bg-slate-900 border border-violet-500/30 rounded-2xl p-4 shadow-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-black text-violet-300 uppercase tracking-widest">Направи анкета</p>
-            <button
-              type="button"
-              onClick={generateAiPollOptions}
-              disabled={isGeneratingPoll}
-              title="AI предложи опции врз основа на овој слајд"
-              className="flex items-center gap-1 text-[11px] font-bold text-violet-300 hover:text-violet-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              {isGeneratingPoll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              AI предложи
-            </button>
-          </div>
-          <div className="space-y-2">
-            {pollDraft.map((opt, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setPollCorrectDraft(c => c === i ? null : i)}
-                  title={pollCorrectDraft === i ? 'Ова е точниот одговор' : 'Означи како точен одговор'}
-                  className={`w-6 h-6 shrink-0 rounded-full border flex items-center justify-center text-xs font-black transition ${
-                    pollCorrectDraft === i
-                      ? 'bg-emerald-500 border-emerald-400 text-white'
-                      : 'border-white/20 text-slate-500 hover:border-emerald-400 hover:text-emerald-400'
-                  }`}
-                >
-                  ✓
-                </button>
-                <input
-                  type="text"
-                  value={opt}
-                  onChange={e => setPollDraft(d => d.map((v, j) => j === i ? e.target.value : v))}
-                  placeholder={`Опција ${String.fromCharCode(65 + i)}`}
-                  maxLength={80}
-                  className="flex-1 min-w-0 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-            ))}
-          </div>
-          <p className="text-[10px] text-slate-500 mt-1.5">Означи ✓ ако анкетата има точен одговор (по избор — остави празно за мислење/гласање).</p>
-          <div className="flex items-center justify-between mt-3">
-            {pollDraft.length < 4 ? (
-              <button type="button" onClick={() => setPollDraft(d => [...d, ''])}
-                className="text-[11px] font-bold text-slate-400 hover:text-white transition">
-                + Опција
-              </button>
-            ) : <span />}
-            <button
-              type="button"
-              onClick={startPoll}
-              disabled={pollDraft.map(o => o.trim()).filter(Boolean).length < 2}
-              className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition"
-            >
-              Стартувај
-            </button>
-          </div>
-        </div>
+        <PollEditorPopover
+          pollDraft={pollDraft}
+          setPollDraft={setPollDraft}
+          pollCorrectDraft={pollCorrectDraft}
+          setPollCorrectDraft={setPollCorrectDraft}
+          isGeneratingPoll={isGeneratingPoll}
+          onGenerateAiOptions={() => generateAiPollOptions(slide)}
+          onStartPoll={startPoll}
+        />
       )}
 
       {/* ── Slide canvas ───────────────────────────────────────────────────── */}
