@@ -53,6 +53,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     { id: 'WEB_EXTRACTOR', label: 'Web Extractor (НОВО)', icon: 'gallery' },
     { id: 'DOCUMENT_EXTRACTOR', label: 'Document Extractor (НОВО)', icon: 'gallery' },
     { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' },
+    { id: 'STORY_BOOK', label: 'Детска сликовница (НОВО)', icon: 'gallery' },
+    { id: 'TECHNICAL_INFOGRAPHIC', label: 'Технички инфографик (НОВО)', icon: 'gallery' },
   ];
 
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();

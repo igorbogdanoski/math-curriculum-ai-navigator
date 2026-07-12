@@ -62,6 +62,12 @@ export interface GeneratorState {
     extractedText: string | null;
     /** IMAGE_EXTRACTOR: type of source image — changes the extraction prompt hint */
     imageMode: 'textbook' | 'handwriting' | 'exam';
+    /** STORY_BOOK inputs */
+    storyBookTopic: string;
+    storyBookAgeRange: '4-6' | '7-9' | '10-12';
+    storyBookPageCount: number;
+    /** TECHNICAL_INFOGRAPHIC input */
+    infographicTopic: string;
 }
 
 // Actions
@@ -147,6 +153,10 @@ export const getInitialState = (curriculum: any, allNationalStandards: any, seco
         dokTarget: undefined,
         extractedText: null,
         imageMode: 'textbook',
+        storyBookTopic: '',
+        storyBookAgeRange: '7-9',
+        storyBookPageCount: 6,
+        infographicTopic: '',
     };
 };
 

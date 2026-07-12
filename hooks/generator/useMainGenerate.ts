@@ -77,6 +77,15 @@ export function useMainGenerate({
     if (materialType === 'ILLUSTRATION') costKeys.push('ILLUSTRATION');
     else if (materialType === 'PRESENTATION') costKeys.push('PRESENTATION');
     else if (materialType === 'LEARNING_PATH') costKeys.push('LEARNING_PATH');
+    else if (materialType === 'STORY_BOOK') {
+      // One ILLUSTRATION-cost image per page (each generateIllustration() call is
+      // metered server-side individually in api/imagen.ts) plus one text call for
+      // the multi-language JSON draft — no separate flat "story book" price needed,
+      // this already matches exactly what gets charged.
+      costKeys.push(...Array(Math.min(10, Math.max(4, state.storyBookPageCount || 6))).fill('ILLUSTRATION'));
+      costKeys.push('TEXT_BASIC');
+    }
+    else if (materialType === 'TECHNICAL_INFOGRAPHIC') costKeys.push('ILLUSTRATION', 'TEXT_BASIC');
     else costKeys.push('TEXT_BASIC');
     if (includeIllustration && materialType !== 'ILLUSTRATION') costKeys.push('ILLUSTRATION');
     const cost = costKeys.reduce((sum, key) => sum + (AI_COSTS[key as keyof typeof AI_COSTS] ?? 0), 0);
@@ -114,6 +123,22 @@ export function useMainGenerate({
           return;
         }
         result = await geminiService.generateLearningPaths(finalContext, studentProfilesToPass, user ?? undefined, effectiveInstruction);
+      } else if (materialType === 'STORY_BOOK') {
+        if (!state.storyBookTopic.trim()) {
+          addNotification('Ве молиме внесете математички поим за приказната.', 'error');
+          setIsLoading(false);
+          return;
+        }
+        result = await geminiService.generateStoryBook(
+          state.storyBookTopic, state.storyBookAgeRange, state.storyBookPageCount, user ?? undefined,
+        );
+      } else if (materialType === 'TECHNICAL_INFOGRAPHIC') {
+        if (!state.infographicTopic.trim()) {
+          addNotification('Ве молиме внесете поим или објект за инфографикот.', 'error');
+          setIsLoading(false);
+          return;
+        }
+        result = await geminiService.generateTechnicalInfographic(state.infographicTopic, user ?? undefined);
       } else if (materialType) {
         switch (materialType) {
           case 'SCENARIO': {

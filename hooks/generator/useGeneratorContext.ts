@@ -9,6 +9,7 @@ import type {
   GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile,
   AIGeneratedIdeas, AIGeneratedAssessment, AIGeneratedRubric,
   AIGeneratedIllustration, TeachingProfile, ConceptProgression, Curriculum,
+  AIGeneratedStoryBook, AIGeneratedTechnicalInfographic,
 } from '../../types';
 import type { GeneratorState } from '../useGeneratorState';
 
@@ -20,6 +21,8 @@ type GeneratedMaterial =
   | AIGeneratedLearningPaths
   | AIGeneratedWorkedExample
   | AIGeneratedPresentation
+  | AIGeneratedStoryBook
+  | AIGeneratedTechnicalInfographic
   | null;
 
 interface UseGeneratorContextParams {

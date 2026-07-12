@@ -11,7 +11,42 @@ export const DOK_META = {
 
 export type DokLevel = 1 | 2 | 3 | 4;
 
-export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR' | 'WEB_EXTRACTOR' | 'DOCUMENT_EXTRACTOR';
+export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR' | 'WEB_EXTRACTOR' | 'DOCUMENT_EXTRACTOR' | 'STORY_BOOK' | 'TECHNICAL_INFOGRAPHIC';
+
+/** A text value pre-translated into all 4 app-supported languages, generated once
+ *  alongside an AI illustration so the (expensive, slow-to-regenerate) image never
+ *  needs to change when the reader switches language — only this text does. */
+export interface MultiLangText {
+  en: string;
+  mk: string;
+  sq: string;
+  tr: string;
+}
+
+export interface AIGeneratedStoryBookPage {
+  imageUrl: string;
+  caption: MultiLangText;
+}
+
+export interface AIGeneratedStoryBook {
+  title: MultiLangText;
+  ageRange: string;
+  pages: AIGeneratedStoryBookPage[];
+  error?: string;
+}
+
+export interface AIGeneratedTechnicalInfographicSection {
+  key: string;
+  heading: MultiLangText;
+  body: MultiLangText;
+}
+
+export interface AIGeneratedTechnicalInfographic {
+  title: MultiLangText;
+  imageUrl: string;
+  sections: AIGeneratedTechnicalInfographicSection[];
+  error?: string;
+}
 
 export interface PresentationSlide {
   title: string;

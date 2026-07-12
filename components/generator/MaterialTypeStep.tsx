@@ -107,6 +107,20 @@ export const MATERIAL_META: Record<string, MaterialMeta> = {
     features: ['Imagen 4 генерирање', 'Математички дијаграми и графици', 'Педагошки контекст и стил', 'Hi-res слика за печатење'],
     timeEst: '~2 мин', tags: ['Визуелно', 'Презентација'],
   },
+  STORY_BOOK: {
+    emoji: '📖', category: 'visual',
+    description: 'Илустрирана детска математичка приказна/сликовница — секоја страница со AI слика и нарација',
+    features: ['4–10 илустрирани страници', 'Текст на MK/SQ/TR/EN — без промена на сликата', 'Возрасно-соодветно раскажување', 'Print-ready сликовница'],
+    timeEst: '~1 мин', tags: ['Приказна', 'Помлади ученици'],
+    badge: 'НОВО', badgeColor: 'bg-pink-100 text-pink-700 border-pink-200',
+  },
+  TECHNICAL_INFOGRAPHIC: {
+    emoji: '📐', category: 'visual',
+    description: 'Технички инфографик за поим/објект — централна слика + означени секции во engineering-стил',
+    features: ['Фотореалистична/3D слика на поимот', 'Секции: Преглед, Компоненти, Спецификации...', 'Текст на MK/SQ/TR/EN', 'Print-ready постер'],
+    timeEst: '~30 сек', tags: ['Инфографик', 'Технички'],
+    badge: 'НОВО', badgeColor: 'bg-pink-100 text-pink-700 border-pink-200',
+  },
 };
 
 const CATEGORIES = [

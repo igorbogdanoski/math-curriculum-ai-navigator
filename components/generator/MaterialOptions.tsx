@@ -11,6 +11,8 @@ import { VideoExtractorOptions } from './options/VideoExtractorOptions';
 import { ImageExtractorOptions } from './options/ImageExtractorOptions';
 import { WebExtractorOptions }  from './options/WebExtractorOptions';
 import { DocumentExtractorOptions } from './options/DocumentExtractorOptions';
+import { StoryBookOptions } from './options/StoryBookOptions';
+import { InfographicOptions } from './options/InfographicOptions';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
@@ -32,6 +34,8 @@ export const MaterialOptions: React.FC<MaterialOptionsProps> = ({ state, dispatc
     if (materialType === 'IMAGE_EXTRACTOR')  return <ImageExtractorOptions state={state} dispatch={dispatch} />;
     if (materialType === 'WEB_EXTRACTOR')    return <WebExtractorOptions   state={state} dispatch={dispatch} />;
     if (materialType === 'DOCUMENT_EXTRACTOR') return <DocumentExtractorOptions state={state} dispatch={dispatch} />;
+    if (materialType === 'STORY_BOOK')       return <StoryBookOptions       state={state} dispatch={dispatch} />;
+    if (materialType === 'TECHNICAL_INFOGRAPHIC') return <InfographicOptions state={state} dispatch={dispatch} />;
 
     return null;
 };

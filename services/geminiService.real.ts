@@ -11,6 +11,7 @@ import { coachingAPI } from './gemini/coaching';
 import { reportsAPI } from './gemini/reports';
 import { testgenAPI } from './gemini/testgen';
 import { annualAPI } from './gemini/annual';
+import { creativeContentAPI } from './gemini/creativeContent';
 import {
   generateKahootFromTasks,
   generateKahootFromPrompt,
@@ -53,6 +54,7 @@ export const realGeminiService = {
   ...reportsAPI,
   ...testgenAPI,
   ...annualAPI,
+  ...creativeContentAPI,
   generateKahootFromTasks,
   generateKahootFromPrompt,
   generateKahootFromDocument,

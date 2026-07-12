@@ -16,6 +16,7 @@ import type {
   AIGeneratedIllustration, AIGeneratedLearningPaths, AIGeneratedWorkedExample,
   AIGeneratedPresentation, AssessmentQuestion, TeachingProfile, Concept,
   Grade, SavedQuestion, PlannerItem, Curriculum,
+  AIGeneratedStoryBook, AIGeneratedTechnicalInfographic,
 } from '../../types';
 import { PlannerItemType, QuestionType } from '../../types';
 import type { GeneratorState } from '../useGeneratorState';
@@ -29,6 +30,8 @@ type GeneratedMaterial =
   | AIGeneratedLearningPaths
   | AIGeneratedWorkedExample
   | AIGeneratedPresentation
+  | AIGeneratedStoryBook
+  | AIGeneratedTechnicalInfographic
   | null;
 
 type BulkResults = {

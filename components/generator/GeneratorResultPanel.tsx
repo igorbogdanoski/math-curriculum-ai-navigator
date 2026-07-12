@@ -6,6 +6,8 @@ import { AILoadingIndicator } from '../common/AILoadingIndicator';
 import { StreamingTextPreview } from './StreamingTextPreview';
 import { DokDistributionBar } from '../common/DokBadge';
 import { GeneratedIllustration } from '../ai/GeneratedIllustration';
+import { GeneratedStoryBook } from '../ai/GeneratedStoryBook';
+import { GeneratedTechnicalInfographic } from '../ai/GeneratedTechnicalInfographic';
 import { GeneratedIdeas } from '../ai/GeneratedIdeas';
 import { SpectraPlanDisplay } from '../ai/SpectraPlanDisplay';
 import { GeneratedAssessment } from '../ai/GeneratedAssessment';
@@ -290,7 +292,9 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
             return <ExtractionInspector quality={quality} bundle={bundle} qualityColors={QUALITY_COLORS} qualityIcon={QUALITY_ICON} qualityLabel={QUALITY_LABEL} />;
           })()}
 
-          {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
+          {'pages' in generatedMaterial && <GeneratedStoryBook material={generatedMaterial} />}
+          {'sections' in generatedMaterial && <GeneratedTechnicalInfographic material={generatedMaterial} />}
+          {'imageUrl' in generatedMaterial && !('pages' in generatedMaterial) && !('sections' in generatedMaterial) && <GeneratedIllustration material={generatedMaterial} />}
           {'openingActivity' in generatedMaterial && (
             <>
               {state.learningDesignModel === 'SPECTRA'
