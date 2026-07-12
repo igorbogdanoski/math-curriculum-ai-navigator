@@ -1,8 +1,11 @@
 import React from 'react';
+import { Bell } from 'lucide-react';
 import { ACHIEVEMENTS } from '../../services/firestoreService';
 import type { StudentGamification } from '../../services/firestoreService';
 import { calcFibonacciLevel, getAvatar } from '../../utils/gamification';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { requestNotificationPermission } from '../../services/pushService';
 
 interface Props {
   gamification: StudentGamification;
@@ -11,8 +14,14 @@ interface Props {
 
 export const GamificationPanel: React.FC<Props> = ({ gamification, classRank }) => {
   const { t } = useLanguage();
+  const { firebaseUser } = useAuth();
   const lvlInfo = calcFibonacciLevel(gamification.totalXP);
   const avatar = getAvatar(lvlInfo.level);
+  // The daily streak-reminder push only reaches Google-linked students
+  // (student_accounts has a stable uid to send to) — an anonymous/device-only
+  // session has no cross-session channel to notify, so the prompt is scoped
+  // to a real signed-in account, not artificially narrowed.
+  const canOptIntoReminders = !!firebaseUser && !firebaseUser.isAnonymous;
 
   return (
     <div className="w-full max-w-2xl mb-4">
@@ -77,6 +86,17 @@ export const GamificationPanel: React.FC<Props> = ({ gamification, classRank }) 
                   <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{t('progress.streakCurrent')}</p>
                 </div>
               </div>
+              {canOptIntoReminders && typeof Notification !== 'undefined' && Notification.permission === 'default' && (
+                <button
+                  type="button"
+                  title="Прати ми потсетник пред да ја изгубам серијата"
+                  onClick={() => requestNotificationPermission(firebaseUser!.uid)}
+                  className="mt-2 flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition self-start"
+                >
+                  <Bell className="w-3 h-3" />
+                  Потсетник
+                </button>
+              )}
             </div>
 
             <div className="flex-1 bg-green-50 border border-green-100 rounded-xl p-3 flex flex-col justify-center">

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyDuggaSubmission = exports.onAnnualPlanForked = exports.onDuggaTestAdapted = exports.onScenarioForkedOrRated = exports.onScenarioPublishedEmbed = exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.onAssignmentCreated = void 0;
+exports.sendDailyStreakReminders = exports.verifyDuggaSubmission = exports.onAnnualPlanForked = exports.onDuggaTestAdapted = exports.onScenarioForkedOrRated = exports.onScenarioPublishedEmbed = exports.grantDemoCredits = exports.grantReferralBonus = exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.onAssignmentCreated = void 0;
+exports.isStreakAtRisk = isStreakAtRisk;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
@@ -886,6 +887,110 @@ exports.verifyDuggaSubmission = functions.firestore
     }
     catch (err) {
         console.error('[verifyDuggaSubmission]', err);
+        return null;
+    }
+});
+// ── P3: Daily "don't lose your streak" push reminder ───────────────────────
+/**
+ * True when a student's SM-2/quiz streak lapses if they don't play something
+ * today — i.e. their last recorded activity was yesterday. Mirrors
+ * utils/gamification.ts's calcStreak(): once a full day passes with no new
+ * activity, the streak resets on next play, so "yesterday" is the one-day
+ * window where a reminder can still save it.
+ */
+function isStreakAtRisk(gamification, yesterdayStr) {
+    if (!gamification)
+        return false;
+    const { currentStreak, lastActivityDate } = gamification;
+    return typeof currentStreak === 'number' && currentStreak > 0 && lastActivityDate === yesterdayStr;
+}
+/**
+ * Resolves the teacherUid a student's most recent quiz activity on a given
+ * device belongs to. quiz_results carries both deviceId and teacherUid on
+ * the same document, so this needs no separate class_memberships lookup.
+ */
+async function resolveTeacherUidForDevice(db, deviceId) {
+    var _a;
+    const snap = await db.collection('quiz_results')
+        .where('deviceId', '==', deviceId)
+        .orderBy('playedAt', 'desc')
+        .limit(1)
+        .get();
+    if (snap.empty)
+        return undefined;
+    const teacherUid = (_a = snap.docs[0].data()) === null || _a === void 0 ? void 0 : _a.teacherUid;
+    return typeof teacherUid === 'string' && teacherUid.length > 0 ? teacherUid : undefined;
+}
+/**
+ * Once daily, pushes a reminder to Google-linked students (student_accounts —
+ * anonymous/device-only students have no stable uid to reach across sessions,
+ * so this is scoped to accounts with a real uid, not a narrowing of intent)
+ * whose current streak lapses if they don't play something today.
+ *
+ * Runs at 18:00 Europe/Skopje — an evening nudge, not an overnight one.
+ */
+exports.sendDailyStreakReminders = functions.pubsub
+    .schedule('0 18 * * *')
+    .timeZone('Europe/Skopje')
+    .onRun(async () => {
+    try {
+        const db = admin.firestore();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('sv-SE');
+        const accountsSnap = await db.collection('student_accounts').get();
+        const reminders = [];
+        await Promise.all(accountsSnap.docs.map(async (accDoc) => {
+            var _a;
+            try {
+                const { name, linkedDeviceIds } = accDoc.data();
+                if (!name || !linkedDeviceIds || linkedDeviceIds.length === 0)
+                    return;
+                let teacherUid;
+                for (const deviceId of linkedDeviceIds) {
+                    teacherUid = await resolveTeacherUidForDevice(db, deviceId);
+                    if (teacherUid)
+                        break;
+                }
+                if (!teacherUid)
+                    return;
+                const gamDoc = await db.collection('student_gamification').doc(`${teacherUid}_${name}`).get();
+                const gamification = gamDoc.data();
+                if (!isStreakAtRisk(gamification, yesterdayStr))
+                    return;
+                const tokenDoc = await db.collection('user_tokens').doc(`${accDoc.id}_web`).get();
+                const token = (_a = tokenDoc.data()) === null || _a === void 0 ? void 0 : _a.token;
+                if (typeof token !== 'string' || !token)
+                    return;
+                reminders.push({ token, streak: gamification.currentStreak });
+            }
+            catch (err) {
+                console.error('[sendDailyStreakReminders] student failed, skipping', accDoc.id, err);
+            }
+        }));
+        if (reminders.length === 0)
+            return null;
+        // Each student's push shows their own real streak number, so send
+        // individually rather than one multicast with a shared body.
+        await Promise.all(reminders.map(({ token, streak }) => admin.messaging().send({
+            token,
+            notification: {
+                title: '🔥 Не ја губи серијата!',
+                body: `Имаш серија од ${streak} ${streak === 1 ? 'ден' : 'дена'} по ред. Реши барем еден квиз денес за да продолжиш!`,
+            },
+            webpush: {
+                notification: { icon: '/icon-192.svg', badge: '/icon-192.svg' },
+                fcmOptions: { link: '/#/my-progress' },
+                headers: { TTL: '43200' },
+            },
+            data: { type: 'streak_reminder' },
+        }).catch((err) => {
+            console.error('[sendDailyStreakReminders] send failed for one token', err);
+        })));
+        return null;
+    }
+    catch (err) {
+        console.error('[sendDailyStreakReminders]', err);
         return null;
     }
 });

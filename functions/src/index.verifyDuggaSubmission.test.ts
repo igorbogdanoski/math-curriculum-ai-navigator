@@ -16,6 +16,9 @@ vi.mock('firebase-functions/v1', () => ({
       onWrite: (handler: unknown) => handler,
     }),
   },
+  pubsub: {
+    schedule: () => ({ timeZone: () => ({ onRun: (handler: unknown) => handler }) }),
+  },
 }));
 
 type DocData = Record<string, unknown> | undefined;
