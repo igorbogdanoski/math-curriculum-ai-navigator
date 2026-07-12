@@ -1,5 +1,4 @@
-﻿import { logger } from '../utils/logger';
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, Home, BarChart2, CheckCircle2,
@@ -8,15 +7,16 @@ import {
 import { useLanguage } from '../i18n/LanguageContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { useStudentRealtime } from '../hooks/useStudentRealtime';
+import { useStudentPeerHelpers } from '../hooks/useStudentPeerHelpers';
+import { useStudentSpacedRepetition } from '../hooks/useStudentSpacedRepetition';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { DailyQuestCard } from '../components/common/DailyQuestCard';
 import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
 import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
-import { firestoreService } from '../services/firestoreService';
-import { isDueForReview, sortByReviewUrgency, getNextReviewLabel, type SpacedRepRecord } from '../utils/spacedRepetition';
 import { GamificationPanel } from '../components/student/GamificationPanel';
 import { ActivityFeed } from '../components/student/ActivityFeed';
+import { PrintableProgressReport } from '../components/student/PrintableProgressReport';
 import { useStudentPortfolio } from '../hooks/useStudentPortfolio';
 import { StudentPortfolioReport } from '../components/portfolio/StudentPortfolioReport';
 
@@ -30,12 +30,6 @@ function PortfolioTabPanel({ studentName }: { studentName: string }) {
     </div>
   );
 }
-
-const formatDate = (ts: any): string => {
-  if (!ts) return '�';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('mk-MK', { day: 'numeric', month: 'short', year: 'numeric' });
-};
 
 interface Props {
   /** Passed from URL query param ?name=... � enables read-only parent view */
@@ -81,39 +75,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp, teacherUi
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [aiReportLoading, setAiReportLoading] = useState(false);
-  const [peerHelpers, setPeerHelpers] = useState<Record<string, string[]>>({});
-  const [sm2Records, setSm2Records] = useState<SpacedRepRecord[]>([]);
 
-  // П5: Peer Learning — fetch students who mastered the same concepts the current student struggles with
-  useEffect(() => {
-    const teacherUid = data?.teacherUid;
-    if (!teacherUid || !studentName || masteryRecords.length === 0) return;
-    const struggling = masteryRecords.filter(m => !m.mastered && m.attempts >= 2).slice(0, 3);
-    if (struggling.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      const results: Record<string, string[]> = {};
-      try {
-        const conceptIds = struggling.map(m => m.conceptId);
-        const allPeers = await firestoreService.fetchMasteryByConceptBulk(conceptIds, teacherUid);
-        for (const m of struggling) {
-          const helpers = allPeers
-            .filter(p => p.conceptId === m.conceptId && p.mastered && p.studentName !== studentName)
-            .map(p => p.studentName)
-            .filter(Boolean)
-            .slice(0, 3) as string[];
-          if (helpers.length > 0) results[m.conceptId] = helpers;
-        }
-      } catch (err) { logger.warn('[PeerLearning] fetchMasteryByConceptBulk failed:', err); }
-      if (!cancelled) setPeerHelpers(results);
-    })();
-    return () => { cancelled = true; };
-  }, [data?.teacherUid, studentName, masteryRecords.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const peerHelpConcepts = useMemo(() =>
-    masteryRecords.filter(m => !m.mastered && m.attempts >= 2 && (peerHelpers[m.conceptId]?.length ?? 0) > 0),
-    [masteryRecords, peerHelpers]
-  );
+  const { peerHelpers, peerHelpConcepts } = useStudentPeerHelpers(data?.teacherUid, studentName, masteryRecords);
+  const { reviewToday } = useStudentSpacedRepetition(studentName, masteryRecords);
 
   // Update daily quests when mastery data arrives
   useEffect(() => {
@@ -121,16 +85,6 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp, teacherUi
       setDailyQuests(loadOrGenerateQuests(studentName, allConcepts, masteryRecords));
     }
   }, [studentName, masteryRecords, allConcepts]);
-
-  // Fetch SM-2 spaced repetition records for this student
-  useEffect(() => {
-    if (!studentName) return;
-    // Use device ID from localStorage as studentId (same key as StudentPlayView)
-    const studentId = (() => { try { return localStorage.getItem('deviceId') || studentName; } catch { return studentName; } })();
-    firestoreService.fetchSpacedRepRecords(studentId)
-      .then(records => setSm2Records(records))
-      .catch(() => {/* non-critical, fall back to timestamp logic */});
-  }, [studentName]);
 
   // Mark as searched when data loads
   useEffect(() => {
@@ -190,26 +144,6 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp, teacherUi
           : [];
       });
   }, [masteryRecords, getConceptChain]);
-
-  // -- Правец 14: Spaced Repetition (SM-2) ------------------------------------
-  const reviewToday = useMemo(() => {
-    // If we have real SM-2 records from Firestore, use the algorithm
-    if (sm2Records.length > 0) {
-      const dueRecords = sortByReviewUrgency(sm2Records.filter(isDueForReview));
-      return dueRecords.map(r => {
-        const mastery = masteryRecords.find(m => m.conceptId === r.conceptId);
-        return { ...mastery, conceptId: r.conceptId, conceptTitle: mastery?.conceptTitle || r.conceptId, sm2Label: getNextReviewLabel(r) };
-      }).filter(m => m.conceptId);
-    }
-    // Fallback: timestamp-based heuristic (original logic)
-    const now = Date.now();
-    return masteryRecords.filter(m => {
-      if (!m.updatedAt) return false;
-      const lastMs = m.updatedAt.toDate().getTime();
-      const daysSince = (now - lastMs) / 86_400_000;
-      return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
-    });
-  }, [masteryRecords, sm2Records]);
 
   // -- Правец 21: Персонализирана патека "Следни чекори" --------------------
   const nextUpConcepts = useMemo(() => {
@@ -743,160 +677,19 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp, teacherUi
         Powered by Math Curriculum AI Navigator
       </footer>
 
-      {/* -- Printable Parent Report (hidden on screen, visible on print) -- */}
-      {searched && totalQuizzes > 0 && (
-        <div className="printable-root hidden" aria-hidden="true">
-          {/* Page header */}
-          <div className="rpt-header">
-            <div className="rpt-header-row">
-              <div>
-                <h1 className="rpt-title">
-                  {reportPeriod === 'THIS_MONTH' ? 'Месечен' : 'Неделен'} извештај за напредок
-                </h1>
-                <p className="rpt-subtitle">Напредок — Math Curriculum AI Navigator</p>
-                <p className="rpt-subtitle">Период: <strong>{periodLabel}</strong></p>
-              </div>
-              <div className="rpt-meta">
-                <div>Датум: <strong>{printDate}</strong></div>
-                <div className="rpt-meta-date">Системски генериран извештај</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Student info */}
-          <div className="rpt-student-box">
-            <span className="rpt-student-label">Ученик</span>
-            <p className="rpt-student-name">{studentName}</p>
-          </div>
-
-          {/* Period stats */}
-          <div className="rpt-stats-grid">
-            {[
-              { label: `Квизови (${periodLabel})`, value: String(periodStats.total) },
-              { label: 'Положени (≥70%)', value: String(periodStats.passed) },
-              { label: 'Просечен резултат', value: periodStats.total > 0 ? `${periodStats.avg}%` : '—' },
-              { label: 'Новосовладани', value: String(periodStats.newlyMastered) },
-            ].map(s => (
-              <div key={s.label} className="rpt-stat-card">
-                <p className="rpt-stat-value">{s.value}</p>
-                <p className="rpt-stat-label">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Period quiz history */}
-          <div className="rpt-section">
-            <h2 className="rpt-section-title">Резултати од квизови</h2>
-            {periodQuizzes.length === 0 ? (
-              <p className="rpt-empty-msg">Нема одиграни квизови во овој период.</p>
-            ) : (
-              <table className="rpt-table">
-                <thead>
-                  <tr>
-                    <th className="rpt-th rpt-th-left">Тест</th>
-                    <th className="rpt-th rpt-th-center">Датум</th>
-                    <th className="rpt-th rpt-th-center">Резултат</th>
-                    <th className="rpt-th rpt-th-center">Оценка</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {periodQuizzes.map((r, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'rpt-row-even' : 'rpt-row-odd'}>
-                      <td className="rpt-td">{r.quizTitle}</td>
-                      <td className="rpt-td rpt-td-center">{formatDate(r.playedAt)}</td>
-                      <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
-                        {r.percentage}% ({r.correctCount}/{r.totalQuestions})
-                      </td>
-                      <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
-                        {r.percentage >= 70 ? 'Положен' : 'Не положен'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Mastery section */}
-          {masteryRecords.length > 0 && (
-            <div className="rpt-section">
-              <h2 className="rpt-section-title">Статус на совладување</h2>
-              <table className="rpt-table">
-                <thead>
-                  <tr>
-                    <th className="rpt-th rpt-th-left">Концепт</th>
-                    <th className="rpt-th rpt-th-center">Обиди</th>
-                    <th className="rpt-th rpt-th-center">Последен резултат</th>
-                    <th className="rpt-th rpt-th-center">Статус</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {masteryRecords
-                    .sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0))
-                    .map((m) => (
-                      <tr key={m.conceptId}>
-                        <td className="rpt-td">{m.conceptTitle || m.conceptId}</td>
-                        <td className="rpt-td rpt-td-center">{m.attempts}</td>
-                        <td className={`rpt-td rpt-td-center rpt-td-bold ${m.bestScore >= 85 ? 'rpt-td-green' : 'rpt-td-amber'}`}>{m.bestScore}%</td>
-                        <td className={`rpt-td rpt-td-center rpt-td-bold ${m.mastered ? 'rpt-td-green' : 'rpt-td-blue'}`}>
-                          {m.mastered ? '✓ Совладано' : `${m.consecutiveHighScores}/3 над 85%`}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Recommendations */}
-          {(prereqGaps.length > 0 || reviewToday.length > 0) && (
-            <div className="rpt-section">
-              <h2 className="rpt-section-title">Препораки за понатамошно учење</h2>
-              {prereqGaps.length > 0 && (
-                <>
-                  <p className="rpt-rec-prereq-heading">
-                    Недостасуваат предуслови ({prereqGaps.length}):
-                  </p>
-                  {prereqGaps.map((gap, i) => (
-                    <p key={i} className="rpt-rec-item">
-                      • <strong>{gap.conceptTitle}</strong> — треба претходно: {gap.missing.join(', ')}
-                    </p>
-                  ))}
-                </>
-              )}
-              {reviewToday.length > 0 && (
-                <>
-                  <p className="rpt-rec-review-heading">
-                    Повтори денес ({reviewToday.length}):
-                  </p>
-                  {reviewToday.map((m, i) => (
-                    <p key={i} className="rpt-rec-item">
-                      • {m.conceptTitle || m.conceptId} {m.mastered ? '(совладано — повторување)' : '(не совладано — вежбање)'}
-                    </p>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Print footer */}
-          <div className="rpt-footer-bar">
-            <span>Math Curriculum AI Navigator — извештај за родители и наставници</span>
-            <span>Генерирано автоматски на {printDate}</span>
-          </div>
-
-          {/* Signature lines */}
-          <div className="rpt-signatures">
-            <div>
-              <div className="rpt-signature-line" />
-              <p className="rpt-signature-label">Потпис на родителот</p>
-            </div>
-            <div>
-              <div className="rpt-signature-line" />
-              <p className="rpt-signature-label">Потпис на ученикот / Наставникот</p>
-            </div>
-          </div>
-        </div>
+      {searched && (
+        <PrintableProgressReport
+          studentName={studentName}
+          totalQuizzes={totalQuizzes}
+          reportPeriod={reportPeriod}
+          periodLabel={periodLabel}
+          periodQuizzes={periodQuizzes}
+          periodStats={periodStats}
+          printDate={printDate}
+          masteryRecords={masteryRecords}
+          prereqGaps={prereqGaps}
+          reviewToday={reviewToday}
+        />
       )}
     </div>
   );
