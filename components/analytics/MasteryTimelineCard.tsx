@@ -77,16 +77,6 @@ const STATUS_META: Record<MasteryStatus, {
   },
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: MasteryStatus }) {
-  const m = STATUS_META[status];
-  return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${m.bg} ${m.color} ${m.border}`}>
-      {m.icon}{m.label}
-    </span>
-  );
-}
 
 function TrendChip({ trendPerWeek }: { trendPerWeek: number }) {
   if (trendPerWeek > 0) {

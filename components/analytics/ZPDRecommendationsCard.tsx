@@ -57,11 +57,6 @@ export const ZPDRecommendationsCard: React.FC<Props> = ({
     );
     const [expanded, setExpanded] = useState(true);
 
-    const totalStudents = new Set([
-        ...readyToAdvance.map(s => s.studentKey),
-        ...needingSupport.map(s => s.studentKey),
-    ]).size;
-
     if (!isLoading && conceptGroups.length === 0) return null;
 
     return (

@@ -2,7 +2,7 @@
  * Unit tests for AI1 Vector RAG — ragService refactor.
  * Tests pure functions only; Firestore and embed API are not called.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   cosineSimilarity,
   SIMILARITY_THRESHOLD,

@@ -120,7 +120,7 @@ interface ReactionBarProps {
   compact?: boolean;
 }
 
-export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onReact, compact }) => (
+export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onReact }) => (
   <div className="flex items-center gap-1 flex-wrap">
     {REACTIONS.map(({ field, emoji, label }) => {
       const arr = reactionArr(reactions as ForumThread | ForumReply, field);

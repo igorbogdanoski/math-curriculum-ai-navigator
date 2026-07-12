@@ -8,8 +8,6 @@ import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 const AgendaItem: React.FC<{ item: PlannerItem; onClick: () => void; }> = ({ item, onClick }) => {
-    const { t } = useLanguage();
-
     const Icon = item.type === PlannerItemType.LESSON ? ICONS.bookOpen : item.type === PlannerItemType.EVENT ? ICONS.lightbulb : ICONS.star;
     return (
         <div onClick={onClick} className="p-2.5 rounded-lg bg-gray-50 hover:bg-white hover:shadow-sm cursor-pointer flex items-start gap-3 transition-all border border-transparent hover:border-gray-100 group">

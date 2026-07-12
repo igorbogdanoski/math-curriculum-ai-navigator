@@ -1,4 +1,4 @@
-import type { MaturaChoice, DokLevel } from '../../types';
+import type { MaturaChoice } from '../../types';
 import type { MaturaQuestion, MaturaExamMeta } from '../../services/firestoreService.matura';
 import {
   buildGradeCacheKey,

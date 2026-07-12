@@ -12,7 +12,6 @@ interface StudentNextStepCardProps {
  * Provides two actions: retry the quiz, or study the concept.
  */
 export const StudentNextStepCard: React.FC<StudentNextStepCardProps> = ({
-  quizId,
   conceptId,
   conceptTitle,
 }) => {

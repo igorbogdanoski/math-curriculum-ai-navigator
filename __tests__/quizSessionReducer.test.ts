@@ -3,7 +3,7 @@
  * Heavy module deps (Firebase, hooks) are mocked so only the pure
  * reducer logic is exercised.
  */
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks — must be at top level before any imports that trigger Firebase

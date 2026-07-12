@@ -41,7 +41,7 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
     const [isDrawing, setIsDrawing] = useState(false);
     const [mode, setMode] = useState<'draw' | 'erase'>('draw');
     const [color, setColor] = useState(COLORS[0].hex);
-    const [lineWidth, setLineWidth] = useState(PEN_WIDTHS[0]);
+    const [lineWidth] = useState(PEN_WIDTHS[0]);
     const [paperStyle, setPaperStyle] = useState<PaperStyle>('grid');
 
     // History (Undo/Redo)

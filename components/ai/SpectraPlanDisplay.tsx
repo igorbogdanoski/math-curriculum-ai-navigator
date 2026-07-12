@@ -66,11 +66,6 @@ function detectPhase(bloomsLevel: string): string | null {
   return null;
 }
 
-// Differentiation level pill
-const DiffPill: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
-  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${colorClass}`}>{label}</span>
-);
-
 // Parse differentiation text into 3 levels
 function parseDifferentiation(text: string): { support: string; standard: string; advanced: string } | null {
   const lower = text.toLowerCase();

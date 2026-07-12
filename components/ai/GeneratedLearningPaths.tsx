@@ -24,7 +24,7 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
     const { addNotification } = useNotification();
     const { firebaseUser } = useAuth();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-    const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [, setIsPdfLoading] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 

@@ -4,7 +4,6 @@ import { DokBadge }     from '../common/DokBadge';
 import { useAuth }      from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 import type { MaturaChoice, DokLevel } from '../../types';
-import { TOPIC_LABELS } from './maturaLibrary.constants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface InternalQuestion {

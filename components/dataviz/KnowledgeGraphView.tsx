@@ -67,7 +67,7 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   const [links, setLinks] = useState<GraphLink[]>([]);
   const [ready, setReady] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
 
   const svgRef = useRef<SVGSVGElement>(null);
 

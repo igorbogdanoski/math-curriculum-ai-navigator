@@ -46,7 +46,7 @@ export const ParentLetterModal: React.FC<Props> = ({
         language: lang,
       });
       setLetterText(text);
-    } catch (e) {
+    } catch {
       setError('Грешка при генерирање. Провери AI квота и обиди се повторно.');
     } finally {
       setIsGenerating(false);

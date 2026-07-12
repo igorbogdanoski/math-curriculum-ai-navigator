@@ -220,8 +220,8 @@ function tgRand(lo: number, hi: number) {
   return Math.floor(Math.random() * (hi - lo + 1)) + lo;
 }
 
-const EXACT_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180] as const;
-type ExactDeg = typeof EXACT_ANGLES[number];
+const _EXACT_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180] as const;
+type ExactDeg = typeof _EXACT_ANGLES[number];
 
 /** Generates trigonometry exercises for use with useLabSession. */
 export function generateTrigSet(difficulty: 1 | 2 | 3, count = 6): LabExercise[] {

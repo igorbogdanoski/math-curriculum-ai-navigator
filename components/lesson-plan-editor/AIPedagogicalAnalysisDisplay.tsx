@@ -146,7 +146,7 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
                 const blob = new Blob([htmlBody], { type: 'text/html' });
                 const clipboardItem = new ClipboardItem({ 'text/html': blob });
                 navigator.clipboard.write([clipboardItem]).then(() => addNotification('Анализата е копирана со форматирање.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
-            } catch (error) {
+            } catch {
                 addNotification('Копирањето со форматирање не е поддржано.', 'error');
             }
             return;

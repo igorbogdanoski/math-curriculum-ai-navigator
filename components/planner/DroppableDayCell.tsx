@@ -1,6 +1,5 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { ICONS } from '../../constants';
 
 interface DroppableDayCellProps {
   dateStr: string;

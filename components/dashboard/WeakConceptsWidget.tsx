@@ -1,6 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Card } from '../common/Card';
-import { ICONS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTeacherAnalytics } from '../../hooks/useTeacherAnalytics';
 import { AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';

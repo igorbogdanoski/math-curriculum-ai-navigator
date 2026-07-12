@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { AIGeneratedThematicPlan, ThematicPlanLesson, ThematicPlanLessonScenario, Grade, Topic } from '../../types';
+import type { AIGeneratedThematicPlan, ThematicPlanLessonScenario, Grade, Topic } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -45,12 +45,6 @@ function stripLatex(text: string): string {
     .trim();
 }
 
-function getText(item: any): string {
-  if (typeof item === 'string') return stripLatex(item);
-  if (item?.text) return stripLatex(item.text);
-  return '';
-}
-
 // ---------------------------------------------------------------------------
 // renderMathToPng — KaTeX + html2canvas → PNG data URI
 // ---------------------------------------------------------------------------

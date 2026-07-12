@@ -54,7 +54,7 @@ export const BloomSliders: React.FC<Props> = ({ value, onChange }) => {
       </div>
 
       <div className="space-y-3">
-        {BLOOM_LEVELS.map(({ key, label, color, bg }) => {
+        {BLOOM_LEVELS.map(({ key, label, bg }) => {
           const val = dist[key] ?? 0;
           return (
             <div key={key} className={`${bg} rounded-xl px-3 py-2`}>

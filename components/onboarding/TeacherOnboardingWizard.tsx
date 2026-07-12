@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, School, BookOpen, BarChart2, CheckCircle, ChevronRight, ChevronLeft, X, Users, Copy, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 import type { TeachingProfile } from '../../types';
 import { trackEvent } from '../../services/telemetryService';
 import { createClass, generateClassJoinCode } from '../../services/firestoreService.classroom';

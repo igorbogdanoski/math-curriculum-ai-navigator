@@ -30,22 +30,6 @@ function toSVG(x: number, y: number, xMin: number, xMax: number, yMin: number, y
   };
 }
 
-function buildPath(
-  f: (x: number) => number,
-  xMin: number, xMax: number, yMin: number, yMax: number, steps = 400,
-): string {
-  let d = ''; let pen = false;
-  for (let i = 0; i <= steps; i++) {
-    const x = xMin + (i / steps) * (xMax - xMin);
-    const y = f(x);
-    if (!isFinite(y) || y < yMin - 1 || y > yMax + 1) { pen = false; continue; }
-    const { sx, sy } = toSVG(x, y, xMin, xMax, yMin, yMax);
-    d += `${pen ? 'L' : 'M'}${sx.toFixed(1)},${sy.toFixed(1)} `;
-    pen = true;
-  }
-  return d.trim();
-}
-
 function buildPathFromPoints(
   pts: [number, number][],
   xMin: number, xMax: number, yMin: number, yMax: number,

@@ -165,7 +165,7 @@ function SessionDoneScreen({ session, onNewSet, difficulty, onDifficultyChange }
   const { score, exercises, hintsUsed, saving, saveError, saveSession, resetSession, correctHistory } = session;
   const [name, setName] = useState(getStoredName);
   const [saved, setSaved] = useState(false);
-  const [retrying, setRetrying] = useState(false);
+  const [, setRetrying] = useState(false);
   const pct = exercises.length > 0 ? Math.round((score / exercises.length) * 100) : 0;
   const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '📚';
   const weakQuestions = exercises.filter((_, i) => correctHistory[i] === false);

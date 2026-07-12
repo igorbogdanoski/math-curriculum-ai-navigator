@@ -21,8 +21,6 @@ import type {
   AIGeneratedAssessment,
   AIGeneratedIdeas,
   AIGeneratedRubric,
-  AIGeneratedIllustration,
-  AIGeneratedLearningPaths,
   AIGeneratedWorkedExample,
   MaterialType,
   NationalStandard,
@@ -125,14 +123,6 @@ export class ResultErrorBoundary extends Component<{ children: ReactNode }, { er
     return this.props.children;
   }
 }
-
-type AnyMaterial =
-  | AIGeneratedAssessment
-  | AIGeneratedIdeas
-  | AIGeneratedRubric
-  | AIGeneratedIllustration
-  | AIGeneratedLearningPaths
-  | AIGeneratedWorkedExample;
 
 interface GeneratorResultPanelProps {
   state: GeneratorState;

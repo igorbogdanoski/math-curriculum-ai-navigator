@@ -135,7 +135,7 @@ const GeoGebraPanel: React.FC<{ onExport?: (dataUrl: string) => void }> = ({ onE
       try {
         if (containerRef.current) containerRef.current.innerHTML = '';
         appletRef.current = null;
-      } catch (_) { /* ignore */ }
+      } catch { /* ignore */ }
     };
   }, [retryKey]);
 

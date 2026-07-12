@@ -1,7 +1,7 @@
 /**
  * api/health.test.ts — S41-D5 unit tests for /api/health.
  */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import handler from './health';
 
 function mockReqRes(method: string) {

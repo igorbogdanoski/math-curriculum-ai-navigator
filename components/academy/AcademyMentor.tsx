@@ -1,6 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
+import { Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';

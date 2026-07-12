@@ -8,7 +8,7 @@ export const GlobalTour: React.FC = () => {
     const { markTourAsSeen } = useUserPreferences();
 
     const handleJoyrideCallback = (data: CallBackProps) => {
-        const { status, type } = data;
+        const { status } = data;
         
         // When tour is finished or skipped
         if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {

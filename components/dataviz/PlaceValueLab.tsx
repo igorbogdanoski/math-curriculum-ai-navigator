@@ -163,7 +163,7 @@ const BlockDisplay: React.FC<BlockDisplayProps> = ({ decomp, showThousands, show
       const by = sectionY + row * rowH;
       if (isThousands) {
         // Mini flat (scaled SVG)
-        const sx = FLAT_SIZE; const d = DEPTH;
+        const sx = FLAT_SIZE;
         const step = sx / 10;
         const gl: React.ReactNode[] = [];
         for (let k = 1; k < 10; k++) {

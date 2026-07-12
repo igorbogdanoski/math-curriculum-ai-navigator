@@ -238,7 +238,7 @@ export function useLessonPlanAIActions({
     try {
       const layout = await geminiService.generateInfographicLayout(plan, user ?? undefined);
       if (isMounted.current) setInfographicLayout(layout);
-    } catch (_error) {
+    } catch {
       if (isMounted.current) addNotification('Грешка при генерирање на инфографикот.', 'error');
     } finally {
       if (isMounted.current) setIsGeneratingInfographic(false);

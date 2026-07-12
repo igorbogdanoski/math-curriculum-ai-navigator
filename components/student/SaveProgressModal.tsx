@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { signInWithPopup, linkWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, linkWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebaseConfig';
 import { firestoreService } from '../../services/firestoreService';
 import { Shield, Loader2, CheckCircle, AlertCircle, X, ChevronDown, ChevronUp } from 'lucide-react';

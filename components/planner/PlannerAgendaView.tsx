@@ -68,7 +68,7 @@ export const PlannerAgendaView: React.FC<PlannerAgendaViewProps> = ({ currentDat
         <div className="relative pl-6">
              {/* Timeline */}
             <div className="absolute top-0 left-8 w-0.5 h-full bg-gray-200"></div>
-            {weekDays.map((day, index) => {
+            {weekDays.map((day) => {
                 const dateStr = day.toISOString().split('T')[0];
                 const itemsForDay = items.filter((item: PlannerItem) => item.date === dateStr);
                 const isCurrentDayToday = isToday(day);

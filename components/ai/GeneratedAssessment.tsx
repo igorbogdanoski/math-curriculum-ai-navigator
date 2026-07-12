@@ -431,7 +431,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 const blob = new Blob([fullHtml], { type: 'text/html' });
                 const clipboardItem = new ClipboardItem({ 'text/html': blob });
                 navigator.clipboard.write([clipboardItem]).then(() => addNotification('Тестот е копиран со форматирање за Word.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
-            } catch (error) {
+            } catch {
                 addNotification('Копирањето со форматирање не е поддржано.', 'error');
             }
             return;

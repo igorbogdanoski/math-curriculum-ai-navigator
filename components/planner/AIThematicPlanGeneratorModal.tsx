@@ -342,15 +342,10 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         'создава', 'дизајнира', 'состави', 'планира', 'синтетизира', 'конципира', 'проект',
         'примениte', 'применуваат',
       ];
-      const LOW_KEYWORDS = [
-        'именува', 'наведи', 'набројува', 'дефинира', 'препознава', 'повторува', 'памети',
-        'објаснува', 'опишува', 'резимира', 'претвора', 'преведува', 'илустрира',
-      ];
-      let hot = 0; let low = 0;
+      let hot = 0;
       editablePlan.lessons.forEach(l => {
         const text = `${l.learningOutcomes} ${l.keyActivities}`.toLowerCase();
         if (HOT_KEYWORDS.some(kw => text.includes(kw))) hot++;
-        else if (LOW_KEYWORDS.some(kw => text.includes(kw))) low++;
       });
       const total = editablePlan.lessons.length;
       if (total === 0) return null;

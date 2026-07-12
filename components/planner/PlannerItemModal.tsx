@@ -109,7 +109,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
                 description: parsedData.description || prev.description
             }));
             addNotification('Успешно препознаено!', 'success');
-        } catch (error) {
+        } catch {
             addNotification('Не успеав да го разберам говорот.', 'error');
         } finally {
             setIsProcessingVoice(false);

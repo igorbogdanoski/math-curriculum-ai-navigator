@@ -1,5 +1,4 @@
 import React from 'react';
-import type { LessonPlan } from '../../types';
 import { ICONS } from '../../constants';
 import { useModal } from '../../contexts/ModalContext';
 import { usePlanner } from '../../contexts/PlannerContext';

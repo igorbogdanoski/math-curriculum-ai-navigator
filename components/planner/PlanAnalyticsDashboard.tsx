@@ -45,9 +45,9 @@ function UbDBar({ label, pct, color }: { label: string; pct: number; color: stri
 export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours: weeklyHoursProp }) => {
   const gradeNum = detectGrade(plan.grade ?? '');
   // Use accurate МОН hours if grade is detected; fall back to prop or 4
-  const { weeklyHours, lessonMinutes, totalHours: officialTotalHours } = gradeNum
+  const { weeklyHours, lessonMinutes } = gradeNum
     ? getGradeHoursInfo(gradeNum)
-    : { weeklyHours: weeklyHoursProp ?? 4, lessonMinutes: 40, totalHours: (weeklyHoursProp ?? 4) * 36 };
+    : { weeklyHours: weeklyHoursProp ?? 4, lessonMinutes: 40 };
   const [qualityReport, setQualityReport] = useState<PlanQualityReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');

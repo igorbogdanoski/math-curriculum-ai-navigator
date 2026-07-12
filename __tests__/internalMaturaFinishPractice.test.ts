@@ -6,7 +6,7 @@
  * Verifies that after a practice session, updateConceptMastery is triggered
  * for exactly the right set of unique concept IDs.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../firebaseConfig', () => ({ db: {}, auth: {}, app: {} }));
 vi.mock('firebase/firestore', () => ({

@@ -163,26 +163,6 @@ const TT_F = [
   [0,3,5,8,6,1],[1,6,7,10,9,2],[2,9,11,4,3,0],[4,11,10,7,8,5]
 ];
 
-// Rhombicuboctahedron (24V)
-function makeRCO(): { verts: Vec3[]; faces: number[][] } {
-  const v: Vec3[] = [];
-  const s = 1, t = 1 + Math.SQRT2;
-  const perms: [number,number,number][] = [
-    [s,s,t],[s,t,s],[t,s,s],
-    [s,s,-t],[s,-t,s],[-t,s,s],
-    [-s,s,t],[-s,t,s],[t,-s,s],
-    [-s,s,-t],[-s,-t,s],[t,s,-s],
-    [s,-s,t],[s,t,-s],[-t,-s,s],
-    [s,-s,-t],[s,-t,-s],[-t,s,-s],
-    [-s,-s,t],[-s,t,-s],[t,-s,-s],
-    [-s,-s,-t],[-s,-t,-s],[-t,-s,-s]
-  ];
-  for (const p of perms) v.push([p[0]/t, p[1]/t, p[2]/t]);
-  // simplified face list for wireframe display
-  const faces: number[][] = [];
-  return { verts: v, faces };
-}
-
 export const SOLIDS: SolidDef[] = [
   // ── Platonic ─────────────────────────────────────────────────────────────
   makeSolid('tetra','Тетраедар','Tetrahedron','platonic', TETRA_V, TETRA_F,

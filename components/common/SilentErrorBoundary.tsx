@@ -1,5 +1,5 @@
 ﻿import { logger } from '../../utils/logger';
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface SilentErrorBoundaryProps {
   children?: ReactNode;

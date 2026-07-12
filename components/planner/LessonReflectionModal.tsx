@@ -51,7 +51,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
         lessonPlan?.theme ?? item.title
       );
       setFormData(questions);
-    } catch (error) {
+    } catch {
       addNotification('Грешка при генерирање на прашањата. Обидете се повторно.', 'error');
     } finally {
       setIsPreFilling(false);

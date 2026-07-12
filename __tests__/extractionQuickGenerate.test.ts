@@ -5,7 +5,7 @@
  * sessionStorage payload → MaterialsGeneratorView reads it back.
  * Pure logic tests — no DOM/React rendering needed.
  */
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ─── Payload builder (mirrors ExtractionHub sendToGenerator logic) ────────────
 

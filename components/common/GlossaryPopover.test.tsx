@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import { GlossaryPopover } from './GlossaryPopover';
 import { QuestionGlossaryStrip } from './QuestionGlossaryStrip';

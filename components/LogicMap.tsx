@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { ConceptMastery } from '../services/firestoreService';
-import { Trophy, Star, Lock, BookOpen, Target, CheckCircle2, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trophy, Star, Lock, Target, CheckCircle2, PlayCircle, AlertCircle } from 'lucide-react';
 
 interface LogicMapProps {
   masteryRecords: ConceptMastery[];

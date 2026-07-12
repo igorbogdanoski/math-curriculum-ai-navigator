@@ -121,7 +121,6 @@ export function linearRegression(points: { x: number; y: number }[]) {
   const sumY = points.reduce((a, p) => a + p.y, 0);
   const sumXY = points.reduce((a, p) => a + p.x * p.y, 0);
   const sumX2 = points.reduce((a, p) => a + p.x * p.x, 0);
-  const sumY2 = points.reduce((a, p) => a + p.y * p.y, 0);
   const denom = n * sumX2 - sumX * sumX;
   if (denom === 0) return { slope: 0, intercept: sumY / n, r2: 0 };
   const slope = (n * sumXY - sumX * sumY) / denom;
