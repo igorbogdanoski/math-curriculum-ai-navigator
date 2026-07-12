@@ -9,6 +9,8 @@ const GRADES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const MODELS: TeachingModel[] = ['5E', 'PBL', 'ZPD', 'Cooperative', 'Traditional'];
 const DOK_LEVELS = [1, 2, 3, 4];
 
+export interface ConceptOption { id: string; title: string; }
+
 interface ScenarioFilterBarProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -25,6 +27,9 @@ interface ScenarioFilterBarProps {
   onModelFilterChange: (model: TeachingModel | null) => void;
   typeFilter: EntryType | null;
   onTypeFilterChange: (type: EntryType | null) => void;
+  conceptFilter: string | null;
+  onConceptFilterChange: (conceptId: string | null) => void;
+  conceptOptions: ConceptOption[];
   sortBy: SortBy;
   onSortByChange: (sortBy: SortBy) => void;
   onClearFilters: () => void;
@@ -38,10 +43,11 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
   dokFilter, onDokFilterChange,
   modelFilter, onModelFilterChange,
   typeFilter, onTypeFilterChange,
+  conceptFilter, onConceptFilterChange, conceptOptions,
   sortBy, onSortByChange,
   onClearFilters,
 }) => {
-  const hasAnyFilter = Boolean(gradeFilter || dokFilter || modelFilter || typeFilter);
+  const hasAnyFilter = Boolean(gradeFilter || dokFilter || modelFilter || typeFilter || conceptFilter);
 
   return (
     <>
@@ -85,7 +91,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
           Филтри
           {hasAnyFilter && (
             <span className="w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-              {[gradeFilter, dokFilter, modelFilter, typeFilter].filter(Boolean).length}
+              {[gradeFilter, dokFilter, modelFilter, typeFilter, conceptFilter].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -197,6 +203,24 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Concept */}
+            {conceptOptions.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-gray-500 uppercase">Концепт</p>
+                <select
+                  value={conceptFilter ?? ''}
+                  onChange={e => onConceptFilterChange(e.target.value || null)}
+                  aria-label="Филтрирај по концепт"
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 max-w-[220px]"
+                >
+                  <option value="">Сите концепти</option>
+                  {conceptOptions.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Clear */}
             {hasAnyFilter && (

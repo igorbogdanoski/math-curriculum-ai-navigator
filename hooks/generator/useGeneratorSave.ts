@@ -88,7 +88,7 @@ export function useGeneratorSave({
       const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
         QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
         SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas', DOCUMENT_EXTRACTOR: 'ideas',
-        LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas',
+        LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas', STORY_BOOK: 'ideas', TECHNICAL_INFOGRAPHIC: 'ideas',
       };
       const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'assessment';
       let title = (material as { title?: string })?.title || '';
@@ -96,12 +96,15 @@ export function useGeneratorSave({
         title = await geminiService.generateSmartQuizTitle(material as unknown as Record<string, unknown>).catch(() => '');
       }
       if (!title) title = 'Генериран материјал';
+      const conceptId = state.selectedConcepts[0];
       await publishMaterialFromGenerator({
         title,
         materialType: libType,
         content: material as unknown as Record<string, unknown>,
         grade: gradeLevel,
         topicTitle: state.selectedTopic,
+        conceptId,
+        conceptTitle: filteredConcepts.find((c: Concept) => c.id === conceptId)?.title,
         authorUid: firebaseUser.uid,
         authorName: user?.name ?? 'Наставник',
         schoolName: user?.schoolName,

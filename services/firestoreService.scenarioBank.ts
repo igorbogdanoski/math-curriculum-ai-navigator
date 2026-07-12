@@ -34,6 +34,9 @@ export interface ScenarioBankEntry {
   secondaryTrack?: SecondaryTrack | null;
   subject: string;
   topicTitle: string;
+  /** Curriculum concept this material was generated for — denormalised for fast filterable browse (absent on older/legacy entries) */
+  conceptId?: string;
+  conceptTitle?: string;
   objectives: string[];
   scenarioIntro: string;
   scenarioMain: string[];
@@ -79,6 +82,7 @@ export interface ScenarioBankEntry {
 export interface ScenarioBankFilter {
   grade?: number | null;
   topicKeyword?: string;
+  conceptId?: string | null;
   dokLevel?: number | null;
   bloomLevel?: number | null;
   teachingModel?: TeachingModel | null;
@@ -130,6 +134,7 @@ function buildScenarioConstraints(filters: ScenarioBankFilter) {
 function matchesClientFilters(entry: ScenarioBankEntry, filters: ScenarioBankFilter): boolean {
   if (filters.dokLevel != null && entry.dokLevel !== filters.dokLevel) return false;
   if (filters.teachingModel && entry.teachingModel !== filters.teachingModel) return false;
+  if (filters.conceptId && entry.conceptId !== filters.conceptId) return false;
   return true;
 }
 
@@ -154,7 +159,7 @@ export const fetchScenarios = async (
   pageLimit = 24,
   cursor?: DocumentSnapshot,
 ): Promise<ScenarioPage> => {
-  const hasClientFilters = filters.dokLevel != null || filters.teachingModel != null;
+  const hasClientFilters = filters.dokLevel != null || filters.teachingModel != null || filters.conceptId != null;
   // Each "page" is a page of RAW Firestore docs; client-side filters (dokLevel/
   // teachingModel, which Firestore can't query natively) are applied for display within
   // that raw page, over-fetched by 40 to reduce how often a page under-fills after
@@ -396,6 +401,8 @@ export interface PublishGeneratedMaterialPayload {
   title: string;
   grade?: number;
   topicTitle?: string;
+  conceptId?: string;
+  conceptTitle?: string;
   materialType: string;
   content: Record<string, unknown>;
   authorUid: string;
@@ -413,6 +420,8 @@ export const publishMaterialFromGenerator = async (p: PublishGeneratedMaterialPa
     grade: p.grade ?? 0,
     subject: 'Математика',
     topicTitle: p.topicTitle ?? '',
+    conceptId: p.conceptId ?? null,
+    conceptTitle: p.conceptTitle ?? '',
     objectives: [],
     scenarioIntro: '',
     scenarioMain: [],

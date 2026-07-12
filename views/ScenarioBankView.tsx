@@ -41,6 +41,7 @@ export const ScenarioBankView: React.FC = () => {
   const [dokFilter, setDokFilter] = useState<number | null>(null);
   const [modelFilter, setModelFilter] = useState<TeachingModel | null>(null);
   const [typeFilter, setTypeFilter] = useState<EntryType | null>(null);
+  const [conceptFilter, setConceptFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('date');
 
   // Browse pagination (all/bro tabs only — mine/admin have their own unbounded/paginated fetches)
@@ -71,6 +72,7 @@ export const ScenarioBankView: React.FC = () => {
           grade: gradeFilter,
           dokLevel: dokFilter,
           teachingModel: modelFilter,
+          conceptId: conceptFilter,
           verifiedOnly: mode === 'bro',
           sortBy,
         };
@@ -85,7 +87,7 @@ export const ScenarioBankView: React.FC = () => {
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, gradeFilter, dokFilter, modelFilter, sortBy, firebaseUser?.uid]);
+  }, [tab, gradeFilter, dokFilter, modelFilter, conceptFilter, sortBy, firebaseUser?.uid]);
 
   useEffect(() => { load(tab); }, [load, tab]);
 
@@ -94,7 +96,7 @@ export const ScenarioBankView: React.FC = () => {
     setIsLoadingMore(true);
     try {
       const filter: ScenarioBankFilter = {
-        grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter,
+        grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter, conceptId: conceptFilter,
         verifiedOnly: tab === 'bro', sortBy,
       };
       const page = await fetchScenarios(filter, 48, lastDoc);
@@ -106,7 +108,7 @@ export const ScenarioBankView: React.FC = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [lastDoc, isLoadingMore, gradeFilter, dokFilter, modelFilter, tab, sortBy, addNotification]);
+  }, [lastDoc, isLoadingMore, gradeFilter, dokFilter, modelFilter, conceptFilter, tab, sortBy, addNotification]);
 
   // Debounced search — triggers after 800ms of typing when query >= 3 chars. For the
   // all/bro tabs (the ones with a paginated browse fetch) this also re-fetches a much
@@ -132,7 +134,7 @@ export const ScenarioBankView: React.FC = () => {
         let poolForSemantic = entries;
         if (needsBroaderFetch) {
           const filter: ScenarioBankFilter = {
-            grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter,
+            grade: gradeFilter, dokLevel: dokFilter, teachingModel: modelFilter, conceptId: conceptFilter,
             verifiedOnly: tab === 'bro', sortBy,
           };
           const page = await fetchScenariosForSearch(filter);
@@ -164,7 +166,7 @@ export const ScenarioBankView: React.FC = () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, tab, entries, gradeFilter, dokFilter, modelFilter, sortBy]);
+  }, [search, tab, entries, gradeFilter, dokFilter, modelFilter, conceptFilter, sortBy]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -174,6 +176,9 @@ export const ScenarioBankView: React.FC = () => {
     }
     if (typeFilter) {
       list = list.filter(e => (e.entryType ?? 'lesson_plan') === typeFilter);
+    }
+    if (conceptFilter) {
+      list = list.filter(e => e.conceptId === conceptFilter);
     }
 
     // When semantic ranking is active, use it to reorder + filter
@@ -193,7 +198,17 @@ export const ScenarioBankView: React.FC = () => {
       e.authorName.toLowerCase().includes(q) ||
       e.objectives.some(o => o.toLowerCase().includes(q))
     );
-  }, [entries, search, tab, firebaseUser?.uid, semanticRanking, searchResults, typeFilter]);
+  }, [entries, search, tab, firebaseUser?.uid, semanticRanking, searchResults, typeFilter, conceptFilter]);
+
+  const conceptOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    entries.forEach(e => {
+      if (e.conceptId && e.conceptTitle) byId.set(e.conceptId, e.conceptTitle);
+    });
+    return [...byId.entries()]
+      .map(([id, title]) => ({ id, title }))
+      .sort((a, b) => a.title.localeCompare(b.title, 'mk'));
+  }, [entries]);
 
   const sorted = useMemo(() => {
     if (sortBy !== 'rating') return filtered;
@@ -539,9 +554,12 @@ export const ScenarioBankView: React.FC = () => {
         onModelFilterChange={setModelFilter}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
+        conceptFilter={conceptFilter}
+        onConceptFilterChange={setConceptFilter}
+        conceptOptions={conceptOptions}
         sortBy={sortBy}
         onSortByChange={setSortBy}
-        onClearFilters={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); setTypeFilter(null); }}
+        onClearFilters={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); setTypeFilter(null); setConceptFilter(null); }}
       />
 
       {/* Results count */}
