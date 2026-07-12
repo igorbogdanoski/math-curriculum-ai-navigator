@@ -20,6 +20,5 @@ export const getLanguagePreference = (): Language => {
   if (navigator.language.startsWith('sq')) return 'sq';
   if (navigator.language.startsWith('tr')) return 'tr';
   if (navigator.language.startsWith('en')) return 'en';
-  if (navigator.language.startsWith('en')) return 'en';
   return 'mk';
 };

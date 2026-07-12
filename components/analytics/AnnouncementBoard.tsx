@@ -32,7 +32,7 @@ export const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({
       <div className="flex items-center gap-2 mb-3">
         <Megaphone className="w-5 h-5 text-amber-500" />
         <h3 className="font-bold text-gray-800">{t('analytics.bulletin')}</h3>
-        <span className="text-xs text-gray-400 ml-1">(Учениците ги гледаат во „Мој Прогрес")</span>
+        <span className="text-xs text-gray-400 ml-1">{t('analytics.bulletinHint')}</span>
       </div>
       <div className="flex gap-2 mb-3">
         <input
@@ -51,7 +51,7 @@ export const AnnouncementBoard: React.FC<AnnouncementBoardProps> = ({
           className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 disabled:opacity-40 transition"
         >
           <Send className="w-4 h-4" />
-          Постави
+          {t('analytics.postAd')}
         </button>
       </div>
       {announcements.length > 0 ? (
