@@ -28,6 +28,7 @@ import { firestoreService } from '../services/firestoreService';
 import type { SavedQuestion, DokLevel } from '../types';
 import type { ConceptMastery } from '../services/firestoreService';
 import { MisconceptionMiniLessonCard } from '../components/analytics/MisconceptionMiniLessonCard';
+import { ConceptScenariosPreview } from '../components/concept/ConceptScenariosPreview';
 
 const KnowledgeGraphView = React.lazy(() =>
   import('../components/dataviz/KnowledgeGraphView').then(m => ({ default: m.KnowledgeGraphView })),
@@ -726,6 +727,8 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     teacherUid={firebaseUser.uid}
                   />
                 )}
+
+                <ConceptScenariosPreview conceptId={concept.id} conceptTitle={concept.title} />
 
                 <Card className="bg-slate-900 border-none text-white overflow-hidden ring-4 ring-blue-500/20">
                     <div className="flex items-center gap-2 mb-6">

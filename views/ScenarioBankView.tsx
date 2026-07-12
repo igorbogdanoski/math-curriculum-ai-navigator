@@ -22,8 +22,22 @@ import {
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { ScenarioSearchResult } from '../services/ragService';
 import type { LessonPlan } from '../types';
+import { SCENARIO_BANK_CONCEPT_PREFILL_KEY } from '../components/concept/ConceptScenariosPreview';
 
 type TabMode = 'all' | 'mine' | 'saved' | 'bro' | 'admin';
+
+/** Reads and clears the one-shot concept prefill set by ConceptScenariosPreview — mirrors the existing `kahoot_gamma_prompt` sessionStorage prefill pattern. */
+function readConceptPrefill(): string | null {
+  try {
+    const raw = sessionStorage.getItem(SCENARIO_BANK_CONCEPT_PREFILL_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(SCENARIO_BANK_CONCEPT_PREFILL_KEY);
+    const parsed = JSON.parse(raw) as { conceptId?: string };
+    return parsed.conceptId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const ScenarioBankView: React.FC = () => {
   const { user, firebaseUser } = useAuth();
@@ -34,14 +48,15 @@ export const ScenarioBankView: React.FC = () => {
   const [entries, setEntries] = useState<ScenarioBankEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [conceptPrefillActive] = useState(() => Boolean(sessionStorage.getItem(SCENARIO_BANK_CONCEPT_PREFILL_KEY)));
+  const [showFilters, setShowFilters] = useState(() => conceptPrefillActive);
 
   // Filters
   const [gradeFilter, setGradeFilter] = useState<number | null>(null);
   const [dokFilter, setDokFilter] = useState<number | null>(null);
   const [modelFilter, setModelFilter] = useState<TeachingModel | null>(null);
   const [typeFilter, setTypeFilter] = useState<EntryType | null>(null);
-  const [conceptFilter, setConceptFilter] = useState<string | null>(null);
+  const [conceptFilter, setConceptFilter] = useState<string | null>(readConceptPrefill);
   const [sortBy, setSortBy] = useState<SortBy>('date');
 
   // Browse pagination (all/bro tabs only — mine/admin have their own unbounded/paginated fetches)
