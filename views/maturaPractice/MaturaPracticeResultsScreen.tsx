@@ -158,7 +158,7 @@ export function ResultsScreen({
               <div key={r.item.questionNumber + r.item.examId} className="flex items-start gap-3 p-3 bg-rose-50 border border-rose-100 rounded-xl">
                 <span className="text-xs font-black text-rose-600 shrink-0 mt-0.5">Q{r.item.questionNumber}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-700 line-clamp-2"><MathRenderer text={r.item.questionText} /></p>
+                  <div className="text-xs text-gray-700 line-clamp-2"><MathRenderer text={r.item.questionText} /></div>
                   <p className="text-xs text-gray-400 mt-0.5">{r.item.examLabel}</p>
                 </div>
                 <ScorePill score={r.scored} max={r.max} />

@@ -48,7 +48,7 @@ const TopicCard: React.FC<{ topic: Topic; onSelect: () => void }> = ({ topic, on
     </div>
     <div className="flex-grow">
       <h3 className="text-xl font-bold text-brand-primary"><MathRenderer text={topic.title} /></h3>
-      <p className="text-sm text-gray-600 mt-2 line-clamp-3"><MathRenderer text={topic.description} /></p>
+      <div className="text-sm text-gray-600 mt-2 line-clamp-3"><MathRenderer text={topic.description} /></div>
     </div>
     <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
         <span className="text-xs font-semibold text-gray-500">{topic.concepts.length} поими</span>

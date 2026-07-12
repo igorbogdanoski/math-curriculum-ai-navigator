@@ -116,7 +116,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <div className="space-y-3 text-gray-700">
                                 <div>
                                     <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Воведна активност:</h4>
-                                    <p className="mt-1"><MathRenderer text={typeof plan.scenario.introductory === 'string' ? plan.scenario.introductory : plan.scenario.introductory.text} /></p>
+                                    <div className="mt-1"><MathRenderer text={typeof plan.scenario.introductory === 'string' ? plan.scenario.introductory : plan.scenario.introductory.text} /></div>
                                 </div>
                                 <div>
                                     <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Главни активности:</h4>
@@ -131,7 +131,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                                 </div>
                                 <div>
                                     <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Завршна активност:</h4>
-                                    <p className="mt-1"><MathRenderer text={typeof plan.scenario.concluding === 'string' ? plan.scenario.concluding : plan.scenario.concluding.text} /></p>
+                                    <div className="mt-1"><MathRenderer text={typeof plan.scenario.concluding === 'string' ? plan.scenario.concluding : plan.scenario.concluding.text} /></div>
                                 </div>
                             </div>
                         </div>
@@ -155,19 +155,19 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                     {plan.differentiation && (
                          <div>
                             <SectionHeader title="Диференцијација" />
-                            <p className="text-gray-700"><MathRenderer text={plan.differentiation} /></p>
+                            <div className="text-gray-700"><MathRenderer text={plan.differentiation} /></div>
                         </div>
                     )}
                     {plan.reflectionPrompt && (
                          <div>
                             <SectionHeader title="Рефлексија за наставникот" />
-                            <p className="text-gray-700"><MathRenderer text={plan.reflectionPrompt} /></p>
+                            <div className="text-gray-700"><MathRenderer text={plan.reflectionPrompt} /></div>
                         </div>
                     )}
                     {plan.selfAssessmentPrompt && (
                          <div>
                             <SectionHeader title="Самооценување за ученици" />
-                            <p className="text-gray-700"><MathRenderer text={plan.selfAssessmentPrompt} /></p>
+                            <div className="text-gray-700"><MathRenderer text={plan.selfAssessmentPrompt} /></div>
                         </div>
                     )}
                     <div>

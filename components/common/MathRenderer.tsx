@@ -300,15 +300,15 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                             );
                         }
                         return (
-                            <p key={`${index}-${pIndex}`} className="my-1">
+                            <div key={`${index}-${pIndex}`} className="my-1">
                                <InlineMathRenderer text={trimmedPara} />
-                            </p>
+                            </div>
                         );
                     });
-                    
+
                 } catch (error) {
                     logger.error("Markdown rendering error", error, { block });
-                    return <p key={index}>{block}</p>;
+                    return <div key={index}>{block}</div>;
                 }
             })}
         </>

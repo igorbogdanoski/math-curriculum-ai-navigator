@@ -200,7 +200,7 @@ const ConceptCard: React.FC<{
         style={{ maxHeight: isExpanded ? '8000px' : '0px' }}
       >
         <div className="p-4 border-t space-y-4">
-          <p className="text-gray-600"><MathRenderer text={concept.description} /></p>
+          <div className="text-gray-600"><MathRenderer text={concept.description} /></div>
           
           <div>
             <h4 className="font-semibold text-gray-800 mb-2">Стандарди за оценување:</h4>
@@ -511,7 +511,7 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
             <div>
                 <h1 className="text-4xl font-bold text-brand-primary"><MathRenderer text={topic.title} /></h1>
                 <p className="text-xl text-gray-500">{grade.title}</p>
-                <p className="text-md text-gray-600 mt-2 max-w-3xl"><MathRenderer text={topic.description} /></p>
+                <div className="text-md text-gray-600 mt-2 max-w-3xl"><MathRenderer text={topic.description} /></div>
             </div>
             <div className="flex gap-2 flex-shrink-0 mt-4 md:mt-0 self-end md:self-auto">
                 {isEditing ? (

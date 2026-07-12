@@ -384,18 +384,24 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser?.uid, concept?.id]);
 
-  // D4: Fetch student concept_mastery for adaptive DoK scaffolding
+  // D4: Fetch student concept_mastery for adaptive DoK scaffolding.
+  // Teacher accounts (a TeachingProfile from `users/{uid}`) never have their own mastery
+  // records, and a query with no deviceId/teacherUid isn't provable by the concept_mastery
+  // security rule for a non-anonymous caller — Firestore rejects the whole list request
+  // with "Missing or insufficient permissions" rather than just returning zero results.
+  // Skipping the fetch for teachers avoids that noise; real (student) sessions never have
+  // a TeachingProfile, so this doesn't affect them.
   useEffect(() => {
-    if (!firebaseUser || !concept) return;
+    if (!firebaseUser || user || !concept) return;
     const studentName = firebaseUser.displayName || firebaseUser.email || firebaseUser.uid;
     firestoreService.fetchMasteryByStudent(studentName)
       .then(records => {
         const rec = records.find(r => r.conceptId === concept.id) ?? null;
         setConceptMastery(rec);
       })
-      .catch(() => {/* non-fatal */});
+      .catch(err => logger.warn('[ConceptDetailView] failed to fetch concept mastery', err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseUser?.uid, concept?.id]);
+  }, [firebaseUser?.uid, user, concept?.id]);
 
   if (!concept || !topic || !grade) {
       return (
