@@ -24,6 +24,7 @@
 import { describe, it, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { collection, query, where, getDocs, type Firestore } from 'firebase/firestore';
 
 // Skip the entire suite if the Firestore emulator isn't configured.
 const EMULATOR = process.env.FIRESTORE_EMULATOR_HOST;
@@ -1212,6 +1213,89 @@ d('SEC-2 — Firestore rules coverage', () => {
       const newUser = testEnv.authenticatedContext('newUser3');
       const f = newUser.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
       await assertFails(f.doc('referrals/newUser3').update({ bonusGranted: true }));
+    });
+  });
+
+  // Regression coverage for the 2026-07-12 "teacher / Google-linked student gets
+  // 'Missing or insufficient permissions' reading their own concept_mastery" fix.
+  // linkWithPopup() preserves the Firebase Auth uid but flips sign_in_provider away
+  // from 'anonymous', so isAnonymousStudent() alone stops recognizing a student who
+  // has linked their session — these tests exercise the actual LIST-query shape
+  // (collection().where().get()) that Firestore evaluates for query provability,
+  // not just a single doc().get(), since that's the exact shape that broke in prod.
+  describe('concept_mastery / spaced_rep — Google-linked student access (ownsDeviceViaIdentity)', () => {
+    it('a Google-linked student (same uid, non-anonymous) can list their own concept_mastery via deviceId', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceLink1').set({ deviceId: 'deviceLink1', name: 'Ана', anonymousUid: 'linked-uid-1' });
+        await f.doc('concept_mastery/cm1').set({ studentName: 'Ана', conceptId: 'c1', deviceId: 'deviceLink1', bestScore: 90, lastScore: 90, attempts: 1, consecutiveHighScores: 1, mastered: false });
+      });
+      // Same uid as anonymousUid, but sign_in_provider is now google.com — mirrors
+      // what linkWithPopup() produces post-link.
+      const linked = testEnv.authenticatedContext('linked-uid-1', { firebase: { sign_in_provider: 'google.com' } });
+      const db = linked.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'concept_mastery'), where('deviceId', '==', 'deviceLink1'));
+      await assertSucceeds(getDocs(q));
+    });
+
+    it('a Google-linked student can update their own concept_mastery record post-link', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceLink2').set({ deviceId: 'deviceLink2', name: 'Бојан', anonymousUid: 'linked-uid-2' });
+      });
+      const linked = testEnv.authenticatedContext('linked-uid-2', { firebase: { sign_in_provider: 'google.com' } });
+      const f = linked.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('concept_mastery/cm2').set({ studentName: 'Бојан', conceptId: 'c1', deviceId: 'deviceLink2', bestScore: 85, lastScore: 85, attempts: 1, consecutiveHighScores: 1, mastered: false }, { merge: true } as never));
+    });
+
+    it('an unrelated authenticated caller with no device/studentUid/teacherUid claim still cannot list someone else\'s concept_mastery (regression guard)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceLink3').set({ deviceId: 'deviceLink3', name: 'Вера', anonymousUid: 'owner-uid-3' });
+        await f.doc('concept_mastery/cm3').set({ studentName: 'Вера', conceptId: 'c1', deviceId: 'deviceLink3', bestScore: 70, lastScore: 70, attempts: 1, consecutiveHighScores: 0, mastered: false });
+      });
+      const stranger = testEnv.authenticatedContext('stranger-uid', { firebase: { sign_in_provider: 'google.com' } });
+      const db = stranger.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'concept_mastery'), where('deviceId', '==', 'deviceLink3'));
+      await assertFails(getDocs(q));
+    });
+
+    it('studentUid field: the matching student can read/write via studentUid, and cannot spoof someone else\'s uid', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const student = testEnv.authenticatedContext('studentUid-owner', { firebase: { sign_in_provider: 'google.com' } });
+      const fStudent = student.firestore() as unknown as { collection(p: string): { add(d: Record<string, unknown>): Promise<unknown> } };
+
+      // Can create a record stamped with their own uid.
+      await assertSucceeds(fStudent.collection('concept_mastery').add({ studentName: 'Гоце', conceptId: 'c1', studentUid: 'studentUid-owner', bestScore: 80, lastScore: 80, attempts: 1, consecutiveHighScores: 1, mastered: false }));
+
+      // Cannot create a record spoofing a different uid.
+      await assertFails(fStudent.collection('concept_mastery').add({ studentName: 'Гоце', conceptId: 'c1', studentUid: 'someone-else-uid', bestScore: 80, lastScore: 80, attempts: 1, consecutiveHighScores: 1, mastered: false }));
+
+      // Can list their own record via studentUid.
+      const db = student.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'concept_mastery'), where('studentUid', '==', 'studentUid-owner'));
+      await assertSucceeds(getDocs(q));
+    });
+
+    it('spaced_rep: a Google-linked student can list their own record via studentId (the raw deviceId field)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceSR1').set({ deviceId: 'deviceSR1', name: 'Дана', anonymousUid: 'sr-linked-uid' });
+        await f.doc('spaced_rep/sr1').set({ studentId: 'deviceSR1', conceptId: 'c1', interval: 1, repetitions: 1, easeFactor: 2.5 });
+      });
+      const linked = testEnv.authenticatedContext('sr-linked-uid', { firebase: { sign_in_provider: 'google.com' } });
+      const db = linked.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'spaced_rep'), where('studentId', '==', 'deviceSR1'));
+      await assertSucceeds(getDocs(q));
     });
   });
 });

@@ -114,6 +114,8 @@ export const ConceptMasterySchema = z.object({
   gradeLevel: z.number().optional(),
   teacherUid: z.string().optional(),
   deviceId: z.string().optional(),
+  /** Firebase Auth uid for a non-anonymous (Google-authenticated) student session — lets the security rules and fetchMasteryByStudent scope reads/writes without relying on isAnonymousStudent(). */
+  studentUid: z.string().optional(),
   attempts: z.number(),
   consecutiveHighScores: z.number(),
   bestScore: z.number(),

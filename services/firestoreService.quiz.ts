@@ -199,7 +199,7 @@ export const quizService = {
       let synced = 0;
       for (const item of pending) {
         try {
-          await quizService.updateConceptMastery(item.studentName, item.conceptId, item.score, item.meta, item.teacherUid, item.deviceId);
+          await quizService.updateConceptMastery(item.studentName, item.conceptId, item.score, item.meta, item.teacherUid, item.deviceId, item.studentUid);
           await clearPendingMastery(item.id);
           synced++;
         } catch (err) {
@@ -351,6 +351,7 @@ export const quizService = {
     meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number },
     teacherUid?: string,
     deviceId?: string,
+    studentUid?: string,
   ): Promise<ConceptMastery> => {
     const safeName = studentName.replace(/\s+/g, '_');
     // Keyed per-student-on-this-device (membershipKey), not bare deviceId — two different
@@ -364,7 +365,7 @@ export const quizService = {
     const queueOffline = async () => {
       try {
         const { saveMasteryOffline } = await import('./indexedDBService');
-        await saveMasteryOffline({ studentName, conceptId, score, meta, teacherUid, deviceId });
+        await saveMasteryOffline({ studentName, conceptId, score, meta, teacherUid, deviceId, studentUid });
       } catch (err) {
         logger.error('Error queueing offline mastery update:', err);
       }
@@ -390,6 +391,7 @@ export const quizService = {
         gradeLevel: meta?.gradeLevel ?? existing?.gradeLevel,
         ...(teacherUid ? { teacherUid } : {}),
         ...(deviceId ? { deviceId } : {}),
+        ...(studentUid ? { studentUid } : {}),
         attempts: (existing?.attempts ?? 0) + 1,
         consecutiveHighScores: newConsecutive,
         bestScore: Math.max(score, existing?.bestScore ?? 0),
@@ -415,13 +417,19 @@ export const quizService = {
     }
   },
 
-  fetchMasteryByStudent: async (studentName: string, deviceId?: string, teacherUid?: string): Promise<ConceptMastery[]> => {
+  // Each branch must carry a where() clause the concept_mastery security rule can prove
+  // without reading unconstrained resource.data — deviceId (anonymous), studentUid (Google-
+  // authenticated student), or teacherUid all satisfy that; a bare studentName filter does
+  // not, and gets the whole list request rejected by Firestore regardless of match count.
+  fetchMasteryByStudent: async (studentName: string, deviceId?: string, teacherUid?: string, studentUid?: string): Promise<ConceptMastery[]> => {
     try {
       const q = deviceId
         ? query(collection(db, 'concept_mastery'), where('deviceId', '==', deviceId))
-        : teacherUid
-          ? query(collection(db, 'concept_mastery'), where('studentName', '==', studentName), where('teacherUid', '==', teacherUid))
-          : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
+        : studentUid
+          ? query(collection(db, 'concept_mastery'), where('studentUid', '==', studentUid))
+          : teacherUid
+            ? query(collection(db, 'concept_mastery'), where('studentName', '==', studentName), where('teacherUid', '==', teacherUid))
+            : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {

@@ -27,6 +27,8 @@ interface UseQuizSessionParams {
   /** Anonymous Firebase Auth uid — required to key live_sessions.studentResponses (not the name, which can collide). */
   liveUid: string | null;
   assignId: string | undefined;
+  /** Google-linked Firebase Auth uid (from useStudentIdentity), when the student has linked their account — lets concept_mastery reads/writes satisfy the security rule's non-anonymous branch. Null for unlinked/anonymous students. */
+  studentGoogleUid?: string | null;
   getConceptDetails: (id: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
 }
 
@@ -39,6 +41,7 @@ export function useQuizSession({
   sessionId,
   liveUid,
   assignId,
+  studentGoogleUid,
   getConceptDetails,
 }: UseQuizSessionParams) {
   const [session, dispatch] = useReducer(quizSessionReducer, QUIZ_SESSION_INITIAL);
@@ -158,6 +161,7 @@ export function useQuizSession({
           },
           meta.teacherUid,
           deviceId,
+          studentGoogleUid ?? undefined,
         );
       } catch (err) {
         logger.error('[Quiz] updateConceptMastery failed:', err);

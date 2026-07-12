@@ -46,6 +46,7 @@ interface MathNavDB extends DBSchema {
       meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number };
       teacherUid?: string;
       deviceId?: string;
+      studentUid?: string;
       timestamp: number;
     };
   };

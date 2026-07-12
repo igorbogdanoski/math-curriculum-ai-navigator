@@ -15,6 +15,8 @@ export interface ConceptMastery {
   gradeLevel?: number;
   teacherUid?: string;
   deviceId?: string;
+  /** Firebase Auth uid for a non-anonymous (Google-authenticated) student session. */
+  studentUid?: string;
   attempts: number;
   consecutiveHighScores: number;
   bestScore: number;

@@ -386,15 +386,19 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
 
   // D4: Fetch student concept_mastery for adaptive DoK scaffolding.
   // Teacher accounts (a TeachingProfile from `users/{uid}`) never have their own mastery
-  // records, and a query with no deviceId/teacherUid isn't provable by the concept_mastery
-  // security rule for a non-anonymous caller — Firestore rejects the whole list request
-  // with "Missing or insufficient permissions" rather than just returning zero results.
-  // Skipping the fetch for teachers avoids that noise; real (student) sessions never have
-  // a TeachingProfile, so this doesn't affect them.
+  // records, and a query with no deviceId/studentUid/teacherUid isn't provable by the
+  // concept_mastery security rule for a non-anonymous caller — Firestore rejects the whole
+  // list request with "Missing or insufficient permissions" rather than just returning zero
+  // results. Skipping the fetch for teachers avoids that noise. For a real, non-anonymous
+  // (Google-authenticated) student session, pass their own uid as studentUid so the query
+  // matches the rule's studentUid == request.auth.uid branch instead of hitting the same
+  // gap; anonymous students are already covered by the rule's isAnonymousStudent() branch
+  // regardless of query shape, so they keep the original bare studentName query.
   useEffect(() => {
     if (!firebaseUser || user || !concept) return;
     const studentName = firebaseUser.displayName || firebaseUser.email || firebaseUser.uid;
-    firestoreService.fetchMasteryByStudent(studentName)
+    const studentUid = firebaseUser.isAnonymous ? undefined : firebaseUser.uid;
+    firestoreService.fetchMasteryByStudent(studentName, undefined, undefined, studentUid)
       .then(records => {
         const rec = records.find(r => r.conceptId === concept.id) ?? null;
         setConceptMastery(rec);

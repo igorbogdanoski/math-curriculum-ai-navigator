@@ -53,6 +53,18 @@ service cloud.firestore {
         || get(/databases/$(database)/documents/student_identity/$(deviceId)).data.anonymousUid == request.auth.uid;
     }
 
+    // Read-side counterpart to ownsClaimedDevice(), for a caller who is NOT (or no longer)
+    // anonymous — e.g. a student who linked their anonymous session to Google via
+    // linkWithPopup(), which keeps the same Firebase Auth uid but flips
+    // sign_in_provider away from 'anonymous', so isAnonymousStudent() alone stops
+    // recognizing them even though they still own the same device/uid. Requires the
+    // student_identity doc to actually exist and be bound to this uid — unclaimed devices
+    // don't get read access this way (that's what isAnonymousStudent() is for, pre-link).
+    function ownsDeviceViaIdentity(deviceId) {
+      return exists(/databases/$(database)/documents/student_identity/$(deviceId))
+        && get(/databases/$(database)/documents/student_identity/$(deviceId)).data.anonymousUid == request.auth.uid;
+    }
+
     // Only anonymous-student writers need to prove device ownership. Teacher-authenticated
     // writes (isDocOwner()) legitimately reference a student's deviceId without the
     // teacher's own uid ever matching that device's anonymousUid, and lab/self-practice
@@ -61,6 +73,15 @@ service cloud.firestore {
       return !isAnonymousStudent()
         || !('deviceId' in request.resource.data)
         || ownsClaimedDevice(request.resource.data.deviceId);
+    }
+
+    // Integrity check for the optional studentUid field (Google-linked student sessions,
+    // see ownsDeviceViaIdentity()) — if a write sets it, it must be the caller's own uid;
+    // a caller can never stamp someone else's uid onto a mastery record. Absent is fine
+    // (anonymous students and teacher-authored writes don't set this field at all).
+    function studentUidOk() {
+      return !('studentUid' in request.resource.data)
+        || request.resource.data.studentUid == request.auth.uid;
     }
 
     // Cosmetic/leaderboard-integrity bound on student_gamification numeric fields — no
@@ -284,24 +305,33 @@ service cloud.firestore {
 
     // ── Совладување на концепти (concept_mastery) ──
     match /concept_mastery/{doc} {
+      // studentUid/ownsDeviceViaIdentity branches cover a student who has linked their
+      // anonymous session to Google (linkWithPopup keeps the same uid but flips
+      // sign_in_provider away from 'anonymous', so isAnonymousStudent() alone stops
+      // recognizing them) — see ownsDeviceViaIdentity()'s comment for detail.
       allow read: if isAuthenticated() && (
         isAdmin() ||
         isDocOwner() ||
         isAnonymousStudent() ||
-        (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
+        (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId)) ||
+        (resource.data.studentUid != null && resource.data.studentUid == request.auth.uid) ||
+        (resource.data.deviceId != null && ownsDeviceViaIdentity(resource.data.deviceId))
       );
       // bestScore/lastScore bounded to 0-100 (and attempts/consecutiveHighScores to >= 0) only
       // when present — closes the trivial "fabricate an out-of-range value" case without
       // requiring every write path to supply every field (mirrors quiz_results' pattern).
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk()
-                    && conceptMasteryScoresOk();
-      // Only the owning teacher, anonymous students (quiz completion), or admin may update
+                    && conceptMasteryScoresOk() && studentUidOk();
+      // Only the owning teacher, anonymous students (quiz completion), a Google-linked
+      // student updating their own previously-anonymous device record, or admin may update.
       allow update: if isAuthenticated() && (
         isDocOwner() ||
         isAnonymousStudent() ||
-        isAdmin()
+        isAdmin() ||
+        (resource.data.studentUid != null && resource.data.studentUid == request.auth.uid) ||
+        (resource.data.deviceId != null && ownsDeviceViaIdentity(resource.data.deviceId))
       ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk()
-        && conceptMasteryScoresOk();
+        && conceptMasteryScoresOk() && studentUidOk();
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
@@ -519,9 +549,12 @@ service cloud.firestore {
     // ── Интервали за повторување (spaced_rep) ──
     // Doc ID = {studentId}_{conceptId}. Written by anonymous student or teacher.
     match /spaced_rep/{doc} {
-      allow read:   if isAuthenticated() && (isAnonymousStudent() || isAdmin() || isDocOwner());
+      // studentId here is actually the raw deviceId (see firestoreService.spacedRep.ts) —
+      // ownsDeviceViaIdentity() covers a student who linked their anonymous session to
+      // Google (same uid, but isAnonymousStudent() stops matching post-link).
+      allow read:   if isAuthenticated() && (isAnonymousStudent() || isAdmin() || isDocOwner() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (isAnonymousStudent() || isDocOwner() || isAdmin());
+      allow update: if isAuthenticated() && (isAnonymousStudent() || isDocOwner() || isAdmin() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 
