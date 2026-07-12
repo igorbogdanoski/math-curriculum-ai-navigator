@@ -3,7 +3,7 @@
 
 export const CACHE_COLLECTION = 'cached_ai_materials';
 export const LITE_MODEL = 'gemini-3.1-flash-lite-preview';
-export const DEFAULT_MODEL = 'gemini-3-flash-preview';
+export const DEFAULT_MODEL = 'gemini-3.5-flash';
 export const PRO_MODEL = 'gemini-3-pro-preview';
 export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
 export const IMAGEN_MODEL = 'gemini-3.1-flash-image';

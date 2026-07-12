@@ -57,8 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ]);
   if (!CONFIRMED.has(modelName)) {
     if (modelName.includes('pro')) modelName = 'gemini-3.1-pro-preview';
-    else if (modelName.includes('flash')) modelName = 'gemini-3-flash-preview';
-    else modelName = 'gemini-3-flash-preview';
+    else if (modelName.includes('flash')) modelName = 'gemini-3.5-flash';
+    else modelName = 'gemini-3.5-flash';
   }
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};

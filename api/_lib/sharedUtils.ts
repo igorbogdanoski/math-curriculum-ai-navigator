@@ -9,6 +9,7 @@ export const ALLOWED_MODELS = new Set([
   'gemini-3.1-flash-image-preview',
   'gemini-3-pro-preview',
   'gemini-3-flash-preview',
+  'gemini-3.5-flash',
   'gemini-3-pro-image-preview',
   // Gemini 2.5 family
   'gemini-2.5-pro',
