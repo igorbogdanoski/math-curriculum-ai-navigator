@@ -174,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot', '/gamma',
     '/exam', '/dugga',
     '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
-    '/national-library', '/olympiad', '/gallery', '/favorites', '/reports/coverage',
+    '/olympiad', '/gallery', '/favorites', '/reports/coverage',
     // Note: /scenario-bank is PRIMARY nav — intentionally excluded here so secondary doesn't auto-expand
   ];
   const isSecondaryPath = (p: string) => SECONDARY_PATHS.some(sp => p === sp || p.startsWith(sp));

@@ -11,6 +11,7 @@ import { useDuggaLibraryData, type LibraryTab } from '../hooks/useDuggaLibraryDa
 import { DuggaTestCard } from '../components/dugga/DuggaTestCard';
 import { AssignDuggaModal } from '../components/dugga/AssignDuggaModal';
 import { DuggaResultsPanel } from '../components/dugga/DuggaResultsPanel';
+import { EmptyState } from '../components/common/EmptyState';
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
@@ -164,23 +165,25 @@ export function DuggaLibraryView() {
           <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
         </div>
       ) : activeTests.length === 0 ? (
-        <div className="text-center py-16 space-y-3">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto">
-            <ClipboardList className="w-8 h-8 text-gray-300" />
-          </div>
-          {tab === 'my' ? (
-            <>
-              <p className="text-gray-500 font-medium">Немаш зачувани тестови</p>
-              <button type="button" onClick={() => navigate('/dugga/build')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors">
-                <Plus className="w-4 h-4" />
-                Направи прв тест
-              </button>
-            </>
-          ) : (
-            <p className="text-gray-500">Нема јавни тестови кои одговараат на пребарувањето.</p>
-          )}
-        </div>
+        tab === 'my' ? (
+          <EmptyState
+            icon={<ClipboardList className="w-8 h-8" />}
+            title="Немаш зачувани тестови"
+            message="Создади го твојот прв Dugga тест за да започнеш."
+          >
+            <button type="button" onClick={() => navigate('/dugga/build')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors">
+              <Plus className="w-4 h-4" />
+              Направи прв тест
+            </button>
+          </EmptyState>
+        ) : (
+          <EmptyState
+            icon={<ClipboardList className="w-8 h-8" />}
+            title="Нема јавни тестови"
+            message="Нема јавни тестови кои одговараат на пребарувањето."
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeTests.map(t => (

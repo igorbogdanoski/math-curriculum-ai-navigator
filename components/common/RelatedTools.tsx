@@ -142,11 +142,6 @@ const RELATED_TOOLS_MAP: Record<string, RelatedTool[]> = {
     { label: 'Тест Генератор', path: '/test-generator', icon: 'assessment' },
     { label: 'Аналитика (Матура)', path: '/matura-stats', icon: 'chart' },
   ],
-  '/national-library': [
-    { label: 'Материјали', path: '/materials', icon: 'generator' },
-    { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
-    { label: 'AI Асистент', path: '/assistant', icon: 'assistant' },
-  ],
   // Exact-match keys (not just the generic '/data-viz' prefix below) so these two
   // labs cross-suggest each other specifically, instead of the generic DataViz list.
   '/data-viz?tab=solid': [

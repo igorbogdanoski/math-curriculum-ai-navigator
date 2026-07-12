@@ -19,6 +19,7 @@ import {
   Share2, Copy, CheckCircle2, FileText, TrendingUp,
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
+import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { aggregateCognitiveProfile } from '../hooks/useStudentCognitiveProfile';
@@ -265,9 +266,9 @@ export const StudentDashboardView: React.FC = () => {
           )}
         </div>
         {pendingAssignments.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center text-sm text-gray-500">
+          <Card className="text-center text-sm text-gray-500">
             🎉 Нема активни задачи. Уживај во вежбата!
-          </div>
+          </Card>
         ) : (
           <div className="space-y-2">
             {pendingAssignments.map((a) => {
@@ -323,7 +324,7 @@ export const StudentDashboardView: React.FC = () => {
                 : 'text-red-600 bg-red-50 border-red-200';
               const grade = pct >= 90 ? '5' : pct >= 75 ? '4' : pct >= 60 ? '3' : pct >= 50 ? '2' : '1';
               return (
-                <div key={sub.id} className="bg-white border border-gray-200 rounded-2xl p-3 flex items-center gap-3">
+                <Card key={sub.id} className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg border ${color} flex-shrink-0`}>
                     {grade}
                   </div>
@@ -335,7 +336,7 @@ export const StudentDashboardView: React.FC = () => {
                     </p>
                   </div>
                   <TrendingUp className={`w-4 h-4 flex-shrink-0 ${pct >= 60 ? 'text-emerald-400' : 'text-red-400'}`} />
-                </div>
+                </Card>
               );
             })}
           </div>
