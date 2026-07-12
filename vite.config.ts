@@ -30,6 +30,22 @@ function geminiDevProxy(apiKey: string): Plugin {
         req.on('error', reject);
       });
 
+      // The client sends a flat `config` object (temperature/topP/maxOutputTokens/
+      // responseMimeType alongside systemInstruction/safetySettings) — the Gemini SDK
+      // requires those generation params nested under `generationConfig`, not spread at
+      // the top level of the request (matches api/gemini.ts's prod-side handling).
+      const splitConfig = (config: Record<string, unknown> | undefined, contents: unknown) => {
+        const { systemInstruction, safetySettings, ...generationConfig } = config || {};
+        const mergedContents = contents;
+        if (systemInstruction && typeof systemInstruction === 'string' && Array.isArray(mergedContents) && mergedContents.length > 0) {
+          const first = mergedContents[0] as { parts?: Array<{ text?: string }> };
+          if (first?.parts?.[0]) {
+            first.parts[0].text = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n${first.parts[0].text || ''}`;
+          }
+        }
+        return { generationConfig, safetySettings, contents: mergedContents };
+      };
+
       // Non-streaming proxy
       server.middlewares.use('/api/gemini-stream', async (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
@@ -41,6 +57,7 @@ function geminiDevProxy(apiKey: string): Plugin {
           const { model, contents, config } = await readBody(req) as {
             model: string; contents: unknown; config?: Record<string, unknown>;
           };
+          const { generationConfig, safetySettings, contents: mergedContents } = splitConfig(config, contents);
 
           res.writeHead(200, {
             'Content-Type': 'text/event-stream',
@@ -48,10 +65,10 @@ function geminiDevProxy(apiKey: string): Plugin {
             'Connection': 'keep-alive',
           });
 
-          const modelInstance = genAI.getGenerativeModel({ model }, { apiVersion: 'v1beta' });
+          const modelInstance = genAI.getGenerativeModel({ model, safetySettings } as Parameters<typeof genAI.getGenerativeModel>[0], { apiVersion: 'v1beta' });
           const result = await modelInstance.generateContentStream({
-            contents,
-            ...config,
+            contents: mergedContents,
+            generationConfig,
           } as Parameters<typeof modelInstance.generateContentStream>[0]);
 
           for await (const chunk of result.stream) {
@@ -106,11 +123,12 @@ function geminiDevProxy(apiKey: string): Plugin {
           const { model, contents, config } = await readBody(req) as {
             model: string; contents: unknown; config?: Record<string, unknown>;
           };
+          const { generationConfig, safetySettings, contents: mergedContents } = splitConfig(config, contents);
 
-          const modelInstance = genAI.getGenerativeModel({ model }, { apiVersion: 'v1beta' });
+          const modelInstance = genAI.getGenerativeModel({ model, safetySettings } as Parameters<typeof genAI.getGenerativeModel>[0], { apiVersion: 'v1beta' });
           const result = await modelInstance.generateContent({
-            contents,
-            ...config,
+            contents: mergedContents,
+            generationConfig,
           } as Parameters<typeof modelInstance.generateContent>[0]);
           const response = await result.response;
 
@@ -140,51 +158,30 @@ function geminiDevProxy(apiKey: string): Plugin {
 
           if (!prompt) { sendJson(400, { error: 'Missing prompt' }); return; }
 
+          // Mirrors api/imagen.ts's tryGeminiImageGen candidate list — kept in sync so local
+          // dev exercises the same models as prod (Imagen 3 :predict / gemini-2.0-flash-*
+          // are retired, this list previously went stale and always failed locally).
           let imageResult: { mimeType: string; data: string } | null = null;
-
-          // Strategy 1: Imagen 3 via :predict (Vertex-compatible endpoint)
-          try {
-            const predictUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
-            const predictRes = await fetch(predictUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                instances: [{ prompt }],
-                parameters: { sampleCount: 1, aspectRatio: '16:9', safetyFilterLevel: 'block_some', personGeneration: 'dont_allow' },
-              }),
-            });
-            if (predictRes.ok) {
-              const d = await predictRes.json();
-              const p = d.predictions?.[0];
-              if (p?.bytesBase64Encoded) imageResult = { mimeType: p.mimeType || 'image/png', data: p.bytesBase64Encoded };
-            } else {
-              const errBody = await predictRes.text().catch(() => '');
-              console.error(`[dev-imagen] Strategy 1 failed [${predictRes.status}]:`, errBody);
-            }
-          } catch (e: unknown) { console.error('[dev-imagen] Strategy 1 error:', errMessage(e)); }
-
-          // Strategy 2: Gemini Flash image generation (tries two model aliases)
-          if (!imageResult) {
-            const { GoogleGenerativeAI } = await import('@google/generative-ai');
-            const genAI = new GoogleGenerativeAI(apiKey);
-            for (const modelName of ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp']) {
-              try {
-                const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
-                type ImageGenRequest = Parameters<typeof model.generateContent>[0] & { generationConfig?: { responseModalities?: string[] } };
-                const result = await model.generateContent({
-                  contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                  generationConfig: { responseModalities: ['IMAGE'] },
-                } as ImageGenRequest);
-                type ImagePart = { inlineData?: { mimeType?: string; data: string } };
-                const parts: ImagePart[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
-                const imgPart = parts.find((p) => p.inlineData?.data);
-                if (imgPart?.inlineData) {
-                  imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
-                  console.log(`[dev-imagen] Strategy 2 succeeded with: ${modelName}`);
-                  break;
-                }
-              } catch (e: unknown) { console.error(`[dev-imagen] Strategy 2 (${modelName}) error:`, errMessage(e)); }
-            }
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(apiKey);
+          for (const modelName of ['gemini-3.1-flash-image', 'gemini-2.5-flash-image', 'gemini-3.1-flash-image-preview']) {
+            try {
+              const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
+              type ImageGenRequest = Parameters<typeof model.generateContent>[0] & { generationConfig?: { responseModalities?: string[] } };
+              const result = await model.generateContent({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+              } as ImageGenRequest);
+              type ImagePart = { inlineData?: { mimeType?: string; data: string } };
+              const parts: ImagePart[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
+              const imgPart = parts.find((p) => p.inlineData?.data);
+              if (imgPart?.inlineData) {
+                imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+                console.log(`[dev-imagen] succeeded with: ${modelName}`);
+                break;
+              }
+              console.warn(`[dev-imagen] ${modelName}: no image parts in response`);
+            } catch (e: unknown) { console.error(`[dev-imagen] ${modelName} error:`, errMessage(e)); }
           }
 
           if (imageResult) {
