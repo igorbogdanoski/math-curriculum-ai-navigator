@@ -4,7 +4,7 @@ import type { Specialization } from '../../data/academy/specializations';
 
 /**
  * A single earned-specialization pill, styled after the existing "AI" reply
- * badge in components/forum/ForumInternals.tsx — same size/shape, colored
+ * badge in components/forum/ThreadDetail.tsx — same size/shape, colored
  * per specialization via its own `color` (bg+text) and `borderColor` fields.
  */
 export const AcademyBadgeChip: React.FC<{ specialization: Specialization }> = ({ specialization }) => (

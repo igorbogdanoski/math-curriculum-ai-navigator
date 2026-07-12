@@ -31,14 +31,11 @@ import {
 } from '../services/firestoreService.forum';
 import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 import { AppError, ErrorCode } from '../utils/errors';
-import {
-  reactionArr,
-  EnrichedConcept,
-  StatsBanner,
-  NewThreadModal,
-  ThreadCard,
-  ThreadDetail,
-} from '../components/forum/ForumInternals';
+import { reactionArr, type EnrichedConcept } from '../components/forum/forumHelpers';
+import { StatsBanner } from '../components/forum/StatsBanner';
+import { NewThreadModal } from '../components/forum/NewThreadModal';
+import { ThreadCard } from '../components/forum/ThreadCard';
+import { ThreadDetail } from '../components/forum/ThreadDetail';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
