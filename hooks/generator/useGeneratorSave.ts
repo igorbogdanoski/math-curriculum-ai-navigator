@@ -41,6 +41,26 @@ type BulkResults = {
   rubric?: AIGeneratedRubric;
 } | null;
 
+/**
+ * Maps a MaterialType to the scenario_bank library-entry type used by the "Save to
+ * Library" button. Exported (rather than inline) so a test can assert this stays in
+ * sync with every user-selectable MaterialType — a type missing here doesn't error,
+ * it silently falls back to 'assessment' (the exact bug STORY_BOOK/TECHNICAL_INFOGRAPHIC
+ * had before this was caught).
+ */
+export const MATERIAL_TYPE_TO_LIB_TYPE: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
+  QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
+  SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas', DOCUMENT_EXTRACTOR: 'ideas',
+  LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas', STORY_BOOK: 'ideas', TECHNICAL_INFOGRAPHIC: 'ideas',
+  // FLASHCARDS and EXIT_TICKET both resolve to an AIGeneratedAssessment-shaped result
+  // (a `questions` array) — GeneratorResultPanel's "Save to Library" button is shown by
+  // duck-typing that shape, not by materialType, so both reach this map at runtime even
+  // though it's easy to forget them here (found missing during a Phase-1 test-coverage
+  // pass; PRESENTATION/ILLUSTRATION are correctly absent — their result shapes never
+  // match the button's duck-type check, so the save button never renders for them).
+  FLASHCARDS: 'quiz', EXIT_TICKET: 'assessment',
+};
+
 interface UseGeneratorSaveParams {
   state: GeneratorState;
   curriculum: Curriculum;
@@ -85,12 +105,7 @@ export function useGeneratorSave({
     if (savedToLibrary.has(keyHint)) return;
     try {
       const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
-      const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
-        QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
-        SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas', DOCUMENT_EXTRACTOR: 'ideas',
-        LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas', STORY_BOOK: 'ideas', TECHNICAL_INFOGRAPHIC: 'ideas',
-      };
-      const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'assessment';
+      const libType = MATERIAL_TYPE_TO_LIB_TYPE[state.materialType ?? ''] ?? 'assessment';
       let title = (material as { title?: string })?.title || '';
       if (!title && (libType === 'quiz' || libType === 'assessment')) {
         title = await geminiService.generateSmartQuizTitle(material as unknown as Record<string, unknown>).catch(() => '');
