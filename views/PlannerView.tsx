@@ -22,7 +22,6 @@ import { PlannerAgendaView } from '../components/planner/PlannerAgendaView';
 import { PlannerWeekView } from '../components/planner/PlannerWeekView';
 import { PlannerMetaAnalysis } from '../components/planner/PlannerMetaAnalysis';
 import { getWeekRange } from '../utils/date';
-import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { plannerTourSteps } from '../tours/tour-steps';
 
 
@@ -51,7 +50,6 @@ export const PlannerView: React.FC = () => {
     const { addNotification } = useNotification();
     const { user } = useAuth();
     useTour('planner', plannerTourSteps, !isLoading);
-    const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
     const aiMenuRef = useRef<HTMLDivElement>(null);
     const [suggestions, setSuggestions] = useState<Array<{ title: string; description: string; conceptHint: string }> | null>(null);

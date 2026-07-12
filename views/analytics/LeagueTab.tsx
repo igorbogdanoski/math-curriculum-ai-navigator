@@ -83,7 +83,6 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
 
   // Top 3 podium
   const top3 = rows.slice(0, 3);
-  const rest = rows.slice(3);
 
   // Group rest by tier
   const tierOrder: LeagueTier[] = ['gold', 'silver', 'bronze'];
@@ -164,7 +163,7 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
               <span className="text-xs text-gray-500 ml-2">Лв. {meta.minLevel}{tier === 'gold' ? '+' : `–${tier === 'silver' ? 5 : 2}`}</span>
             </div>
             <div className="divide-y divide-gray-100">
-              {tierRows.map((row, i) => {
+              {tierRows.map((row) => {
                 const rank = rows.indexOf(row) + 1;
                 const lvlInfo = calcFibonacciLevel(row.gamification.totalXP);
                 return (

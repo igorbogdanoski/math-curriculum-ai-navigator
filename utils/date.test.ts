@@ -63,7 +63,6 @@ describe('date utils', () => {
             const date = new Date(2024, 8, 11);
             const days = getDaysInWeek(date);
             for (let i = 1; i < days.length; i++) {
-                const diff = days[i].getDate() - days[i - 1].getDate();
                 // Handle month boundary: diff could be negative (next month wraps around)
                 const msPerDay = 86_400_000;
                 expect(days[i].getTime() - days[i - 1].getTime()).toBe(msPerDay);

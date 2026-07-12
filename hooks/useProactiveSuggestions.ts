@@ -90,7 +90,7 @@ export function useProactiveSuggestions() {
                     setIsLoading(false);
                     return;
                 }
-             } catch(e) { localStorage.removeItem(cacheKey); }
+             } catch { localStorage.removeItem(cacheKey); }
           }
 
           try {

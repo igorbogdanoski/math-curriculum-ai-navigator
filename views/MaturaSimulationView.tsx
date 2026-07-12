@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 import {
     TRACK_LABELS, TRACK_ORDER, TRACK_ACCENT, SESSION_ORDER,
-    DURATION_SECONDS, examLabel, hasAnswer, gradeFromPercent,
+    DURATION_SECONDS, examLabel,
     progressKey, resultKey, gradePart2, gradePart3,
 } from './maturaSimulation/maturaSimUtils';
 import type { Phase, SimAnswers, SimResult } from './maturaSimulation/maturaSimUtils';

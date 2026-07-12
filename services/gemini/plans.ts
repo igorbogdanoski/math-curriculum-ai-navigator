@@ -1,5 +1,5 @@
 ﻿import { logger } from '../../utils/logger';
-import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
+import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
 import { fetchScenarioBankContext } from './ragService';
 import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH } from '../../data/allNationalStandardsComplete';
 import { streamGeminiProxy } from './core.proxy';

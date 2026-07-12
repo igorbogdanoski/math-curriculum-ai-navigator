@@ -65,7 +65,7 @@ export const CurriculumGraphView: React.FC = () => {
   const [selectedGrades, setSelectedGrades] = useState<number[]>([6]);
   useEffect(() => { if (defaultGrades.length > 0) setSelectedGrades(defaultGrades); }, [defaultGrades]);
 
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [, setSelectedTopics] = useState<string[]>([]);
   const [isClustered,    setIsClustered]    = useState(false);
   const [isFullscreen,   setIsFullscreen]   = useState(false);
   const [aiAnalysisConcept, setAiAnalysisConcept] = useState<EnrichedConcept | null>(null);

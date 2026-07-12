@@ -8,7 +8,7 @@ import { requestNotificationPermission } from '../../services/pushService';
 import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../../services/feedbackTaxonomyRollout';
 import { getGlobalDefault, setGlobalDefault, type GlobalFlagKey } from '../../services/featureFlags/globalConfig';
 import {
-    isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics,
+    clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics,
     isMacedonianContextEnabled, setMacedonianContextEnabled,
     isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled,
     isIntentRouterEnabled, setIntentRouterEnabled,

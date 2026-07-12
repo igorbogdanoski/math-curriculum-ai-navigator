@@ -15,8 +15,6 @@
  *   GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT for Firestore
  */
 
-import { execSync } from 'node:child_process';
-
 // ─── CLI args ─────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
 const examIdIdx = args.indexOf('--examId');
@@ -177,7 +175,7 @@ for (const q of toEnrich) {
     let enrichment;
     try {
       enrichment = JSON.parse(cleaned);
-    } catch (e) {
+    } catch {
       // Robust fix for common LaTeX unescaped backslash issue
       const fixed = cleaned.replace(/(?<!\\)\\(?![nr"\\])/g, '\\\\');
       enrichment = JSON.parse(fixed);

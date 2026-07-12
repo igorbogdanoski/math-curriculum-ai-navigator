@@ -53,7 +53,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [nameInput, setNameInput] = useState<string>(() => {
     try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
   });
-  const { data, isLoading: loading, error } = useStudentProgress(studentName, isReadOnly);
+  const { data, isLoading: loading } = useStudentProgress(studentName, isReadOnly);
   const results = data?.results || [];
   const masteryRecords = data?.mastery || [];
   const gamification = data?.gamification ?? null;
@@ -191,7 +191,6 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const reviewToday = useMemo(() => {
     // If we have real SM-2 records from Firestore, use the algorithm
     if (sm2Records.length > 0) {
-      const sm2Map = new Map(sm2Records.map(r => [r.conceptId, r]));
       const dueRecords = sortByReviewUrgency(sm2Records.filter(isDueForReview));
       return dueRecords.map(r => {
         const mastery = masteryRecords.find(m => m.conceptId === r.conceptId);

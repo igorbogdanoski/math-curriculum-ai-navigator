@@ -5,7 +5,6 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
-import { NotFoundView } from './NotFoundView';
 import { useNavigation } from '../contexts/NavigationContext';
 import { SharedViewCTA } from '../components/common/SharedViewCTA';
 
@@ -37,7 +36,7 @@ export const SharedPlanView: React.FC<SharedPlanViewProps> = ({ data }) => {
         setTimeout(() => {
           navigate('/my-lessons');
         }, 1500);
-      } catch (error) {
+      } catch {
         addNotification('Настана грешка при увозот.', 'error');
         setIsImporting(false);
       }

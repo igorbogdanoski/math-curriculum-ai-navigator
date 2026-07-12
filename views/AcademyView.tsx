@@ -8,7 +8,7 @@ import { slugify } from '../utils/slugify';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
-import { loadConceptCards, daysUntilDue, conceptCardId } from '../utils/sm2';
+import { loadConceptCards, daysUntilDue } from '../utils/sm2';
 
 const AcademyCertificateButton = React.lazy(() =>
   import('../components/academy/AcademyCertificate').then(m => ({ default: m.AcademyCertificateButton }))

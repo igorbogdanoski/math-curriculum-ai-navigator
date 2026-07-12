@@ -14,13 +14,6 @@ export interface ScenarioSegment {
   index: number;
 }
 
-// Patterns that mark the start of a new lesson/scenario in Macedonian/English documents
-const BOUNDARY_PATTERNS = [
-  /^(Час|Наставна\s+единица|Подготовка\s+бр\.?|Тема|Lesson|Час\s+бр\.?|Подготовка\s+за\s+час)\s*[:\-–—]?\s*(\d+|[IVXLC]+)/im,
-  /^\d+[.)]\s+/m, // "1. ", "2) "
-  /^={3,}|^-{3,}/m, // separator lines
-];
-
 const HEADING_RE = new RegExp(
   '(?:^|\\n)(' +
     '(?:Час|Наставна единица|Подготовка бр\\.?|Подготовка за час|Lesson|Тема)\\s*[:\\-–—]?\\s*(?:\\d+|[IVXLC]+)' +

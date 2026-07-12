@@ -46,7 +46,7 @@ export function usePersonalizedRecommendations(enabled = true) {
                         setIsLoading(false);
                         return;
                     }
-                } catch(e) {
+                } catch {
                     localStorage.removeItem(cacheKey);
                 }
             }

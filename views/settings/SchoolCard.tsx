@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import type { User } from 'firebase/auth';
 import { Card } from '../../components/common/Card';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { useAuth } from '../../contexts/AuthContext';

@@ -1,6 +1,6 @@
 
 import { useReducer, useEffect, useRef } from 'react';
-import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution, type DokLevel, type SecondaryTrack } from '../types';
+import { QuestionType, type MaterialType, type GenerationContextType, type DifferentiationLevel, type BloomDistribution, type DokLevel, type SecondaryTrack } from '../types';
 import { useCurriculum } from './useCurriculum';
 import { useAuth } from '../contexts/AuthContext';
 import type { VideoPreviewData } from '../utils/videoPreview';

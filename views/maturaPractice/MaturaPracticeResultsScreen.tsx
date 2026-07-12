@@ -4,7 +4,7 @@ import { DokBadge } from '../../components/common/DokBadge';
 import type { DokLevel } from '../../types';
 import type { PracticeItem, QuestionState } from './maturaPracticeHelpers';
 import { TOPIC_LABELS, TOPIC_COLORS, isOpen } from './maturaPracticeHelpers';
-import { TopicChip, ScorePill } from './MaturaPracticeUI';
+import { ScorePill } from './MaturaPracticeUI';
 
 export function ResultsScreen({
   items, states, onRetryWrong, onNewSession,

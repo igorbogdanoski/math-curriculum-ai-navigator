@@ -35,7 +35,7 @@ export const ExamPlayerView: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timeRemaining] = useState(0);
   // Question keys (e.g. "q3") whose latest answer failed to sync to the server —
   // still safe locally (localStorage backup below), but the teacher's server-side
   // copy is stale until this clears. Surfaced as a small warning banner.

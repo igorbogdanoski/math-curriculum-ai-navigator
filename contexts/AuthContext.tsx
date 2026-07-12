@@ -3,7 +3,7 @@ import React, { createContext, useContext, useCallback, useState, useEffect, use
 import type { TeachingProfile } from '../types';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, deleteUser } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app, db, storage, googleProvider } from '../firebaseConfig';
 import { setSentryUser, clearSentryUser } from '../services/sentryService';
 import { parseFirestoreDoc, TeachingProfileSchema } from '../schemas/firestoreSchemas';

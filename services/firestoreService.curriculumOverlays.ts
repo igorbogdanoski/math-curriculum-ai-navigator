@@ -9,7 +9,7 @@
  * Document:   {uid}_{gradeId}_{topicIndex}
  */
 
-import { doc, getDoc, setDoc, deleteDoc, getDocs, collection, query, where, serverTimestamp, type Timestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDocs, collection, query, where, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 export interface TopicOverlay {

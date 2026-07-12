@@ -3,7 +3,7 @@ import 'mathlive';
 import type { MathfieldElement } from 'mathlive';
 import {
   Sigma, Copy, Trash2, History, Lightbulb, Calculator,
-  CheckCircle2, Shuffle, ChevronDown, Loader2, Check,
+  CheckCircle2, Shuffle, Loader2, Check,
   Printer, Download, Zap, Save, ArrowLeftCircle,
 } from 'lucide-react';
 import { duggaAPI } from '../services/gemini/dugga';

@@ -1,6 +1,5 @@
 import fs from 'fs';
 import https from 'https';
-import path from 'path';
 
 const API_KEY = process.env.GEMINI_API_KEY;
 

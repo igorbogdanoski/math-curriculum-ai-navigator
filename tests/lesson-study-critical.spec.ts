@@ -126,9 +126,7 @@ test.describe('LessonStudyView: observation form', () => {
     // Fill required fields
     await page.getByPlaceholder(/линеарни равенки/i).fill('Тест сценарио 101');
 
-    // Select engagement star (3rd star)
-    const stars = page.locator('button[type="button"]').filter({ hasText: '' }).nth(2);
-    // Use role-based selector for engagement stars
+    // Select engagement star (3rd star) — use role-based selector for engagement stars
     const engagementButtons = page.locator('form button[type="button"]');
     await engagementButtons.nth(2).click();
 

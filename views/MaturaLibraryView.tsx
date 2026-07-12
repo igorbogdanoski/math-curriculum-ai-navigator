@@ -30,7 +30,6 @@ import { InternalMaturaTab, collectPracticeConceptIds } from '../components/matu
 export { collectPracticeConceptIds };
 import { TeacherTestBuilder } from '../components/matura/TeacherTestBuilder';
 import { parseMaturaDeepLink } from '../components/matura/maturaDeepLink';
-import type { MaturaExamMeta } from '../services/firestoreService.matura';
 import {
   saveLibraryAttempt,
   getLibraryAttemptsForExam,

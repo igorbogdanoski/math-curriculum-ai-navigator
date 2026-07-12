@@ -33,7 +33,7 @@ if (!prev) {
 let changed = '';
 try {
   changed = execSync(`git diff --name-only ${prev} ${cur}`, { encoding: 'utf8' });
-} catch (e) {
+} catch {
   console.log('[vercel-ignore] git diff failed → build to be safe');
   process.exit(1);
 }

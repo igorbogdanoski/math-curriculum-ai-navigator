@@ -14,7 +14,6 @@ import {
   signInWithPopup,
   signInAnonymously,
   linkWithPopup,
-  GoogleAuthProvider,
 } from 'firebase/auth';
 import { Loader2, GraduationCap, AlertCircle, ArrowRight, Shield } from 'lucide-react';
 import { auth, googleProvider } from '../firebaseConfig';

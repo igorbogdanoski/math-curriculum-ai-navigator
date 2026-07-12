@@ -5,7 +5,7 @@
  *   live_gamma/{pin}/responses/{studentId} — student answers
  */
 import {
-  doc, setDoc, updateDoc, deleteDoc, onSnapshot,
+  doc, setDoc, updateDoc, onSnapshot,
   collection, serverTimestamp, arrayUnion, arrayRemove,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';

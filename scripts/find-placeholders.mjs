@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 
 const files = [
   'data/matura/raw/dim-gymnasium-2022-august-mk.json',

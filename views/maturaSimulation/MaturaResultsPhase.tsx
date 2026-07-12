@@ -7,7 +7,7 @@ import {
 import { Card } from '../../components/common/Card';
 import { MathRenderer } from '../../components/common/MathRenderer';
 import type { MaturaQuestion, MaturaExamMeta } from '../../services/firestoreService.matura';
-import { formatTime, gradeFromPercent, examLabel } from './maturaSimUtils';
+import { formatTime, gradeFromPercent } from './maturaSimUtils';
 import type { SimResult, SimAnswers, QGrade } from './maturaSimUtils';
 
 interface PartBreakdownItem {
@@ -40,7 +40,7 @@ interface MaturaResultsPhaseProps {
 }
 
 export function MaturaResultsPhase({
-    result, selectedExam, questions, partBreakdown, topicBreakdown,
+    result, questions, partBreakdown, topicBreakdown,
     aiAnalysis, aiLoading, requestAiAnalysis,
     expandedSolutions, setExpandedSolutions,
     planCreated, planSaving, handleGeneratePlan, hasUser,

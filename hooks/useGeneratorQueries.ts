@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { firestoreService } from '../services/firestoreService';
-import type { SavedQuestion } from '../types';
 
 /**
  * Fetches verified questions for a specific concept

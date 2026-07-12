@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useContext, createContext } from 'react';
+import { useContext, createContext } from 'react';
 
 interface NavigationContextType {
   navigate: (path: string) => void;

@@ -145,7 +145,7 @@ describe('usePlanner hook and PlannerContext', () => {
         });
         
         const { doc, setDoc } = await import('firebase/firestore');
-        const { id, ...data } = planToUpdate;
+        const { id: _id, ...data } = planToUpdate;
         expect(doc).toHaveBeenCalledWith({}, 'users', 'test-user-123', 'lessonPlans', 'plan1');
         expect(setDoc).toHaveBeenCalledWith(undefined, data, { merge: true });
     });

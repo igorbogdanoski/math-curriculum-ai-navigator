@@ -162,7 +162,7 @@ export function useStudentCognitiveProfile({
           setProfile(aggregateCognitiveProfile(studentName, masteries, quizResults));
           setIsLoading(false);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setError('Грешка при вчитување на когнитивниот профил.');
           setIsLoading(false);

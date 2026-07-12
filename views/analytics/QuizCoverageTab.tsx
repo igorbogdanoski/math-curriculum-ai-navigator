@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
 import type { ConceptStat } from './shared';
 import type { Concept } from '../../types';
-import { GradeBadge } from '../../components/common/GradeBadge';
 
 interface QuizCoverageTabProps {
   allConceptStats: ConceptStat[];

@@ -10,7 +10,6 @@ import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 import { AcademyReflectionPrompt } from '../components/academy/AcademyReflectionPrompt';
 import { FeynmanChallenge } from '../components/academy/FeynmanChallenge';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
-import { DokBadge } from '../components/common/DokBadge';
 import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
 import { sm2Update, loadCards, saveCards, getOrCreateCard } from '../utils/sm2';

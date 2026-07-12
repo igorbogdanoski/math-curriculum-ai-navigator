@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Loader2, CheckCircle, XCircle, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { MaterialFeedbackModal } from '../components/analytics/MaterialFeedbackModal';
@@ -12,7 +11,6 @@ import type { FeedbackReasonCode, SavedQuestion } from '../types';
 
 export const ContentReviewView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
-    const { t } = useLanguage();
     const [questions, setQuestions] = useState<SavedQuestion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedQuestion, setSelectedQuestion] = useState<SavedQuestion | null>(null);

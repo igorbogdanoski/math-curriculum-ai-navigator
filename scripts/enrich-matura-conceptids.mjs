@@ -22,7 +22,7 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = join(__dir, '../data/matura/raw');
 
 const DRY_RUN = !process.argv.includes('--apply');
-const DO_IMPORT = process.argv.includes('--import'); // reserved for future Firestore push
+const _DO_IMPORT = process.argv.includes('--import'); // reserved for future Firestore push
 
 // TOPIC_MAP and lookupConcepts() are imported from matura-concept-map.mjs
 

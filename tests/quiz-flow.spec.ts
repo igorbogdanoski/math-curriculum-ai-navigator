@@ -24,8 +24,6 @@ test.describe('Quiz Flow: /play/:id', () => {
 
   test('shows loading spinner on initial load', async ({ page }) => {
     await page.goto('/#/play/any-quiz-id');
-    // Spinner or loading text should appear immediately before data fetch completes
-    const spinner = page.locator('[class*="animate-spin"], [class*="animate-pulse"]').first();
     // Either spinner is visible briefly OR we go directly to name screen / error
     // Just check no crash
     await expect(page.locator('body')).toBeVisible();

@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, onSnapshot,
-  serverTimestamp, query, where, limit, orderBy, type Timestamp,
+  serverTimestamp, query, where, limit, orderBy,
   runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';

@@ -4,7 +4,7 @@
  */
 
 import type { SpacedRepRecord } from './spacedRepetition';
-import { getNextReviewLabel, isDueForReview } from './spacedRepetition';
+import { getNextReviewLabel } from './spacedRepetition';
 
 export interface SRSItem {
   conceptId: string;

@@ -15,7 +15,7 @@ function enrichFile(sourceFile, targetFile) {
 
     let enrichedCount = 0;
 
-    targetData.questions.forEach((targetQ, index) => {
+    targetData.questions.forEach((targetQ) => {
         const sourceQ = sourceData.questions.find(q => q.questionNumber === targetQ.questionNumber);
         if (!sourceQ) return;
 

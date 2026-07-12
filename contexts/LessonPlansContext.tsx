@@ -209,7 +209,7 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     for (const item of planData.items) {
-        const { id, ...data } = item;
+        const { id: _id, ...data } = item;
         const newItemRef = doc(collection(db, "users", uid, "plannerItems"));
         const newItemData = {
             ...data,

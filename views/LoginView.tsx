@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { User } from "firebase/auth";
 import { trackEvent } from '../services/telemetryService';
 import { isDemoMode, getDemoCredentials } from '../services/demoMode';
-import { Zap, BarChart2, BookOpen, Languages, ShieldCheck, GraduationCap, Star } from 'lucide-react';
+import { Zap, BookOpen, Languages, ShieldCheck, GraduationCap, Star } from 'lucide-react';
 import { SchoolRegistryPicker } from '../components/common/SchoolRegistryPicker';
 import type { SchoolRegistryEntry } from '../data/schoolRegistry';
 

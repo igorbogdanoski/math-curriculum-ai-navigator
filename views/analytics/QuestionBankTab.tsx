@@ -6,7 +6,6 @@ import type { SavedQuestion, DokLevel } from '../../types';
 import { DOK_META } from '../../types';
 import { DokBadge } from '../../components/common/DokBadge';
 import { useNotification } from '../../contexts/NotificationContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { db } from '../../firebaseConfig';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -27,7 +26,6 @@ const QUESTION_TYPE_KEYS: Record<string, string> = {
 
 const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
   const { addNotification } = useNotification();
-  const { user } = useAuth();
   const { t } = useLanguage();
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);

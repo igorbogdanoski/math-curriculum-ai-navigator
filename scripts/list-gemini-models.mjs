@@ -56,7 +56,6 @@ console.log('─'.repeat(75));
 
 // Group by family
 const generateModels = models.filter(m => m.supportedGenerationMethods?.includes('generateContent'));
-const streamModels   = models.filter(m => m.supportedGenerationMethods?.includes('streamGenerateContent'));
 const embedModels    = models.filter(m => m.supportedGenerationMethods?.includes('embedContent'));
 const otherModels    = models.filter(m =>
   !m.supportedGenerationMethods?.includes('generateContent') &&

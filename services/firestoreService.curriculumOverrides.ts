@@ -16,7 +16,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 

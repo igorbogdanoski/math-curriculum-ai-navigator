@@ -16,7 +16,7 @@ export interface FeynmanGrade {
 export async function gradeFeynmanAnswer(
   concept: string,
   studentText: string,
-  maxPoints: number,
+  _maxPoints: number,
 ): Promise<FeynmanGrade> {
   const safeConcept = sanitizePromptInput(concept, 300);
   const safeText    = sanitizePromptInput(studentText, 1500);

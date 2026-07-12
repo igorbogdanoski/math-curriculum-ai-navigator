@@ -9,7 +9,7 @@
  *   4. smartOCR          — world-class LaTeX digitization of math images/handwriting
  */
 
-import { callGeminiProxy, DEFAULT_MODEL, ULTIMATE_MODEL, SAFETY_SETTINGS, getAILanguageRule } from './core';
+import { callGeminiProxy, DEFAULT_MODEL, SAFETY_SETTINGS, getAILanguageRule } from './core';
 
 function fallbackMsg(mk: string, en: string, sq: string, tr: string): string {
   const lang = getAILanguageRule();

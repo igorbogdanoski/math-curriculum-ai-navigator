@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { MaturaCurriculumRefs, MaturaQuestion, SecondaryTrack } from '../types';
+import type { MaturaQuestion, SecondaryTrack } from '../types';
 import { useCurriculum } from './useCurriculum';
 import { alignMaturaQuestionToCurriculum, type MaturaCurriculumAlignment } from '../utils/maturaCurriculum';
 

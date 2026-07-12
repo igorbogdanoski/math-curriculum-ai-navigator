@@ -29,7 +29,7 @@ export const SharedAnnualPlanView: React.FC<SharedAnnualPlanViewProps> = ({ data
         setTimeout(() => {
           navigate('/planner');
         }, 1500);
-      } catch (error) {
+      } catch {
         addNotification('Настана грешка при увозот.', 'error');
         setIsImporting(false);
       }

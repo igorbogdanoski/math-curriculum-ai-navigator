@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { examService } from '../services/firestoreService.exam';
@@ -28,7 +27,6 @@ const VARIANT_BADGE: Record<string, string> = {
 };
 
 export const ExamPresenterView: React.FC<{ id?: string }> = ({ id }) => {
-  const { firebaseUser } = useAuth();
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
   const { params } = useRouter([]);

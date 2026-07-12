@@ -83,7 +83,6 @@ if (mode === '--list') {
   console.log('  ' + '─'.repeat(90));
   for (const id of ids) {
     const p = registry.prompts[id];
-    const hashStatus = p.hash ? `${p.hash.slice(0, 8)}…` : '(no hash)';
     console.log(
       `  ${id.padEnd(36)} v${p.version.padEnd(8)} ${p.lastModified}   ${p.description}`
     );
