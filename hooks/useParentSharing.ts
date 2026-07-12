@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 
 /** Shared "share a student's report with a parent" concern — used by both the
- *  gradebook's entries table row menu and its Early Warning panel. */
-export function useParentSharing() {
+ *  gradebook's entries table row menu and its Early Warning panel.
+ *
+ *  `teacherUid` is required in every generated link — the parent portal scopes every
+ *  read by it so a bare student-name collision across different teachers/schools can't
+ *  leak another student's data (see ParentPortalView.tsx). */
+export function useParentSharing(teacherUid: string) {
   const { addNotification } = useNotification();
   const [copiedParent, setCopiedParent] = useState<string | null>(null);
   const [shareMenuStudent, setShareMenuStudent] = useState<string | null>(null);
 
   const getParentUrl = (studentName: string) =>
-    `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}`;
+    `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}&teacher=${encodeURIComponent(teacherUid)}`;
 
   const handleCopyParentLink = (studentName: string) => {
     navigator.clipboard.writeText(getParentUrl(studentName)).then(() => {

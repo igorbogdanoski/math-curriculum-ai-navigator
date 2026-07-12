@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StudentProgressView } from './StudentProgressView';
-import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home, Copy, Printer, MessageCircle, Smartphone } from 'lucide-react';
+import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home, Copy, Printer, MessageCircle, Smartphone, ShieldAlert } from 'lucide-react';
 import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -27,8 +27,12 @@ function getWeekStart(): Date {
 
 /**
  * П23 — Родителски Портал
- * Ако URL содржи ?name=... → директно покажи ги резултатите (read-only).
- * Ако нема → покажи форма за внесување на името на ученикот.
+ * Ако URL содржи ?name=...&teacher=... → директно покажи ги резултатите (read-only).
+ * Ако нема name → покажи форма за внесување на името на ученикот, сепак скоупирана
+ * на teacher-от од линкот.
+ * И двете патеки бараат ?teacher=... — без него линкот е третиран како невалиден.
+ * `teacher` е потребен за да не се меша податоци меѓу ученици со исто име кај
+ * различни наставници/училишта (секој сериозен share-линк веќе го содржи).
  * Public route — нема потреба од автентикација.
  */
 export const ParentPortalView: React.FC = () => {
@@ -37,6 +41,7 @@ export const ParentPortalView: React.FC = () => {
     : '';
   const params = new URLSearchParams(hashSearch);
   const nameFromUrl = params.get('name');
+  const teacherFromUrl = params.get('teacher');
 
   const [nameInput, setNameInput] = useState('');
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
@@ -44,8 +49,24 @@ export const ParentPortalView: React.FC = () => {
   const [summaryError, setSummaryError] = useState('');
   const [reportCopied, setReportCopied] = useState(false);
 
+  if (!teacherFromUrl) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-3">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-8 h-8 text-red-500" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-800">Линкот не е валиден</h1>
+          <p className="text-gray-500 text-sm">
+            Овој линк недостасува или е застарен. Побарајте нов линк од наставникот на детето.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (nameFromUrl) {
-    return <StudentProgressView name={decodeURIComponent(nameFromUrl)} />;
+    return <StudentProgressView name={decodeURIComponent(nameFromUrl)} teacherUid={teacherFromUrl} />;
   }
 
   const buildReportText = (emoji = true) => {
@@ -102,9 +123,9 @@ export const ParentPortalView: React.FC = () => {
       }
       const weekStart = getWeekStart();
       const [results, masteryData, gamification] = await Promise.all([
-        firestoreService.fetchQuizResultsByStudentName(trimmed),
-        firestoreService.fetchMasteryByStudent(trimmed),
-        firestoreService.fetchStudentGamification(trimmed),
+        firestoreService.fetchQuizResultsByStudentName(trimmed, undefined, teacherFromUrl),
+        firestoreService.fetchMasteryByStudent(trimmed, undefined, teacherFromUrl),
+        firestoreService.fetchStudentGamification(trimmed, teacherFromUrl),
       ]);
 
       const weekResults = results.filter(r => {
@@ -333,7 +354,7 @@ export const ParentPortalView: React.FC = () => {
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
-                onClick={() => { window.location.hash = `/parent?name=${encodeURIComponent(summary.studentName)}`; }}
+                onClick={() => { window.location.hash = `/parent?name=${encodeURIComponent(summary.studentName)}&teacher=${encodeURIComponent(teacherFromUrl)}`; }}
                 className="w-full py-2.5 border-2 border-indigo-200 text-indigo-600 rounded-xl font-semibold text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />

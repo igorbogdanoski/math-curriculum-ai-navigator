@@ -619,6 +619,18 @@ const AppCore: React.FC = () => {
         );
     }
 
+    // Parent portal — standalone, no teacher sidebar/billing-widget/sign-out. A
+    // parent reaching this page is neither a teacher nor a student, so neither
+    // AuthenticatedApp's shell nor StudentShell's student-identity chrome fits;
+    // ParentPortalView already provides its own complete page chrome.
+    if (window.location.hash.startsWith('#/parent')) {
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <ParentPortalView />
+            </Suspense>
+        );
+    }
+
     // P0 (2026-07-12 nav audit): student-facing routes get StudentShell, not
     // the full teacher AuthenticatedApp shell.
     if (isStudentShellRoute(window.location.hash)) {

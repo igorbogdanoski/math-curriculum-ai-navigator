@@ -282,11 +282,13 @@ export const quizService = {
     return { results: items, lastDoc: hasMore ? lastDoc : null };
   },
 
-  fetchQuizResultsByStudentName: async (studentName: string, deviceId?: string): Promise<QuizResult[]> => {
+  fetchQuizResultsByStudentName: async (studentName: string, deviceId?: string, teacherUid?: string): Promise<QuizResult[]> => {
     try {
       const q = deviceId
         ? query(collection(db, 'quiz_results'), where('deviceId', '==', deviceId), orderBy('playedAt', 'desc'), limit(100))
-        : query(collection(db, 'quiz_results'), where('studentName', '==', studentName), orderBy('playedAt', 'desc'), limit(100));
+        : teacherUid
+          ? query(collection(db, 'quiz_results'), where('studentName', '==', studentName), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(100))
+          : query(collection(db, 'quiz_results'), where('studentName', '==', studentName), orderBy('playedAt', 'desc'), limit(100));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
@@ -413,11 +415,13 @@ export const quizService = {
     }
   },
 
-  fetchMasteryByStudent: async (studentName: string, deviceId?: string): Promise<ConceptMastery[]> => {
+  fetchMasteryByStudent: async (studentName: string, deviceId?: string, teacherUid?: string): Promise<ConceptMastery[]> => {
     try {
       const q = deviceId
         ? query(collection(db, 'concept_mastery'), where('deviceId', '==', deviceId))
-        : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
+        : teacherUid
+          ? query(collection(db, 'concept_mastery'), where('studentName', '==', studentName), where('teacherUid', '==', teacherUid))
+          : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {

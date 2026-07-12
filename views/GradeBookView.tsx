@@ -92,7 +92,7 @@ export const GradeBookView: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  const sharing = useParentSharing();
+  const sharing = useParentSharing(firebaseUser?.uid ?? '');
 
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);

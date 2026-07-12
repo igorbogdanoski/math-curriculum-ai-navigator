@@ -40,9 +40,13 @@ const formatDate = (ts: any): string => {
 interface Props {
   /** Passed from URL query param ?name=... � enables read-only parent view */
   name?: string;
+  /** Passed from URL query param ?teacher=... � required alongside `name` for the read-only
+   *  parent view; scopes every fetch so a bare student-name collision across teachers/schools
+   *  can't leak another student's data. */
+  teacherUid?: string;
 }
 
-export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
+export const StudentProgressView: React.FC<Props> = ({ name: nameProp, teacherUid: teacherUidProp }) => {
   const { t } = useLanguage();
   const isReadOnly = !!nameProp;
   const { getConceptChain, getConceptDetails, allConcepts } = useCurriculum();
@@ -53,7 +57,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [nameInput, setNameInput] = useState<string>(() => {
     try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
   });
-  const { data, isLoading: loading } = useStudentProgress(studentName, isReadOnly);
+  const { data, isLoading: loading } = useStudentProgress(studentName, isReadOnly, teacherUidProp);
   const results = data?.results || [];
   const masteryRecords = data?.mastery || [];
   const gamification = data?.gamification ?? null;

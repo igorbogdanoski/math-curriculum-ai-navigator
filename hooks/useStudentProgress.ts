@@ -13,24 +13,32 @@ interface StudentProgressData {
   teacherUid?: string;
 }
 
-export function useStudentProgress(studentName: string, isReadOnly: boolean = false) {
+export function useStudentProgress(studentName: string, isReadOnly: boolean = false, sharedTeacherUid?: string) {
   return useQuery<StudentProgressData, Error>({
-    queryKey: ['student-progress', studentName, isReadOnly],
+    queryKey: ['student-progress', studentName, isReadOnly, sharedTeacherUid],
     queryFn: async () => {
       const deviceId = isReadOnly ? undefined : getDeviceId() ?? undefined;
 
+      // Read-only (parent-link) views must scope every read by the teacherUid carried in the
+      // share link — never fetch by bare studentName alone, which would leak any other
+      // student sharing that name across every teacher/school in the database.
       const [quizData, masteryData, assignments] = await Promise.all([
-        firestoreService.fetchQuizResultsByStudentName(studentName.trim(), deviceId),
-        firestoreService.fetchMasteryByStudent(studentName.trim(), deviceId),
+        firestoreService.fetchQuizResultsByStudentName(studentName.trim(), deviceId, sharedTeacherUid),
+        firestoreService.fetchMasteryByStudent(studentName.trim(), deviceId, sharedTeacherUid),
         firestoreService.fetchAssignmentsByStudent(studentName.trim()),
       ]);
 
-      // Derive primary teacherUid from the most frequent teacher in quiz results
-      const teacherUidCounts: Record<string, number> = {};
-      quizData.forEach((r: QuizResult) => {
-        if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1;
-      });
-      const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      // Own-device view: derive the primary teacherUid from the most frequent teacher in the
+      // (device-scoped, already-safe) quiz results. Read-only view: the teacherUid is already
+      // known from the share link — use it directly rather than re-deriving it.
+      let topTeacherUid = sharedTeacherUid;
+      if (!topTeacherUid) {
+        const teacherUidCounts: Record<string, number> = {};
+        quizData.forEach((r: QuizResult) => {
+          if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1;
+        });
+        topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      }
 
       // Failed concept IDs — pre-fetch quiz links for self-navigation
       const failedConceptIds = Array.from(
