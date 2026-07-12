@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, GraduationCap, Brain, Gift, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getReferralLink } from '../../hooks/useReferral';
+import { isStudentShellRoute } from '../../utils/studentShellRoutes';
 
 const STORAGE_KEY = 'whats_new_s65_seen';
 
@@ -38,6 +39,10 @@ export const WhatsNewModal: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // Teacher-only feature announcement (referral program, teacher-facing feature
+    // list) — must not pop up over public/student-facing routes like /play/:id,
+    // where its full-screen backdrop would also block the page underneath.
+    if (isStudentShellRoute(window.location.hash)) return;
     try {
       if (!localStorage.getItem(STORAGE_KEY)) setOpen(true);
     } catch { /* incognito */ }

@@ -9,10 +9,14 @@ import { db } from '../firebaseConfig';
 import { getCachedQuizContent, precacheQuizContent } from '../services/indexedDBService';
 import type { DifferentiationLevel } from '../types';
 import type { QuizPlayData } from '../components/student/quizSessionReducer';
-import { useLanguage } from '../i18n/LanguageContext';
 
+/**
+ * Error is stored as an untranslated i18n key (e.g. 'play.error.notFound'),
+ * not a pre-translated string — this effect only depends on [id], so a
+ * language switch after the initial fetch must not leave a stale-language
+ * message behind. Callers translate it at render time via t(error).
+ */
 export function useStudentQuiz(id: string | undefined, tid?: string) {
-  const { t } = useLanguage();
   const [quizData, setQuizData] = useState<QuizPlayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +26,7 @@ export function useStudentQuiz(id: string | undefined, tid?: string) {
     let cancelled = false;
     const fetchQuiz = async () => {
       if (!id) {
-        if (!cancelled) { setError(t('play.error.invalidLink')); setLoading(false); }
+        if (!cancelled) { setError('play.error.invalidLink'); setLoading(false); }
         return;
       }
       try {
@@ -47,7 +51,7 @@ export function useStudentQuiz(id: string | undefined, tid?: string) {
             setQuizData({ ...cached, _meta: { teacherUid: tid ?? undefined, conceptId: undefined, topicId: undefined, gradeLevel: undefined, differentiationLevel: undefined } });
             usedCache = true;
           } else if (!cancelled) {
-            setError(t('play.error.notFound'));
+            setError('play.error.notFound');
           }
           if (!cancelled) setUsingCachedContent(usedCache);
           if (!cancelled) setLoading(false);
@@ -72,7 +76,7 @@ export function useStudentQuiz(id: string | undefined, tid?: string) {
             });
             precacheQuizContent(id, content).catch(() => {});
           } else {
-            setError(t('play.error.notFound'));
+            setError('play.error.notFound');
           }
         } catch (err) {
           // Firestore failed — try offline cache
@@ -85,7 +89,7 @@ export function useStudentQuiz(id: string | undefined, tid?: string) {
             usedCache = true;
           } else if (!cancelled) {
             logger.error('Грешка при вчитување на квизот:', err);
-            setError(t('play.error.connect'));
+            setError('play.error.connect');
           }
         }
         if (!cancelled) setUsingCachedContent(usedCache);

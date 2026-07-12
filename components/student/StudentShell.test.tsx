@@ -64,6 +64,7 @@ describe('StudentShell', () => {
   it('logs out via signOut + clears student localStorage keys + navigates to student login', async () => {
     localStorage.setItem('studentName', 'Ана');
     localStorage.setItem('student_google_uid', 'abc');
+    localStorage.setItem('student_class_id', 'class-1');
     render(<StudentShell path="/portfolio"><div /></StudentShell>);
 
     fireEvent.click(screen.getByLabelText('Одјави се'));
@@ -71,6 +72,7 @@ describe('StudentShell', () => {
     await vi.waitFor(() => expect(signOutMock).toHaveBeenCalled());
     expect(localStorage.getItem('studentName')).toBeNull();
     expect(localStorage.getItem('student_google_uid')).toBeNull();
+    expect(localStorage.getItem('student_class_id')).toBeNull();
     expect(navigate).toHaveBeenCalledWith('/student/login');
   });
 

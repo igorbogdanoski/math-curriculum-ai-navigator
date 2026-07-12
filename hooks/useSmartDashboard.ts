@@ -76,7 +76,9 @@ export function useSmartDashboard(weakConcepts: WeakConcept[]) {
       const lastActivity: Record<string, number> = {};
       results.forEach(r => {
         if (!r.studentName) return;
-        const ms = r.playedAt?.toMillis() ?? 0;
+        const ms = typeof r.playedAt?.toMillis === 'function'
+          ? r.playedAt.toMillis()
+          : r.playedAt ? new Date(r.playedAt as unknown as string).getTime() : 0;
         if (!lastActivity[r.studentName] || ms > lastActivity[r.studentName]) {
           lastActivity[r.studentName] = ms;
         }

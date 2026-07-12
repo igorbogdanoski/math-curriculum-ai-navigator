@@ -63,6 +63,16 @@ test.describe('Патека 1 — Teacher Quiz (без автентикациј�
 
     await page.goto(`/#/play/${E2E_QUIZ_ID}?tid=test-teacher-uid`);
 
+    // A cached studentName triggers the shared-device "is this still you?"
+    // confirmation gate (ReturningStudentConfirm) before the quiz itself renders.
+    // isVisible() checks the current DOM immediately (it does not wait for the
+    // element to appear), so use waitFor to give the SPA time to render first.
+    const continueBtn = page.getByRole('button', { name: 'Да, тоа сум јас' });
+    await continueBtn.waitFor({ state: 'visible', timeout: 8_000 }).catch(() => null);
+    if (await continueBtn.isVisible().catch(() => false)) {
+      await continueBtn.click();
+    }
+
     // Quiz should load without authentication
     await expect(page.getByText('E2E Тест: Основни операции')).toBeVisible({ timeout: 12_000 });
   });
@@ -71,15 +81,30 @@ test.describe('Патека 1 — Teacher Quiz (без автентикациј�
     await mockAllFirestoreQueries(page);
     await page.addInitScript(`localStorage.setItem('studentName', 'Тест Ученик');`);
 
-    // Fail the quiz doc fetch
-    await page.route(/firestore\.googleapis\.com.*cached_ai_materials\/invalid-quiz/, async (route) => {
-      await route.fulfill({ status: 404, body: '{"error":{"code":404}}' });
-    });
+    // Route-mocking the raw Firestore getDoc() network call proved unreliable in
+    // practice — the request fell through to the real backend and got a genuine
+    // permission-denied instead of the mocked response. Use the app's own E2E
+    // cache-only bypass instead: with nothing precached for this ID, useStudentQuiz
+    // deterministically takes its "not found" branch without touching the network.
+    await page.addInitScript(`window.__E2E_USE_CACHE_ONLY__ = true;`);
 
     await page.goto('/#/play/invalid-quiz?tid=test-teacher');
 
+    // A cached studentName triggers the shared-device "is this still you?"
+    // confirmation gate (ReturningStudentConfirm) before the error state renders.
+    // isVisible() checks the current DOM immediately (it does not wait for the
+    // element to appear), so use waitFor to give the SPA time to render first.
+    const continueBtn = page.getByRole('button', { name: 'Да, тоа сум јас' });
+    await continueBtn.waitFor({ state: 'visible', timeout: 8_000 }).catch(() => null);
+    if (await continueBtn.isVisible().catch(() => false)) {
+      await continueBtn.click();
+    }
+
+    // Language defaults from navigator.language (see i18n/index.ts), and
+    // Chromium's default test-runner locale is en-US, so this legitimately
+    // renders in English rather than Macedonian — assert both.
     await expect(
-      page.getByText(/Квизот не е пронајден|невалиден|Грешка/i)
+      page.getByText(/Квизот не е пронајден|невалиден|Грешка|not found|invalid|error/i)
     ).toBeVisible({ timeout: 12_000 });
   });
 

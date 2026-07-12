@@ -447,7 +447,11 @@ export async function setupTeacherMocks(page: Page, teacherUid = 'test-teacher-u
     localStorage.setItem(`firebase:authUser:${key}:default`, authData);
     localStorage.setItem(`firebase:authUser:${key}`, authData);
     localStorage.setItem('firebase:authUser:mock-api-key:[DEFAULT]', authData);
-    
+    // Suppress the "What's New" promo modal — its full-screen backdrop blocks
+    // clicks on whatever the test is actually trying to interact with, and
+    // dismissing it isn't part of what these specs are testing.
+    localStorage.setItem('whats_new_s65_seen', '1');
+
     console.log('E2E: Set authData in localStorage for key:', key);
     // Set a flag for our mocks to know we are in teacher mode
     window.__E2E_TEACHER_MODE__ = true;

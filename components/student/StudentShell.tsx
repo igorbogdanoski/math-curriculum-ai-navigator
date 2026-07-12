@@ -32,6 +32,7 @@ export const StudentShell: React.FC<StudentShellProps> = ({ path, children }) =>
     try {
       localStorage.removeItem('studentName');
       localStorage.removeItem('student_google_uid');
+      localStorage.removeItem('student_class_id');
     } catch { /* ignore */ }
     navigate('/student/login');
   };

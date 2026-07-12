@@ -110,7 +110,7 @@ export const StudentPlayView: React.FC = () => {
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md border border-red-100">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-slate-800 mb-2">{t('play.errorTitle')}</h2>
-          <p className="text-slate-500 mb-6">{error}</p>
+          <p className="text-slate-500 mb-6">{t(error)}</p>
           <button
             type="button"
             onClick={() => { window.location.hash = '/'; }}
