@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { firestorePage } from './firestorePagination';
+import { logger } from '../utils/logger';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -352,6 +353,7 @@ export const getDuggaTestByCode = async (shareCode: string): Promise<DuggaTest |
 export const subscribeMyDuggaTests = (
   teacherUid: string,
   onData: (tests: DuggaTest[]) => void,
+  onError?: (err: Error) => void,
 ): (() => void) => {
   const q = query(
     collection(db, 'dugga_tests'),
@@ -361,6 +363,9 @@ export const subscribeMyDuggaTests = (
   );
   return onSnapshot(q, snap => {
     onData(snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaTest)));
+  }, err => {
+    logger.error('[subscribeMyDuggaTests] listener error', err);
+    onError?.(err);
   });
 };
 

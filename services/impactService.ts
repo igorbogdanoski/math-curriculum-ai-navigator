@@ -50,13 +50,18 @@ function combine(...stats: ImpactSurfaceStats[]): ImpactSurfaceStats {
 
 /** One-shot fetch of a teacher's Dugga tests — subscribeMyDuggaTests is live, so this takes the first snapshot and unsubscribes. */
 function fetchMyDuggaTestsOnce(uid: string): Promise<DuggaTest[]> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let unsubscribe: (() => void) | null = null;
     let resolved = false;
     unsubscribe = subscribeMyDuggaTests(uid, (tests) => {
       if (resolved) return;
       resolved = true;
       resolve(tests);
+      unsubscribe?.();
+    }, (err) => {
+      if (resolved) return;
+      resolved = true;
+      reject(err);
       unsubscribe?.();
     });
     if (resolved) unsubscribe();

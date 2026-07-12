@@ -12,6 +12,7 @@ import { DuggaTestCard } from '../components/dugga/DuggaTestCard';
 import { AssignDuggaModal } from '../components/dugga/AssignDuggaModal';
 import { DuggaResultsPanel } from '../components/dugga/DuggaResultsPanel';
 import { EmptyState } from '../components/common/EmptyState';
+import { logger } from '../utils/logger';
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
@@ -45,13 +46,23 @@ export function DuggaLibraryView() {
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Избриши го тестот? Ова не може да се врати.')) return;
-    await deleteDuggaTest(id);
-    addNotification('Тестот е избришан.', 'success');
+    try {
+      await deleteDuggaTest(id);
+      addNotification('Тестот е избришан.', 'success');
+    } catch (err) {
+      logger.error('[DuggaLibraryView] failed to delete test', err);
+      addNotification('Грешка при бришење на тестот.', 'error');
+    }
   }, [addNotification]);
 
   const handleTogglePublic = useCallback(async (id: string, isPublic: boolean) => {
-    await updateDuggaTest(id, { isPublic });
-    addNotification(isPublic ? 'Тестот е јавно споделен.' : 'Тестот е направен приватен.', 'success');
+    try {
+      await updateDuggaTest(id, { isPublic });
+      addNotification(isPublic ? 'Тестот е јавно споделен.' : 'Тестот е направен приватен.', 'success');
+    } catch (err) {
+      logger.error('[DuggaLibraryView] failed to toggle test visibility', err);
+      addNotification('Грешка при промена на видливоста.', 'error');
+    }
   }, [addNotification]);
 
   const handleCopyCode = useCallback((code: string) => {

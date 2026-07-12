@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { subscribeMyDuggaTests, fetchPublicDuggaTestsPage } from '../services/firestoreService.dugga';
 import type { DuggaTest } from '../services/firestoreService.dugga';
+import { logger } from '../utils/logger';
 
 export type LibraryTab = 'my' | 'public';
 
@@ -23,6 +24,8 @@ export function useDuggaLibraryData(teacherUid: string | undefined, tab: Library
     const unsub = subscribeMyDuggaTests(teacherUid, tests => {
       setMyTests(tests);
       setLoadingMy(false);
+    }, () => {
+      setLoadingMy(false);
     });
     return unsub;
   }, [teacherUid]);
@@ -36,6 +39,10 @@ export function useDuggaLibraryData(teacherUid: string | undefined, tab: Library
       setPublicTests(page.items);
       setPublicLastDoc(page.lastDoc);
       setPublicHasMore(page.hasMore);
+      setLoadingPublic(false);
+    }).catch(err => {
+      if (cancelled) return;
+      logger.error('[useDuggaLibraryData] failed to load public tests', err);
       setLoadingPublic(false);
     });
     return () => { cancelled = true; };

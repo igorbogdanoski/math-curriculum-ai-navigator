@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { logger } from '../utils/logger';
 
 export interface DailyBriefAction {
   label: string;
@@ -137,7 +138,9 @@ export function useDailyBrief() {
             return;
           }
         }
-      } catch { /* ignore */ }
+      } catch (err) {
+        logger.warn('[useDailyBrief] corrupted cache entry, will regenerate', err);
+      }
     }
 
     isLoadingRef.current = true;
@@ -159,9 +162,14 @@ export function useDailyBrief() {
       setBrief(generated);
 
       const entry: CacheEntry = { brief: generated, generatedAt: Date.now() };
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { /* storage full */ }
-    } catch {
-      // Non-fatal — brief is a nice-to-have feature
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+      } catch (err) {
+        logger.warn('[useDailyBrief] failed to cache brief (storage full?)', err);
+      }
+    } catch (err) {
+      // Non-fatal — brief is a nice-to-have feature, but log so real failures are diagnosable.
+      logger.error('[useDailyBrief] failed to load daily brief', err);
     } finally {
       isLoadingRef.current = false;
       setIsLoading(false);
