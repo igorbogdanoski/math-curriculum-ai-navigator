@@ -1,4 +1,5 @@
-﻿import { logger } from '../utils/logger';
+﻿// Targets the `cached_ai_materials` Firestore collection — a teacher's private/shareable AI-generated material library. For public lesson-plan/scenario sharing, see firestoreService.scenarioBank.ts (`scenario_bank` collection).
+import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
@@ -415,7 +416,8 @@ async function computeContentHash(parts: string[]): Promise<string> {
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export const saveToLibrary = async (content: unknown, meta: {
+/** Saves a generated material into the `cached_ai_materials` collection (a teacher's private/shareable library — distinct from `scenario_bank`, see firestoreService.scenarioBank.ts). */
+export const saveToCachedMaterials = async (content: unknown, meta: {
     title: string;
     type: CachedMaterial['type'];
     teacherUid: string;
@@ -427,7 +429,7 @@ export const saveToLibrary = async (content: unknown, meta: {
     // Content moderation gate — block profanity/PII/oversized payloads before they reach Firestore.
     const moderation = moderateMaterial({ title: meta.title, content });
     if (!moderation.ok) {
-        logger.warn('saveToLibrary blocked by moderation', {
+        logger.warn('saveToCachedMaterials blocked by moderation', {
             reason: moderation.reason,
             details: moderation.details,
             teacherUid: meta.teacherUid,
@@ -453,7 +455,7 @@ export const saveToLibrary = async (content: unknown, meta: {
     );
     const dupSnap = await getDocs(dupQ);
     if (!dupSnap.empty) {
-        logger.info('saveToLibrary: dedup hit, returning existing id', dupSnap.docs[0].id);
+        logger.info('saveToCachedMaterials: dedup hit, returning existing id', dupSnap.docs[0].id);
         return dupSnap.docs[0].id;
     }
 

@@ -150,7 +150,7 @@ interface GeneratorResultPanelProps {
   handleCancel: () => void;
   handleSaveAsNote: () => void;
   handleSaveQuestion: (...args: any[]) => void;
-  handleSaveToLibrary: (material: any, key: string) => void;
+  handlePublishToBank: (material: any, key: string) => void;
   handleSavePackage: () => void;
   handleMaterialRate: (rating: 'up' | 'down', reportText?: string) => void;
   handleGenerateFromExtraction: (type: MaterialType) => void;
@@ -180,7 +180,7 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
   handleCancel,
   handleSaveAsNote,
   handleSaveQuestion,
-  handleSaveToLibrary,
+  handlePublishToBank,
   handleSavePackage,
   handleMaterialRate,
   handleGenerateFromExtraction,
@@ -304,7 +304,7 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
+                  onClick={() => handlePublishToBank(generatedMaterial, 'main')}
                   disabled={savedToLibrary.has('main')}
                   className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has('main') ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
@@ -349,7 +349,7 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
                 )}
                 <button
                   type="button"
-                  onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
+                  onClick={() => handlePublishToBank(generatedMaterial, 'main')}
                   disabled={savedToLibrary.has('main')}
                   className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has('main') ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >
@@ -440,7 +440,7 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
                 )}
                 <button
                   type="button"
-                  onClick={() => handleSaveToLibrary(variants[activeVariantTab], `variant-${activeVariantTab}`)}
+                  onClick={() => handlePublishToBank(variants[activeVariantTab], `variant-${activeVariantTab}`)}
                   disabled={savedToLibrary.has(`variant-${activeVariantTab}`)}
                   className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has(`variant-${activeVariantTab}`) ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                 >

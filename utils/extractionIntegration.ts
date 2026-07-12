@@ -7,7 +7,7 @@
  *   • Quiz generation prompt         (hooks/useGeneratorActions, InteractiveQuizPlayer)
  *   • Assignment draft               (assignments/AssignmentEditor)
  *   • Flashcards                     (SM-2 spaced-repetition deck)
- *   • Library material draft         (saveToLibrary)
+ *   • Library material draft         (saveToCachedMaterials)
  *   • Annual plan linkage hints      (planner → "Add extracted content")
  *   • Concept mapping hint           (extractionConceptMap)
  *

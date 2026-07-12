@@ -32,7 +32,7 @@ vi.mock('./gemini/core', () => ({
     callEmbeddingProxy: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
 }));
 
-const { saveToLibrary } = await import('./firestoreService.materials');
+const { saveToCachedMaterials } = await import('./firestoreService.materials');
 
 const BASE_META = {
     title: 'Квадратни равенки',
@@ -43,7 +43,7 @@ const BASE_META = {
     gradeLevel: 9,
 };
 
-describe('saveToLibrary — content deduplication', () => {
+describe('saveToCachedMaterials — content deduplication', () => {
     beforeEach(() => {
         addDocMock.mockReset();
         getDocs_mock.mockReset();
@@ -57,7 +57,7 @@ describe('saveToLibrary — content deduplication', () => {
             docs: [{ id: 'existing-material-id' }],
         });
 
-        const id = await saveToLibrary({ questions: [] }, BASE_META);
+        const id = await saveToCachedMaterials({ questions: [] }, BASE_META);
 
         expect(id).toBe('existing-material-id');
         expect(addDocMock).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe('saveToLibrary — content deduplication', () => {
     it('saves new document when no duplicate exists', async () => {
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        const id = await saveToLibrary({ questions: [] }, BASE_META);
+        const id = await saveToCachedMaterials({ questions: [] }, BASE_META);
 
         expect(id).toBe('new-material-id');
         expect(addDocMock).toHaveBeenCalledOnce();
@@ -80,7 +80,7 @@ describe('saveToLibrary — content deduplication', () => {
     it('saves contentHash field to the document', async () => {
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        await saveToLibrary('some content text', BASE_META);
+        await saveToCachedMaterials('some content text', BASE_META);
 
         const savedData = addDocMock.mock.calls[0][1];
         expect(savedData.contentHash).toBeDefined();
@@ -91,14 +91,14 @@ describe('saveToLibrary — content deduplication', () => {
     it('produces the same hash for same inputs (idempotent)', async () => {
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        await saveToLibrary('content', BASE_META);
+        await saveToCachedMaterials('content', BASE_META);
         const hash1 = addDocMock.mock.calls[0][1].contentHash as string;
 
         addDocMock.mockReset();
         addDocMock.mockResolvedValue({ id: 'new-material-id-2' });
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        await saveToLibrary('content', BASE_META);
+        await saveToCachedMaterials('content', BASE_META);
         const hash2 = addDocMock.mock.calls[0][1].contentHash as string;
 
         expect(hash1).toBe(hash2);
@@ -107,14 +107,14 @@ describe('saveToLibrary — content deduplication', () => {
     it('produces different hash when title differs', async () => {
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        await saveToLibrary('content', { ...BASE_META, title: 'Линеарни равенки' });
+        await saveToCachedMaterials('content', { ...BASE_META, title: 'Линеарни равенки' });
         const hash1 = addDocMock.mock.calls[0][1].contentHash as string;
 
         addDocMock.mockReset();
         addDocMock.mockResolvedValue({ id: 'new-material-id-2' });
         getDocs_mock.mockResolvedValue({ empty: true, docs: [] });
 
-        await saveToLibrary('content', { ...BASE_META, title: 'Квадратни равенки' });
+        await saveToCachedMaterials('content', { ...BASE_META, title: 'Квадратни равенки' });
         const hash2 = addDocMock.mock.calls[0][1].contentHash as string;
 
         expect(hash1).not.toBe(hash2);

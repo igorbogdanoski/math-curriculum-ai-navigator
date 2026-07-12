@@ -4,7 +4,7 @@ import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { DokBadge } from '../components/common/DokBadge';
 import { smartOCRContract, type SmartOCROutput } from '../services/gemini/visionContracts';
-import { saveToLibrary, saveQuestion } from '../services/firestoreService.materials';
+import { saveToCachedMaterials, saveQuestion } from '../services/firestoreService.materials';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -266,7 +266,7 @@ export const SmartOCRView: React.FC = () => {
       const title = imageName
         ? `OCR: ${imageName.replace(/\.[^.]+$/, '')}`
         : `Smart OCR — ${new Date().toLocaleDateString('mk-MK')}`;
-      await saveToLibrary(
+      await saveToCachedMaterials(
         { latexCode, normalizedText: ocrResult?.normalizedText ?? '', formulas: ocrResult?.formulas ?? [] },
         {
           title,

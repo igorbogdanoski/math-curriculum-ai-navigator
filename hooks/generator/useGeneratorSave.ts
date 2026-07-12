@@ -1,7 +1,7 @@
 ﻿import { logger } from '../../utils/logger';
 /**
  * useGeneratorSave — library/save operations for generated materials.
- * Handles: savedToLibrary, assignTarget, handleSaveToLibrary, handleSaveQuestion,
+ * Handles: savedToLibrary, assignTarget, handlePublishToBank, handleSaveQuestion,
  *          handleSaveAsNote, handleMaterialRate, handleGenerateFromBank.
  */
 import { useState } from 'react';
@@ -99,7 +99,7 @@ export function useGeneratorSave({
   const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
   const [saveIsPublic, setSaveIsPublic] = useState(true);
 
-  const handleSaveToLibrary = async (material: GeneratedMaterial, keyHint: string) => {
+  const handlePublishToBank = async (material: GeneratedMaterial, keyHint: string) => {
     if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
     if (!material) return;
     if (savedToLibrary.has(keyHint)) return;
@@ -266,7 +266,7 @@ export function useGeneratorSave({
     isPro,
     saveIsPublic,
     setSaveIsPublic,
-    handleSaveToLibrary,
+    handlePublishToBank,
     handleSaveQuestion,
     handleSaveAsNote,
     handleMaterialRate,

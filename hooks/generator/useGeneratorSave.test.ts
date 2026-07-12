@@ -56,7 +56,7 @@ describe('MATERIAL_TYPE_TO_LIB_TYPE completeness', () => {
   });
 });
 
-describe('useGeneratorSave — handleSaveToLibrary conceptId/conceptTitle wiring', () => {
+describe('useGeneratorSave — handlePublishToBank conceptId/conceptTitle wiring', () => {
   const concepts: Concept[] = [{ id: 'c1', title: 'Собирање дропки' } as Concept];
 
   function setup(materialType: string, selectedConcepts: string[] = ['c1']) {
@@ -85,7 +85,7 @@ describe('useGeneratorSave — handleSaveToLibrary conceptId/conceptTitle wiring
     const { result } = renderHook(() => useGeneratorSave(params));
     const material = { title: { en: 'A Fractions Story', mk: 'Приказна за дропки', sq: '', tr: '' }, ageRange: '7-9' as const, pages: [] };
 
-    await act(async () => { await result.current.handleSaveToLibrary(material, 'main'); });
+    await act(async () => { await result.current.handlePublishToBank(material, 'main'); });
 
     expect(scenarioBankService.publishMaterialFromGenerator).toHaveBeenCalledWith(
       expect.objectContaining({ conceptId: 'c1', conceptTitle: 'Собирање дропки', materialType: 'ideas' }),
@@ -97,7 +97,7 @@ describe('useGeneratorSave — handleSaveToLibrary conceptId/conceptTitle wiring
     const { result } = renderHook(() => useGeneratorSave(params));
     const material = { title: { en: 'A Story', mk: 'Приказна', sq: '', tr: '' }, ageRange: '7-9' as const, pages: [] };
 
-    await act(async () => { await result.current.handleSaveToLibrary(material, 'main'); });
+    await act(async () => { await result.current.handlePublishToBank(material, 'main'); });
 
     const call = vi.mocked(scenarioBankService.publishMaterialFromGenerator).mock.calls[0][0];
     expect(call.conceptId).toBeUndefined();
@@ -109,7 +109,7 @@ describe('useGeneratorSave — handleSaveToLibrary conceptId/conceptTitle wiring
     const { result } = renderHook(() => useGeneratorSave(params));
     const material = { title: { en: 'Infographic', mk: 'Инфографик', sq: '', tr: '' }, imageUrl: 'x', sections: [] };
 
-    await act(async () => { await result.current.handleSaveToLibrary(material, 'main'); });
+    await act(async () => { await result.current.handlePublishToBank(material, 'main'); });
 
     expect(scenarioBankService.publishMaterialFromGenerator).toHaveBeenCalledWith(
       expect.objectContaining({ materialType: 'ideas' }),

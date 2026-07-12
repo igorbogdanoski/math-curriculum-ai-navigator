@@ -188,7 +188,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         handleSaveAsNote,
         handleSaveTeacherNote,
         handleSaveQuestion,
-        handleSaveToLibrary,
+        handlePublishToBank,
         handleSavePackage,
         handleMaterialRate,
         handleGenerateFromBank,
@@ -408,7 +408,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     handleCancel={handleCancel}
                     handleSaveAsNote={handleSaveAsNote}
                     handleSaveQuestion={handleSaveQuestion}
-                    handleSaveToLibrary={handleSaveToLibrary}
+                    handlePublishToBank={handlePublishToBank}
                     handleSavePackage={handleSavePackage}
                     handleMaterialRate={handleMaterialRate}
                     handleGenerateFromExtraction={handleGenerateFromExtraction}

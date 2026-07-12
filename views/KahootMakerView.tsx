@@ -195,7 +195,7 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
           ...(q.dokLevel ? { dok_level: q.dokLevel } : {}),
         })),
       };
-      const quizId = await firestoreService.saveToLibrary(quizContent, {
+      const quizId = await firestoreService.saveToCachedMaterials(quizContent, {
         title: quizContent.title,
         type: 'quiz',
         teacherUid: firebaseUser.uid,
