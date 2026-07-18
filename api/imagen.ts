@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
-import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { reserveCredits, refundCredits } from './_lib/aiCredits.js';
 import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 
 interface ImageGenResult {
@@ -91,6 +91,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing prompt for image generation' });
   }
 
+  // Atomic check-and-deduct — see aiCredits.ts's reserveCredits() doc comment.
+  // requireSufficientCredits() above was only a fast-path pre-check. This route only ever
+  // generates images — default to ILLUSTRATION rather than aiCredits.ts's generic TEXT_BASIC
+  // fallback if the caller didn't specify a costKey (matches the prior deductCreditsServerSide
+  // call's own costKey default). No model-dependent floor here (no `model` arg passed), so no
+  // need to wait for a model to be chosen first.
+  const principal = getRequestPrincipal(req);
+  const reservation = await reserveCredits(principal, validated.costKey ?? 'ILLUSTRATION');
+  if (!reservation.ok) {
+    recordLatency('imagen-proxy', Date.now() - handlerStart);
+    return res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
+  }
+
   let lastError: Error | null = null;
 
   for (let i = 0; i < apiKeys.length; i++) {
@@ -101,15 +114,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (s2result) {
         const { mimeType, data, model, tokensIn, tokensOut } = s2result;
         try {
-          recordTokens({ userId: getRequestPrincipal(req), model, tokensIn, tokensOut });
+          recordTokens({ userId: principal, model, tokensIn, tokensOut });
         } catch {
           // best-effort — never break the response path
         }
         recordLatency('imagen-proxy', Date.now() - handlerStart);
-        // This route only ever generates images — default to ILLUSTRATION
-        // rather than aiCredits.ts's generic TEXT_BASIC fallback if the
-        // caller didn't specify a costKey.
-        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey ?? 'ILLUSTRATION');
+        // Already reserved atomically above — nothing further to deduct on success.
         return res.status(200).json({ inlineData: { mimeType, data } });
       }
 
@@ -130,6 +140,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // All keys/strategies exhausted — refund the reservation, no image was delivered.
+  await refundCredits(principal, reservation.amount);
   recordLatency('imagen-proxy', Date.now() - handlerStart);
   console.error('[/api/imagen] Error:', lastError);
   // Never forward the raw upstream SDK error text to the client — same "never leak

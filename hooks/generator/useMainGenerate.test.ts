@@ -148,3 +148,61 @@ describe('useMainGenerate — costKeys per material type (billing surface)', () 
     expect(geminiService.generateStoryBook).toHaveBeenCalled();
   });
 });
+
+// 2026-07-18 (audit_2026_07_18_full_app_review): "Cancel" previously only ever checked
+// cancelRef inside the SCENARIO branch's own streaming loop — every other material type is a
+// single non-streaming await with no mid-flight checkpoint, so clicking Cancel while e.g. an
+// ILLUSTRATION request was in flight did nothing: the server had already generated (and, per
+// the Wave 3 credit-race fix, already atomically billed) the result by the time the promise
+// resolved, and the old code unconditionally displayed it with no acknowledgement of the
+// cancel click at all.
+describe('useMainGenerate — Cancel on non-SCENARIO material types', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(isDailyQuotaKnownExhausted).mockReturnValue(false);
+  });
+
+  it('still shows a result that finished generating after Cancel was clicked, with a notice — not silently discarded', async () => {
+    let resolveIllustration!: (v: { imageUrl: string; prompt: string }) => void;
+    vi.mocked(geminiService.generateIllustration).mockReturnValue(
+      new Promise(resolve => { resolveIllustration = resolve; }) as never,
+    );
+    const params = baseParams('ILLUSTRATION', { illustrationPrompt: 'a circle' });
+    const { result } = renderHook(() => useMainGenerate(params));
+
+    let generatePromise!: Promise<void>;
+    act(() => { generatePromise = result.current.handleGenerate(); });
+    // Cancel while the request is still in flight (server-side generation/billing already
+    // started and can't be un-billed from the client — see Wave 3's reserveCredits()).
+    act(() => { result.current.handleCancel(); });
+    act(() => { resolveIllustration({ imageUrl: 'x', prompt: 'a circle' }); });
+    await act(async () => { await generatePromise; });
+
+    expect(result.current.generatedMaterial).toEqual({ imageUrl: 'x', prompt: 'a circle' });
+    expect(params.addNotification).toHaveBeenCalledWith(
+      expect.stringMatching(/откажување/i), 'info',
+    );
+  });
+
+  it('does not show a stale notice or leftover cancelled state on the next successful generation', async () => {
+    let resolveFirst!: (v: { imageUrl: string; prompt: string }) => void;
+    vi.mocked(geminiService.generateIllustration).mockReturnValueOnce(
+      new Promise(resolve => { resolveFirst = resolve; }) as never,
+    );
+    const params = baseParams('ILLUSTRATION', { illustrationPrompt: 'a circle' });
+    const { result } = renderHook(() => useMainGenerate(params));
+
+    let firstGenerate!: Promise<void>;
+    act(() => { firstGenerate = result.current.handleGenerate(); });
+    act(() => { result.current.handleCancel(); });
+    act(() => { resolveFirst({ imageUrl: 'first', prompt: 'a circle' }); });
+    await act(async () => { await firstGenerate; });
+    params.addNotification.mockClear();
+
+    vi.mocked(geminiService.generateIllustration).mockResolvedValueOnce({ imageUrl: 'second', prompt: 'a circle' } as never);
+    await act(async () => { await result.current.handleGenerate(); });
+
+    expect(result.current.generatedMaterial).toEqual({ imageUrl: 'second', prompt: 'a circle' });
+    expect(params.addNotification).not.toHaveBeenCalledWith(expect.stringMatching(/откажување/i), 'info');
+  });
+});

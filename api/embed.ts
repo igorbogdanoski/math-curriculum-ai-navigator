@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
-import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { reserveCredits, refundCredits } from './_lib/aiCredits.js';
 
 type GeminiPart = { text?: string };
 type GeminiContent = { parts?: GeminiPart[] };
@@ -61,6 +61,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing text for embedding' });
   }
 
+  // Atomic check-and-deduct — see aiCredits.ts's reserveCredits() doc comment.
+  // requireSufficientCredits() above was only a fast-path pre-check.
+  const principal = getRequestPrincipal(req);
+  const reservation = await reserveCredits(principal, validated.costKey);
+  if (!reservation.ok) {
+    recordLatency('embed-proxy', Date.now() - handlerStart);
+    return res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
+  }
+
   let lastError: Error | null = null;
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
@@ -79,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // character count (~4 chars/token) so this call is at least visible to the cost guard.
       try {
         recordTokens({
-          userId: getRequestPrincipal(req),
+          userId: principal,
           model: model || 'gemini-embedding-2',
           tokensIn: Math.ceil(text.length / 4),
           tokensOut: 0,
@@ -88,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('embed-proxy', Date.now() - handlerStart);
-      await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey);
+      // Already reserved atomically above — nothing further to deduct on success.
 
       if (responseShape === 'embeddings') {
         return res.status(200).json({ embeddings: embedding });
@@ -108,6 +117,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // All keys exhausted or non-recoverable error — refund the reservation, nothing was delivered.
+  await refundCredits(principal, reservation.amount);
   recordLatency('embed-proxy', Date.now() - handlerStart);
   console.error('[/api/embed] Error:', lastError);
   // Never forward the raw upstream SDK error text to the client — same "never leak

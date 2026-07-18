@@ -3,7 +3,7 @@ import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool
 import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
-import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { reserveCredits, refundCredits } from './_lib/aiCredits.js';
 import { isUsableJson } from '../utils/jsonRecovery.js';
 
 // Increase body size limit to 10 MB to support PDF inline data uploads
@@ -61,6 +61,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else modelName = 'gemini-3.5-flash';
   }
 
+  // Atomic check-and-deduct, now that modelName (needed for the MODEL_MIN_COST floor) is
+  // known — the actual race-safe enforcement point; requireSufficientCredits() above was
+  // only a fast-path pre-check. See reserveCredits()'s own doc comment for why this can't
+  // just live at the top of the handler.
+  const principal = getRequestPrincipal(req);
+  const reservation = await reserveCredits(principal, validated.costKey, modelName);
+  if (!reservation.ok) {
+    recordLatency('gemini-proxy', Date.now() - handlerStart);
+    return res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
+  }
+
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
   // Normalize contents once — reused across key rotation attempts
@@ -108,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const usage = (response as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }).usageMetadata;
         if (usage) {
           recordTokens({
-            userId: getRequestPrincipal(req),
+            userId: principal,
             model: modelName,
             tokensIn: usage.promptTokenCount ?? 0,
             tokensOut: usage.candidatesTokenCount ?? 0,
@@ -119,14 +130,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       recordLatency('gemini-proxy', Date.now() - handlerStart);
       const responseText = response.text();
-      // Only deduct once the response is actually usable. Previously this billed on any 200,
-      // so a client-side retry-on-malformed-JSON (core.json.ts) issued a brand-new billed
-      // request for the same logical action every time — up to MAX_RETRIES+1 charges with no
-      // refund. Non-JSON responses (responseMimeType unset/'text/plain') keep prior behavior.
+      // Credits were already reserved atomically before this loop started. Only refund when
+      // the response turns out unusable — previously this billed on any 200, so a client-side
+      // retry-on-malformed-JSON (core.json.ts) issued a brand-new billed request for the same
+      // logical action every time — up to MAX_RETRIES+1 charges with no refund. Non-JSON
+      // responses (responseMimeType unset/'text/plain') keep prior behavior.
       const expectsJson = (generationConfig as { responseMimeType?: string }).responseMimeType === 'application/json';
       const isUsable = !expectsJson || isUsableJson(responseText);
-      if (isUsable) {
-        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
+      if (!isUsable) {
+        await refundCredits(principal, reservation.amount);
       }
       return res.status(200).json({ text: responseText, candidates: response.candidates, groundingMetadata });
     } catch (error) {
@@ -145,7 +157,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // All keys exhausted or non-recoverable error
+  // All keys exhausted or non-recoverable error — refund the reservation, nothing was delivered.
+  await refundCredits(principal, reservation.amount);
   console.error('[/api/gemini] Error:', lastError);
   const message = lastError?.message ?? 'Internal server error';
   const status = message.includes('429') ? 429 :

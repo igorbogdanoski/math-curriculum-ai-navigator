@@ -3,7 +3,7 @@ import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@g
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
-import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { reserveCredits, refundCredits } from './_lib/aiCredits.js';
 import { isUsableJson } from '../utils/jsonRecovery.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -43,6 +43,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (modelName.includes('pro')) modelName = 'gemini-3.1-pro-preview';
     else if (modelName.includes('flash')) modelName = 'gemini-3.5-flash';
     else modelName = 'gemini-3.5-flash';
+  }
+
+  // Atomic check-and-deduct, now that modelName is known — see aiCredits.ts's reserveCredits()
+  // doc comment. requireSufficientCredits() above was only a fast-path pre-check.
+  const principal = getRequestPrincipal(req);
+  const reservation = await reserveCredits(principal, validated.costKey, modelName);
+  if (!reservation.ok) {
+    recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
+    return res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
   }
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
@@ -118,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const usage = (finalResponse as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }).usageMetadata;
         if (usage) {
           recordTokens({
-            userId: getRequestPrincipal(req),
+            userId: principal,
             model: modelName,
             tokensIn: usage.promptTokenCount ?? 0,
             tokensOut: usage.candidatesTokenCount ?? 0,
@@ -128,10 +137,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // best-effort — never break the response path
       }
       recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
-      // Same "don't bill an unusable response" guard as api/gemini.ts — see its comment.
+      // Credits were already reserved atomically before the key-rotation loop started — same
+      // "don't bill an unusable response" guard as api/gemini.ts, but as a refund since the
+      // reservation already happened.
       const expectsJson = (generationConfig as { responseMimeType?: string }).responseMimeType === 'application/json';
-      if (!expectsJson || isUsableJson(fullText)) {
-        await deductCreditsServerSide(getRequestPrincipal(req), validated.costKey, modelName);
+      if (expectsJson && !isUsableJson(fullText)) {
+        await refundCredits(principal, reservation.amount);
       }
 
       res.write('data: [DONE]\n\n');
@@ -154,6 +165,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // All keys exhausted or non-recoverable error — refund the reservation, nothing was delivered.
+  await refundCredits(principal, reservation.amount);
   recordLatency('gemini-stream-proxy', Date.now() - handlerStart);
   console.error('[/api/gemini-stream] Error:', lastError);
   const message = lastError?.message ?? 'Internal server error';

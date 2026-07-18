@@ -13,7 +13,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { setCorsHeaders, authenticateAndRateLimit, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
-import { deductCreditsServerSide } from './_lib/aiCredits.js';
+import { reserveCredits, refundCredits, type ReserveResult } from './_lib/aiCredits.js';
 import { verifyExpressionEquivalence } from '../utils/cas/casEngine.js';
 import { DEFAULT_MODEL } from '../services/gemini/core.constants.js';
 
@@ -145,6 +145,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : (answer ?? '') + (imageBase64 ? '_img' : '');
   const cacheKey = buildGradeCacheKey(examId, questionNumber, cacheKeyInput);
 
+  // Declared outside the try block so the catch clause below can refund it — reserveCredits()
+  // itself is called inside the try (after the cache-hit check).
+  let reservation: ReserveResult | null = null;
+
   try {
     const { getFirestore, FieldValue } = await import('firebase-admin/firestore');
     const db = getFirestore();
@@ -158,6 +162,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // Atomic check-and-deduct — see aiCredits.ts's reserveCredits() doc comment.
+    // requireSufficientCredits() above was only a fast-path pre-check. Placed after the cache
+    // check so a cache hit (no CAS/Gemini work at all) never reserves/bills a credit.
+    reservation = await reserveCredits(uid, 'TEXT_BASIC');
+    if (!reservation.ok) {
+      recordLatency('matura-grade', Date.now() - handlerStart);
+      res.status(402).json({ error: 'Insufficient AI credits.', quotaType: 'credits' });
+      return;
+    }
+
     const hasImage = Boolean(imageBase64);
 
     const saveAndReturn = async (g: AIGradeResult) => {
@@ -166,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         score: g.score, maxPoints: maxScore, feedback: g.feedback,
         cachedAt: FieldValue.serverTimestamp(),
       });
-      await deductCreditsServerSide(uid, 'TEXT_BASIC');
+      // Already reserved atomically above — nothing further to deduct.
       recordLatency('matura-grade', Date.now() - handlerStart);
       res.status(200).json(g);
     };
@@ -236,6 +250,7 @@ ${hasImage ? `Ученикот испратил фотографија на св
     const text = await callGeminiForGrade(prompt, image);
     const parsed = safeParseJSON(text);
     if (!parsed) {
+      await refundCredits(uid, reservation.amount);
       res.status(502).json({ error: 'AI grading response could not be parsed.' });
       return;
     }
@@ -259,6 +274,10 @@ ${hasImage ? `Ученикот испратил фотографија на св
 
     await saveAndReturn(grade);
   } catch (err) {
+    // Refund whatever was reserved above — nothing was delivered/cached on this path.
+    if (reservation && reservation.amount > 0) {
+      await refundCredits(uid, reservation.amount);
+    }
     console.error('[matura-grade] Error:', err);
     recordLatency('matura-grade', Date.now() - handlerStart);
     res.status(500).json({ error: err instanceof Error ? err.message : 'Grading failed.' });

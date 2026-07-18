@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Focused regression test for H5: the server must not bill for a response it asked for
 // as JSON but that came back malformed/unrecoverable — see utils/jsonRecovery.ts.
+//
+// 2026-07-18 (audit_2026_07_18_full_app_review, credit race finding): credit
+// check-and-deduct is now atomic (reserveCredits() before the Gemini call,
+// refundCredits() if the response turns out unusable) instead of a separate
+// check-then-later-deduct pair — these tests were updated to match.
 
 function mockReqRes(body: Record<string, unknown>) {
   const req = { method: 'POST', headers: { authorization: 'Bearer faketoken' }, body, socket: {} } as any;
@@ -16,7 +21,8 @@ function mockReqRes(body: Record<string, unknown>) {
   return { req, res };
 }
 
-const deductCreditsServerSide = vi.fn(async () => { /* no-op */ });
+const reserveCredits = vi.fn(async () => ({ ok: true, amount: 5 }));
+const refundCredits = vi.fn(async () => { /* no-op */ });
 let mockResponseText = '{"ok":true}';
 
 vi.mock('./_lib/sharedUtils.js', () => ({
@@ -34,7 +40,8 @@ vi.mock('./_lib/sharedUtils.js', () => ({
 vi.mock('./_lib/sloTracker.js', () => ({ recordLatency: vi.fn() }));
 vi.mock('./_lib/costTracker.js', () => ({ recordTokens: vi.fn() }));
 vi.mock('./_lib/aiCredits.js', () => ({
-  deductCreditsServerSide: (...args: unknown[]) => deductCreditsServerSide(...args),
+  reserveCredits: (...args: unknown[]) => reserveCredits(...args),
+  refundCredits: (...args: unknown[]) => refundCredits(...args),
 }));
 
 vi.mock('@google/generative-ai', () => ({
@@ -56,10 +63,11 @@ vi.mock('@google/generative-ai', () => ({
 describe('/api/gemini — billing gate on JSON responses', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    reserveCredits.mockResolvedValue({ ok: true, amount: 5 });
     process.env.GEMINI_API_KEY = 'test-key-1234567890';
   });
 
-  it('does not deduct credits when the response is malformed, unrecoverable JSON', async () => {
+  it('reserves credits up front, then refunds when the response is malformed, unrecoverable JSON', async () => {
     mockResponseText = 'Извинете, не можам да генерирам.';
     const { default: handler } = await import('./gemini');
     const { req, res } = mockReqRes({ costKey: 'TEXT_BASIC' });
@@ -67,10 +75,13 @@ describe('/api/gemini — billing gate on JSON responses', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200); // still returns the response to the client
-    expect(deductCreditsServerSide).not.toHaveBeenCalled();
+    expect(reserveCredits).toHaveBeenCalledTimes(1);
+    expect(reserveCredits).toHaveBeenCalledWith('u1', 'TEXT_BASIC', 'gemini-3-flash-preview');
+    expect(refundCredits).toHaveBeenCalledTimes(1);
+    expect(refundCredits).toHaveBeenCalledWith('u1', 5);
   });
 
-  it('deducts credits once when the response is valid JSON', async () => {
+  it('reserves credits once and does not refund when the response is valid JSON', async () => {
     mockResponseText = '{"title":"T","questions":[]}';
     const { default: handler } = await import('./gemini');
     const { req, res } = mockReqRes({ costKey: 'TEXT_BASIC' });
@@ -78,17 +89,30 @@ describe('/api/gemini — billing gate on JSON responses', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(deductCreditsServerSide).toHaveBeenCalledTimes(1);
-    expect(deductCreditsServerSide).toHaveBeenCalledWith('u1', 'TEXT_BASIC', 'gemini-3-flash-preview');
+    expect(reserveCredits).toHaveBeenCalledTimes(1);
+    expect(reserveCredits).toHaveBeenCalledWith('u1', 'TEXT_BASIC', 'gemini-3-flash-preview');
+    expect(refundCredits).not.toHaveBeenCalled();
   });
 
-  it('deducts credits for recoverable truncated JSON, not just perfectly-formed JSON', async () => {
+  it('does not refund for recoverable truncated JSON, not just perfectly-formed JSON', async () => {
     mockResponseText = '{"title":"T","items":["a","b unfinis';
     const { default: handler } = await import('./gemini');
     const { req, res } = mockReqRes({ costKey: 'TEXT_BASIC' });
 
     await handler(req, res);
 
-    expect(deductCreditsServerSide).toHaveBeenCalledTimes(1);
+    expect(reserveCredits).toHaveBeenCalledTimes(1);
+    expect(refundCredits).not.toHaveBeenCalled();
+  });
+
+  it('returns 402 and never calls Gemini when reserveCredits reports insufficient balance', async () => {
+    reserveCredits.mockResolvedValue({ ok: false, amount: 0 });
+    const { default: handler } = await import('./gemini');
+    const { req, res } = mockReqRes({ costKey: 'TEXT_BASIC' });
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(402);
+    expect(refundCredits).not.toHaveBeenCalled();
   });
 });

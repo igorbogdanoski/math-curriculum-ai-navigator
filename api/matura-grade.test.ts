@@ -53,7 +53,8 @@ function mockReqRes(body: Record<string, unknown> = {}) {
 
 const authenticateAndRateLimit = vi.fn();
 const requireSufficientCredits = vi.fn();
-const deductCreditsServerSide = vi.fn(async () => { /* no-op */ });
+const reserveCredits = vi.fn(async () => ({ ok: true, amount: 5 }));
+const refundCredits = vi.fn(async () => { /* no-op */ });
 const generateContent = vi.fn();
 
 vi.mock('./_lib/sharedUtils.js', () => ({
@@ -63,7 +64,8 @@ vi.mock('./_lib/sharedUtils.js', () => ({
 }));
 
 vi.mock('./_lib/aiCredits.js', () => ({
-  deductCreditsServerSide: (...args: unknown[]) => deductCreditsServerSide(...args),
+  reserveCredits: (...args: unknown[]) => reserveCredits(...args),
+  refundCredits: (...args: unknown[]) => refundCredits(...args),
 }));
 
 vi.mock('./_lib/sloTracker.js', () => ({ recordLatency: vi.fn() }));
@@ -98,6 +100,7 @@ vi.mock('firebase-admin/firestore', () => ({
 describe('matura-grade — auth/credit gate wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    reserveCredits.mockResolvedValue({ ok: true, amount: 5 });
     firestoreDocs.clear();
     process.env.GEMINI_API_KEY = 'test-key-1234567890';
   });
@@ -131,10 +134,10 @@ describe('matura-grade — auth/credit gate wiring', () => {
 
     expect(res.statusCode).toBe(402);
     expect(generateContent).not.toHaveBeenCalled();
-    expect(deductCreditsServerSide).not.toHaveBeenCalled();
+    expect(reserveCredits).not.toHaveBeenCalled();
   });
 
-  it('grades, caches, and deducts credits once the gate passes (happy path)', async () => {
+  it('grades, caches, and reserves credits once the gate passes (happy path)', async () => {
     authenticateAndRateLimit.mockResolvedValue('u1');
     requireSufficientCredits.mockResolvedValue(true);
     generateContent.mockResolvedValue({
@@ -150,7 +153,45 @@ describe('matura-grade — auth/credit gate wiring', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ score: 2, correct: true });
-    expect(deductCreditsServerSide).toHaveBeenCalledWith('u1', 'TEXT_BASIC');
+    expect(reserveCredits).toHaveBeenCalledWith('u1', 'TEXT_BASIC');
+    expect(refundCredits).not.toHaveBeenCalled();
     expect(firestoreDocs.size).toBe(1);
+  });
+
+  it('regression (audit_2026_07_18): a cache hit never reserves a credit', async () => {
+    authenticateAndRateLimit.mockResolvedValue('u1');
+    requireSufficientCredits.mockResolvedValue(true);
+    const examId = 'e1', questionNumber = 1, answer = 'нешто различно';
+    const cacheKey = __testables.buildGradeCacheKey(examId, questionNumber, answer);
+    firestoreDocs.set(`matura_ai_grades/${cacheKey}`, { score: 2, maxPoints: 2, feedback: 'Точно.' });
+
+    const { default: handler } = await import('./matura-grade');
+    const { req, res } = mockReqRes({
+      mode: 'part2', examId, questionNumber, questionText: 'Реши равенка',
+      correctAnswer: '5', answer, maxScore: 2,
+    });
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(reserveCredits).not.toHaveBeenCalled();
+    expect(generateContent).not.toHaveBeenCalled();
+  });
+
+  it('regression (audit_2026_07_18): refunds the reservation when the Gemini response cannot be parsed', async () => {
+    authenticateAndRateLimit.mockResolvedValue('u1');
+    requireSufficientCredits.mockResolvedValue(true);
+    generateContent.mockResolvedValue({ response: { text: () => 'not json at all' } });
+    const { default: handler } = await import('./matura-grade');
+    const { req, res } = mockReqRes({
+      mode: 'part2', examId: 'e2', questionNumber: 1, questionText: 'Реши равенка',
+      correctAnswer: '5', answer: 'нешто различно', maxScore: 2,
+    });
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(502);
+    expect(reserveCredits).toHaveBeenCalledTimes(1);
+    expect(refundCredits).toHaveBeenCalledWith('u1', 5);
   });
 });

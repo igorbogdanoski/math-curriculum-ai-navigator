@@ -547,6 +547,18 @@ export function useMainGenerate({
         }
       }
 
+      // Cancel only ever short-circuited the SCENARIO branch's own streaming loop (which
+      // leaves `result` null, so the checks below already no-op for it). Every other
+      // material type is a single non-streaming await with no mid-flight checkpoint — by the
+      // time it resolves, the server has already generated (and atomically billed, see
+      // reserveCredits() in api/_lib/aiCredits.ts) the result regardless of a client-side
+      // Cancel click. Discarding it here would waste a credit the user already paid for with
+      // nothing to show for it, so show it anyway with a clear notice instead.
+      if (cancelRef.current && result) {
+        addNotification('Генерирањето заврши откако побаравте откажување — резултатот е подготвен подолу.', 'info');
+      }
+      cancelRef.current = false;
+
       if (deductCredits && result) await deductCredits(costKeys);
 
       if (includeIllustration && result && materialType !== 'ILLUSTRATION') {

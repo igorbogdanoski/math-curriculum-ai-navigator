@@ -31,7 +31,10 @@ vi.mock('./_lib/sharedUtils.js', () => ({
 
 vi.mock('./_lib/sloTracker.js', () => ({ recordLatency: vi.fn() }));
 vi.mock('./_lib/costTracker.js', () => ({ recordTokens: vi.fn() }));
-vi.mock('./_lib/aiCredits.js', () => ({ deductCreditsServerSide: vi.fn(async () => undefined) }));
+vi.mock('./_lib/aiCredits.js', () => ({
+  reserveCredits: vi.fn(async () => ({ ok: true, amount: 5 })),
+  refundCredits: vi.fn(async () => undefined),
+}));
 
 vi.mock('@google/generative-ai', () => ({
   GoogleGenerativeAI: class {
