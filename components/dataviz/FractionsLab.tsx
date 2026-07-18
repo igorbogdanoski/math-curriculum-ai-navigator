@@ -192,13 +192,28 @@ const AREA_W = 240, AREA_H = 180;
 
 interface AreaModelProps { fracA: Fraction; fracB: Fraction }
 
-/** fracA shades rows (denA rows, numA shaded), fracB shades columns (denB columns, numB
- *  shaded) — the overlap of both shadings is the product's numerator, out of denA×denB
- *  total cells. Standard fraction-multiplication area model. Read-only (no drag) —
- *  driven entirely by the two fraction pickers above it. */
+/**
+ * fracA shades rows (denA rows, numA shaded), fracB shades columns (denB columns per
+ * whole, numB shaded) — the overlap of both shadings is the product's numerator, out of
+ * denA×denB total cells. Standard fraction-multiplication area model. Read-only (no
+ * drag) — driven entirely by the two fraction pickers above it (or, for division, by
+ * fracA and B's reciprocal — see FractionsLab's ÷ branch below).
+ *
+ * fracB may be IMPROPER (num > den) when this renders a division reciprocal (e.g. ÷1/4
+ * passes the reciprocal 4/1). The grid used to silently assume num ≤ den — with an
+ * improper fracB, `cols` collapsed to `fracB.den` (as low as 1) while `colShaded = c <
+ * fracB.num` stayed true for every column that existed, degenerating the whole visual
+ * to "column always fully shaded" regardless of the real value. Fixed by drawing enough
+ * whole-widths side by side (`wholes = ceil(num/den)`) to actually fit the numerator,
+ * each split into `den` sub-columns — reduces to the old proper-fraction behavior when
+ * wholes === 1.
+ */
 const AreaModel: React.FC<AreaModelProps> = ({ fracA, fracB }) => {
-  const rows = fracA.den, cols = fracB.den;
-  const rowH = AREA_H / rows, colW = AREA_W / cols;
+  const rows = fracA.den;
+  const wholes = Math.max(1, Math.ceil(fracB.num / fracB.den));
+  const cols = fracB.den * wholes;
+  const width = AREA_W * wholes;
+  const rowH = AREA_H / rows, colW = AREA_W / fracB.den;
   const cells: React.ReactNode[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -212,12 +227,15 @@ const AreaModel: React.FC<AreaModelProps> = ({ fracA, fracB }) => {
     }
   }
   return (
-    <svg viewBox={`0 0 ${AREA_W} ${AREA_H}`} role="img"
+    <svg viewBox={`0 0 ${width} ${AREA_H}`} role="img"
       aria-label={`Модел на површина, ${fracA.num}/${fracA.den} и ${fracB.num}/${fracB.den}`}
       className="w-full max-w-[260px]"
     >
       {cells}
-      <rect x={0} y={0} width={AREA_W} height={AREA_H} fill="none" stroke="#6d28d9" strokeWidth={2} />
+      {Array.from({ length: wholes - 1 }, (_, i) => (
+        <line key={`whole-${i}`} x1={(i + 1) * AREA_W} y1={0} x2={(i + 1) * AREA_W} y2={AREA_H} stroke="#6d28d9" strokeWidth={1.5} strokeDasharray="4 3" />
+      ))}
+      <rect x={0} y={0} width={width} height={AREA_H} fill="none" stroke="#6d28d9" strokeWidth={2} />
     </svg>
   );
 };
@@ -261,11 +279,15 @@ export const FractionsLab: React.FC = () => {
   const [operation, setOperation] = useState<Operation>('+');
   const clampedOpA = { num: Math.min(opFracA.num, opFracA.den), den: opFracA.den };
   const clampedOpB = { num: Math.min(opFracB.num, opFracB.den), den: opFracB.den };
+  // BarModel lets the numerator be dragged down to 0, so B÷0 is reachable in this mode
+  // (see divideFractions' null-on-zero contract) — every ÷-specific value below must be
+  // guarded on this instead of computed unconditionally.
+  const opDivByZero = operation === '÷' && clampedOpB.num === 0;
   const opResult = operation === '+' ? addFractions(clampedOpA, clampedOpB)
     : operation === '-' ? subtractFractions(clampedOpA, clampedOpB)
     : operation === '×' ? multiplyFractions(clampedOpA, clampedOpB)
     : divideFractions(clampedOpA, clampedOpB);
-  const opReciprocalB: Fraction = { num: clampedOpB.den, den: clampedOpB.num };
+  const opReciprocalB: Fraction | null = opDivByZero ? null : { num: clampedOpB.den, den: clampedOpB.num };
 
   const setOpNumA = useCallback((n: number) => setOpFracA(f => ({ ...f, num: n })), []);
   const setOpDenA = useCallback((d: number) => setOpFracA(f => ({ num: Math.min(f.num, d), den: d })), []);
@@ -510,7 +532,13 @@ export const FractionsLab: React.FC = () => {
             </div>
           )}
 
-          {(operation === '×' || operation === '÷') && (
+          {operation === '÷' && opDivByZero && (
+            <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 font-semibold">
+              Не може да се дели со нула — намести го броителот на Дропка Б на најмалку 1.
+            </div>
+          )}
+
+          {(operation === '×' || (operation === '÷' && !opDivByZero)) && opReciprocalB && (
             <div className="bg-gradient-to-br from-slate-50 to-violet-50 rounded-2xl border border-violet-100 p-4">
               <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Модел на површина</p>
               <AreaModel fracA={clampedOpA} fracB={operation === '÷' ? opReciprocalB : clampedOpB} />
@@ -523,11 +551,13 @@ export const FractionsLab: React.FC = () => {
             </div>
           )}
 
-          <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 text-center">
-            <p className="text-2xl font-black text-violet-700">
-              {fractionToString(clampedOpA)} {operation} {fractionToString(clampedOpB)} = {fractionToString(opResult)}
-            </p>
-          </div>
+          {opResult && (
+            <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3 text-center">
+              <p className="text-2xl font-black text-violet-700">
+                {fractionToString(clampedOpA)} {operation} {fractionToString(clampedOpB)} = {fractionToString(opResult)}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

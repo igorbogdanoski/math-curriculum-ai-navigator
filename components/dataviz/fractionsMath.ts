@@ -46,8 +46,14 @@ export function multiplyFractions(a: Fraction, b: Fraction): Fraction {
   return simplifyFraction({ num: a.num * b.num, den: a.den * b.den });
 }
 
-/** Divides a by b — multiplies by b's reciprocal — and simplifies the result. */
-export function divideFractions(a: Fraction, b: Fraction): Fraction {
+/**
+ * Divides a by b — multiplies by b's reciprocal — and simplifies the result.
+ * Returns null when dividing by zero (b.num === 0) instead of silently producing a
+ * bogus "num/0" result via simplifyFraction's gcd(x, 0) = x shortcut — callers must
+ * check for null and show an explicit "can't divide by zero" state.
+ */
+export function divideFractions(a: Fraction, b: Fraction): Fraction | null {
+  if (b.num === 0) return null;
   return simplifyFraction({ num: a.num * b.den, den: a.den * b.num });
 }
 
@@ -333,11 +339,12 @@ export function generateFractionsSet(
           difficulty: 3, curriculumRef: cur,
         });
       } else {
-        // Divide two fractions
+        // Divide two fractions — b.num is always >= 1 here (randomProperFraction never
+        // produces a zero numerator), so divideFractions can never return null.
         const a = randomProperFraction(Math.min(cfg.maxDenominator, 6));
         const b = randomProperFraction(Math.min(cfg.maxDenominator, 6));
         const reciprocal: Fraction = { num: b.den, den: b.num };
-        const quotient = divideFractions(a, b);
+        const quotient = divideFractions(a, b)!;
         exs.push({
           id,
           question: `${fractionToString(a)} ÷ ${fractionToString(b)} = ?`,

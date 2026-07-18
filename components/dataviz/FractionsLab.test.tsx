@@ -156,6 +156,57 @@ describe('FractionsLab — Operations mode', () => {
     fireEvent.click(barA, { clientX: 340, clientY: 32 }); // drag to num=den=2 → fraction A becomes 2/2
     expect(screen.getByText('2/2 + 1/4 = 5/4')).toBeTruthy();
   });
+
+  // Regression coverage for audit_2026_07_18: the ÷ area model used to silently collapse
+  // to "one column, always fully shaded" for every non-trivial division, because it fed an
+  // improper reciprocal fraction into a grid that assumed num <= den. These assert the
+  // actual rendered SVG geometry (viewBox width, per-whole divider count), not just the
+  // text answer — the old bug produced the CORRECT text answer while the visual was wrong.
+  it('÷ area model draws one whole-width block per unit of the reciprocal (1/2 ÷ 1/4 → reciprocal 4/1 → 4 whole blocks)', () => {
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '÷' }));
+
+    const areaModel = screen.getByRole('img', { name: /Модел на површина/ });
+    // AREA_W is 240 in FractionsLab.tsx; wholes = ceil(4/1) = 4 → viewBox width 960.
+    expect(areaModel.getAttribute('viewBox')).toBe('0 0 960 180');
+    // 3 dashed divider lines mark the 4 whole-blocks.
+    expect(areaModel.querySelectorAll('line').length).toBe(3);
+  });
+
+  it('÷ area model renders a single block when B is a whole number (1/2 ÷ 3/3 → reciprocal 3/3, wholes=1)', () => {
+    mockSvgBoundingRect(340, 64);
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '÷' }));
+
+    const cardB = screen.getByText('Дропка Б').closest('div')!.parentElement!;
+    fireEvent.click(within(cardB).getByText('3')); // den B = 3
+    const barB = screen.getByRole('img', { name: /Бар модел, \d+ од 3/ });
+    fireEvent.click(barB, { clientX: 340, clientY: 32 }); // drag to right edge → num B = den B = 3
+
+    expect(screen.getByRole('img', { name: /Бар модел, 3 од 3/ })).toBeTruthy();
+    const areaModel = screen.getByRole('img', { name: /Модел на површина/ });
+    // reciprocal of 3/3 is 3/3 → wholes = ceil(3/3) = 1 → viewBox width unchanged (240).
+    expect(areaModel.getAttribute('viewBox')).toBe('0 0 240 180');
+    expect(areaModel.querySelectorAll('line').length).toBe(0);
+  });
+
+  it('regression (audit_2026_07_18): dividing by zero shows an explicit error instead of a bogus "num/0" result', () => {
+    mockSvgBoundingRect(340, 64);
+    renderLab();
+    fireEvent.click(screen.getByRole('button', { name: 'Операции' }));
+    fireEvent.click(screen.getByRole('button', { name: '÷' }));
+
+    // Drag fraction B's numerator down to 0 (default opFracB is 1/4).
+    const barB = screen.getByRole('img', { name: /Бар модел, 1 од 4/ });
+    fireEvent.click(barB, { clientX: 1, clientY: 32 });
+
+    expect(screen.getByRole('img', { name: /Бар модел, 0 од 4/ })).toBeTruthy();
+    expect(screen.getByText(/Не може да се дели со нула/)).toBeTruthy();
+    expect(screen.queryByText(/1\/0/)).toBeNull();
+    expect(screen.queryByRole('img', { name: /Модел на површина/ })).toBeNull();
+  });
 });
 
 describe('FractionsLab — Build mode', () => {

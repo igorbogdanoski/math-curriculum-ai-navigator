@@ -81,6 +81,11 @@ describe('divideFractions', () => {
   it('dividing a fraction by itself gives 1/1', () => {
     expect(divideFractions({ num: 3, den: 5 }, { num: 3, den: 5 })).toEqual({ num: 1, den: 1 });
   });
+
+  it('regression (audit_2026_07_18): dividing by a zero-numerator fraction returns null, not a bogus "num/0" result', () => {
+    expect(divideFractions({ num: 1, den: 2 }, { num: 0, den: 4 })).toBeNull();
+    expect(divideFractions({ num: 5, den: 1 }, { num: 0, den: 1 })).toBeNull();
+  });
 });
 
 describe('toPercent / fractionFromPercent', () => {
