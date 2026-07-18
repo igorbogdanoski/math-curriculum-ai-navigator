@@ -253,9 +253,10 @@ describe('Secondary curriculum data integrity (P4 + P6)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Grade.weeklyHours in secondary data (P6)', () => {
-    it('gymnasium grades have weeklyHours = 4', () => {
+    it('gymnasium grades have weeklyHours = 4, except grade 11 (II година, new 2026/2027 programme) which has 3', () => {
         for (const grade of secondaryCurriculumByTrack['gymnasium'].curriculum.grades) {
-            expect(grade.weeklyHours, `gymnasium grade ${grade.id}`).toBe(4);
+            const expected = grade.level === 11 ? 3 : 4;
+            expect(grade.weeklyHours, `gymnasium grade ${grade.id}`).toBe(expected);
         }
     });
 

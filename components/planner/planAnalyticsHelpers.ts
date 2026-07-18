@@ -76,6 +76,13 @@ export function toPercent(counts: number[]): number[] {
 }
 
 export function detectGrade(grade: string): number | null {
+  // Guard against secondary/vocational/elective titles (e.g. "I (прва) — Стручно 2-год",
+  // "IV — Математичка анализа (изборен)", "XI (единаесетто) / II (втора) година — Гимназиско")
+  // whose Roman numerals/digits would otherwise be misread as a primary grade 1-9. Every
+  // primary grade title (grade1.ts..grade9.ts) consistently contains "Одделение" — secondary
+  // titles never do — so this is a reliable, track-agnostic signal without needing the caller
+  // to thread secondaryTrack through every call site.
+  if (!/одделение/i.test(grade)) return null;
   const m = grade.match(/\b(IX|VIII|VII|VI|V|IV|III|II|I|9|8|7|6|5|4|3|2|1)\b/i);
   if (!m) return null;
   const v = m[1].toUpperCase();

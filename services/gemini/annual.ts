@@ -142,8 +142,17 @@ async generateAnnualPlan(
       : 4;
     const secondaryContextBlock = getSecondaryTrackContext(profile?.secondaryTrack);
 
-    // Detect grade number for national standards context
-    const gradeMatch = grade.match(/\b(IX|VIII|VII|VI|V|IV|III|II|I|9|8|7|6|5|4|3|2|1)\b/i);
+    // Detect grade number for national standards context — primary grades (1-9) only.
+    // Secondary/vocational/elective titles ("I (прва) — Стручно 2-год", "IV — Математичка
+    // анализа (изборен)", "XI (единаесетто) / II (втора) година — Гимназиско", ...) contain
+    // Roman numerals/digits that would otherwise be misread as a primary grade level, wrongly
+    // grounding the AI prompt in grades 1/2/4 curriculum for a secondary-track plan. Guard on
+    // profile.secondaryTrack first (authoritative when known), and additionally require
+    // "Одделение" in the title (present on every primary grade title, never on secondary ones)
+    // so the fallback holds even when profile is missing.
+    const gradeMatch = !profile?.secondaryTrack && /одделение/i.test(grade)
+      ? grade.match(/\b(IX|VIII|VII|VI|V|IV|III|II|I|9|8|7|6|5|4|3|2|1)\b/i)
+      : null;
     const romanMap: Record<string, number> = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9 };
     const detectedGrade = gradeMatch
       ? (romanMap[gradeMatch[1].toUpperCase()] ?? parseInt(gradeMatch[1], 10) ?? null)

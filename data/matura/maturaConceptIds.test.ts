@@ -22,7 +22,7 @@ function extractIds(filePath: string, pattern: RegExp): Set<string> {
 
 describe('matura conceptIds — validity and coverage', () => {
   const validIds = new Set<string>([
-    ...extractIds(join(__dirname, '../secondary/gymnasium.ts'), /id: '(gym\d+-c\d+-\d+)'/g),
+    ...extractIds(join(__dirname, '../secondary/gymnasium.ts'), /id: '(gym\d+n?-c\d+-\d+)'/g),
     ...extractIds(join(__dirname, '../secondary/vocational4.ts'), /id: '(voc4-\d+-c\d+-\d+)'/g),
   ]);
 
@@ -50,7 +50,15 @@ describe('matura conceptIds — validity and coverage', () => {
     const invalid = [...usedIds].filter(id => !validIds.has(id));
     // 2 known pre-existing bad IDs in dim-vocational4-economics-2024-august-mk.json,
     // predating this enrichment pass — tracked here, not silently ignored.
-    const knownPreExisting = ['voc4-10-c6-4', 'voc4-10-c6-5'];
+    // 8 gym11-c*-* IDs (2026-07-18): the official gymnasium grade-11 (II година) programme was
+    // replaced for учебна 2026/2027 (BRO, бр. 13-13739/9, 28.10.2025) — old topics/concepts were
+    // removed from gymnasium.ts and the new ones use a non-colliding `gym11n-*` prefix (see comment
+    // block above gymnasiumGrade11). These matura questions were tagged under the old programme's
+    // concept IDs before the replacement and remain historically valid archive entries.
+    const knownPreExisting = [
+      'voc4-10-c6-4', 'voc4-10-c6-5',
+      'gym11-c1-1', 'gym11-c2-1', 'gym11-c3-1', 'gym11-c3-2', 'gym11-c4-1', 'gym11-c6-1', 'gym11-c7-1', 'gym11-c8-1',
+    ];
     const unexpected = invalid.filter(id => !knownPreExisting.includes(id));
     expect(unexpected).toEqual([]);
   });

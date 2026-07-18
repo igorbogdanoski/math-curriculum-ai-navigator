@@ -41,7 +41,7 @@ describe('generateAnnualPlan — official curriculum grounding for every grade (
   it('calls buildOfficialCurriculumSummary for grade 6 (previously only wired for grade 8)', async () => {
     mockBuildOfficialCurriculumSummary.mockResolvedValue('ОФИЦИЈАЛНИ ПОДАТОЦИ ЗА 6 ОДД.');
 
-    await annualAPI.generateAnnualPlan('VI', 'Математика', 36, 'генерички контекст');
+    await annualAPI.generateAnnualPlan('VI (шесто) Одделение', 'Математика', 36, 'генерички контекст');
 
     expect(mockBuildOfficialCurriculumSummary).toHaveBeenCalledWith(6);
     const prompt = mockGenerateAndParseJSON.mock.calls[0][0][0].text as string;
@@ -51,9 +51,24 @@ describe('generateAnnualPlan — official curriculum grounding for every grade (
   it('calls buildOfficialCurriculumSummary for grade 1 too', async () => {
     mockBuildOfficialCurriculumSummary.mockResolvedValue('ОФИЦИЈАЛНИ ПОДАТОЦИ ЗА 1 ОДД.');
 
-    await annualAPI.generateAnnualPlan('I', 'Математика', 36, 'генерички контекст');
+    await annualAPI.generateAnnualPlan('I (прво) Одделение', 'Математика', 36, 'генерички контекст');
 
     expect(mockBuildOfficialCurriculumSummary).toHaveBeenCalledWith(1);
+  });
+
+  it('does NOT detect a primary grade from a secondary/vocational/elective title that happens to contain a Roman numeral (regression: "I"/"II"/"IV" in secondary titles were misread as grades 1/2/4)', async () => {
+    mockBuildOfficialCurriculumSummary.mockResolvedValue('');
+
+    await annualAPI.generateAnnualPlan('I (прва) — Стручно 2-год', 'Математика', 36, 'контекст за стручно 2-год');
+    expect(mockBuildOfficialCurriculumSummary).not.toHaveBeenCalled();
+    mockBuildOfficialCurriculumSummary.mockClear();
+
+    await annualAPI.generateAnnualPlan('IV — Математичка анализа (изборен)', 'Математика', 36, 'контекст за изборен');
+    expect(mockBuildOfficialCurriculumSummary).not.toHaveBeenCalled();
+    mockBuildOfficialCurriculumSummary.mockClear();
+
+    await annualAPI.generateAnnualPlan('XI (единаесетто) / II (втора) година — Гимназиско', 'Математика', 36, 'контекст за гимназија');
+    expect(mockBuildOfficialCurriculumSummary).not.toHaveBeenCalled();
   });
 
   it('falls back to the caller-supplied curriculumContext when no official summary is available', async () => {
