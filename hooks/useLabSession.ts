@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { normalizeLabAnswer, type LabExercise } from '../types/labTypes';
 import { logger } from '../utils/logger';
+import { getOrCreateDeviceId } from '../utils/studentIdentity';
 
 export type { LabExercise };
 
@@ -116,6 +117,7 @@ export function useLabSession(labId: string, labTitle: string): UseLabSessionRet
         quizType:        'lab',
         conceptId:       labId,
         studentName:     studentName.trim(),
+        deviceId:        getOrCreateDeviceId(),
         score,
         correctCount:    score,
         totalQuestions:  exercises.length,

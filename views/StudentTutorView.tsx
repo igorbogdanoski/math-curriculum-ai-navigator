@@ -92,13 +92,18 @@ export const StudentTutorView: React.FC = () => {
 
   // Inject curriculum context when student + concept params are present
   useEffect(() => {
-    if (!studentParam || !conceptIdParam) return;
+    // Requires a resolved teacherUid — this view is reached from AlertsTab/StudentProgressView
+    // (a teacher opening a named student's tutor context, never the student's own device), and
+    // the underlying query is scoped by teacherUid+studentName (schema's properly-scoped read
+    // pattern). Skipping rather than falling back to an unscoped name-only query, which could
+    // otherwise return any teacher's/school's student of the same name.
+    if (!studentParam || !conceptIdParam || !firebaseUser?.uid) return;
     let cancelled = false;
 
     const inject = async () => {
       try {
-        // Fetch last 5 results for this student, filter by concept
-        const allResults = await firestoreService.fetchQuizResultsByStudentName(studentParam);
+        // Fetch last 5 results for this student, filter by concept.
+        const allResults = await firestoreService.fetchQuizResultsByStudentName(studentParam, undefined, firebaseUser.uid);
         const conceptResults = allResults
           .filter(r => r.conceptId === conceptIdParam)
           .slice(0, 5);
@@ -122,8 +127,11 @@ export const StudentTutorView: React.FC = () => {
 
     inject();
     return () => { cancelled = true; };
+  // studentParam/conceptIdParam/conceptTitleParam are stable URL-parsed consts for this
+  // component's lifetime (no remount-free URL change expected here) — only firebaseUser?.uid
+  // needs to be reactive, since it may resolve after this component's first mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [firebaseUser?.uid]);
 
   // Deterministic curriculum grounding — no AI call, just a static lookup from the
   // official BRO program data, so it can't fail in a costly way.

@@ -328,13 +328,26 @@ export const quizService = {
     }
   },
 
-  /** Most recent lab-exercise session for a lab (optionally scoped to a student). Reuses the conceptId+playedAt index. */
-  fetchLastLabSession: async (labId: string, studentName?: string): Promise<QuizResult | null> => {
+  /**
+   * Most recent lab-exercise session for a lab, scoped to this device — previously queried
+   * with no deviceId filter at all, which both (a) returned the platform's most-recent attempt
+   * by ANY student rather than "your last session", and (b) can't be granted under a
+   * deviceId-scoped Firestore read rule (list queries need a matching where() clause). Requires
+   * deviceId; callers with no known device (shouldn't normally happen — getOrCreateDeviceId()
+   * always returns one) get null rather than a cross-student result.
+   */
+  fetchLastLabSession: async (labId: string, deviceId?: string): Promise<QuizResult | null> => {
+    if (!deviceId) return null;
     try {
-      const q = query(collection(db, 'quiz_results'), where('conceptId', '==', labId), orderBy('playedAt', 'desc'), limit(30));
+      const q = query(
+        collection(db, 'quiz_results'),
+        where('conceptId', '==', labId),
+        where('deviceId', '==', deviceId),
+        orderBy('playedAt', 'desc'),
+        limit(1),
+      );
       const snap = await getDocs(q);
-      const docs = snap.docs.map(d => d.data() as QuizResult).filter(d => d.quizType === 'lab');
-      const match = studentName ? docs.find(d => d.studentName === studentName) : docs[0];
+      const match = snap.docs.map(d => d.data() as QuizResult).find(d => d.quizType === 'lab');
       return match ?? null;
     } catch (error) {
       logger.warn('fetchLastLabSession failed (non-critical):', error);

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Lightbulb, ChevronRight, RotateCcw, Shuffle, Trophy, Save, TrendingUp, TrendingDown } from 'lucide-react';
 import type { useLabSession } from '../../hooks/useLabSession';
 import { CURRICULUM_STANDARD_MAP } from '../../types/labTypes';
+import { getOrCreateDeviceId } from '../../utils/studentIdentity';
 
 type LabSession = ReturnType<typeof useLabSession>;
 
@@ -43,7 +44,7 @@ function ContinueBanner({ labId }: { labId: string }) {
     queryKey: ['lastLabSession', labId],
     queryFn: async () => {
       const { firestoreService } = await import('../../services/firestoreService');
-      return firestoreService.fetchLastLabSession(labId);
+      return firestoreService.fetchLastLabSession(labId, getOrCreateDeviceId());
     },
     staleTime: 5 * 60 * 1000,
   });

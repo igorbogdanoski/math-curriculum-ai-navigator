@@ -3,15 +3,16 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { StudentTutorView } from './StudentTutorView';
 
 vi.mock('../i18n/LanguageContext', () => ({
   useLanguage: () => ({ t: (key: string) => key }),
 }));
 
+const mockAuth = vi.hoisted(() => ({ firebaseUser: null as { uid: string } | null }));
 vi.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({ firebaseUser: null }),
+  useAuth: () => mockAuth,
 }));
 
 vi.mock('../contexts/NavigationContext', () => ({
@@ -22,8 +23,9 @@ vi.mock('../services/geminiService', () => ({
   geminiService: { askTutor: vi.fn().mockResolvedValue('...') },
 }));
 
+const mockFetchQuizResultsByStudentName = vi.fn().mockResolvedValue([]);
 vi.mock('../services/firestoreService', () => ({
-  firestoreService: { fetchQuizResultsByStudentName: vi.fn().mockResolvedValue([]) },
+  firestoreService: { fetchQuizResultsByStudentName: (...args: unknown[]) => mockFetchQuizResultsByStudentName(...args) },
 }));
 
 vi.mock('../services/ragService', () => ({
@@ -61,6 +63,8 @@ vi.mock('../components/common/PhotoWorksheetSolver', () => ({
 describe('StudentTutorView — homework-help entry points', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchQuizResultsByStudentName.mockResolvedValue([]);
+    mockAuth.firebaseUser = null;
     window.location.hash = '#/tutor';
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -85,5 +89,25 @@ describe('StudentTutorView — homework-help entry points', () => {
     fireEvent.click(screen.getByText('📷 Фотографирај домашна'));
     expect(screen.queryByTestId('photo-worksheet-solver')).toBeNull();
     expect(screen.getByTestId('solution-checker')).toBeTruthy();
+  });
+
+  it('regression: does not query quiz history at all while no teacherUid is known (never falls back to an unscoped studentName-only lookup)', async () => {
+    window.location.hash = '#/tutor?student=%D0%9C%D0%B0%D1%80%D0%BA%D0%BE&concept=fractions&title=%D0%94%D1%80%D0%BE%D0%BF%D0%BA%D0%B8';
+    mockAuth.firebaseUser = null;
+
+    render(<StudentTutorView />);
+    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+
+    expect(mockFetchQuizResultsByStudentName).not.toHaveBeenCalled();
+  });
+
+  it('regression: once a teacherUid is known, queries quiz history scoped by teacherUid+studentName (security finding, audit_2026_07_18)', async () => {
+    window.location.hash = '#/tutor?student=%D0%9C%D0%B0%D1%80%D0%BA%D0%BE&concept=fractions&title=%D0%94%D1%80%D0%BE%D0%BF%D0%BA%D0%B8';
+    mockAuth.firebaseUser = { uid: 'teacher-1' };
+
+    render(<StudentTutorView />);
+    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+
+    expect(mockFetchQuizResultsByStudentName).toHaveBeenCalledWith('Марко', undefined, 'teacher-1');
   });
 });

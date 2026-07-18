@@ -207,11 +207,17 @@ service cloud.firestore {
     }
 
     // ── Квиз резултати (quiz_results) ──
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): the blanket
+    // isAnonymousStudent() branch let ANY anonymous sign-in read the entire collection
+    // unscoped (a query with no matching where() clause). Replaced with the same
+    // deviceId-ownership pattern already used by concept_mastery — every real
+    // student-facing read of this collection already supplies deviceId (see
+    // StudentTutorView.tsx/LabExercisePanel.tsx/useLabSession.ts fixes from the same pass).
     match /quiz_results/{doc} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
         isDocOwner() ||
-        isAnonymousStudent() ||
+        (resource.data.deviceId != null && ownsDeviceViaIdentity(resource.data.deviceId)) ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       // Bounds only (mirrors dugga_submissions' pattern) — can't verify percentage is actually
@@ -253,7 +259,15 @@ service cloud.firestore {
     // И3: any authenticated teacher may update ratingsByUid (dot-notation field)
     match /cached_ai_materials/{doc} {
       allow read:   if !resource.data.get('isPrivate', false) || isAuthenticated();
-      allow create: if isAuthenticated();
+      // 2026-07-18 (audit_2026_07_18_full_app_review, security finding): create had no
+      // ownership check at all — any authenticated caller (including anonymous students, who
+      // legitimately create these via saveRemediaQuiz after a low quiz score) could stamp an
+      // arbitrary teacherUid onto a new doc, impersonating that teacher's attribution. Mirrors
+      // the update rule's own check just below: teacherUid may be omitted (anonymous-authored
+      // remedial quizzes), but if present it must be the caller's own uid.
+      allow create: if isAuthenticated() && (
+        !('teacherUid' in request.resource.data) || request.resource.data.teacherUid == request.auth.uid
+      );
       allow update: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()
         // И3: peer rating — any authenticated user may set their own rating entry (1-5 only);
@@ -273,6 +287,14 @@ service cloud.firestore {
     }
 
     // ── Задачи (assignments) ──
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): unlike quiz_results/
+    // concept_mastery, this collection carries no deviceId/studentUid field at all — client
+    // reads scope by `classStudentNames array-contains studentName` (hooks/useStudentRealtime.ts),
+    // which a Firestore rule cannot verify against a bare anonymous auth token (no claim proves
+    // "my name is in this array"). Closing this fully needs a device→teacherUid reverse-lookup
+    // (custom claims or a mirror collection) — intentionally NOT built in this pass (Tier 2,
+    // flagged as follow-up work). isAnonymousStudent() is left as-is here; it's the same
+    // pre-existing blast radius as today, not made worse or better by this pass.
     match /assignments/{doc} {
       allow read: if isAuthenticated() && (
         isDocOwner() ||
@@ -304,15 +326,20 @@ service cloud.firestore {
     }
 
     // ── Совладување на концепти (concept_mastery) ──
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): the blanket
+    // isAnonymousStudent() branch (both read AND update) let ANY anonymous sign-in read or
+    // overwrite ANY document in this collection — for update, deviceOwnershipOk() alone didn't
+    // close this, since it trivially passes when the write simply omits deviceId. Removed from
+    // both; every legitimate anonymous-student read/write already supplies deviceId or
+    // studentUid (see fetchMasteryByStudent's own comment on this file, and
+    // updateConceptMastery in firestoreService.quiz.ts, which always includes deviceId in the
+    // payload when the caller has one). studentUid/ownsDeviceViaIdentity branches additionally
+    // cover a student who has linked their anonymous session to Google (linkWithPopup keeps the
+    // same uid but flips sign_in_provider away from 'anonymous').
     match /concept_mastery/{doc} {
-      // studentUid/ownsDeviceViaIdentity branches cover a student who has linked their
-      // anonymous session to Google (linkWithPopup keeps the same uid but flips
-      // sign_in_provider away from 'anonymous', so isAnonymousStudent() alone stops
-      // recognizing them) — see ownsDeviceViaIdentity()'s comment for detail.
       allow read: if isAuthenticated() && (
         isAdmin() ||
         isDocOwner() ||
-        isAnonymousStudent() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId)) ||
         (resource.data.studentUid != null && resource.data.studentUid == request.auth.uid) ||
         (resource.data.deviceId != null && ownsDeviceViaIdentity(resource.data.deviceId))
@@ -322,11 +349,10 @@ service cloud.firestore {
       // requiring every write path to supply every field (mirrors quiz_results' pattern).
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']) && deviceOwnershipOk()
                     && conceptMasteryScoresOk() && studentUidOk();
-      // Only the owning teacher, anonymous students (quiz completion), a Google-linked
-      // student updating their own previously-anonymous device record, or admin may update.
+      // Only the owning teacher, a device/studentUid-verified student (anonymous or
+      // Google-linked), or admin may update.
       allow update: if isAuthenticated() && (
         isDocOwner() ||
-        isAnonymousStudent() ||
         isAdmin() ||
         (resource.data.studentUid != null && resource.data.studentUid == request.auth.uid) ||
         (resource.data.deviceId != null && ownsDeviceViaIdentity(resource.data.deviceId))
@@ -343,6 +369,14 @@ service cloud.firestore {
     }
 
     // ── Гамификација (student_gamification) ──
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): fetchClassLeaderboard
+    // (hooks/useStudentProgress.ts) legitimately reads every classmate's doc under one teacherUid
+    // (for rank) — a genuine cross-student read a deviceId/studentUid-scoped rule can't allow, so
+    // isAnonymousStudent() can't simply be dropped here the way it was for quiz_results/
+    // concept_mastery without breaking the leaderboard outright. A real fix needs a
+    // device→teacherUid reverse-lookup (custom claims or a mirror collection) to let the rule
+    // verify "this uid's class" without reading the whole collection — intentionally NOT built
+    // in this pass (Tier 2, flagged as follow-up work, same as assignments/announcements below).
     match /student_gamification/{doc} {
       allow read: if isAuthenticated() && (
         isAnonymousStudent() ||
@@ -432,6 +466,12 @@ service cloud.firestore {
     }
 
     // ── Огласи (announcements) ──
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): client reads scope by
+    // `where('teacherUid','==', teacherUid)` (hooks/useStudentRealtime.ts) — a shared class feed
+    // a student legitimately needs to read (the teacher's broadcast, not their own document), but
+    // a Firestore rule can't verify "this uid belongs to this teacherUid" from a bare anonymous
+    // auth token. Same Tier 2 (device→teacherUid reverse-lookup) gap as assignments/
+    // student_gamification above — intentionally NOT built in this pass, flagged as follow-up.
     match /announcements/{doc} {
       allow read: if isAuthenticated() && (
         isDocOwner() ||
@@ -762,8 +802,16 @@ service cloud.firestore {
     // Ажурирање: само полето imageUrl (мобилен ученик по прикачување).
     match /solution_uploads/{token} {
       allow read:   if isAuthenticated();
+      // 2026-07-18 (audit_2026_07_18_full_app_review, security finding): expiresAt was fully
+      // client-controlled — a caller could set it far in the future and keep exploiting the
+      // update rule's own `resource.data.expiresAt > request.time.toMillis()` check indefinitely,
+      // defeating the documented "10-minute token" design. The real client
+      // (services/firestoreService.solutionUploads.ts) always sets exactly now+10min; bounded
+      // here to now+11min (1min slack for clock skew) as a server-side ceiling.
       allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['questionKey', 'expiresAt', 'imageUrl', 'createdAt']);
+                    && request.resource.data.keys().hasAll(['questionKey', 'expiresAt', 'imageUrl', 'createdAt'])
+                    && request.resource.data.expiresAt > request.time.toMillis()
+                    && request.resource.data.expiresAt <= request.time.toMillis() + (11 * 60 * 1000);
       allow update: if isAuthenticated()
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imageUrl'])
                     && request.resource.data.imageUrl is string

@@ -1298,4 +1298,142 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(getDocs(q));
     });
   });
+
+  // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): regression coverage
+  // for removing the blanket isAnonymousStudent() read branch on quiz_results/concept_mastery —
+  // any anonymous sign-in used to be able to dump the entire collection with an unscoped list().
+  describe('quiz_results — unscoped anonymous reads are now denied; device-owner reads still work', () => {
+    it('a random anonymous session cannot list the whole quiz_results collection (no where clause)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const stranger = testEnv.authenticatedContext('stranger-qr', { firebase: { sign_in_provider: 'anonymous' } });
+      const db = stranger.firestore() as unknown as Firestore;
+      await assertFails(getDocs(collection(db, 'quiz_results')));
+    });
+
+    it('a random anonymous session cannot list another device\'s quiz_results by deviceId', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceQR1').set({ deviceId: 'deviceQR1', name: 'Петар', anonymousUid: 'qr-owner-uid' });
+        await f.doc('quiz_results/qrDeviceScoped1').set({ studentName: 'Петар', percentage: 80, conceptId: 'c1', deviceId: 'deviceQR1' });
+      });
+      const stranger = testEnv.authenticatedContext('stranger-qr-2', { firebase: { sign_in_provider: 'anonymous' } });
+      const db = stranger.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'quiz_results'), where('deviceId', '==', 'deviceQR1'));
+      await assertFails(getDocs(q));
+    });
+
+    it('the legitimate owning device can list its own quiz_results', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceQR2').set({ deviceId: 'deviceQR2', name: 'Петар', anonymousUid: 'qr-owner-uid-2' });
+        await f.doc('quiz_results/qrDeviceScoped2').set({ studentName: 'Петар', percentage: 80, conceptId: 'c1', deviceId: 'deviceQR2' });
+      });
+      const owner = testEnv.authenticatedContext('qr-owner-uid-2', { firebase: { sign_in_provider: 'anonymous' } });
+      const db = owner.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'quiz_results'), where('deviceId', '==', 'deviceQR2'));
+      await assertSucceeds(getDocs(q));
+    });
+
+    it('a teacher can still list their own students\' quiz_results by teacherUid (isDocOwner, unaffected by this fix)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('quiz_results/qrTeacherScoped1').set({ studentName: 'Марко', percentage: 70, conceptId: 'c1', teacherUid: 'teacher-qr-1' });
+      });
+      const teacher = testEnv.authenticatedContext('teacher-qr-1');
+      const db = teacher.firestore() as unknown as Firestore;
+      const q = query(collection(db, 'quiz_results'), where('teacherUid', '==', 'teacher-qr-1'));
+      await assertSucceeds(getDocs(q));
+    });
+  });
+
+  describe('concept_mastery — unscoped anonymous reads/updates are now denied', () => {
+    it('a random anonymous session cannot list the whole concept_mastery collection (no where clause)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const stranger = testEnv.authenticatedContext('stranger-cm', { firebase: { sign_in_provider: 'anonymous' } });
+      const db = stranger.firestore() as unknown as Firestore;
+      await assertFails(getDocs(collection(db, 'concept_mastery')));
+    });
+
+    it('a random anonymous session cannot overwrite another device\'s concept_mastery doc, even by omitting deviceId from the write', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/deviceCM1').set({ deviceId: 'deviceCM1', name: 'Ана', anonymousUid: 'cm-owner-uid' });
+        await f.doc('concept_mastery/cmDeviceScoped1').set({ studentName: 'Ана', conceptId: 'c1', deviceId: 'deviceCM1', bestScore: 80, lastScore: 80, attempts: 1, consecutiveHighScores: 1, mastered: false });
+      });
+      const impostor = testEnv.authenticatedContext('impostor-cm', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = impostor.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      // Omits deviceId entirely from the update payload — deviceOwnershipOk() alone would have
+      // let this through under the old rule (isAnonymousStudent() as an unconditional OR-branch).
+      await assertFails(f.doc('concept_mastery/cmDeviceScoped1').update({ studentName: 'Ана', conceptId: 'c1', bestScore: 100, lastScore: 100 }));
+    });
+  });
+
+  describe('cached_ai_materials — create ownership (audit_2026_07_18_full_app_review)', () => {
+    it('cannot forge another teacher\'s uid as teacherUid on create', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const impostor = testEnv.authenticatedContext('impostor-cam');
+      const f = impostor.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('cached_ai_materials/camForged1').set({ teacherUid: 'someone-elses-uid', title: 'Forged' }));
+    });
+
+    it('can create with their own teacherUid', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const teacher = testEnv.authenticatedContext('cam-owner-1');
+      const f = teacher.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('cached_ai_materials/camOwned1').set({ teacherUid: 'cam-owner-1', title: 'Mine' }));
+    });
+
+    it('an anonymous student can still create a remedial-quiz doc with no teacherUid at all', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const anon = testEnv.authenticatedContext('remedia-student', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = anon.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('cached_ai_materials/camRemedia1').set({ title: 'Remedial quiz', isPrivate: false }));
+    });
+  });
+
+  describe('solution_uploads — expiresAt is now server-bounded (audit_2026_07_18_full_app_review)', () => {
+    it('rejects an expiresAt far in the future (defeats the "10-minute token" design)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const user = testEnv.authenticatedContext('su-user-1');
+      const f = user.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      const farFuture = Date.now() + 24 * 60 * 60 * 1000; // +1 day
+      await assertFails(f.doc('solution_uploads/tokFar').set({
+        questionKey: 'q1', expiresAt: farFuture, imageUrl: '', createdAt: Date.now(),
+      }));
+    });
+
+    it('rejects an expiresAt already in the past', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const user = testEnv.authenticatedContext('su-user-2');
+      const f = user.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('solution_uploads/tokPast').set({
+        questionKey: 'q1', expiresAt: Date.now() - 1000, imageUrl: '', createdAt: Date.now(),
+      }));
+    });
+
+    it('accepts a real ~10-minute expiresAt', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const user = testEnv.authenticatedContext('su-user-3');
+      const f = user.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('solution_uploads/tokOk').set({
+        questionKey: 'q1', expiresAt: Date.now() + 10 * 60 * 1000, imageUrl: '', createdAt: Date.now(),
+      }));
+    });
+  });
 });
