@@ -82,19 +82,22 @@ export function fromMixedNumber(whole: number, remainder: Fraction): Fraction {
 
 export type FractionGradeRange = 'g3' | 'g4' | 'g5' | 'g6';
 
+// 2026-07-19 (Wave 8.4, audit_2026_07_18_full_app_review): `label`/`description` used to be
+// baked-in MK strings here — moved to i18n keys (built in FractionsLab.tsx's gradeLabel()/
+// gradeDescription() helpers) so this data constant doesn't hardcode a UI language.
+// `curriculumRef` stays as-is: it's an internal exercise-metadata tag (asserted on directly
+// in fractionsMath.test.ts), not rendered UI text.
 export interface FractionGradeConfig {
-  label: string;
   maxDenominator: number;
   allowMixed: boolean;
   curriculumRef: string;
-  description: string;
 }
 
 export const GRADE_CONFIGS: Record<FractionGradeRange, FractionGradeConfig> = {
-  g3: { label: 'III одд.', maxDenominator: 4,  allowMixed: false, curriculumRef: 'МОН III одд.', description: 'Запознавање со дропки (половина, третина, четвртина)' },
-  g4: { label: 'IV одд.',  maxDenominator: 6,  allowMixed: false, curriculumRef: 'МОН IV одд.',  description: 'Читање, запишување и споредба на дропки' },
-  g5: { label: 'V одд.',   maxDenominator: 10, allowMixed: false, curriculumRef: 'МОН V одд.',   description: 'Собирање дропки со ист именител, скратување' },
-  g6: { label: 'VI одд.',  maxDenominator: 12, allowMixed: true,  curriculumRef: 'МОН VI одд.',  description: 'Мешани броеви, различни именители, децимален запис' },
+  g3: { maxDenominator: 4,  allowMixed: false, curriculumRef: 'МОН III одд.' },
+  g4: { maxDenominator: 6,  allowMixed: false, curriculumRef: 'МОН IV одд.' },
+  g5: { maxDenominator: 10, allowMixed: false, curriculumRef: 'МОН V одд.' },
+  g6: { maxDenominator: 12, allowMixed: true,  curriculumRef: 'МОН VI одд.' },
 };
 
 function fRand(lo: number, hi: number) {

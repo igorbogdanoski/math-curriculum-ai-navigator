@@ -1,8 +1,9 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FractionsLab } from './FractionsLab';
+import { LanguageProvider } from '../../i18n/LanguageContext';
 
 // The full app-shell (/data-viz) is auth-gated, so real drag interaction can't be
 // browser-tested end-to-end without production credentials. BarModel/NumberLineModel's
@@ -20,7 +21,9 @@ vi.mock('../../services/firestoreService', () => ({
 function renderLab() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    React.createElement(QueryClientProvider, { client }, React.createElement(FractionsLab)),
+    <LanguageProvider>
+      <QueryClientProvider client={client}><FractionsLab /></QueryClientProvider>
+    </LanguageProvider>,
   );
 }
 
@@ -32,6 +35,8 @@ function mockSvgBoundingRect(width: number, height: number) {
     toJSON: () => {},
   } as DOMRect);
 }
+
+beforeEach(() => { localStorage.setItem('preferred_language', 'mk'); });
 
 describe('FractionsLab — Show mode', () => {
   it('renders the bar, circle, and number line synced to the default fraction', () => {

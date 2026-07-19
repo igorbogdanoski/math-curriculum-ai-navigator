@@ -8,6 +8,13 @@ import {
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
+
+const gradeLabel = (g: FractionGradeRange, t: (k: string) => string): string =>
+  ({ g3: t('fractionsLab.grade.g3'), g4: t('fractionsLab.grade.g4'), g5: t('fractionsLab.grade.g5'), g6: t('fractionsLab.grade.g6') }[g]);
+
+const gradeDescription = (g: FractionGradeRange, t: (k: string) => string): string =>
+  ({ g3: t('fractionsLab.grade.g3Desc'), g4: t('fractionsLab.grade.g4Desc'), g5: t('fractionsLab.grade.g5Desc'), g6: t('fractionsLab.grade.g6Desc') }[g]);
 
 // ─── Bar model — draggable boundary between shaded/unshaded segments ────────
 const BAR_W = 320, BAR_H = 64;
@@ -15,6 +22,7 @@ const BAR_W = 320, BAR_H = 64;
 interface BarModelProps { num: number; den: number; onChange?: (num: number) => void }
 
 const BarModel: React.FC<BarModelProps> = ({ num, den, onChange }) => {
+  const { t } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
   const segW = BAR_W / den;
@@ -46,11 +54,11 @@ const BarModel: React.FC<BarModelProps> = ({ num, den, onChange }) => {
       ref={svgRef}
       viewBox={`0 0 ${BAR_W} ${BAR_H}`}
       role={onChange ? 'slider' : 'img'}
-      aria-label={`Бар модел, ${num} од ${den} засенчени`}
+      aria-label={`${t('fractionsLab.model.bar')}, ${num} ${t('fractionsLab.aria.of')} ${den} ${t('fractionsLab.aria.shaded')}`}
       aria-valuemin={onChange ? 0 : undefined}
       aria-valuemax={onChange ? den : undefined}
       aria-valuenow={onChange ? num : undefined}
-      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      aria-valuetext={onChange ? `${num} ${t('fractionsLab.aria.of')} ${den}` : undefined}
       tabIndex={onChange ? 0 : undefined}
       className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded' : ''}`}
       onMouseDown={onDown}
@@ -94,6 +102,7 @@ function wedgePath(startFrac: number, endFrac: number): string {
 interface CircleModelProps { num: number; den: number; onChange?: (num: number) => void }
 
 const CircleModel: React.FC<CircleModelProps> = ({ num, den, onChange }) => {
+  const { t } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -129,11 +138,11 @@ const CircleModel: React.FC<CircleModelProps> = ({ num, den, onChange }) => {
       ref={svgRef}
       viewBox={`0 0 ${CIRCLE_VB} ${CIRCLE_VB}`}
       role={onChange ? 'slider' : 'img'}
-      aria-label={`Круг модел, ${num} од ${den} засенчени`}
+      aria-label={`${t('fractionsLab.model.circle')}, ${num} ${t('fractionsLab.aria.of')} ${den} ${t('fractionsLab.aria.shaded')}`}
       aria-valuemin={onChange ? 0 : undefined}
       aria-valuemax={onChange ? den : undefined}
       aria-valuenow={onChange ? num : undefined}
-      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      aria-valuetext={onChange ? `${num} ${t('fractionsLab.aria.of')} ${den}` : undefined}
       tabIndex={onChange ? 0 : undefined}
       className={`w-full max-w-[180px] select-none ${onChange ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full' : ''}`}
       onMouseDown={onDown}
@@ -165,6 +174,7 @@ const LINE_W = 320, TICK_H = 10;
 interface NumberLineProps { num: number; den: number; onChange?: (num: number) => void }
 
 const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
+  const { t } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
   const segW = LINE_W / den;
@@ -196,11 +206,11 @@ const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
       ref={svgRef}
       viewBox={`0 0 ${LINE_W} 50`}
       role={onChange ? 'slider' : 'img'}
-      aria-label={`Бројна права, точка на ${num}/${den}`}
+      aria-label={`${t('fractionsLab.model.numberLine')}, ${t('fractionsLab.aria.point')} ${num}/${den}`}
       aria-valuemin={onChange ? 0 : undefined}
       aria-valuemax={onChange ? den : undefined}
       aria-valuenow={onChange ? num : undefined}
-      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      aria-valuetext={onChange ? `${num} ${t('fractionsLab.aria.of')} ${den}` : undefined}
       tabIndex={onChange ? 0 : undefined}
       className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded' : ''}`}
       onMouseDown={onDown}
@@ -248,6 +258,7 @@ interface AreaModelProps { fracA: Fraction; fracB: Fraction }
  * wholes === 1.
  */
 const AreaModel: React.FC<AreaModelProps> = ({ fracA, fracB }) => {
+  const { t } = useLanguage();
   const rows = fracA.den;
   const wholes = Math.max(1, Math.ceil(fracB.num / fracB.den));
   const cols = fracB.den * wholes;
@@ -267,7 +278,7 @@ const AreaModel: React.FC<AreaModelProps> = ({ fracA, fracB }) => {
   }
   return (
     <svg viewBox={`0 0 ${width} ${AREA_H}`} role="img"
-      aria-label={`Модел на површина, ${fracA.num}/${fracA.den} и ${fracB.num}/${fracB.den}`}
+      aria-label={`${t('fractionsLab.areaModel')}, ${fracA.num}/${fracA.den} ${t('fractionsLab.and')} ${fracB.num}/${fracB.den}`}
       className="w-full max-w-[260px]"
     >
       {cells}
@@ -285,6 +296,7 @@ type Operation = '+' | '-' | '×' | '÷';
 type Mode = 'show' | 'compare' | 'operations' | 'practice' | 'build';
 
 export const FractionsLab: React.FC = () => {
+  const { t } = useLanguage();
   const [grade, setGrade] = useState<FractionGradeRange>('g4');
   const [mode, setMode] = useState<Mode>('show');
   const cfg = GRADE_CONFIGS[grade];
@@ -357,11 +369,11 @@ export const FractionsLab: React.FC = () => {
   }, [cfg.maxDenominator]);
 
   const MODES: { id: Mode; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'show',       label: 'Прикажи',   icon: Eye        },
-    { id: 'compare',    label: 'Спореди',   icon: GitCompare },
-    { id: 'operations', label: 'Операции',  icon: Divide     },
-    { id: 'practice',   label: 'Вежбај',    icon: PenLine    },
-    { id: 'build',      label: 'Состави',   icon: Target     },
+    { id: 'show',       label: t('fractionsLab.mode.show'),       icon: Eye        },
+    { id: 'compare',    label: t('fractionsLab.mode.compare'),    icon: GitCompare },
+    { id: 'operations', label: t('fractionsLab.mode.operations'), icon: Divide     },
+    { id: 'practice',   label: t('fractionsLab.mode.practice'),   icon: PenLine    },
+    { id: 'build',      label: t('fractionsLab.mode.build'),      icon: Target     },
   ];
 
   const GRADES: FractionGradeRange[] = ['g3', 'g4', 'g5', 'g6'];
@@ -371,8 +383,8 @@ export const FractionsLab: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-extrabold text-gray-900">Дропки — Бар, Круг и Бројна права</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{cfg.description}</p>
+          <h2 className="text-lg font-extrabold text-gray-900">{t('fractionsLab.title')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{gradeDescription(grade, t)}</p>
         </div>
         {/* Grade selector */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
@@ -386,7 +398,7 @@ export const FractionsLab: React.FC = () => {
                 grade === g ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {GRADE_CONFIGS[g].label}
+              {gradeLabel(g, t)}
             </button>
           ))}
         </div>
@@ -413,7 +425,7 @@ export const FractionsLab: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-gray-700">Именител:</label>
+              <label className="text-sm font-semibold text-gray-700">{t('fractionsLab.show.denominatorLabel')}</label>
               <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
                 {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
                   <button key={d} type="button" onClick={() => setDen(d)}
@@ -434,20 +446,20 @@ export const FractionsLab: React.FC = () => {
             </div>
           </div>
 
-          <p className="text-xs text-gray-500">Влечи ги барот, кругот или точката на бројната права:</p>
+          <p className="text-xs text-gray-500">{t('fractionsLab.show.instruction')}</p>
 
           <div className="flex flex-wrap items-start gap-6">
             <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Бар модел</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">{t('fractionsLab.model.bar')}</p>
               <BarModel num={clampedFrac.num} den={clampedFrac.den} onChange={setNum} />
             </div>
             <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Круг модел</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">{t('fractionsLab.model.circle')}</p>
               <CircleModel num={clampedFrac.num} den={clampedFrac.den} onChange={setNum} />
             </div>
           </div>
           <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl border border-indigo-100 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Бројна права</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">{t('fractionsLab.model.numberLine')}</p>
             <NumberLineModel num={clampedFrac.num} den={clampedFrac.den} onChange={setNum} />
           </div>
         </div>
@@ -456,11 +468,11 @@ export const FractionsLab: React.FC = () => {
       {/* ── MODE: COMPARE ───────────────────────────────────────────────────── */}
       {mode === 'compare' && (
         <div className="space-y-4">
-          <p className="text-xs text-gray-500">Влечи ги баровите за да спореди две дропки:</p>
+          <p className="text-xs text-gray-500">{t('fractionsLab.compare.instruction')}</p>
           <div className="flex flex-wrap items-start gap-6">
             <div className="bg-gradient-to-br from-slate-50 to-sky-50 rounded-2xl border border-sky-100 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка А</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{t('fractionsLab.fractionA')}</p>
                 <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
                   {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
                     <button key={d} type="button" onClick={() => setDenA(d)}
@@ -478,7 +490,7 @@ export const FractionsLab: React.FC = () => {
             </div>
             <div className="bg-gradient-to-br from-slate-50 to-rose-50 rounded-2xl border border-rose-100 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка Б</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{t('fractionsLab.fractionB')}</p>
                 <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
                   {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
                     <button key={d} type="button" onClick={() => setDenB(d)}
@@ -510,7 +522,7 @@ export const FractionsLab: React.FC = () => {
       {mode === 'operations' && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-700">Операција:</span>
+            <span className="text-sm font-semibold text-gray-700">{t('fractionsLab.operations.label')}</span>
             <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
               {(['+', '-', '×', '÷'] as Operation[]).map(op => (
                 <button key={op} type="button" onClick={() => setOperation(op)}
@@ -527,7 +539,7 @@ export const FractionsLab: React.FC = () => {
           <div className="flex flex-wrap items-start gap-6">
             <div className="bg-gradient-to-br from-slate-50 to-violet-50 rounded-2xl border border-violet-100 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка А</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{t('fractionsLab.fractionA')}</p>
                 <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
                   {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
                     <button key={d} type="button" onClick={() => setOpDenA(d)}
@@ -545,7 +557,7 @@ export const FractionsLab: React.FC = () => {
             </div>
             <div className="bg-gradient-to-br from-slate-50 to-pink-50 rounded-2xl border border-pink-100 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Дропка Б</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{t('fractionsLab.fractionB')}</p>
                 <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
                   {Array.from({ length: cfg.maxDenominator - 1 }, (_, i) => i + 2).map(d => (
                     <button key={d} type="button" onClick={() => setOpDenB(d)}
@@ -565,25 +577,25 @@ export const FractionsLab: React.FC = () => {
 
           {(operation === '+' || operation === '-') && (
             <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-700">
-              За да {operation === '+' ? 'собереш' : 'одземеш'} дропки со различен именител, прво доведи ги
-              на заеднички именител ({clampedOpA.den} × {clampedOpB.den} = {clampedOpA.den * clampedOpB.den}
-              {' '}е секогаш валиден заеднички именител), а потоа {operation === '+' ? 'собери' : 'одземи'} ги броителите.
+              {operation === '+' ? t('fractionsLab.operations.addPrefix') : t('fractionsLab.operations.subtractPrefix')}
+              {clampedOpA.den} × {clampedOpB.den} = {clampedOpA.den * clampedOpB.den}
+              {operation === '+' ? t('fractionsLab.operations.addSuffix') : t('fractionsLab.operations.subtractSuffix')}
             </div>
           )}
 
           {operation === '÷' && opDivByZero && (
             <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 font-semibold">
-              Не може да се дели со нула — намести го броителот на Дропка Б на најмалку 1.
+              {t('fractionsLab.divByZero')}
             </div>
           )}
 
           {(operation === '×' || (operation === '÷' && !opDivByZero)) && opReciprocalB && (
             <div className="bg-gradient-to-br from-slate-50 to-violet-50 rounded-2xl border border-violet-100 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">Модел на површина</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-2">{t('fractionsLab.areaModel')}</p>
               <AreaModel fracA={clampedOpA} fracB={operation === '÷' ? opReciprocalB : clampedOpB} />
               {operation === '÷' && (
                 <p className="text-xs text-gray-500 mt-2">
-                  Делењето со дропка е множење со нејзиниот реципрочен број: {fractionToString(clampedOpA)} ÷ {fractionToString(clampedOpB)}
+                  {t('fractionsLab.division.explanationPrefix')} {fractionToString(clampedOpA)} ÷ {fractionToString(clampedOpB)}
                   {' '}= {fractionToString(clampedOpA)} × {fractionToString(opReciprocalB)}
                 </p>
               )}
@@ -617,18 +629,18 @@ export const FractionsLab: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2">
-              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide">Состави ја дропката</p>
+              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide">{t('fractionsLab.build.title')}</p>
               <p className="text-2xl font-black text-amber-700">{fractionToString(target)}</p>
             </div>
             <button type="button" onClick={newBuildTarget}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition">
               <RefreshCw className="w-4 h-4" />
-              Нова дропка
+              {t('fractionsLab.build.newFraction')}
             </button>
           </div>
 
           <div className="bg-gradient-to-br from-slate-50 to-amber-50 rounded-2xl border border-amber-100 p-4">
-            <p className="text-xs text-gray-500 mb-2">Влечи ја линијата за да засенчиш {target.num} од {target.den} делови:</p>
+            <p className="text-xs text-gray-500 mb-2">{t('fractionsLab.build.dragInstructionPrefix')} {target.num} {t('fractionsLab.aria.of')} {target.den} {t('fractionsLab.build.dragInstructionSuffix')}</p>
             <BarModel num={buildFrac.num} den={buildFrac.den} onChange={n => { setBuildFrac(f => ({ ...f, num: n })); setBuildChecked(false); }} />
           </div>
 
@@ -637,7 +649,7 @@ export const FractionsLab: React.FC = () => {
             onClick={() => setBuildChecked(true)}
             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition"
           >
-            Провери
+            {t('fractionsLab.build.checkButton')}
           </button>
 
           {buildChecked && (
@@ -645,8 +657,8 @@ export const FractionsLab: React.FC = () => {
               buildCorrect ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
               {buildCorrect
-                ? `✓ Точно! ${fractionToString(buildFrac)} = ${fractionToString(target)}`
-                : `Не сосема — ти имаш ${fractionToString(buildFrac)}, целта е ${fractionToString(target)}.`}
+                ? `${t('fractionsLab.build.correctPrefix')} ${fractionToString(buildFrac)} = ${fractionToString(target)}`
+                : `${t('fractionsLab.build.incorrectPrefix')} ${fractionToString(buildFrac)}${t('fractionsLab.build.incorrectMiddle')} ${fractionToString(target)}.`}
             </div>
           )}
         </div>
