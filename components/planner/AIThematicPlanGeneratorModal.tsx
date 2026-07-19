@@ -18,6 +18,7 @@ import { detectMathDomain } from '../../utils/mathDomainDetector';
 import { publishThematicPlanToBank } from '../../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../scenario-bank/PublishScenarioDialog';
 import { getPedagogicalModelInfo } from '../../data/educationalModelsInfo';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -47,6 +48,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const { addNotification } = useNotification();
     const { firebaseUser, user } = useAuth();
     const { navigate } = useNavigation();
+    const { t } = useLanguage();
     const printRef = useRef<HTMLDivElement>(null);
 
     const isPrefilled = Boolean(prefillThemeName && prefillGradeTitle);
@@ -155,7 +157,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedGradeObj || !selectedTopicObj) {
-            addNotification('Ве молиме изберете валидно одделение и тема.', 'error');
+            addNotification(t('thematicPlan.errors.selectValid'), 'error');
             return;
         }
         setIsLoading(true);
@@ -213,20 +215,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 {/* Info cards row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                        <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Одделение</p>
+                        <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">{t('thematicPlan.config.gradeLabel')}</p>
                         <p className="text-base font-bold text-blue-800">{gradeForConfig?.title ?? prefillGradeTitle}</p>
                     </div>
                     <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
-                        <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-1">Траење</p>
-                        <p className="text-base font-bold text-emerald-800">{weeks} {weeks === 1 ? 'недела' : 'недели'}</p>
+                        <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-1">{t('thematicPlan.config.duration')}</p>
+                        <p className="text-base font-bold text-emerald-800">{weeks} {weeks === 1 ? t('thematicPlan.config.week') : t('thematicPlan.config.weeks')}</p>
                     </div>
                     {topicHours !== null && gradeInfo && (
                         <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
-                            <p className="text-xs font-semibold text-violet-500 uppercase tracking-wide mb-1">Вкупно часови</p>
+                            <p className="text-xs font-semibold text-violet-500 uppercase tracking-wide mb-1">{t('thematicPlan.config.totalHours')}</p>
                             <p className="text-base font-bold text-violet-800">
-                                {topicHours} часа
+                                {topicHours} {t('thematicPlan.config.hoursSuffix')}
                                 <span className="text-xs font-normal text-violet-500 ml-1">
-                                    ({weeks}нед × {gradeInfo.weeklyHours}ч/нед, {gradeInfo.lessonMinutes}мин)
+                                    ({weeks}{t('thematicPlan.config.weeksAbbrev')} {gradeInfo.weeklyHours}{t('thematicPlan.config.hoursPerWeekAbbrev')} {gradeInfo.lessonMinutes}{t('thematicPlan.config.minAbbrev')})
                                 </span>
                             </p>
                         </div>
@@ -236,11 +238,11 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 {/* Topic match info */}
                 {topicForConfig && (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Тематска целина во програмата</p>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('thematicPlan.config.topicInProgram')}</p>
                         <p className="text-sm font-medium text-gray-800">{topicForConfig.title}</p>
                         {topicForConfig.concepts && topicForConfig.concepts.length > 0 && (
                             <p className="text-xs text-gray-500 mt-1">
-                                {topicForConfig.concepts.length} концепти: {topicForConfig.concepts.slice(0, 4).map(c => c.title).join(', ')}{topicForConfig.concepts.length > 4 ? '...' : ''}
+                                {topicForConfig.concepts.length} {t('thematicPlan.config.conceptsCountSuffix')} {topicForConfig.concepts.slice(0, 4).map(c => c.title).join(', ')}{topicForConfig.concepts.length > 4 ? '...' : ''}
                             </p>
                         )}
                     </div>
@@ -250,26 +252,26 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
                     <p className="font-semibold mb-2 flex items-center gap-2">
                         <ICONS.sparkles className="w-4 h-4" />
-                        AI ќе генерира тематски план со:
+                        {t('thematicPlan.config.aiWillGenerate')}
                     </p>
                     <ul className="list-disc pl-5 space-y-1 text-indigo-700">
-                        <li>{topicHours ?? '~'} наставни единици со датум, цели и Bloom таксономија</li>
-                        <li>Конкретни активности и сценарија за секој час</li>
-                        <li>БРО стандарди III-А поврзани со секоја единица</li>
-                        <li>Официјален формат за печатење (МОН образец)</li>
+                        <li>{topicHours ?? '~'} {t('thematicPlan.config.bullet1Suffix')}</li>
+                        <li>{t('thematicPlan.config.bullet2')}</li>
+                        <li>{t('thematicPlan.config.bullet3')}</li>
+                        <li>{t('thematicPlan.config.bullet4')}</li>
                     </ul>
                 </div>
 
                 {/* Link to Истражи програма */}
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    <span>Сакаш да ги видиш целите и стандардите прво?</span>
+                    <span>{t('thematicPlan.config.exploreLead')}</span>
                     <button
                         type="button"
                         onClick={() => { hideModal(); navigate(exploreUrl); }}
                         className="text-brand-primary font-semibold hover:underline"
                     >
-                        Истражи програма →
+                        {t('thematicPlan.config.exploreLink')}
                     </button>
                 </div>
             </div>
@@ -283,9 +285,9 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             await saveThematicPlanEdit(firebaseUser.uid, selectedGradeId, selectedTopicId, editablePlan, { authorName, schoolName, period });
             setSavedAt(new Date());
             setCoachKey(`thematic_${selectedTopicId}_${Date.now()}`);
-            addNotification('✅ Тематскиот план е зачуван!', 'success');
+            addNotification(t('thematicPlan.saveSuccess'), 'success');
         } catch {
-            addNotification('Грешка при зачувување. Обидете се повторно.', 'error');
+            addNotification(t('thematicPlan.saveError'), 'error');
         } finally {
             setIsSaving(false);
         }
@@ -296,21 +298,21 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         setIsPublishingToBank(true);
         try {
             await publishThematicPlanToBank({
-                title: editablePlan.thematicUnit || selectedTopicObj?.title || 'Тематски план',
+                title: editablePlan.thematicUnit || selectedTopicObj?.title || t('thematicPlan.defaultTitle'),
                 grade: selectedGradeObj.level,
                 secondaryTrack: user.secondaryTrack ?? null,
                 topicTitle: selectedTopicObj?.title ?? '',
                 plan: editablePlan,
                 authorUid: firebaseUser.uid,
-                authorName: authorName || user.name || 'Наставник',
+                authorName: authorName || user.name || t('common.teacher'),
                 schoolName: schoolName || user.schoolName,
                 isPublic: opts.isPublic,
                 authorNotes: opts.authorNotes,
             });
             setShowPublishDialog(false);
-            addNotification(opts.isPublic ? '✅ Тематскиот план е јавно споделен во Банката!' : '🔒 Тематскиот план е зачуван приватно.', 'success');
+            addNotification(opts.isPublic ? t('thematicPlan.publishedPublic') : t('thematicPlan.publishedPrivate'), 'success');
         } catch {
-            addNotification('Грешка при споделување.', 'error');
+            addNotification(t('lessonPlan.shareError'), 'error');
         } finally {
             setIsPublishingToBank(false);
         }
@@ -366,7 +368,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 <div className="p-8 text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto"></div>
                     <p className="mt-4 text-gray-600">
-                        AI асистентот ја анализира темата и ги креира наставните единици со сценарија... Ова може да потрае неколку моменти.
+                        {t('thematicPlan.generatingText')}
                     </p>
                 </div>
             );
@@ -379,12 +381,12 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         {isEditing && (
                             <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2 text-sm text-blue-700">
                                 <ICONS.edit className="w-4 h-4 flex-shrink-0" />
-                                <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
+                                <span>{t('annualPlan.officialModal.editModeHint')}</span>
                             </div>
                         )}
                         {allCoveredStandards.length > 0 && (
                             <div className="mb-3 p-2.5 bg-indigo-50 border border-indigo-100 rounded-lg print:hidden">
-                                <p className="text-[11px] font-bold text-indigo-700 mb-1.5">📋 БРО стандарди III-А покриени во темата ({allCoveredStandards.length})</p>
+                                <p className="text-[11px] font-bold text-indigo-700 mb-1.5">{t('thematicPlan.broStandardsCoveredPrefix')} ({allCoveredStandards.length})</p>
                                 <div className="flex flex-wrap gap-1">
                                     {allCoveredStandards.map(code => (
                                         <span key={code} className="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-bold">
@@ -422,7 +424,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                 onClick={() => setBroAccordionOpen(o => !o)}
                                 className="w-full flex items-center justify-between px-3 py-2 bg-indigo-50 hover:bg-indigo-100 transition-colors text-xs font-bold text-indigo-700"
                             >
-                                <span>📋 Покриени БРО стандарди III-А ({allCoveredStandards.length})</span>
+                                <span>{t('thematicPlan.broStandardsCoveredAccordion')} ({allCoveredStandards.length})</span>
                                 <span className="text-indigo-500">{broAccordionOpen ? '▲' : '▼'}</span>
                             </button>
                             {broAccordionOpen && (
@@ -445,10 +447,9 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         <div className="mb-3 flex items-start gap-3 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
                             <span className="text-xl mt-0.5">🔲</span>
                             <div className="min-w-0">
-                                <p className="text-xs font-bold text-indigo-800">Препорачана алатка за оваа тема: Алгебарски Плочки</p>
+                                <p className="text-xs font-bold text-indigo-800">{t('thematicPlan.algebraTiles.title')}</p>
                                 <p className="text-[10px] text-indigo-600 mt-0.5 leading-relaxed">
-                                    Визуелни манипулативи (x², x, 1) — идеални за факторизација, равенки и полиноми.
-                                    При создавање час за оваа тема, копчето <strong>„🔲 Алгебарски Плочки"</strong> ќе се прикажи автоматски во Брзо создади.
+                                    {t('thematicPlan.algebraTiles.desc1')} <strong>„{t('thematicPlan.algebraTiles.buttonName')}"</strong> {t('thematicPlan.algebraTiles.desc2')}
                                 </p>
                             </div>
                         </div>
@@ -458,11 +459,11 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Час</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Наставна единица</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цели / Стандарди</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Активности</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Оценување</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('thematicPlan.table.period')}</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('thematicPlan.table.unit')}</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('thematicPlan.table.goals')}</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('thematicPlan.table.activities')}</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('thematicPlan.table.assessment')}</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -515,7 +516,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                     onClick={() => setPedagAccordionOpen(o => !o)}
                                     className="w-full flex items-center justify-between px-3 py-2 bg-violet-50 hover:bg-violet-100 transition-colors text-xs font-bold text-violet-700"
                                 >
-                                    <span>🎓 Педагошко збогатување на темата</span>
+                                    <span>{t('thematicPlan.pedagEnrichAccordion')}</span>
                                     <span className="text-violet-400">{pedagAccordionOpen ? '▲' : '▼'}</span>
                                 </button>
                                 {pedagAccordionOpen && (
@@ -544,10 +545,10 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             <form onSubmit={handleSubmit}>
                 <div className="p-6 space-y-4">
                     <p className="text-sm text-gray-600">
-                        Изберете одделение и тема, а AI асистентот ќе ви генерира предлог-план со наставни единици, цели, детални сценарија за час и активности за целата тема.
+                        {t('thematicPlan.form.intro')}
                     </p>
                     <div>
-                        <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">Одделение</label>
+                        <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">{t('thematicPlan.config.gradeLabel')}</label>
                         <select
                             id="grade-select"
                             value={selectedGradeId}
@@ -558,7 +559,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700">Тематска целина</label>
+                        <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700">{t('thematicPlan.form.topicLabel')}</label>
                         <select
                             id="topic-select"
                             value={selectedTopicId}
@@ -566,21 +567,21 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             className="mt-1 block w-full p-2 border-gray-300 rounded-md"
                             disabled={topicsForGrade.length === 0}
                         >
-                            <option value="">-- Избери тема --</option>
-                            {topicsForGrade.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
+                            <option value="">{t('thematicPlan.form.selectTopicPlaceholder')}</option>
+                            {topicsForGrade.map((tp: Topic) => <option key={tp.id} value={tp.id}>{tp.title}</option>)}
                         </select>
                     </div>
                 </div>
                 <div className="flex justify-end items-center bg-gray-50 p-4 rounded-b-lg">
                     <button type="button" onClick={hideModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 mr-3">
-                        Откажи
+                        {t('common.cancel')}
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary"
                         disabled={!selectedTopicId || isLoading}
                     >
-                        {isLoading ? 'Генерирам...' : 'Генерирај тематски план'}
+                        {isLoading ? t('thematicPlan.generatingShort') : t('thematicPlan.generateButton')}
                     </button>
                 </div>
             </form>
@@ -594,7 +595,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 <div className="flex justify-between items-center bg-gray-50 p-4 rounded-b-lg border-t border-gray-200">
                     <button type="button" onClick={hideModal}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm">
-                        Откажи
+                        {t('common.cancel')}
                     </button>
                     <button
                         type="button"
@@ -603,7 +604,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-2 font-bold disabled:opacity-50"
                     >
                         <ICONS.sparkles className="w-4 h-4" />
-                        Генерирај тематски план
+                        {t('thematicPlan.generateButton')}
                     </button>
                 </div>
             );
@@ -619,7 +620,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         onClick={() => { setGeneratedPlan(null); setEditablePlan(null); setIsEditing(false); }}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
                     >
-                        Назад
+                        {t('common.back')}
                     </button>
                     {viewMode === 'official' && (
                         <button
@@ -632,7 +633,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             }`}
                         >
                             <ICONS.edit className="w-4 h-4" />
-                            {isEditing ? 'Прегледај' : 'Уреди'}
+                            {isEditing ? t('common.preview') : t('common.edit')}
                         </button>
                     )}
                     <button
@@ -641,7 +642,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm"
                     >
                         <ICONS.eye className="w-4 h-4" />
-                        {viewMode === 'official' ? 'Поедноставен' : 'Официјален'}
+                        {viewMode === 'official' ? t('thematicPlan.viewMode.simple') : t('thematicPlan.viewMode.official')}
                     </button>
                 </div>
                 <div className="flex gap-2">
@@ -651,11 +652,11 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             onClick={handleSaveEdits}
                             disabled={isSaving}
                             className="px-3 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-1.5 text-sm disabled:opacity-60 transition"
-                            title={savedAt ? `Последно зачувано: ${savedAt.toLocaleTimeString('mk')}` : 'Зачувај ги промените во Firestore'}
+                            title={savedAt ? `${t('thematicPlan.lastSavedPrefix')} ${savedAt.toLocaleTimeString('mk')}` : t('thematicPlan.saveTooltip')}
                         >
                             {isSaving
-                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Зачувувам...</>
-                                : <>{savedAt ? '✅' : <ICONS.bookmark className="w-4 h-4" />} Зачувај</>
+                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> {t('common.saving')}</>
+                                : <>{savedAt ? '✅' : <ICONS.bookmark className="w-4 h-4" />} {t('common.save')}</>
                             }
                         </button>
                     )}
@@ -664,9 +665,9 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             type="button"
                             onClick={() => setShowOfficialForm(true)}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 flex items-center gap-2 text-sm"
-                            title="МОН официјален образец — A4 пејзаж, со потписи"
+                            title={t('thematicPlan.monFormTooltip')}
                         >
-                            📄 МОН Образец
+                            {t('thematicPlan.monFormButton')}
                         </button>
                     )}
                     {firebaseUser && editablePlan && (
@@ -675,11 +676,11 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             onClick={() => setShowPublishDialog(true)}
                             disabled={isPublishingToBank}
                             className="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-2 text-sm disabled:opacity-60"
-                            title="Сподели го тематскиот план со колеги преку Банката на Сценарија"
+                            title={t('thematicPlan.shareTooltip')}
                         >
                             {isPublishingToBank
-                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Споделувам...</>
-                                : <>🔗 Во Банката</>
+                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> {t('thematicPlan.sharing')}</>
+                                : <>{t('thematicPlan.toBankButton')}</>
                             }
                         </button>
                     )}
@@ -687,17 +688,17 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         type="button"
                         onClick={handlePrint}
                         className="px-4 py-2 bg-brand-accent text-white rounded-lg shadow hover:bg-opacity-90 flex items-center gap-2 text-sm"
-                        title={(!authorName || !schoolName) ? 'Препорачливо е да ги пополните полињата Изготвил/-а и Училиште пред печатење' : undefined}
+                        title={(!authorName || !schoolName) ? t('thematicPlan.printHintMissingFields') : undefined}
                     >
                         <ICONS.printer className="w-4 h-4" />
-                        Испечати
+                        {t('annualPlan.officialModal.print')}
                     </button>
                     <button
                         type="button"
                         onClick={hideModal}
                         className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary text-sm"
                     >
-                        Затвори
+                        {t('common.close')}
                     </button>
                 </div>
 
@@ -707,10 +708,10 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         <span className="text-lg shrink-0">⚠️</span>
                         <div>
                             <p className="text-xs font-black text-amber-800">
-                                Само {bloomHotPct}% HOT активности — МОН препорачува ≥20%
+                                {t('thematicPlan.bloomHot.titlePrefix')} {bloomHotPct}{t('thematicPlan.bloomHot.titleSuffix')}
                             </p>
                             <p className="text-[11px] text-amber-700 mt-0.5">
-                                Додај активности со „анализира", „дизајнира", „оценува", „решава проблеми" во клучните активности на лекциите за да го зголемиш нивото на когнитивна сложеност.
+                                {t('thematicPlan.bloomHot.desc')}
                             </p>
                         </div>
                     </div>
@@ -752,14 +753,14 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         <h2 id="ai-thematic-plan-title" className="text-xl font-bold text-brand-primary flex items-center gap-2">
                             <ICONS.sparkles className="w-5 h-5" />
                             {isPrefilled ? (
-                                <span>Тематски план: <span className="text-emerald-600">{prefillThemeName}</span></span>
-                            ) : 'AI Генератор на Тематски План'}
+                                <span>{t('thematicPlan.modalTitlePrefix')} <span className="text-emerald-600">{prefillThemeName}</span></span>
+                            ) : t('thematicPlan.modalTitleDefault')}
                         </h2>
                         <button
                             type="button"
                             onClick={hideModal}
                             className="p-1 rounded-full hover:bg-gray-200"
-                            aria-label="Затвори модал"
+                            aria-label={t('thematicPlan.closeModalAriaLabel')}
                         >
                             <ICONS.close className="w-6 h-6 text-gray-600" />
                         </button>
@@ -780,8 +781,8 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         {showOfficialForm && editablePlan && (
             <ThematicPlanOfficialForm
                 data={editablePlan}
-                gradeLabel={selectedGradeObj ? `${selectedGradeObj.level}. одделение` : ''}
-                subject="Математика"
+                gradeLabel={selectedGradeObj ? `${selectedGradeObj.level}. ${t('thematicPlan.gradeSuffix')}` : ''}
+                subject={t('lessonPlan.defaultSubject')}
                 authorName={authorName}
                 schoolName={schoolName}
                 period={period}
