@@ -33,14 +33,26 @@ const BarModel: React.FC<BarModelProps> = ({ num, den, onChange }) => {
   const onUp = useCallback(() => { dragging.current = false; }, []);
   const onTouchMove = useCallback((e: React.TouchEvent) => { e.preventDefault(); emitFromX(e.touches[0].clientX); }, [emitFromX]);
   const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => { emitFromX(e.clientX); }, [emitFromX]);
+  const onKeyDown = useCallback((e: React.KeyboardEvent<SVGSVGElement>) => {
+    if (!onChange) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.min(den, num + 1)); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.max(0, num - 1)); }
+    else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+    else if (e.key === 'End') { e.preventDefault(); onChange(den); }
+  }, [onChange, num, den]);
 
   return (
     <svg
       ref={svgRef}
       viewBox={`0 0 ${BAR_W} ${BAR_H}`}
-      role="img"
+      role={onChange ? 'slider' : 'img'}
       aria-label={`Бар модел, ${num} од ${den} засенчени`}
-      className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize' : ''}`}
+      aria-valuemin={onChange ? 0 : undefined}
+      aria-valuemax={onChange ? den : undefined}
+      aria-valuenow={onChange ? num : undefined}
+      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      tabIndex={onChange ? 0 : undefined}
+      className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded' : ''}`}
       onMouseDown={onDown}
       onMouseMove={onMove}
       onMouseUp={onUp}
@@ -48,6 +60,7 @@ const BarModel: React.FC<BarModelProps> = ({ num, den, onChange }) => {
       onTouchMove={onTouchMove}
       onTouchEnd={onUp}
       onClick={onChange ? onSvgClick : undefined}
+      onKeyDown={onChange ? onKeyDown : undefined}
     >
       {Array.from({ length: den }, (_, i) => (
         <rect
@@ -103,14 +116,26 @@ const CircleModel: React.FC<CircleModelProps> = ({ num, den, onChange }) => {
   const onUp = useCallback(() => { dragging.current = false; }, []);
   const onTouchMove = useCallback((e: React.TouchEvent) => { e.preventDefault(); emitFromPoint(e.touches[0].clientX, e.touches[0].clientY); }, [emitFromPoint]);
   const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => { emitFromPoint(e.clientX, e.clientY); }, [emitFromPoint]);
+  const onKeyDown = useCallback((e: React.KeyboardEvent<SVGSVGElement>) => {
+    if (!onChange) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.min(den, num + 1)); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.max(0, num - 1)); }
+    else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+    else if (e.key === 'End') { e.preventDefault(); onChange(den); }
+  }, [onChange, num, den]);
 
   return (
     <svg
       ref={svgRef}
       viewBox={`0 0 ${CIRCLE_VB} ${CIRCLE_VB}`}
-      role="img"
+      role={onChange ? 'slider' : 'img'}
       aria-label={`Круг модел, ${num} од ${den} засенчени`}
-      className={`w-full max-w-[180px] select-none ${onChange ? 'cursor-pointer' : ''}`}
+      aria-valuemin={onChange ? 0 : undefined}
+      aria-valuemax={onChange ? den : undefined}
+      aria-valuenow={onChange ? num : undefined}
+      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      tabIndex={onChange ? 0 : undefined}
+      className={`w-full max-w-[180px] select-none ${onChange ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full' : ''}`}
       onMouseDown={onDown}
       onMouseMove={onMove}
       onMouseUp={onUp}
@@ -118,6 +143,7 @@ const CircleModel: React.FC<CircleModelProps> = ({ num, den, onChange }) => {
       onTouchMove={onTouchMove}
       onTouchEnd={onUp}
       onClick={onChange ? onSvgClick : undefined}
+      onKeyDown={onChange ? onKeyDown : undefined}
     >
       {Array.from({ length: den }, (_, i) => (
         <path
@@ -157,14 +183,26 @@ const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
   const onUp = useCallback(() => { dragging.current = false; }, []);
   const onTouchMove = useCallback((e: React.TouchEvent) => { e.preventDefault(); emitFromX(e.touches[0].clientX); }, [emitFromX]);
   const onSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => { emitFromX(e.clientX); }, [emitFromX]);
+  const onKeyDown = useCallback((e: React.KeyboardEvent<SVGSVGElement>) => {
+    if (!onChange) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.min(den, num + 1)); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.max(0, num - 1)); }
+    else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+    else if (e.key === 'End') { e.preventDefault(); onChange(den); }
+  }, [onChange, num, den]);
 
   return (
     <svg
       ref={svgRef}
       viewBox={`0 0 ${LINE_W} 50`}
-      role="img"
+      role={onChange ? 'slider' : 'img'}
       aria-label={`Бројна права, точка на ${num}/${den}`}
-      className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize' : ''}`}
+      aria-valuemin={onChange ? 0 : undefined}
+      aria-valuemax={onChange ? den : undefined}
+      aria-valuenow={onChange ? num : undefined}
+      aria-valuetext={onChange ? `${num} од ${den}` : undefined}
+      tabIndex={onChange ? 0 : undefined}
+      className={`w-full max-w-[340px] select-none ${onChange ? 'cursor-ew-resize focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded' : ''}`}
       onMouseDown={onDown}
       onMouseMove={onMove}
       onMouseUp={onUp}
@@ -172,6 +210,7 @@ const NumberLineModel: React.FC<NumberLineProps> = ({ num, den, onChange }) => {
       onTouchMove={onTouchMove}
       onTouchEnd={onUp}
       onClick={onChange ? onSvgClick : undefined}
+      onKeyDown={onChange ? onKeyDown : undefined}
     >
       <line x1={0} y1={25} x2={LINE_W} y2={25} stroke="#94a3b8" strokeWidth={2} />
       {Array.from({ length: den + 1 }, (_, i) => (
