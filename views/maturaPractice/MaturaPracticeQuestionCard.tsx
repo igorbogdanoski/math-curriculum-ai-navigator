@@ -143,8 +143,8 @@ ${item.questionText}
     onUpdate({ submitted: true });
   }, [onUpdate]);
 
-  const mcCorrect = !open && state.submitted && state.mcPick === item.correctAnswer.trim();
-  const mcWrong   = !open && state.submitted && state.mcPick !== item.correctAnswer.trim();
+  const mcCorrect = !open && !item.voided && state.submitted && state.mcPick === item.correctAnswer?.trim();
+  const mcWrong   = !open && !item.voided && state.submitted && state.mcPick !== item.correctAnswer?.trim();
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -170,11 +170,26 @@ ${item.questionText}
         ))}
       </div>
 
+      {/* ── Part 1 MC: officially voided (no correct answer exists) ── */}
+      {!open && item.voided && (
+        <div className="px-5 pb-4 space-y-2 mt-2">
+          {availableChoices.map(choice => (
+            <div key={choice} className="w-full flex items-start gap-3 px-4 py-2.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-left opacity-60">
+              <span className="font-black shrink-0">{choice}.</span>
+              <MathRenderer text={item.choices![choice]!} />
+            </div>
+          ))}
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            <span className="font-bold">Ова прашање е поништено</span> од Државната испитна комисија{item.voidedReason ? ` — ${item.voidedReason}` : ''}. Не се бодува и не влијае на резултатот.
+          </div>
+        </div>
+      )}
+
       {/* ── Part 1 MC ── */}
-      {!open && (
+      {!open && !item.voided && (
         <div className="px-5 pb-4 space-y-2 mt-2">
           {availableChoices.map((choice, choiceIdx) => {
-            const isCorrectChoice = choice === item.correctAnswer.trim();
+            const isCorrectChoice = choice === item.correctAnswer?.trim();
             const isPicked        = state.mcPick === choice;
             const isFocused       = !state.submitted && focusedChoiceIdx === choiceIdx;
             let bg = 'bg-white border-gray-200 hover:border-brand-primary hover:bg-blue-50';
@@ -200,7 +215,7 @@ ${item.questionText}
           {state.submitted && (
             <div className="flex items-center gap-3 mt-1">
               <p className={`text-sm font-bold flex-1 ${mcCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {mcCorrect ? '✓ Точно!' : `✗ Точен одговор: ${item.correctAnswer.trim()}`}
+                {mcCorrect ? '✓ Точно!' : `✗ Точен одговор: ${item.correctAnswer?.trim() ?? ''}`}
               </p>
               {mcWrong && (
                 <ForumCTA

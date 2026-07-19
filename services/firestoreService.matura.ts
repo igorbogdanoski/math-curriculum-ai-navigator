@@ -54,6 +54,8 @@ interface LocalMaturaRawQuestion {
   successRatePercent?: number | null;
   conceptIds?: string[];
   curriculumRefs?: MaturaCurriculumRefs;
+  voided?: boolean;
+  voidedReason?: string;
 }
 
 interface LocalMaturaRawExam {
@@ -114,6 +116,14 @@ export interface MaturaQuestion {
   solutionImageUrl?: string | null;
   successRatePercent?: number | null;
   curriculumRefs?: MaturaCurriculumRefs;
+  /**
+   * True for a question officially voided by the state exam committee (e.g. "се отфрла
+   * поради постоење на два точни одговори" — discarded for having two valid correct
+   * answers) — correctAnswer is null and this question must never be auto-scored or fed
+   * into spaced repetition. See audit_2026_07_18_full_app_review / Wave 4 for provenance.
+   */
+  voided?: boolean;
+  voidedReason?: string;
 }
 
 /** Cached AI grade result stored in `matura_ai_grades/{cacheKey}`. */
@@ -291,6 +301,8 @@ async function getLocalMaturaData(): Promise<{ exams: MaturaExamMeta[]; byExam: 
           solutionImageUrl: q.solutionImageUrl ?? keySol?.solutionImageUrl ?? null,
           successRatePercent: q.successRatePercent,
           curriculumRefs: q.curriculumRefs,
+          voided: q.voided,
+          voidedReason: q.voidedReason,
         };
       })
       .sort((a, b) => a.questionNumber - b.questionNumber);

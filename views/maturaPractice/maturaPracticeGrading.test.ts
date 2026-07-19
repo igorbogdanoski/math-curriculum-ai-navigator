@@ -26,12 +26,17 @@ vi.mock('../../services/firestoreService.matura', async () => {
   };
 });
 
+const recordMaturaSpacedReview = vi.fn(async (_uid: string, _examId: string, _questionNumber: number, _percentage: number) => {});
+vi.mock('../../services/firestoreService.maturaSpacedRep', () => ({
+  recordMaturaSpacedReview: (...args: Parameters<typeof recordMaturaSpacedReview>) => recordMaturaSpacedReview(...args),
+}));
+
 import { callGeminiProxy } from '../../services/gemini/core';
 import {
   getCachedAIGrade,
   type MaturaQuestion,
 } from '../../services/firestoreService.matura';
-import { gradePart2, gradePart3, explainWrongAnswer } from './maturaPracticeGrading';
+import { gradePart2, gradePart3, explainWrongAnswer, recordMcSpacedReview } from './maturaPracticeGrading';
 
 function makeQ(over: Partial<MaturaQuestion> = {}): MaturaQuestion {
   return {
@@ -164,5 +169,35 @@ describe('explainWrongAnswer', () => {
     vi.mocked(callGeminiProxy).mockResolvedValueOnce({ text: undefined } as any);
     const out = await explainWrongAnswer(makeQ(), 'Б', 'x = 4');
     expect(out).toBe('Не можев да генерирам објаснување.');
+  });
+});
+
+// ─── recordMcSpacedReview ───────────────────────────────────────────────────────
+// 2026-07-18 (audit_2026_07_18_full_app_review, Wave 4): officially voided questions
+// (correctAnswer: null) must never be scored or fed into spaced repetition.
+
+describe('recordMcSpacedReview', () => {
+  it('does not record anything for a voided question, regardless of what was selected', () => {
+    const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: null as unknown as string, voided: true, voidedReason: 'два точни одговори' });
+    recordMcSpacedReview('u1', q, 'А');
+    expect(recordMaturaSpacedReview).not.toHaveBeenCalled();
+  });
+
+  it('records a correct MC answer normally for a non-voided question', () => {
+    const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: 'А', points: 1 });
+    recordMcSpacedReview('u1', q, 'А');
+    expect(recordMaturaSpacedReview).toHaveBeenCalledWith('u1', 'exam-1', 5, 100);
+  });
+
+  it('records an incorrect MC answer as 0%', () => {
+    const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: 'А', points: 1 });
+    recordMcSpacedReview('u1', q, 'Б');
+    expect(recordMaturaSpacedReview).toHaveBeenCalledWith('u1', 'exam-1', 5, 0);
+  });
+
+  it('does nothing without a uid', () => {
+    const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: 'А' });
+    recordMcSpacedReview(undefined, q, 'А');
+    expect(recordMaturaSpacedReview).not.toHaveBeenCalled();
   });
 });

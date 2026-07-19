@@ -136,6 +136,9 @@ export function recordMcSpacedReview(
   selected: string,
 ): void {
   if (!uid) return;
+  // Officially voided questions (see MaturaQuestion.voided) have no correct answer —
+  // never score them or feed them into the spaced-repetition signal.
+  if (q.voided) return;
   const correct = (selected ?? '').trim().toLowerCase()
     === (q.correctAnswer ?? '').trim().toLowerCase();
   pushSpacedReview(uid, q, correct ? (q.points ?? 1) : 0, q.points ?? 1);

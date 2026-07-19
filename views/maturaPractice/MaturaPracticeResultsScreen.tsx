@@ -15,8 +15,11 @@ export function ResultsScreen({
   onNewSession: () => void;
 }) {
   function getScored(item: PracticeItem, s: QuestionState): { scored: number; max: number; correct: boolean } {
+    // Officially voided questions carry no correct answer and are excluded from scoring
+    // entirely (neither counted right nor wrong, no points either way).
+    if (item.voided) return { scored: 0, max: 0, correct: true };
     if (!isOpen(item)) {
-      const correct = s.submitted && s.mcPick === item.correctAnswer.trim();
+      const correct = s.submitted && s.mcPick === item.correctAnswer?.trim();
       return { scored: correct ? 1 : 0, max: 1, correct };
     }
     if (item.part === 2 && s.aiGrade) {
@@ -49,7 +52,7 @@ export function ResultsScreen({
   const topicResults = [...topicMap.values()].sort((a, b) => (b.scored / b.max) - (a.scored / a.max));
 
   const weakTopics = topicResults.filter(t => t.max > 0 && (t.scored / t.max) < 0.6);
-  const wrongItems = results.filter(r => !r.correct || r.state.skipped).map(r => r.item);
+  const wrongItems = results.filter(r => !r.item.voided && (!r.correct || r.state.skipped)).map(r => r.item);
 
   // DoK breakdown
   const dokMap: Record<number, { scored: number; max: number }> = { 1:{scored:0,max:0}, 2:{scored:0,max:0}, 3:{scored:0,max:0}, 4:{scored:0,max:0} };

@@ -190,9 +190,11 @@ export function MaturaPracticeView() {
     let scored = 0, max = 0;
     states.slice(0, current).forEach((s, i) => {
       const item = queue[i];
-      if (!item) return;
+      // Officially voided questions carry no correct answer and are excluded from both
+      // the numerator and denominator — they're not part of the scored exam at all.
+      if (!item || item.voided) return;
       max += item.points;
-      if (!isOpen(item) && s.submitted && s.mcPick === item.correctAnswer.trim()) scored += 1;
+      if (!isOpen(item) && s.submitted && s.mcPick === item.correctAnswer?.trim()) scored += 1;
       else if (item.part === 2 && s.aiGrade) scored += s.aiGrade.score;
       else if (item.part === 3) scored += s.aiGradeP3 ? s.aiGradeP3.score : (s.selfChecks ?? []).filter(Boolean).length;
     });
@@ -215,11 +217,12 @@ export function MaturaPracticeView() {
 
     queue.forEach((item, i) => {
       const s = states[i];
+      if (item.voided) return;
       if (topicArea && item.topicArea !== topicArea) return;
       matched++;
       if (!isOpen(item)) {
         max += 1;
-        if (s.submitted && s.mcPick === item.correctAnswer.trim()) scored += 1;
+        if (s.submitted && s.mcPick === item.correctAnswer?.trim()) scored += 1;
       } else if (item.part === 2 && s.aiGrade) {
         max += s.aiGrade.maxScore;
         scored += s.aiGrade.score;
@@ -235,9 +238,10 @@ export function MaturaPracticeView() {
     if (matched === 0) {
       queue.forEach((item, i) => {
         const s = states[i];
+        if (item.voided) return;
         if (!isOpen(item)) {
           max += 1;
-          if (s.submitted && s.mcPick === item.correctAnswer.trim()) scored += 1;
+          if (s.submitted && s.mcPick === item.correctAnswer?.trim()) scored += 1;
         } else if (item.part === 2 && s.aiGrade) {
           max += s.aiGrade.maxScore;
           scored += s.aiGrade.score;
