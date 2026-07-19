@@ -29,6 +29,7 @@ import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichP
 import { usePlanning } from '../contexts/PlanningContext';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useAnnualPlanGeneration } from '../hooks/useAnnualPlanGeneration';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface AnnualPlanGeneratorViewProps {
     planId?: string; // when set → edit mode (load + update)
@@ -55,6 +56,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
     const { setPlanningState } = usePlanning();
     const { lessonPlans } = usePlanner();
+    const { t } = useLanguage();
 
     // ── S94-E5: Lesson count per topic title (for Progress Tracker badges) ──────
     const lessonCountMap = useMemo(() => {
@@ -174,7 +176,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
             {isLoadingExisting && (
                 <div className="flex items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mr-4" />
-                    <span className="text-gray-500 font-medium">Вчитување на планот...</span>
+                    <span className="text-gray-500 font-medium">{t('annualPlan.loadingExisting')}</span>
                 </div>
             )}
             {!isLoadingExisting && (
@@ -183,12 +185,12 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <ICONS.planner className="w-8 h-8" />
-                        {planId ? 'Уреди Годишна Програма' : 'AI Годишна Програма'}
+                        {planId ? t('annualPlan.title.edit') : t('annualPlan.title.new')}
                     </h1>
                     <p className="text-gray-500 mt-2">
                         {planId
-                            ? 'Уредувате постоечка програма — промените ќе се зачуваат на истото место.'
-                            : 'Автоматско генерирање на структуриран годишен план (Annual Curriculum Planner)'}
+                            ? t('annualPlan.subtitle.edit')
+                            : t('annualPlan.subtitle.new')}
                     </p>
                 </div>
                 {/* Ж7.1 — Presence indicator (only in edit mode) */}
@@ -197,13 +199,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         {viewers.length > 0 && (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-medium text-emerald-700">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                {viewers.map(v => v.displayName).join(', ')} {viewers.length === 1 ? 'е' : 'се'} онлајн
+                                {viewers.map(v => v.displayName).join(', ')} {viewers.length === 1 ? t('annualPlan.presence.onlineSingular') : t('annualPlan.presence.onlinePlural')}
                             </div>
                         )}
                         {remoteUpdatedBy && (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs font-medium text-amber-700">
                                 <ICONS.arrowPath className="w-3.5 h-3.5" />
-                                {remoteUpdatedBy} зачуваше промени — превчитајте за да ги добиете
+                                {remoteUpdatedBy} {t('annualPlan.presence.remoteUpdated')}
                             </div>
                         )}
                     </div>
@@ -217,9 +219,9 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 </div>
                 
                 {[
-                    { step: 1, label: 'Одделение & Предмет' },
-                    { step: 2, label: 'Параметри' },
-                    { step: 3, label: 'Генерирање & Преглед' }
+                    { step: 1, label: t('annualPlan.step1Label') },
+                    { step: 2, label: t('annualPlan.step2Label') },
+                    { step: 3, label: t('annualPlan.step3Label') }
                 ].map((s) => (
                     <div key={s.step} className="flex flex-col items-center gap-2 text-center">
                         <button 
@@ -247,11 +249,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                     <Card className="animate-fade-in p-8">
                         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">1</span>
-                            Изберете Одделение и Предмет
+                            {t('annualPlan.step1.heading')}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label htmlFor="apg-grade" className="block text-sm font-bold text-gray-700 mb-2">Одделение</label>
+                                <label htmlFor="apg-grade" className="block text-sm font-bold text-gray-700 mb-2">{t('annualPlan.step1.gradeLabel')}</label>
                                 <select
                                     id="apg-grade"
                                     className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
@@ -264,11 +266,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 </select>
                             </div>
                             <div>
-                                <label htmlFor="apg-subject" className="block text-sm font-bold text-gray-700 mb-2">Предмет</label>
+                                <label htmlFor="apg-subject" className="block text-sm font-bold text-gray-700 mb-2">{t('annualPlan.step1.subjectLabel')}</label>
                                 <input
                                     id="apg-subject"
                                     type="text"
-                                    placeholder="пр. Математика"
+                                    placeholder={t('annualPlan.step1.subjectPlaceholder')}
                                     value={subject}
                                     onChange={(e) => { setSubject(e.target.value); if (subjectError) setSubjectError(''); }}
                                     className={`w-full p-3 border-2 rounded-xl bg-gray-50 focus:bg-white outline-none transition-all font-medium ${subjectError ? 'border-red-400 focus:border-red-500' : 'border-gray-100 focus:border-blue-500'}`}
@@ -280,12 +282,12 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (!subject.trim()) { setSubjectError('Внесете назив на предметот.'); return; }
+                                    if (!subject.trim()) { setSubjectError(t('annualPlan.step1.subjectRequired')); return; }
                                     setCurrentStep(2);
                                 }}
                                 className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
                             >
-                                Следно <ICONS.chevronDown className="w-5 h-5 -rotate-90" />
+                                {t('common.next')} <ICONS.chevronDown className="w-5 h-5 -rotate-90" />
                             </button>
                         </div>
                     </Card>
@@ -295,17 +297,17 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                     <Card className="animate-fade-in p-8">
                         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">2</span>
-                            Параметри на планирањето
+                            {t('annualPlan.step2.heading')}
                         </h2>
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center justify-between">
-                                    <span>Вкупно недели во учебната година</span>
-                                    <span className="text-blue-600">{weeks} недели</span>
+                                    <span>{t('annualPlan.step2.totalWeeksLabel')}</span>
+                                    <span className="text-blue-600">{weeks} {t('annualPlan.step2.weeksSuffix')}</span>
                                 </label>
                                 <input
                                     type="range"
-                                    title="Број на недели"
+                                    title={t('annualPlan.step2.weeksSliderTitle')}
                                     min="20"
                                     max="40"
                                     value={weeks}
@@ -313,24 +315,24 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                 />
                                 <div className="flex justify-between text-[10px] text-gray-400 mt-2">
-                                    <span>20 недели</span>
-                                    <span>36 недели (Стандардно)</span>
-                                    <span>40 недели</span>
+                                    <span>{t('annualPlan.step2.weeksMin')}</span>
+                                    <span>{t('annualPlan.step2.weeksDefault')}</span>
+                                    <span>{t('annualPlan.step2.weeksMax')}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="mt-8 flex justify-between">
-                            <button 
+                            <button
                                 onClick={() => setCurrentStep(1)}
                                 className="px-6 py-3 bg-white border-2 border-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center gap-2"
                             >
-                                <ICONS.chevronDown className="w-5 h-5 rotate-90" /> Назад
+                                <ICONS.chevronDown className="w-5 h-5 rotate-90" /> {t('common.back')}
                             </button>
-                            <button 
+                            <button
                                 onClick={() => { setCurrentStep(3); if (!plan) handleGenerate(); }}
                                 className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
                             >
-                                Генерирај <ICONS.sparkles className="w-5 h-5" />
+                                {t('common.generate')} <ICONS.sparkles className="w-5 h-5" />
                             </button>
                         </div>
                     </Card>
@@ -341,8 +343,8 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         {!plan && isGenerating ? (
                             <Card className="p-12 text-center flex flex-col items-center">
                                 <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">Генерирање на Годишна Програма</h3>
-                                <p className="text-gray-500 max-w-sm">AI ги анализира националните стандарди и ги распределува темите за Вашето одделение...</p>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">{t('annualPlan.generating.heading')}</h3>
+                                <p className="text-gray-500 max-w-sm">{t('annualPlan.generating.desc')}</p>
                             </Card>
                         ) : plan ? (
                             <Card>
@@ -352,7 +354,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             {plan.subject} ({plan.grade})
                                         </h2>
                                         <p className="text-xs text-gray-400 mt-1">
-                                            {viewMode === 'list' ? 'Повлечи ги темите за да го смениш редоследот · Кликни Тематски план за детална разработка' : 'Кликни на тема за да генерираш тематски план'}
+                                            {viewMode === 'list' ? t('annualPlan.hint.list') : t('annualPlan.hint.gantt')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -363,25 +365,25 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 onClick={() => setViewMode('list')}
                                                 className={`px-3 py-1.5 transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                                             >
-                                                📋 Листа
+                                                {t('annualPlan.view.list')}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setViewMode('gantt')}
                                                 className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${viewMode === 'gantt' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                                             >
-                                                📅 Gantt
+                                                {t('annualPlan.view.gantt')}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setViewMode('analytics')}
                                                 className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${viewMode === 'analytics' ? 'bg-violet-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                                             >
-                                                📊 Аналитика
+                                                {t('annualPlan.view.analytics')}
                                             </button>
                                         </div>
                                         <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                                            {plan.totalWeeks} недели
+                                            {plan.totalWeeks} {t('annualPlan.step2.weeksSuffix')}
                                         </span>
                                         {user && (
                                             <>
@@ -389,19 +391,19 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 type="button"
                                                 onClick={handleSave}
                                                 disabled={isSaving}
-                                                title="Зачувај (Ctrl+S)"
+                                                title={t('annualPlan.save.title')}
                                                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-60 transition shadow-sm"
                                             >
                                                 {isSaving
-                                                    ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Зачувувам...</>
-                                                    : savedId && !planId ? '✓ Зачувано' : planId ? 'Ажурирај' : 'Зачувај'}
+                                                    ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> {t('common.saving')}</>
+                                                    : savedId && !planId ? t('common.saved') : planId ? t('common.update') : t('common.save')}
                                             </button>
                                             {savedId && (
                                                 <button
                                                     type="button"
                                                     onClick={handleTogglePublic}
                                                     disabled={isTogglingPublic}
-                                                    title={isPublic ? 'Откажи споделување' : 'Сподели во Библиотека'}
+                                                    title={isPublic ? t('annualPlan.publicToggle.unshare') : t('annualPlan.publicToggle.share')}
                                                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm transition shadow-sm border ${
                                                         isPublic
                                                             ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
@@ -410,7 +412,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 >
                                                     {isTogglingPublic
                                                         ? <ICONS.spinner className="w-4 h-4 animate-spin" />
-                                                        : isPublic ? '🌐 Јавно' : '🔒 Приватно'}
+                                                        : isPublic ? t('annualPlan.publicToggle.public') : t('annualPlan.publicToggle.private')}
                                                 </button>
                                             )}
                                             {(savedId ?? planId) && firebaseUser && (
@@ -418,7 +420,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                     planType="annual"
                                                     planId={savedId ?? planId ?? ''}
                                                     ownerUid={firebaseUser.uid}
-                                                    ownerName={user?.name ?? 'Наставник'}
+                                                    ownerName={user?.name ?? t('common.teacher')}
                                                     isOwner
                                                 />
                                             )}
@@ -430,7 +432,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 downloadICS(ics, `Годишна_Програма_${plan.subject}_${plan.grade}.ics`);
                                             }}
                                             className="p-2 border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-600"
-                                            title="iCal Експорт"
+                                            title={t('annualPlan.icalExportTitle')}
                                         >
                                             📅
                                         </button>
@@ -438,41 +440,41 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             type="button"
                                             onClick={handleGenerateAllThematic}
                                             disabled={isGeneratingParallel}
-                                            title="Загреј ги сите тематски планови паралелно (кешираат за брз пристап)"
+                                            title={t('annualPlan.warmAll.title')}
                                             className="flex items-center gap-1 px-2.5 py-1.5 border-2 border-indigo-100 rounded-xl hover:bg-indigo-50 transition text-indigo-700 text-xs font-bold disabled:opacity-50"
                                         >
                                             {isGeneratingParallel
-                                                ? <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Загревам...</>
-                                                : '⚡ Загреј сите'}
+                                                ? <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {t('annualPlan.warmAll.loading')}</>
+                                                : t('annualPlan.warmAll.button')}
                                         </button>
                                         <button
                                             onClick={handlePrint}
                                             className="p-2 border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-600"
-                                            title="Печати"
+                                            title={t('common.print')}
                                         >
                                             🖨️
                                         </button>
                                         <button
                                             onClick={() => setShowOfficialForm(true)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 border-2 border-blue-100 rounded-xl hover:bg-blue-50 transition text-blue-700 text-xs font-bold"
-                                            title="Официјален МОН образец за Годишна програма"
+                                            title={t('annualPlan.officialForm.tooltip')}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                                            Официјален образец
+                                            {t('annualPlan.officialForm.button')}
                                         </button>
                                         <button
                                             onClick={() => {
                                                 sessionStorage.setItem('dataviz_import', JSON.stringify({
                                                     tableData: {
-                                                        headers: ['Тема', 'Недели'],
-                                                        rows: plan.topics.map((t: AIGeneratedAnnualPlanTopic) => [t.title.slice(0, 30), t.durationWeeks]),
+                                                        headers: [t('annualPlan.dataviz.headerTopic'), t('annualPlan.dataviz.headerWeeks')],
+                                                        rows: plan.topics.map((tp: AIGeneratedAnnualPlanTopic) => [tp.title.slice(0, 30), tp.durationWeeks]),
                                                     },
-                                                    config: { title: `${plan.grade} — ${plan.subject}`, xLabel: 'Тема', yLabel: 'Недели', type: 'bar-horizontal' },
+                                                    config: { title: `${plan.grade} — ${plan.subject}`, xLabel: t('annualPlan.dataviz.headerTopic'), yLabel: t('annualPlan.dataviz.headerWeeks'), type: 'bar-horizontal' },
                                                 }));
                                                 navigate('/data-viz');
                                             }}
                                             className="p-2 border-2 border-indigo-100 rounded-xl hover:bg-indigo-50 transition text-indigo-600"
-                                            title="Визуализирај во DataViz Studio"
+                                            title={t('annualPlan.datavizTitle')}
                                         >
                                             📊
                                         </button>
@@ -484,7 +486,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     <div className="mb-4 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
                                         <div className="flex items-center justify-between mb-1.5">
                                             <span className="text-xs font-bold text-indigo-700">
-                                                ⚡ Загревање на тематски планови: {parallelProgress.done}/{parallelProgress.total}
+                                                ⚡ {t('annualPlan.warmProgress.label')}: {parallelProgress.done}/{parallelProgress.total}
                                             </span>
                                             {!isGeneratingParallel && (
                                                 <button type="button" onClick={() => setParallelProgress(null)} className="text-xs text-indigo-400 hover:text-indigo-600">✕</button>
@@ -501,11 +503,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             return (
                                                 <div className="mt-1.5">
                                                     <p className="text-[10px] text-indigo-600">
-                                                        ✅ Завршено! {failed.length === 0 ? 'Кликни на тема во Gantt за моментален пристап.' : ''}
+                                                        ✅ {t('annualPlan.warmProgress.done')} {failed.length === 0 ? t('annualPlan.warmProgress.doneWithClick') : ''}
                                                     </p>
                                                     {failed.length > 0 && (
                                                         <div className="mt-1.5 space-y-1">
-                                                            <p className="text-[10px] font-bold text-red-600">⚠️ {failed.length} теми со грешка — обиди се повторно:</p>
+                                                            <p className="text-[10px] font-bold text-red-600">⚠️ {failed.length} {t('annualPlan.warmProgress.errorsLabel')}</p>
                                                             {failed.map(f => (
                                                                 <div key={f.topic} className="flex items-center gap-1.5">
                                                                     <span className="text-[10px] text-red-700 flex-1 truncate">✗ {f.topic}</span>
@@ -534,7 +536,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                                                 } : null));
                                                                         }}
                                                                     >
-                                                                        Повтори
+                                                                        {t('common.retry')}
                                                                     </button>
                                                                 </div>
                                                             ))}
@@ -548,7 +550,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
                                 {viewMode === 'analytics' ? (
                                     <div className="mb-6">
-                                        <React.Suspense fallback={<div className="flex items-center justify-center py-12 text-slate-400 text-sm">Вчитување аналитики...</div>}>
+                                        <React.Suspense fallback={<div className="flex items-center justify-center py-12 text-slate-400 text-sm">{t('annualPlan.analyticsLoading')}</div>}>
                                             <PlanAnalyticsDashboard plan={plan} weeklyHours={4} />
                                         </React.Suspense>
                                     </div>
@@ -633,16 +635,16 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         onClick={() => setCurrentStep(2)}
                                         className="px-6 py-3 text-blue-600 font-bold hover:bg-blue-50 rounded-xl transition-all"
                                     >
-                                        ← Назад кон параметри
+                                        {t('annualPlan.backToParams')}
                                     </button>
                                 </div>
                             </Card>
                         ) : (
                             <Card className="p-12 text-center">
                                 <div className="mb-4 text-gray-300 flex justify-center"><ICONS.planner className="w-12 h-12" /></div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">Грешка при генерирање</h3>
-                                <p className="text-gray-500 mb-6">Настана грешка. Ве молиме обидете се повторно.</p>
-                                <button onClick={() => setCurrentStep(2)} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Обиди се повторно</button>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">{t('annualPlan.error.heading')}</h3>
+                                <p className="text-gray-500 mb-6">{t('annualPlan.error.desc')}</p>
+                                <button onClick={() => setCurrentStep(2)} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">{t('common.retry')}</button>
                             </Card>
                         )}
 
@@ -669,7 +671,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                     onClick={() => setShowOfficialForm(false)}
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Официјален образец за Годишна програма"
+                    aria-label={t('annualPlan.officialModal.ariaLabel')}
                 >
                     <div
                         className="bg-white rounded-lg shadow-xl max-w-[95vw] w-full overflow-hidden flex flex-col max-h-[95vh]"
@@ -679,7 +681,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
                                 <ICONS.printer className="w-5 h-5" />
-                                Официјален образец — Годишна Глобална Програма (МОН)
+                                {t('annualPlan.officialModal.heading')}
                             </h2>
                             <div className="flex items-center gap-2">
                                 <button
@@ -692,7 +694,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     }`}
                                 >
                                     <ICONS.edit className="w-4 h-4" />
-                                    {officialIsEditing ? 'Прегледај' : 'Уреди'}
+                                    {officialIsEditing ? t('common.preview') : t('common.edit')}
                                 </button>
                                 <button
                                     type="button"
@@ -700,13 +702,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
                                 >
                                     <ICONS.printer className="w-4 h-4" />
-                                    Испечати
+                                    {t('annualPlan.officialModal.print')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowOfficialForm(false)}
                                     className="p-1 rounded-full hover:bg-gray-200"
-                                    aria-label="Затвори"
+                                    aria-label={t('common.close')}
                                 >
                                     <ICONS.close className="w-5 h-5 text-gray-600" />
                                 </button>
@@ -716,7 +718,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         {officialIsEditing && (
                             <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center gap-2 text-sm text-blue-700 flex-shrink-0">
                                 <ICONS.edit className="w-4 h-4 flex-shrink-0" />
-                                <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
+                                <span>{t('annualPlan.officialModal.editModeHint')}</span>
                             </div>
                         )}
 
