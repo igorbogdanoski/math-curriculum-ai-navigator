@@ -1,4 +1,5 @@
 import { verifyExpressionEquivalence } from '../../utils/cas/casEngine';
+import { normalizeTrueFalse } from '../../utils/duggaScoring';
 import type { DuggaQuestion } from '../../services/firestoreService.dugga';
 
 export function isObjectiveType(type: string) {
@@ -8,7 +9,11 @@ export function isObjectiveType(type: string) {
 export function isAnswerCorrect(q: DuggaQuestion, answer: string | string[] | undefined): boolean | null {
   if (answer === undefined || answer === null) return false;
   if (!isObjectiveType(q.type)) return null;
-  if (q.type === 'multiple_choice' || q.type === 'true_false' || q.type === 'inline_select') {
+  if (q.type === 'true_false') {
+    const correct = q.correctAnswer;
+    return normalizeTrueFalse(String(answer)) === normalizeTrueFalse(String(correct ?? ''));
+  }
+  if (q.type === 'multiple_choice' || q.type === 'inline_select') {
     const correct = q.correctAnswer ?? q.options?.find(o => o.isCorrect)?.id;
     return String(answer).trim() === String(correct ?? '').trim();
   }

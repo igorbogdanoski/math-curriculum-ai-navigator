@@ -5,6 +5,24 @@ import { gradeUnitCirclePick, parseUnitCirclePick } from './duggaUnitCirclePickG
 import { gradeProofSteps, parseProofSteps } from './duggaProofStepsGrading';
 import { verifyExpressionEquivalence } from './cas/casEngine';
 
+/**
+ * 2026-07-19 (Wave 15.1 follow-up, found while i18n-ing DuggaQuestionEditor): the
+ * teacher-authoring UI historically stored true_false's correctAnswer as English
+ * 'true'/'false' (makeBlankQuestion's default + the editor's own buttons), while
+ * the student-facing answer in DuggaQuestionCard.tsx has always been MK
+ * 'Точно'/'Неточно' — a literal string compare between the two NEVER matched, so
+ * true_false questions likely never graded correctly. Normalizing both sides here
+ * (rather than migrating existing Firestore data) fixes both already-authored
+ * questions and new ones without a migration script. statement_eval doesn't need
+ * this — both sides already use the same MK values.
+ */
+export function normalizeTrueFalse(value: string): string {
+  const v = value.trim().toLowerCase();
+  if (v === 'true') return 'точно';
+  if (v === 'false') return 'неточно';
+  return v;
+}
+
 export interface QResult {
   earned: number;
   maxPoints: number;
@@ -39,7 +57,11 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
       const correctTexts = (q.options ?? []).filter(o => o.isCorrect).map(o => o.text).join(', ');
       return { ...base, earned, correct: allCorrect, feedback: allCorrect ? '' : `Точни: ${correctTexts}` };
     }
-    case 'true_false':
+    case 'true_false': {
+      if (!q.correctAnswer) return null;
+      const correct = normalizeTrueFalse(answer) === normalizeTrueFalse(q.correctAnswer);
+      return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
+    }
     case 'statement_eval': {
       if (!q.correctAnswer) return null;
       const correct = answer.toLowerCase() === q.correctAnswer.toLowerCase();

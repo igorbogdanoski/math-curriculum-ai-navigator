@@ -117,6 +117,22 @@ describe('autoScore — true_false', () => {
   it('returns null when correctAnswer is missing', () => {
     expect(autoScore(makeQ({ type: 'true_false' }), 'Точно')).toBeNull();
   });
+
+  // 2026-07-19 (Wave 15.1 follow-up): the teacher-editor historically authored
+  // correctAnswer as English 'true'/'false' (DuggaQuestionEditor.tsx's old default)
+  // while the student always submits MK 'Точно'/'Неточно' — a literal compare never
+  // matched, so every true_false question graded as wrong regardless of the answer.
+  // Legacy already-authored questions still have 'true'/'false' stored in Firestore,
+  // so normalizeTrueFalse() must keep accepting both forms indefinitely.
+  it('matches legacy English correctAnswer values against the MK student answer', () => {
+    const legacyTrue = makeQ({ type: 'true_false', points: 1, correctAnswer: 'true' });
+    expect(autoScore(legacyTrue, 'Точно')?.correct).toBe(true);
+    expect(autoScore(legacyTrue, 'Неточно')?.correct).toBe(false);
+
+    const legacyFalse = makeQ({ type: 'true_false', points: 1, correctAnswer: 'false' });
+    expect(autoScore(legacyFalse, 'Неточно')?.correct).toBe(true);
+    expect(autoScore(legacyFalse, 'Точно')?.correct).toBe(false);
+  });
 });
 
 // ─── statement_eval ───────────────────────────────────────────────────────────

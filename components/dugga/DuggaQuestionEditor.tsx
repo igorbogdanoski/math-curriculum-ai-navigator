@@ -12,6 +12,7 @@ import type {
 } from '../../services/firestoreService.dugga';
 import { S61TeacherControls, isOpenEndedType } from './S61TeacherControls';
 import { BASE_FUNCTIONS, type BaseFunctionKey } from '../math/functionTransformerHelpers';
+import { normalizeTrueFalse } from '../../utils/duggaScoring';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Question type metadata ───────────────────────────────────────────────────
@@ -79,7 +80,9 @@ export function makeBlankQuestion(type: DuggaQuestionType = 'multiple_choice'): 
     ];
   }
   if (type === 'true_false') {
-    base.correctAnswer = 'true';
+    // MK value, not English — matches the student-facing answer value in
+    // DuggaQuestionCard.tsx (see utils/duggaScoring.ts's normalizeTrueFalse for why).
+    base.correctAnswer = 'Точно';
   }
   if (type === 'ordering') {
     base.orderItems = ['', '', '', ''];
@@ -247,18 +250,18 @@ export function QuestionEditor({
             <div>
               <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaEditor.correctAnswer')}</label>
               <div className="flex gap-3">
-                {/* Value stays English ('true'/'false', see makeBlankQuestion) — only the
-                    displayed label is translated. Note: DuggaQuestionCard's true_false
-                    player UI stores the student's answer as MK 'Точно'/'Неточно' text, which
-                    means true_false grading (duggaScoring.ts's literal string compare) was
-                    already mismatched before this i18n pass — pre-existing, out of scope here. */}
-                {(['true', 'false'] as const).map(v => (
+                {/* Value stays MK ('Точно'/'Неточно') — matches the student-facing answer
+                    value in DuggaQuestionCard.tsx, and is compared via normalizeTrueFalse()
+                    in utils/duggaScoring.ts (which also still accepts legacy 'true'/'false'
+                    values already stored on questions authored before this fix). Only the
+                    displayed label is translated. */}
+                {(['Точно', 'Неточно'] as const).map(v => (
                   <button type="button" key={v}
                     onClick={() => upd({ correctAnswer: v })}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
-                      q.correctAnswer === v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      normalizeTrueFalse(q.correctAnswer ?? '') === normalizeTrueFalse(v) ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}>
-                    {v === 'true' ? `✓ ${t('duggaQuestion.true')}` : `✗ ${t('duggaQuestion.false')}`}
+                    {v === 'Точно' ? `✓ ${t('duggaQuestion.true')}` : `✗ ${t('duggaQuestion.false')}`}
                   </button>
                 ))}
               </div>

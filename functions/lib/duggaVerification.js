@@ -24,6 +24,21 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyDeterministicQuestions = verifyDeterministicQuestions;
+/**
+ * 2026-07-19 (Wave 15.1 follow-up): true_false's correctAnswer was historically
+ * authored as English 'true'/'false' by the teacher-editor while the student's
+ * submitted answer is MK 'Точно'/'Неточно' — a literal compare never matched.
+ * Kept in sync by hand with the identical helper in utils/duggaScoring.ts per
+ * this file's documented "deliberate COPY, not a shared import" convention.
+ */
+function normalizeTrueFalse(value) {
+    const v = value.trim().toLowerCase();
+    if (v === 'true')
+        return 'точно';
+    if (v === 'false')
+        return 'неточно';
+    return v;
+}
 /** Re-derives earned points for one deterministic-type question. Returns null if this
  *  question type isn't one of the ones this module can verify without a heavier port. */
 function verifyOneQuestion(q, answer) {
@@ -46,7 +61,11 @@ function verifyOneQuestion(q, answer) {
             const ratio = hits / correctIds.length;
             return allCorrect ? q.points : Math.floor(q.points * ratio * (wrong > 0 ? 0.6 : 1));
         }
-        case 'true_false':
+        case 'true_false': {
+            if (!q.correctAnswer)
+                return null;
+            return normalizeTrueFalse(rawAnswer) === normalizeTrueFalse(q.correctAnswer) ? q.points : 0;
+        }
         case 'statement_eval': {
             if (!q.correctAnswer)
                 return null;

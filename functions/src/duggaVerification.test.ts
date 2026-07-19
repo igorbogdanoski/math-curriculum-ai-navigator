@@ -13,6 +13,19 @@ describe('verifyDeterministicQuestions', () => {
     expect(result.unverifiedQuestionIds).toEqual([]);
   });
 
+  // 2026-07-19 (Wave 15.1 follow-up): true_false's correctAnswer was historically
+  // authored as English 'true'/'false' by the teacher-editor while the student always
+  // submits MK 'Точно'/'Неточно' — normalizeTrueFalse() must keep accepting legacy
+  // English values already stored on questions authored before the fix.
+  it('matches a legacy English true_false correctAnswer against the MK student answer', () => {
+    const questions: VerifQuestion[] = [
+      { id: 'q1', type: 'true_false', points: 3, correctAnswer: 'true' },
+    ];
+    const result = verifyDeterministicQuestions(questions, { q1: 'Точно' });
+    expect(result.verifiedEarned).toBe(3);
+    expect(result.verifiedMax).toBe(3);
+  });
+
   it('catches a fabricated 100% on a multiple_choice question the student actually got wrong', () => {
     const questions: VerifQuestion[] = [
       { id: 'q1', type: 'multiple_choice', points: 10, options: [{ id: 'a', text: 'A', isCorrect: true }, { id: 'b', text: 'B' }] },

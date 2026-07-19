@@ -56,6 +56,20 @@ describe('isAnswerCorrect — other objective types unchanged', () => {
     expect(isAnswerCorrect(q, ['a'])).toBeNull();
   });
 
+  // 2026-07-19 (Wave 15.1 follow-up): mirrors utils/duggaScoring.ts's normalizeTrueFalse
+  // fix — the results panel's independent recompute must agree with the live-graded score.
+  it('true_false: matches MK student answer against MK correctAnswer, case-insensitively', () => {
+    const q = makeQ({ type: 'true_false', correctAnswer: 'Точно' });
+    expect(isAnswerCorrect(q, 'точно')).toBe(true);
+    expect(isAnswerCorrect(q, 'Неточно')).toBe(false);
+  });
+
+  it('true_false: matches legacy English correctAnswer values against the MK student answer', () => {
+    const q = makeQ({ type: 'true_false', correctAnswer: 'true' });
+    expect(isAnswerCorrect(q, 'Точно')).toBe(true);
+    expect(isAnswerCorrect(q, 'Неточно')).toBe(false);
+  });
+
   it('returns null for non-objective types (needs AI/manual grading)', () => {
     expect(isAnswerCorrect(makeQ({ type: 'essay' }), 'some text')).toBeNull();
   });
