@@ -17,6 +17,7 @@ import { BloomRadarChart } from './BloomRadarChart';
 import { QualityScoreCard } from './QualityScoreCard';
 import { NationalStandardsPanel } from './NationalStandardsPanel';
 import { CurriculumGapPanel } from './CurriculumGapPanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ function UbDBar({ label, pct, color }: { label: string; pct: number; color: stri
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours: weeklyHoursProp }) => {
+  const { t } = useLanguage();
   const gradeNum = detectGrade(plan.grade ?? '');
   // Use accurate МОН hours if grade is detected; fall back to prop or 4
   const { weeklyHours, lessonMinutes } = gradeNum
@@ -61,7 +63,7 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours: wee
       const report = await analyzePlanQuality(plan);
       setQualityReport(report);
     } catch {
-      setAnalysisError('Грешка при AI анализа. Обидете се повторно.');
+      setAnalysisError(t('planAnalytics.errors.aiAnalysis'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -171,7 +173,7 @@ ${safeWeak}
       });
       if (resp?.text) setUbdSuggestions(resp.text.trim());
     } catch {
-      setUbdSuggestions('Грешка при генерирање. Обиди се повторно.');
+      setUbdSuggestions(t('planAnalytics.errors.ubdGenerate'));
     } finally {
       setIsFillingGaps(false);
     }
@@ -186,10 +188,9 @@ ${safeWeak}
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
           <span className="text-xl shrink-0 mt-0.5">⚠️</span>
           <div>
-            <p className="text-xs font-bold text-amber-800">Недоволно Примена/Анализа/Синтеза — само {hotPct}% наспроти препорачаните ≥30%</p>
+            <p className="text-xs font-bold text-amber-800">{t('planAnalytics.bloomWarning.titlePrefix')} {hotPct}{t('planAnalytics.bloomWarning.titleSuffix')}</p>
             <p className="text-[11px] text-amber-700 mt-0.5">
-              МОН препорачува минимум 30% цели на Блум ниво 3–6 (Примена, Анализа, Евалуација, Создавање).
-              Додај активности со „решава", „анализира", „оценува", „дизајнира" во целите на темите.
+              {t('planAnalytics.bloomWarning.desc')}
             </p>
           </div>
         </div>
@@ -201,38 +202,38 @@ ${safeWeak}
           <div>
             <h3 className="text-sm font-bold text-sky-900">📐 UbD Backward Design</h3>
             <p className="text-[11px] text-sky-600 mt-0.5">
-              Проверка на трите фази: Цели → Докази → Активности (Wiggins &amp; McTighe)
+              {t('planAnalytics.ubd.subtitle')}
             </p>
           </div>
           {ubdScore.weakTopics.length > 0 && (
             <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">
-              {ubdScore.weakTopics.length} теми со пропусти
+              {ubdScore.weakTopics.length} {t('planAnalytics.ubd.gapsCountSuffix')}
             </span>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 1 — Посакувани резултати</p>
-            <UbDBar label="Теми со цели" pct={ubdScore.stage1} color={ubdScore.stage1 >= 70 ? 'text-emerald-600' : 'text-red-500'} />
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">{t('planAnalytics.ubd.stage1Title')}</p>
+            <UbDBar label={t('planAnalytics.ubd.stage1Label')} pct={ubdScore.stage1} color={ubdScore.stage1 >= 70 ? 'text-emerald-600' : 'text-red-500'} />
           </div>
           <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 2 — Докази за разбирање</p>
-            <UbDBar label="Теми со проверка/тест" pct={ubdScore.stage2} color={ubdScore.stage2 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">{t('planAnalytics.ubd.stage2Title')}</p>
+            <UbDBar label={t('planAnalytics.ubd.stage2Label')} pct={ubdScore.stage2} color={ubdScore.stage2 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
           </div>
           <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 3 — Наставна програма</p>
-            <UbDBar label="Теми со истраж./соработка" pct={ubdScore.stage3} color={ubdScore.stage3 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">{t('planAnalytics.ubd.stage3Title')}</p>
+            <UbDBar label={t('planAnalytics.ubd.stage3Label')} pct={ubdScore.stage3} color={ubdScore.stage3 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
           </div>
         </div>
         {ubdScore.weakTopics.length > 0 && (
           <div className="space-y-2">
             <details className="text-[11px]">
               <summary className="cursor-pointer text-sky-600 hover:text-sky-800 font-semibold select-none">
-                Прикажи теми со нецелосна UbD структура
+                {t('planAnalytics.ubd.showIncomplete')}
               </summary>
               <ul className="mt-1.5 space-y-0.5 pl-3">
-                {ubdScore.weakTopics.map(t => (
-                  <li key={t} className="text-amber-700">• {t}</li>
+                {ubdScore.weakTopics.map(topic => (
+                  <li key={topic} className="text-amber-700">• {topic}</li>
                 ))}
               </ul>
             </details>
@@ -243,8 +244,8 @@ ${safeWeak}
               className="flex items-center gap-1.5 text-[11px] font-bold text-sky-700 hover:text-sky-900 disabled:opacity-50 transition-colors"
             >
               {isFillingGaps
-                ? <><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> AI генерира предлози...</>
-                : <>🎯 AI: Пополни ги UbD пропустите</>}
+                ? <><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {t('planAnalytics.ubd.generating')}</>
+                : <>{t('planAnalytics.ubd.fillGapsButton')}</>}
             </button>
             {ubdSuggestions && (
               <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-[11px] text-sky-900 leading-relaxed whitespace-pre-wrap">
@@ -258,9 +259,9 @@ ${safeWeak}
       {/* ── S78-A: AI Quality Analysis ── */}
       <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-100 flex items-center justify-between gap-4">
         <div>
-          <h3 className="font-bold text-violet-800 text-sm">🤖 AI Педагошка Анализа</h3>
+          <h3 className="font-bold text-violet-800 text-sm">{t('planAnalytics.aiQuality.heading')}</h3>
           <p className="text-xs text-violet-600 mt-0.5">
-            Длабока оцена на Блум баланс, покриеност на curriculum, вертикална прогресија и препораки за подобрување.
+            {t('planAnalytics.aiQuality.desc')}
           </p>
         </div>
         <button
@@ -270,8 +271,8 @@ ${safeWeak}
           className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 disabled:opacity-60 transition shadow-sm"
         >
           {isAnalyzing ? (
-            <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Анализирам...</>
-          ) : qualityReport ? '🔄 Повторна анализа' : '🔍 Анализирај'}
+            <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {t('planAnalytics.aiQuality.analyzing')}</>
+          ) : qualityReport ? t('planAnalytics.aiQuality.reanalyze') : t('planAnalytics.aiQuality.analyze')}
         </button>
       </div>
       {analysisError && (
@@ -283,7 +284,7 @@ ${safeWeak}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
           <div className="text-2xl font-bold text-blue-700">{plan.topics?.length ?? 0}</div>
-          <div className="text-xs text-blue-500 mt-0.5">Теми</div>
+          <div className="text-xs text-blue-500 mt-0.5">{t('planAnalytics.stat.topics')}</div>
         </div>
         <div className={`rounded-xl p-3 text-center border ${totalPlanned > totalAvailableHours ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
           <div className={`text-2xl font-bold ${totalPlanned > totalAvailableHours ? 'text-red-700' : 'text-emerald-700'}`}>
@@ -291,12 +292,12 @@ ${safeWeak}
             <span className="text-sm font-normal opacity-60">/{totalAvailableHours}</span>
           </div>
           <div className={`text-xs mt-0.5 ${totalPlanned > totalAvailableHours ? 'text-red-500' : 'text-emerald-500'}`}>
-            Часови · {weeklyHours}ч/нед · {lessonMinutes}мин
+            {t('planAnalytics.stat.hoursSuffixPrefix')} {weeklyHours}{t('planAnalytics.stat.hoursSuffixMiddle')} {lessonMinutes}{t('planAnalytics.stat.hoursSuffixEnd')}
           </div>
         </div>
         <div className="bg-purple-50 rounded-xl p-3 text-center border border-purple-100">
           <div className="text-2xl font-bold text-purple-700">{coveragePct}%</div>
-          <div className="text-xs text-purple-500 mt-0.5">Покриеност</div>
+          <div className="text-xs text-purple-500 mt-0.5">{t('planAnalytics.stat.coverage')}</div>
         </div>
         <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
           <div className="text-2xl font-bold text-amber-700">
@@ -304,7 +305,7 @@ ${safeWeak}
               ? `L${bloomPct.indexOf(Math.max(...bloomPct)) + 1}`
               : '—'}
           </div>
-          <div className="text-xs text-amber-500 mt-0.5">Доминантен Bloom</div>
+          <div className="text-xs text-amber-500 mt-0.5">{t('planAnalytics.stat.dominantBloom')}</div>
         </div>
       </div>
 
@@ -312,20 +313,20 @@ ${safeWeak}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <h3 className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" />
-          Bloom's Taxonomy — дистрибуција на цели
+          {t('planAnalytics.bloom.heading')}
         </h3>
         <p className="text-xs text-gray-400 mb-3">
-          МОН препорачува: ≥30% Примена (Ниво 3), ≥20% Анализа+Евалуација+Создавање
+          {t('planAnalytics.bloom.descPrefix')}
           {' · '}
-          <span className="text-indigo-400">─ ─ Целна</span>
+          <span className="text-indigo-400">{t('planAnalytics.bloom.targetLegend')}</span>
           {' · '}
-          <span className="text-cyan-500">─── Планирана</span>
+          <span className="text-cyan-500">{t('planAnalytics.bloom.plannedLegend')}</span>
         </p>
         <div className="flex flex-col sm:flex-row items-start gap-4">
           <div className="w-full sm:w-80 flex-shrink-0">
             {bloomTotalHits === 0 ? (
               <div className="h-48 flex items-center justify-center text-gray-300 text-xs border-2 border-dashed border-gray-100 rounded-xl">
-                Нема доволно текст за анализа
+                {t('planAnalytics.bloom.notEnoughText')}
               </div>
             ) : (
               <BloomRadarChart scores={bloomPct} targets={bloomTargetPct} />
@@ -361,7 +362,7 @@ ${safeWeak}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-          Распределба на часови по теми
+          {t('planAnalytics.hours.heading')}
         </h3>
         <div className="space-y-2.5">
           {topicsWithHours.map(({ topic, planned, official }, idx) => {
@@ -384,8 +385,8 @@ ${safeWeak}
                   <div className="flex justify-between text-xs text-gray-700 mb-0.5">
                     <span className="truncate font-medium">{topic.title}</span>
                     <span className="flex-shrink-0 ml-2 font-mono tabular-nums text-gray-500">
-                      {planned}ч
-                      {official != null && <span className="text-gray-300">/{official}ч</span>}
+                      {planned}{t('planAnalytics.hoursAbbrevShort')}
+                      {official != null && <span className="text-gray-300">/{official}{t('planAnalytics.hoursAbbrevShort')}</span>}
                     </span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -396,7 +397,7 @@ ${safeWeak}
                   </div>
                 </div>
                 {official != null && isOver && (
-                  <span className="text-[10px] text-red-500 font-bold flex-shrink-0">+{planned - official}ч</span>
+                  <span className="text-[10px] text-red-500 font-bold flex-shrink-0">+{planned - official}{t('planAnalytics.hoursAbbrevShort')}</span>
                 )}
                 {official != null && !isOver && !isUnder && (
                   <span className="text-[10px] text-emerald-600 flex-shrink-0">✓</span>
@@ -408,19 +409,19 @@ ${safeWeak}
 
         {/* Total row */}
         <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-          <span className="text-gray-500">Вкупно планирани:</span>
+          <span className="text-gray-500">{t('planAnalytics.hours.totalLabel')}</span>
           <span className={`font-bold font-mono ${totalPlanned > totalAvailableHours ? 'text-red-600' : 'text-emerald-600'}`}>
-            {totalPlanned} / {totalAvailableHours} ч.
+            {totalPlanned} / {totalAvailableHours} {t('planAnalytics.hoursAbbrevShort')}.
           </span>
         </div>
         {totalPlanned > totalAvailableHours && (
           <p className="text-[11px] text-red-500 mt-1">
-            ⚠️ Планирани {totalPlanned - totalAvailableHours} часа повеќе од достапниот фонд.
+            {t('planAnalytics.hours.overBudgetPrefix')} {totalPlanned - totalAvailableHours} {t('planAnalytics.hours.overBudgetSuffix')}
           </p>
         )}
         {totalPlanned < totalAvailableHours * 0.9 && (
           <p className="text-[11px] text-amber-500 mt-1">
-            ℹ️ Има {totalAvailableHours - totalPlanned} слободни часа — размисли за дополнително вградување.
+            {t('planAnalytics.hours.underBudgetPrefix')} {totalAvailableHours - totalPlanned} {t('planAnalytics.hours.underBudgetSuffix')}
           </p>
         )}
       </div>
@@ -429,24 +430,24 @@ ${safeWeak}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <h3 className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
-          Покриеност на официјалната програма
+          {t('planAnalytics.coverage.heading')}
         </h3>
         {coverageItems.length === 0 ? (
           <p className="text-xs text-gray-400 italic py-4 text-center">
-            Нема официјална програма за ова одделение во системот (1–9 одд. поддржани).
+            {t('planAnalytics.coverage.noOfficial')}
           </p>
         ) : (
           <>
             <p className="text-xs text-gray-400 mb-3">
-              Споредба на твоите теми со официјалната МОН програма за {plan.grade ?? 'ова одделение'}.
+              {t('planAnalytics.coverage.compareTextPrefix')} {plan.grade ?? t('planAnalytics.coverage.thisGradeFallback')}.
               {' '}
-              <span className="text-emerald-600 font-semibold">{coveredCount}/{coverageItems.length}</span> теми покриени.
+              <span className="text-emerald-600 font-semibold">{coveredCount}/{coverageItems.length}</span> {t('planAnalytics.coverage.topicsCoveredSuffix')}
             </p>
             <div className="flex flex-wrap gap-2">
               {coverageItems.map((item, i) => (
                 <div
                   key={i}
-                  title={item.covered ? `Покриена: ${item.planTopicTitle}` : 'Не е планирана'}
+                  title={item.covered ? `${t('planAnalytics.coverage.coveredTitlePrefix')} ${item.planTopicTitle}` : t('planAnalytics.coverage.notPlanned')}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                     item.covered
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
@@ -455,13 +456,13 @@ ${safeWeak}
                 >
                   <span>{item.covered ? '✓' : '✗'}</span>
                   <span className="truncate max-w-[180px]">{item.title}</span>
-                  <span className="opacity-50 tabular-nums">{item.hours}ч</span>
+                  <span className="opacity-50 tabular-nums">{item.hours}{t('planAnalytics.hoursAbbrevShort')}</span>
                 </div>
               ))}
             </div>
             {coverageItems.some(c => !c.covered) && (
               <p className="text-[11px] text-red-500 mt-3">
-                ⚠️ {coverageItems.filter(c => !c.covered).map(c => c.title).join(', ')} — не се планирани во твојот план.
+                ⚠️ {coverageItems.filter(c => !c.covered).map(c => c.title).join(', ')} {t('planAnalytics.coverage.notPlannedListSuffix')}
               </p>
             )}
           </>
@@ -469,16 +470,16 @@ ${safeWeak}
       </div>
 
       {/* ── D: МОН Национални Стандарди ── */}
-      <NationalStandardsPanel planTopics={(plan.topics ?? []).map(t => t.title)} gradeNum={gradeNum} />
+      <NationalStandardsPanel planTopics={(plan.topics ?? []).map(topic => topic.title)} gradeNum={gradeNum} />
 
       {/* ── E: S100.2 — AI Curriculum Gap Detector ── */}
       {gradeNum !== null && gradeNum <= 9 && (
         <div className="border border-red-200 rounded-2xl bg-white shadow-sm p-5">
           <p className="text-xs font-black text-red-700 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>🔍</span> Gap Detector — БРО стандарди
+            <span>🔍</span> {t('planAnalytics.gapDetector.heading')}
           </p>
           <CurriculumGapPanel
-            planTopics={(plan.topics ?? []).map(t => t.title)}
+            planTopics={(plan.topics ?? []).map(topic => topic.title)}
             gradeNum={gradeNum as number}
           />
         </div>
