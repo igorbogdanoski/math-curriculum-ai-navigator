@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createDuggaTest, updateDuggaTest, deleteDuggaTest,
   getDuggaTest, getDuggaTestByCode, submitDuggaTest, incrementDuggaAdaptCount,
-  fetchPublicDuggaTestsPage,
+  fetchPublicDuggaTestsPage, gradeSubmissionQuestion,
 } from './firestoreService.dugga';
 import type { DuggaTest } from './firestoreService.dugga';
 import {
@@ -229,6 +229,99 @@ describe('submitDuggaTest', () => {
       studentName: 'Петар', score: 8, submittedAt: 'SERVER_TS',
     }));
     expect(subId).toBe('sub-1');
+  });
+});
+
+// ─── gradeSubmissionQuestion ──────────────────────────────────────────────────
+// 2026-07-19 (audit_2026_07_18_full_app_review, Wave 5.2): lets a teacher manually
+// award points for a question that couldn't be auto/AI-graded (correct: null),
+// recomputing score/percentage/pendingReviewPoints from the full result set so
+// they never drift out of sync with the per-question detail.
+
+describe('gradeSubmissionQuestion', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function mockSubmission(overrides: Record<string, unknown> = {}) {
+    (doc as ReturnType<typeof vi.fn>).mockReturnValue('doc-ref');
+    (getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        totalPoints: 10,
+        score: 4,
+        questionResults: {
+          q1: { earned: 4, maxPoints: 4, correct: true, feedback: '' },
+          q2: { earned: 0, maxPoints: 6, correct: null, feedback: 'Потребно дополнително оценување' },
+        },
+        ...overrides,
+      }),
+    });
+  }
+
+  it('throws when the submission does not exist', async () => {
+    (doc as ReturnType<typeof vi.fn>).mockReturnValue('doc-ref');
+    (getDoc as ReturnType<typeof vi.fn>).mockResolvedValue({ exists: () => false });
+    await expect(gradeSubmissionQuestion('missing-sub', 'q2', 5)).rejects.toThrow('Submission not found');
+  });
+
+  it('throws for a questionId not present in questionResults', async () => {
+    mockSubmission();
+    await expect(gradeSubmissionQuestion('sub-1', 'q-unknown', 5)).rejects.toThrow('Unknown question for this submission');
+  });
+
+  it('awards full points and marks correct=true when earnedPoints meets maxPoints', async () => {
+    mockSubmission();
+    await gradeSubmissionQuestion('sub-1', 'q2', 6);
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', expect.objectContaining({
+      score: 10, // 4 (q1) + 6 (q2)
+      pendingReviewPoints: 0,
+      percentage: 100, // 10/10, no more pending
+      questionResults: expect.objectContaining({
+        q2: expect.objectContaining({ earned: 6, correct: true }),
+      }),
+    }));
+  });
+
+  it('awards partial credit and keeps correct=false (not null) once graded', async () => {
+    mockSubmission();
+    await gradeSubmissionQuestion('sub-1', 'q2', 3);
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', expect.objectContaining({
+      score: 7, // 4 + 3
+      pendingReviewPoints: 0,
+      percentage: 70, // 7/10
+      questionResults: expect.objectContaining({
+        q2: expect.objectContaining({ earned: 3, correct: false }),
+      }),
+    }));
+  });
+
+  it('clamps earnedPoints to [0, maxPoints]', async () => {
+    mockSubmission();
+    await gradeSubmissionQuestion('sub-1', 'q2', 999);
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', expect.objectContaining({
+      questionResults: expect.objectContaining({ q2: expect.objectContaining({ earned: 6 }) }),
+    }));
+
+    await gradeSubmissionQuestion('sub-1', 'q2', -5);
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', expect.objectContaining({
+      questionResults: expect.objectContaining({ q2: expect.objectContaining({ earned: 0 }) }),
+    }));
+  });
+
+  it('leaves other still-pending questions out of the percentage denominator', async () => {
+    mockSubmission({
+      totalPoints: 15,
+      questionResults: {
+        q1: { earned: 4, maxPoints: 4, correct: true, feedback: '' },
+        q2: { earned: 0, maxPoints: 6, correct: null, feedback: '' },
+        q3: { earned: 0, maxPoints: 5, correct: null, feedback: '' },
+      },
+    });
+    await gradeSubmissionQuestion('sub-1', 'q2', 6);
+    expect(updateDoc).toHaveBeenCalledWith('doc-ref', expect.objectContaining({
+      score: 10, // 4 + 6, q3 still ungraded
+      pendingReviewPoints: 5, // q3 still pending
+      percentage: 100, // 10/(15-5)
+    }));
   });
 });
 

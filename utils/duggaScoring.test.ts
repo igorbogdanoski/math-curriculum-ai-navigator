@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { autoScore, needsAIGrade, buildAIGradingQuestionContext, parseAIEarnedPoints, percentageToMkGrade } from './duggaScoring';
+import { autoScore, needsAIGrade, needsManualReview, buildAIGradingQuestionContext, parseAIEarnedPoints, percentageToMkGrade } from './duggaScoring';
 import type { DuggaQuestion } from '../services/firestoreService.dugga';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -413,6 +413,54 @@ describe('parseAIEarnedPoints', () => {
 
   it('returns 0 when no pattern found', () => {
     expect(parseAIEarnedPoints('No score here', 5)).toBe(0);
+  });
+});
+
+// ─── needsManualReview ────────────────────────────────────────────────────────
+// 2026-07-19 (audit_2026_07_18_full_app_review, Wave 5.1): these 8 types silently
+// scored 0 forever when the author never filled in the answer key, with no
+// distinction from "genuinely wrong". needsManualReview() flags exactly the cases
+// where autoScore() returns null due to a missing structured answer key.
+
+describe('needsManualReview', () => {
+  it('flags checklist with no correct option marked', () => {
+    expect(needsManualReview(makeQ({ type: 'checklist', options: [{ id: 'a', text: 'A' }] }))).toBe(true);
+  });
+  it('does not flag checklist with a correct option marked', () => {
+    expect(needsManualReview(makeQ({ type: 'checklist', options: [{ id: 'a', text: 'A', isCorrect: true }] }))).toBe(false);
+  });
+  it('flags fill_blanks with no correctAnswer', () => {
+    expect(needsManualReview(makeQ({ type: 'fill_blanks' }))).toBe(true);
+  });
+  it('does not flag fill_blanks with a correctAnswer', () => {
+    expect(needsManualReview(makeQ({ type: 'fill_blanks', correctAnswer: 'x=5' }))).toBe(false);
+  });
+  it('flags ordering with empty orderItems', () => {
+    expect(needsManualReview(makeQ({ type: 'ordering', orderItems: [] }))).toBe(true);
+  });
+  it('flags multi_match with no matchPairs', () => {
+    expect(needsManualReview(makeQ({ type: 'multi_match' }))).toBe(true);
+  });
+  it('flags function_match with no expectedTransform', () => {
+    expect(needsManualReview(makeQ({ type: 'function_match' }))).toBe(true);
+  });
+  it('flags proof_steps with no expectedProof steps', () => {
+    expect(needsManualReview(makeQ({ type: 'proof_steps' }))).toBe(true);
+    expect(needsManualReview(makeQ({ type: 'proof_steps', expectedProof: { steps: [] } as any }))).toBe(true);
+  });
+  it('flags unit_circle_pick with no expectedUnitCircle', () => {
+    expect(needsManualReview(makeQ({ type: 'unit_circle_pick' }))).toBe(true);
+  });
+  it('flags student_chart with no expectedChart', () => {
+    expect(needsManualReview(makeQ({ type: 'student_chart' }))).toBe(true);
+  });
+  it('flags list_items with no correctAnswer', () => {
+    expect(needsManualReview(makeQ({ type: 'list_items' }))).toBe(true);
+  });
+  it('returns false for types unaffected by this gap (multiple_choice, essay, section_header)', () => {
+    expect(needsManualReview(makeQ({ type: 'multiple_choice' }))).toBe(false);
+    expect(needsManualReview(makeQ({ type: 'essay' }))).toBe(false);
+    expect(needsManualReview(makeQ({ type: 'section_header' }))).toBe(false);
   });
 });
 

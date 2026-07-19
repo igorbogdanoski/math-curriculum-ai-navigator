@@ -29,8 +29,8 @@ describe('isAnswerCorrect — fill_blanks CAS fallback (consistency with autoSco
     expect(isAnswerCorrect(makeQ({ correctAnswer: 'x=5' }), 'x=4')).toBe(false);
   });
 
-  it('returns false rather than throwing when correctAnswer is missing', () => {
-    expect(isAnswerCorrect(makeQ({ correctAnswer: undefined }), 'anything')).toBe(false);
+  it('returns null (needs review), not false, when correctAnswer is missing — a missing answer key means "not gradeable", not "everyone got it wrong" (Wave 5.1/5.2)', () => {
+    expect(isAnswerCorrect(makeQ({ correctAnswer: undefined }), 'anything')).toBeNull();
   });
 });
 
@@ -49,6 +49,11 @@ describe('isAnswerCorrect — other objective types unchanged', () => {
     ] });
     expect(isAnswerCorrect(q, ['b', 'a'])).toBe(true);
     expect(isAnswerCorrect(q, ['a'])).toBe(false);
+  });
+
+  it('checklist: returns null (needs review) when no option is marked correct', () => {
+    const q = makeQ({ type: 'checklist', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }] });
+    expect(isAnswerCorrect(q, ['a'])).toBeNull();
   });
 
   it('returns null for non-objective types (needs AI/manual grading)', () => {

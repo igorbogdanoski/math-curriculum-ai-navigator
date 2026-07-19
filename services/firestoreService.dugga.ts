@@ -6,6 +6,7 @@ import {
 import { db } from '../firebaseConfig';
 import { firestorePage } from './firestorePagination';
 import { logger } from '../utils/logger';
+import type { QResult } from '../utils/duggaScoring';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -288,6 +289,23 @@ export interface DuggaSubmission {
   aiGradeNotes?: string;
   submittedAt: Timestamp;
 
+  /**
+   * Per-question grading breakdown, keyed by DuggaQuestion.id — added 2026-07-19
+   * (audit_2026_07_18_full_app_review, Wave 5) so a teacher can review and
+   * manually grade the questions `autoScore()` couldn't score (correct === null:
+   * either a missing answer key — see needsManualReview() — or a failed AI call).
+   * Older submissions predating this field simply won't have it.
+   */
+  questionResults?: Record<string, QResult>;
+  /**
+   * Sum of q.points across all currently-null-correct questions at submit time.
+   * `percentage` is computed excluding these, so a student's score isn't
+   * artificially deflated by content the teacher hasn't graded yet. Once every
+   * pending question is manually graded via `gradeSubmissionQuestion`, this
+   * reaches 0 and `percentage` naturally reflects the full `totalPoints`.
+   */
+  pendingReviewPoints?: number;
+
   // S61-E3 — Tamper-evident seal for final-exam submissions ----------------
   /**
    * SHA-256 hex of `${testId}|${studentUid}|${stableJSON(answers)}` taken at
@@ -404,6 +422,39 @@ export const submitDuggaTest = async (
     submittedAt: serverTimestamp(),
   });
   return ref.id;
+};
+
+/**
+ * Manually grade one question of a submission whose `questionResults[questionId]`
+ * has `correct: null` (missing answer key or a failed AI grade — see
+ * needsManualReview()/Wave 5). Recomputes `score`, `percentage` and
+ * `pendingReviewPoints` from the full, updated `questionResults` map so the
+ * submission's totals never drift out of sync with the per-question detail.
+ */
+export const gradeSubmissionQuestion = async (
+  submissionId: string,
+  questionId: string,
+  earnedPoints: number,
+): Promise<void> => {
+  const ref = doc(db, 'dugga_submissions', submissionId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Submission not found');
+  const sub = snap.data() as DuggaSubmission;
+  const results = { ...(sub.questionResults ?? {}) };
+  const prior = results[questionId];
+  if (!prior) throw new Error('Unknown question for this submission');
+  const clamped = Math.max(0, Math.min(earnedPoints, prior.maxPoints));
+  results[questionId] = {
+    ...prior,
+    earned: clamped,
+    correct: clamped >= prior.maxPoints,
+    feedback: '',
+  };
+  const score = Object.values(results).reduce((sum, r) => sum + r.earned, 0);
+  const pendingReviewPoints = Object.values(results).reduce((sum, r) => sum + (r.correct === null ? r.maxPoints : 0), 0);
+  const gradedMaxPts = sub.totalPoints - pendingReviewPoints;
+  const percentage = gradedMaxPts > 0 ? Math.round((score / gradedMaxPts) * 100) : 0;
+  await updateDoc(ref, { questionResults: results, score, pendingReviewPoints, percentage });
 };
 
 export const getTestSubmissions = async (testId: string): Promise<DuggaSubmission[]> => {

@@ -13,18 +13,22 @@ export function isAnswerCorrect(q: DuggaQuestion, answer: string | string[] | un
     return String(answer).trim() === String(correct ?? '').trim();
   }
   if (q.type === 'fill_blanks') {
-    const literalMatch = String(answer).trim().toLowerCase() === String(q.correctAnswer ?? '').trim().toLowerCase();
+    // 2026-07-19 (audit_2026_07_18_full_app_review, Wave 5.1/5.2): a missing answer
+    // key means this question was never gradeable — not "every student got it
+    // wrong". Returning `false` here made the per-question accuracy bar show a
+    // misleading 0%-correct result; `null` correctly falls through to "AI оценување"
+    // (see needsManualReview() in utils/duggaScoring.ts for the live-grading side).
+    if (!q.correctAnswer) return null;
+    const literalMatch = String(answer).trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
     if (literalMatch) return true;
     // Mirrors utils/duggaScoring.ts's autoScore CAS fallback — without this, this
     // independent results-view recompute could disagree with the live-graded score
     // for the same submission (e.g. "2x+2" vs a stored "2+2x").
-    if (q.correctAnswer) {
-      return verifyExpressionEquivalence(String(answer), q.correctAnswer).verdict === 'equivalent';
-    }
-    return false;
+    return verifyExpressionEquivalence(String(answer), q.correctAnswer).verdict === 'equivalent';
   }
   if (q.type === 'checklist') {
     const correctIds = (q.options ?? []).filter(o => o.isCorrect).map(o => o.id).sort();
+    if (!correctIds.length) return null; // no answer key authored — see fill_blanks comment above
     const given = (Array.isArray(answer) ? answer : [answer]).slice().sort();
     return JSON.stringify(correctIds) === JSON.stringify(given);
   }

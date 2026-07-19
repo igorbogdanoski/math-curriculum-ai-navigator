@@ -1,9 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, X, Users } from 'lucide-react';
-import { getTestSubmissions } from '../../services/firestoreService.dugga';
+import { Loader2, X, Users, ChevronLeft, Clock } from 'lucide-react';
+import { getTestSubmissions, gradeSubmissionQuestion } from '../../services/firestoreService.dugga';
 import type { DuggaTest, DuggaSubmission } from '../../services/firestoreService.dugga';
 import { DOK_COLORS } from './duggaLibraryConstants';
 import { isAnswerCorrect, gradeLabel, gradeBg } from './duggaResultsScoring';
+
+// ─── Per-student submission detail + manual-grading control ───────────────────
+// 2026-07-19 (audit_2026_07_18_full_app_review, Wave 5.2): questions where
+// autoScore()/AI grading couldn't produce a score (questionResults[id].correct
+// === null — see needsManualReview() in utils/duggaScoring.ts) previously had
+// no way for a teacher to ever award points for them. This view lets a teacher
+// open one student's submission and manually grade exactly those questions.
+
+function SubmissionDetail({ test, submission, onBack, onGraded }: {
+  test: DuggaTest;
+  submission: DuggaSubmission;
+  onBack: () => void;
+  onGraded: (updated: DuggaSubmission) => void;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const results = submission.questionResults ?? {};
+  const questions = test.questions.filter(q => q.type !== 'section_header');
+
+  const save = async (questionId: string, maxPoints: number) => {
+    const raw = drafts[questionId];
+    const points = Number(raw);
+    if (raw === undefined || raw.trim() === '' || Number.isNaN(points)) return;
+    setSavingId(questionId);
+    try {
+      await gradeSubmissionQuestion(submission.id, questionId, points);
+      const clamped = Math.max(0, Math.min(points, maxPoints));
+      const nextResults = {
+        ...results,
+        [questionId]: { ...results[questionId], earned: clamped, correct: clamped >= maxPoints, feedback: '' },
+      };
+      const score = Object.values(nextResults).reduce((s, r) => s + r.earned, 0);
+      const pendingReviewPoints = Object.values(nextResults).reduce((s, r) => s + (r.correct === null ? r.maxPoints : 0), 0);
+      const gradedMaxPts = submission.totalPoints - pendingReviewPoints;
+      const percentage = gradedMaxPts > 0 ? Math.round((score / gradedMaxPts) * 100) : 0;
+      onGraded({ ...submission, questionResults: nextResults, score, pendingReviewPoints, percentage });
+    } catch {
+      // Non-critical — the teacher can retry the save.
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700">
+        <ChevronLeft className="w-3.5 h-3.5" /> Назад кон учениците
+      </button>
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <p className="font-bold text-sm text-gray-800">{submission.studentName}</p>
+          <p className="text-xs text-gray-400">{submission.score}/{submission.totalPoints} поени · {submission.percentage}%</p>
+        </div>
+        {(submission.pendingReviewPoints ?? 0) > 0 && (
+          <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
+            <Clock className="w-3 h-3" /> {submission.pendingReviewPoints} поени чекаат
+          </span>
+        )}
+      </div>
+      <div className="space-y-2">
+        {questions.map((q, i) => {
+          const r = results[q.id];
+          const needsReview = r?.correct === null;
+          return (
+            <div key={q.id} className={`p-3 rounded-xl border ${needsReview ? 'border-amber-200 bg-amber-50/40' : 'border-gray-200'}`}>
+              <div className="flex items-start gap-3">
+                <span className="text-xs font-mono text-gray-400 shrink-0 mt-0.5">Q{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-700 line-clamp-2">{q.text.replace(/<[^>]*>/g, '')}</p>
+                  {!r ? (
+                    <p className="text-xs text-gray-400 italic mt-1">Нема запишан резултат за ова прашање (поднесено пред оваа функција).</p>
+                  ) : needsReview ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={r.maxPoints}
+                        step="0.5"
+                        placeholder="0"
+                        value={drafts[q.id] ?? ''}
+                        onChange={e => setDrafts(d => ({ ...d, [q.id]: e.target.value }))}
+                        className="w-16 px-2 py-1 text-xs rounded-lg border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      />
+                      <span className="text-xs text-gray-500">/ {r.maxPoints} поени</span>
+                      <button
+                        type="button"
+                        onClick={() => save(q.id, r.maxPoints)}
+                        disabled={savingId === q.id}
+                        className="text-xs font-bold bg-amber-500 text-white px-3 py-1 rounded-lg hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        {savingId === q.id ? 'Зачувување…' : 'Зачувај'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className={`text-xs font-bold mt-1 ${r.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {r.earned}/{r.maxPoints} поени {r.correct ? '✓' : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 type ResultsTab = 'overview' | 'questions' | 'students';
 
@@ -11,8 +119,10 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
   const [submissions, setSubmissions] = useState<DuggaSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<ResultsTab>('overview');
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
 
   useEffect(() => {
+    setSelectedSubmissionId(null);
     getTestSubmissions(test.id).then(s => {
       setSubmissions(s);
       setLoading(false);
@@ -61,7 +171,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => { setTab(t.id); setSelectedSubmissionId(null); }}
                 className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === t.id ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {t.label}
@@ -179,15 +289,23 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
           )}
 
           {/* ── STUDENTS ── */}
-          {!loading && n > 0 && tab === 'students' && (
+          {!loading && n > 0 && tab === 'students' && !selectedSubmissionId && (
             <div className="space-y-2">
               {[...submissions].sort((a, b) => b.percentage - a.percentage).map(sub => (
-                <div key={sub.id} className="flex items-center justify-between gap-4 p-3 rounded-xl border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all">
+                <button
+                  type="button"
+                  key={sub.id}
+                  onClick={() => setSelectedSubmissionId(sub.id)}
+                  className="w-full flex items-center justify-between gap-4 p-3 rounded-xl border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all text-left"
+                >
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-gray-800 truncate">{sub.studentName}</p>
                     <p className="text-xs text-gray-400">{sub.submittedAt?.toDate?.()?.toLocaleDateString('mk-MK') ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
+                    {(sub.pendingReviewPoints ?? 0) > 0 && (
+                      <Clock className="w-3.5 h-3.5 text-amber-500" aria-label="Чека рачна проверка" />
+                    )}
                     <div className="text-right">
                       <div className="text-sm font-bold text-gray-800">{sub.score}/{sub.totalPoints}</div>
                       <div className="text-xs text-gray-500">{sub.percentage}%</div>
@@ -196,10 +314,23 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
                       {gradeLabel(sub.percentage)}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
+
+          {!loading && n > 0 && tab === 'students' && selectedSubmissionId && (() => {
+            const sub = submissions.find(s => s.id === selectedSubmissionId);
+            if (!sub) return null;
+            return (
+              <SubmissionDetail
+                test={test}
+                submission={sub}
+                onBack={() => setSelectedSubmissionId(null)}
+                onGraded={updated => setSubmissions(subs => subs.map(s => s.id === updated.id ? updated : s))}
+              />
+            );
+          })()}
         </div>
       </div>
     </div>

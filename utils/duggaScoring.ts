@@ -147,6 +147,30 @@ export function needsAIGrade(q: DuggaQuestion): boolean {
 }
 
 /**
+ * True when `autoScore()` returns null because the question is *structurally*
+ * ungradeable — the author never filled in the answer key (correctIds,
+ * orderItems, matchPairs, expectedTransform, etc.) — as opposed to
+ * `needsAIGrade()`'s types, which are always sent to an AI grader regardless
+ * of authoring completeness. AI grading can't help here either: there's no
+ * answer key to grade against, so this genuinely needs a human teacher to
+ * award points by hand.
+ */
+export function needsManualReview(q: DuggaQuestion): boolean {
+  switch (q.type) {
+    case 'checklist': return !(q.options ?? []).some(o => o.isCorrect);
+    case 'fill_blanks': return !q.correctAnswer;
+    case 'ordering': return !q.orderItems?.length;
+    case 'multi_match': return !q.matchPairs?.length;
+    case 'function_match': return !q.expectedTransform;
+    case 'proof_steps': return !q.expectedProof?.steps?.length;
+    case 'unit_circle_pick': return !q.expectedUnitCircle;
+    case 'student_chart': return !q.expectedChart;
+    case 'list_items': return !q.correctAnswer;
+    default: return false;
+  }
+}
+
+/**
  * Folds structural context (table data, options, row/column labels) into the
  * question text sent to AI grading, for types with no stored answer key
  * (`table_completion`, `interactive_table`, `inline_select`, `diagram_annotate`)

@@ -8,7 +8,7 @@ import { QuestionCard } from '../components/dugga/DuggaQuestionCard';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
-import { autoScore, needsAIGrade, buildAIGradingQuestionContext } from '../utils/duggaScoring';
+import { autoScore, needsAIGrade, needsManualReview, buildAIGradingQuestionContext } from '../utils/duggaScoring';
 import type { QResult } from '../utils/duggaScoring';
 import { gradeFeynmanAnswer, feynmanScoreToPoints } from '../utils/duggaFeynmanGrading';
 import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
@@ -60,6 +60,7 @@ export function DuggaPlayerView() {
   const [results, setResults] = useState<Record<string, QResult>>({});
   const [totalScore, setTotalScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
+  const [pendingReviewPoints, setPendingReviewPoints] = useState(0);
   const [, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('Оценување...');
 
@@ -142,7 +143,12 @@ export function DuggaPlayerView() {
         qResults[q.id] = auto;
         earned += auto.earned;
       } else {
-        qResults[q.id] = { earned: 0, maxPoints: q.points, correct: null, feedback: 'Потребно дополнително оценување' };
+        qResults[q.id] = {
+          earned: 0, maxPoints: q.points, correct: null,
+          feedback: needsManualReview(q)
+            ? 'Наставникот сè уште нема зачувано точен одговор за ова прашање — потребна е рачна проверка.'
+            : 'Потребно дополнително оценување',
+        };
       }
       maxPts += q.points;
     }
@@ -259,6 +265,13 @@ export function DuggaPlayerView() {
       }
     }
 
+    // 2e) Points still awaiting manual review (correct === null: either a malformed
+    // answer key — see needsManualReview() — or an AI-grading call that failed) must
+    // not silently deflate the percentage every student sees. Excluded from the
+    // denominator here; a teacher's later manual grade re-includes them (Wave 5.2).
+    const pendingPts = gradeable.reduce((sum, q) => sum + (qResults[q.id]?.correct === null ? q.points : 0), 0);
+    const gradedMaxPts = maxPts - pendingPts;
+
     // 3) Save to Firestore (with optional tamper-evident seal in finalExamMode)
     setSubmitStatus('Зачувување...');
     const studentUid = firebaseUser?.uid ?? `anon_${Date.now()}`;
@@ -291,7 +304,9 @@ export function DuggaPlayerView() {
         answers: mergedAnswers,
         score: earned,
         totalPoints: maxPts,
-        percentage: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0,
+        percentage: gradedMaxPts > 0 ? Math.round((earned / gradedMaxPts) * 100) : 0,
+        pendingReviewPoints: pendingPts,
+        questionResults: qResults,
         aiGradeNotes: Object.values(qResults).filter(r => r.aiGrade).map(r => r.aiGrade).join('\n---\n'),
         ...(submissionSeal ? { submissionSeal, submissionSealedAt } : {}),
       });
@@ -302,11 +317,13 @@ export function DuggaPlayerView() {
     setResults(qResults);
     setTotalScore(earned);
     setMaxScore(maxPts);
+    setPendingReviewPoints(pendingPts);
     setSubmitting(false);
     setPhase('results');
   };
 
-  const pct = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  const gradedMaxScore = maxScore - pendingReviewPoints;
+  const pct = gradedMaxScore > 0 ? Math.round((totalScore / gradedMaxScore) * 100) : 0;
   const gradeLabel = pct >= 90 ? 'Одличен (5)' : pct >= 75 ? 'Многу добар (4)' : pct >= 60 ? 'Добар (3)' : pct >= 50 ? 'Задоволителен (2)' : 'Недоволен (1)';
   const answeredCount = test ? test.questions.filter(q => q.type !== 'section_header' && (answers[q.id] ?? '').length > 0).length : 0;
   const totalAnswerable = test ? test.questions.filter(q => q.type !== 'section_header').length : 0;
@@ -513,6 +530,11 @@ export function DuggaPlayerView() {
                 </div>
               </div>
             </div>
+            {pendingReviewPoints > 0 && (
+              <p className="text-xs text-indigo-100/90 mt-4 bg-white/10 inline-block px-3 py-1.5 rounded-full">
+                ⏳ {pendingReviewPoints} {pendingReviewPoints === 1 ? 'поен чека' : 'поени чекаат'} рачна проверка од наставникот — процентот погоре е сметан само од веќе оценетите прашања.
+              </p>
+            )}
           </div>
         </div>
 
