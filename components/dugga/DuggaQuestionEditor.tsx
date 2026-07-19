@@ -12,40 +12,46 @@ import type {
 } from '../../services/firestoreService.dugga';
 import { S61TeacherControls, isOpenEndedType } from './S61TeacherControls';
 import { BASE_FUNCTIONS, type BaseFunctionKey } from '../math/functionTransformerHelpers';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Question type metadata ───────────────────────────────────────────────────
+// Wave 15.1 (audit_2026_07_18_full_app_review, 2026-07-19): label/desc hold i18n
+// KEYS, not literal text — consumers must call t(qt.label)/t(qt.desc). Kept as a
+// static array (not a getQTypes(t) function) so existing importers of Q_TYPES/
+// TEST_TYPES don't need restructuring, just an extra t() at the render site.
 export const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactNode; desc: string; aiSupported: boolean }[] = [
-  { id: 'multiple_choice',  label: 'Повеќе избор (1 точен)',    icon: <CheckSquare className="w-4 h-4"/>,  desc: 'Класичен MC со 4 опции',                    aiSupported: true },
-  { id: 'checklist',        label: 'Повеќе точни одговори',     icon: <List className="w-4 h-4"/>,          desc: 'Еден или повеќе точни',                     aiSupported: true },
-  { id: 'true_false',       label: 'Точно / Неточно',           icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'Тврдење T/F',                               aiSupported: true },
-  { id: 'fill_blanks',      label: 'Пополни празнини',          icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Равенки со празни места',                   aiSupported: true },
-  { id: 'short_answer',     label: 'Краток одговор',            icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Текст или мат. израз',                      aiSupported: true },
-  { id: 'essay',            label: 'Есеј / Докаж',              icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Проширен одговор, AI градирање',             aiSupported: true },
-  { id: 'ordering',         label: 'Редослед на чекори',        icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'Постави докажување во ред',                 aiSupported: true },
-  { id: 'multi_match',      label: 'Поврзување (match)',        icon: <Shuffle className="w-4 h-4"/>,       desc: 'Поими ↔ дефиниции',                         aiSupported: true },
-  { id: 'statement_eval',   label: 'Оцени тврдење',             icon: <CheckSquare className="w-4 h-4"/>,  desc: 'Точно / Неточно / Делумно',                 aiSupported: true },
-  { id: 'table_completion', label: 'Пополни табела',            icon: <Table2 className="w-4 h-4"/>,        desc: 'Функциска табела x→f(x)',                   aiSupported: true },
-  { id: 'list_items',       label: 'Листа',                     icon: <List className="w-4 h-4"/>,          desc: 'Наброј (факторизација, корени…)',            aiSupported: false },
-  { id: 'multi_part',       label: 'Повеќеделно',               icon: <Layers className="w-4 h-4"/>,        desc: 'Под-прашања 1.1, 1.2, 1.3',                aiSupported: false },
-  { id: 'inline_select',    label: 'Вграден избор',             icon: <ChevronDown className="w-4 h-4"/>, desc: 'Dropdown во реченица',                       aiSupported: false },
-  { id: 'interactive_table',label: 'Интерактивна табела',       icon: <Table2 className="w-4 h-4"/>,        desc: 'Cell checkboxes (таблица на вистина)',       aiSupported: false },
-  { id: 'diagram_annotate', label: 'Означи дијаграм',           icon: <Hash className="w-4 h-4"/>,          desc: 'Слика + label-и',                           aiSupported: false },
-  { id: 'feynman_explain',  label: 'Феинман Предизвик',          icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Објасни концепт едноставно, AI рубрика',    aiSupported: false },
-  { id: 'proof_critique',  label: 'Критика на доказ',           icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Намерно погрешен доказ — ученикот го наоѓа грешката', aiSupported: false },
-  { id: 'proof_steps',      label: 'Редослед на доказ (со стапки)', icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'Подреди чекори на доказ, вклучува дистрактори', aiSupported: false },
-  { id: 'geometry_construct', label: 'Геометриска конструкција', icon: <Compass className="w-4 h-4"/>,      desc: 'GeoGebra конструкција + AI оценување',      aiSupported: false },
-  { id: 'function_match',   label: 'Трансформација на функција', icon: <Sigma className="w-4 h-4"/>,        desc: 'Совпадни ги a,b,c,d со слајдери',            aiSupported: false },
-  { id: 'unit_circle_pick', label: 'Единечна кружница',         icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'Избери агол/точка на единечна кружница',    aiSupported: false },
-  { id: 'student_chart',   label: 'Нацртај дијаграм',           icon: <Table2 className="w-4 h-4"/>,        desc: 'Ученикот внесува податоци и цртa дијаграм', aiSupported: false },
-  { id: 'section_header',  label: 'Дел / Секција',              icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
+  { id: 'multiple_choice',  label: 'duggaQType.multiple_choice.label',  icon: <CheckSquare className="w-4 h-4"/>,  desc: 'duggaQType.multiple_choice.desc',  aiSupported: true },
+  { id: 'checklist',        label: 'duggaQType.checklist.label',        icon: <List className="w-4 h-4"/>,          desc: 'duggaQType.checklist.desc',        aiSupported: true },
+  { id: 'true_false',       label: 'duggaQType.true_false.label',       icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'duggaQType.true_false.desc',       aiSupported: true },
+  { id: 'fill_blanks',      label: 'duggaQType.fill_blanks.label',      icon: <AlignLeft className="w-4 h-4"/>,    desc: 'duggaQType.fill_blanks.desc',      aiSupported: true },
+  { id: 'short_answer',     label: 'duggaQType.short_answer.label',     icon: <AlignLeft className="w-4 h-4"/>,    desc: 'duggaQType.short_answer.desc',     aiSupported: true },
+  { id: 'essay',            label: 'duggaQType.essay.label',            icon: <AlignLeft className="w-4 h-4"/>,    desc: 'duggaQType.essay.desc',            aiSupported: true },
+  { id: 'ordering',         label: 'duggaQType.ordering.label',         icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'duggaQType.ordering.desc',         aiSupported: true },
+  { id: 'multi_match',      label: 'duggaQType.multi_match.label',      icon: <Shuffle className="w-4 h-4"/>,       desc: 'duggaQType.multi_match.desc',      aiSupported: true },
+  { id: 'statement_eval',   label: 'duggaQType.statement_eval.label',   icon: <CheckSquare className="w-4 h-4"/>,  desc: 'duggaQType.statement_eval.desc',   aiSupported: true },
+  { id: 'table_completion', label: 'duggaQType.table_completion.label', icon: <Table2 className="w-4 h-4"/>,        desc: 'duggaQType.table_completion.desc', aiSupported: true },
+  { id: 'list_items',       label: 'duggaQType.list_items.label',       icon: <List className="w-4 h-4"/>,          desc: 'duggaQType.list_items.desc',       aiSupported: false },
+  { id: 'multi_part',       label: 'duggaQType.multi_part.label',       icon: <Layers className="w-4 h-4"/>,        desc: 'duggaQType.multi_part.desc',       aiSupported: false },
+  { id: 'inline_select',    label: 'duggaQType.inline_select.label',    icon: <ChevronDown className="w-4 h-4"/>, desc: 'duggaQType.inline_select.desc',    aiSupported: false },
+  { id: 'interactive_table',label: 'duggaQType.interactive_table.label',icon: <Table2 className="w-4 h-4"/>,        desc: 'duggaQType.interactive_table.desc',aiSupported: false },
+  { id: 'diagram_annotate', label: 'duggaQType.diagram_annotate.label', icon: <Hash className="w-4 h-4"/>,          desc: 'duggaQType.diagram_annotate.desc', aiSupported: false },
+  { id: 'feynman_explain',  label: 'duggaQType.feynman_explain.label',  icon: <AlignLeft className="w-4 h-4"/>,    desc: 'duggaQType.feynman_explain.desc',  aiSupported: false },
+  { id: 'proof_critique',  label: 'duggaQType.proof_critique.label',    icon: <AlignLeft className="w-4 h-4"/>,    desc: 'duggaQType.proof_critique.desc',   aiSupported: false },
+  { id: 'proof_steps',      label: 'duggaQType.proof_steps.label',      icon: <ArrowUpDown className="w-4 h-4"/>, desc: 'duggaQType.proof_steps.desc',      aiSupported: false },
+  { id: 'geometry_construct', label: 'duggaQType.geometry_construct.label', icon: <Compass className="w-4 h-4"/>, desc: 'duggaQType.geometry_construct.desc', aiSupported: false },
+  { id: 'function_match',   label: 'duggaQType.function_match.label',   icon: <Sigma className="w-4 h-4"/>,        desc: 'duggaQType.function_match.desc',   aiSupported: false },
+  { id: 'unit_circle_pick', label: 'duggaQType.unit_circle_pick.label', icon: <ToggleLeft className="w-4 h-4"/>,   desc: 'duggaQType.unit_circle_pick.desc', aiSupported: false },
+  { id: 'student_chart',   label: 'duggaQType.student_chart.label',     icon: <Table2 className="w-4 h-4"/>,        desc: 'duggaQType.student_chart.desc',    aiSupported: false },
+  { id: 'section_header',  label: 'duggaQType.section_header.label',    icon: <Layers className="w-4 h-4"/>,        desc: 'duggaQType.section_header.desc',   aiSupported: false },
 ];
 
+// Same convention as Q_TYPES: `label` holds an i18n key, not literal text.
 export const TEST_TYPES: { id: DuggaTestType; label: string; emoji: string }[] = [
-  { id: 'topic',   label: 'Тематски тест',      emoji: '📌' },
-  { id: 'midterm', label: 'Полугодишен тест',   emoji: '📅' },
-  { id: 'annual',  label: 'Годишен тест',        emoji: '📆' },
-  { id: 'exam',    label: 'Завршен испит',       emoji: '🎓' },
-  { id: 'custom',  label: 'Прилагоден',          emoji: '⚙️' },
+  { id: 'topic',   label: 'duggaTestType.topic.label',   emoji: '📌' },
+  { id: 'midterm', label: 'duggaTestType.midterm.label', emoji: '📅' },
+  { id: 'annual',  label: 'duggaTestType.annual.label',  emoji: '📆' },
+  { id: 'exam',    label: 'duggaTestType.exam.label',    emoji: '🎓' },
+  { id: 'custom',  label: 'duggaTestType.custom.label',  emoji: '⚙️' },
 ];
 
 export const DOK_COLORS: Record<DuggaDok, string> = {
@@ -107,10 +113,11 @@ export function QuestionEditor({
 }) {
   const [expanded, setExpanded] = useState(true);
   const [useMathInput, setUseMathInput] = useState(false);
+  const { t } = useLanguage();
 
   const upd = (patch: Partial<DuggaQuestion>) => onChange({ ...q, ...patch });
 
-  const qTypeMeta = Q_TYPES.find(t => t.id === q.type)!;
+  const qTypeMeta = Q_TYPES.find(qt => qt.id === q.type)!;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
@@ -128,7 +135,7 @@ export function QuestionEditor({
         <span className="text-xs font-bold text-gray-400 min-w-[24px]">{idx + 1}.</span>
         <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-white px-2 py-1 rounded-lg border border-gray-200">
           {qTypeMeta.icon}
-          <span>{qTypeMeta.label}</span>
+          <span>{t(qTypeMeta.label)}</span>
         </div>
         <select
           value={q.dok}
@@ -146,13 +153,13 @@ export function QuestionEditor({
           value={q.points}
           onChange={e => upd({ points: Math.max(1, Number(e.target.value)) })}
           className="w-14 text-xs text-center border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-violet-300"
-          title="Поени"
+          title={t('duggaEditor.pointsTitle')}
         />
-        <span className="text-xs text-gray-400">поени</span>
+        <span className="text-xs text-gray-400">{t('duggaEditor.points')}</span>
         <div className="ml-auto flex items-center gap-1.5">
           <button type="button" onClick={() => setUseMathInput(m => !m)}
             className={`text-xs px-2 py-1 rounded-lg transition-colors ${useMathInput ? 'bg-indigo-100 text-indigo-700' : 'text-gray-400 hover:bg-gray-100'}`}
-            title="MathLive режим">
+            title={t('duggaEditor.mathLiveMode')}>
             Σ
           </button>
           <button type="button" onClick={() => setExpanded(e => !e)} className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
@@ -168,14 +175,14 @@ export function QuestionEditor({
         <div className="p-4 space-y-4">
           {/* Question text */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Текст на прашањето</label>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.questionText')}</label>
             {useMathInput ? (
-              <MathInput value={q.text} onChange={text => upd({ text })} placeholder="Внеси математички израз..." />
+              <MathInput value={q.text} onChange={text => upd({ text })} placeholder={t('duggaEditor.mathExprPlaceholder')} />
             ) : (
               <textarea
                 value={q.text}
                 onChange={e => upd({ text: e.target.value })}
-                placeholder="Внеси го прашањето... (LaTeX: $x^2 + 1$)"
+                placeholder={t('duggaEditor.questionTextPlaceholder')}
                 rows={3}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 resize-none"
               />
@@ -191,7 +198,7 @@ export function QuestionEditor({
           {(q.type === 'multiple_choice' || q.type === 'checklist') && q.options && (
             <div>
               <label className="text-xs font-semibold text-gray-500 mb-2 block">
-                Опции {q.type === 'multiple_choice' ? '(избери 1 точен)' : '(избери сите точни)'}
+                {q.type === 'multiple_choice' ? t('duggaEditor.optionsChooseOne') : t('duggaEditor.optionsChooseAll')}
               </label>
               <div className="space-y-2">
                 {q.options.map((opt, oi) => (
@@ -215,7 +222,7 @@ export function QuestionEditor({
                         const newOpts = q.options!.map((o, i) => i === oi ? { ...o, text: e.target.value } : o);
                         upd({ options: newOpts });
                       }}
-                      placeholder={`Опција ${String.fromCharCode(65 + oi)}`}
+                      placeholder={`${t('duggaEditor.optionPlaceholder')} ${String.fromCharCode(65 + oi)}`}
                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                     />
                     <button type="button" onClick={() => upd({ options: q.options!.filter((_, i) => i !== oi) })}
@@ -230,7 +237,7 @@ export function QuestionEditor({
                   disabled={q.options!.length >= 6}
                   className="text-xs text-violet-600 hover:text-violet-700 flex items-center gap-1 disabled:opacity-40"
                 >
-                  <Plus className="w-3 h-3" /> Додај опција
+                  <Plus className="w-3 h-3" /> {t('duggaEditor.addOption')}
                 </button>
               </div>
             </div>
@@ -238,15 +245,20 @@ export function QuestionEditor({
 
           {q.type === 'true_false' && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-2 block">Точен одговор</label>
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaEditor.correctAnswer')}</label>
               <div className="flex gap-3">
+                {/* Value stays English ('true'/'false', see makeBlankQuestion) — only the
+                    displayed label is translated. Note: DuggaQuestionCard's true_false
+                    player UI stores the student's answer as MK 'Точно'/'Неточно' text, which
+                    means true_false grading (duggaScoring.ts's literal string compare) was
+                    already mismatched before this i18n pass — pre-existing, out of scope here. */}
                 {(['true', 'false'] as const).map(v => (
                   <button type="button" key={v}
                     onClick={() => upd({ correctAnswer: v })}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
                       q.correctAnswer === v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}>
-                    {v === 'true' ? '✓ Точно' : '✗ Неточно'}
+                    {v === 'true' ? `✓ ${t('duggaQuestion.true')}` : `✗ ${t('duggaQuestion.false')}`}
                   </button>
                 ))}
               </div>
@@ -255,15 +267,22 @@ export function QuestionEditor({
 
           {q.type === 'statement_eval' && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-2 block">Точен одговор</label>
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaEditor.correctAnswer')}</label>
               <div className="flex gap-2">
-                {['Точно', 'Неточно', 'Делумно точно'].map(v => (
+                {/* Values stay MK ('Точно'/'Неточно'/'Делумно точно') — compared literally
+                    against the student's answer in duggaScoring.ts, which uses the same MK
+                    values (see DuggaQuestionCard.tsx). Only the label is translated. */}
+                {([
+                  ['Точно', t('duggaQuestion.true')],
+                  ['Неточно', t('duggaQuestion.false')],
+                  ['Делумно точно', t('duggaQuestion.partiallyTrue')],
+                ] as [string, string][]).map(([v, label]) => (
                   <button type="button" key={v}
                     onClick={() => upd({ correctAnswer: v })}
                     className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-colors ${
                       q.correctAnswer === v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500'
                     }`}>
-                    {v}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -272,11 +291,11 @@ export function QuestionEditor({
 
           {(q.type === 'fill_blanks' || q.type === 'short_answer' || q.type === 'list_items') && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Точен одговор / Клучни зборови</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.correctAnswerKeywords')}</label>
               <input
                 value={q.correctAnswer ?? ''}
                 onChange={e => upd({ correctAnswer: e.target.value })}
-                placeholder="Внеси го точниот одговор..."
+                placeholder={t('duggaEditor.correctAnswerPlaceholder')}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
               />
             </div>
@@ -284,7 +303,7 @@ export function QuestionEditor({
 
           {q.type === 'ordering' && q.orderItems && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-2 block">Чекори по точен редослед</label>
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaEditor.stepsInOrder')}</label>
               <div className="space-y-2">
                 {q.orderItems.map((item, ii) => (
                   <div key={ii} className="flex items-center gap-2">
@@ -296,7 +315,7 @@ export function QuestionEditor({
                         items[ii] = e.target.value;
                         upd({ orderItems: items });
                       }}
-                      placeholder={`Чекор ${ii + 1}`}
+                      placeholder={`${t('duggaEditor.stepPlaceholder')} ${ii + 1}`}
                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200"
                     />
                     <button type="button" onClick={() => upd({ orderItems: q.orderItems!.filter((_, i) => i !== ii) })}
@@ -308,7 +327,7 @@ export function QuestionEditor({
                 ))}
                 <button type="button" onClick={() => upd({ orderItems: [...q.orderItems!, ''] })}
                   className="text-xs text-violet-600 flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Додај чекор
+                  <Plus className="w-3 h-3" /> {t('duggaEditor.addStep')}
                 </button>
               </div>
             </div>
@@ -316,19 +335,19 @@ export function QuestionEditor({
 
           {q.type === 'multi_match' && q.matchPairs && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-2 block">Парови за поврзување</label>
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaEditor.matchPairs')}</label>
               <div className="space-y-2">
                 {q.matchPairs.map((pair, pi) => (
                   <div key={pi} className="flex items-center gap-2">
                     <input value={pair.left} onChange={e => {
                       const pairs = q.matchPairs!.map((p, i) => i === pi ? { ...p, left: e.target.value } : p);
                       upd({ matchPairs: pairs });
-                    }} placeholder="Лево" className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
+                    }} placeholder={t('duggaEditor.left')} className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
                     <span className="text-gray-300">↔</span>
                     <input value={pair.right} onChange={e => {
                       const pairs = q.matchPairs!.map((p, i) => i === pi ? { ...p, right: e.target.value } : p);
                       upd({ matchPairs: pairs });
-                    }} placeholder="Десно" className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
+                    }} placeholder={t('duggaEditor.right')} className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
                     <button type="button" onClick={() => upd({ matchPairs: q.matchPairs!.filter((_, i) => i !== pi) })}
                       disabled={q.matchPairs!.length <= 2}
                       className="text-red-300 hover:text-red-500 disabled:opacity-30">
@@ -338,7 +357,7 @@ export function QuestionEditor({
                 ))}
                 <button type="button" onClick={() => upd({ matchPairs: [...q.matchPairs!, { left: '', right: '' }] })}
                   className="text-xs text-violet-600 flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Додај пар
+                  <Plus className="w-3 h-3" /> {t('duggaEditor.addPair')}
                 </button>
               </div>
             </div>
@@ -352,7 +371,7 @@ export function QuestionEditor({
                     const hs = [...q.tableHeaders!];
                     hs[hi] = e.target.value;
                     upd({ tableHeaders: hs });
-                  }} placeholder={`Колона ${hi + 1}`} className="flex-1 px-2 py-1 rounded-lg border border-gray-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300" />
+                  }} placeholder={`${t('duggaEditor.columnPlaceholder')} ${hi + 1}`} className="flex-1 px-2 py-1 rounded-lg border border-gray-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300" />
                 ))}
               </div>
               {q.tableRows.map((row, ri) => (
@@ -367,53 +386,53 @@ export function QuestionEditor({
               ))}
               <button type="button" onClick={() => upd({ tableRows: [...q.tableRows!, new Array(q.tableHeaders!.length).fill('')] })}
                 className="text-xs text-violet-600 flex items-center gap-1 mt-1">
-                <Plus className="w-3 h-3" /> Додај ред
+                <Plus className="w-3 h-3" /> {t('duggaEditor.addRow')}
               </button>
             </div>
           )}
 
           {q.type === 'section_header' && (
-            <p className="text-xs text-gray-400 italic">Секцискиот наслов ќе се прикаже bold во тестот.</p>
+            <p className="text-xs text-gray-400 italic">{t('duggaEditor.sectionHeaderNote')}</p>
           )}
 
           {q.type === 'essay' && (
-            <p className="text-xs text-gray-400">Есеј одговорот ќе го гради AI автоматски по Rubric (дефинирај ја во решение).</p>
+            <p className="text-xs text-gray-400">{t('duggaEditor.essayNote')}</p>
           )}
 
           {q.type === 'feynman_explain' && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Концепт за Феинман объаснување</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.feynmanConceptLabel')}</label>
               <input
                 type="text"
                 value={q.feynmanConcept ?? ''}
                 onChange={e => upd({ feynmanConcept: e.target.value })}
-                placeholder="пр. дефинитен интеграл, Питагорова теорема..."
+                placeholder={t('duggaEditor.feynmanConceptPlaceholder')}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-yellow-400"
               />
-              <p className="text-[10px] text-gray-400 mt-1">Ученикот ќе го објасни концептот на дете, AI ќе оцени по 4 Феинман критериуми (точност · едноставност · комплетност · без жаргон).</p>
+              <p className="text-[10px] text-gray-400 mt-1">{t('duggaEditor.feynmanNote')}</p>
             </div>
           )}
 
           {q.type === 'proof_critique' && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Чекори на доказот (еден чекор по ред)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.proofCritiqueStepsLabel')}</label>
                 <textarea
                   rows={5}
                   value={(q.proofCritiqueSteps ?? []).join('\n')}
                   onChange={e => upd({ proofCritiqueSteps: e.target.value.split('\n').map((s: string) => s.trim()).filter(Boolean) })}
-                  placeholder={"Чекор 1: ...\nЧекор 2: ...\nЧекор 3: (ВО ОВОЈ ИМА ГРЕШКА)\nЧекор 4: ..."}
+                  placeholder={t('duggaEditor.proofCritiqueStepsPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-rose-400 resize-y"
                 />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
-                  Индекс на погрешниот чекор (0-базиран, пр. 2 = трет чекор)
+                  {t('duggaEditor.errorStepIndexLabel')}
                 </label>
                 <input
                   type="number" min={0}
                   max={Math.max(0, (q.proofCritiqueSteps?.length ?? 1) - 1)}
-                  title="Индекс на погрешниот чекор"
+                  title={t('duggaEditor.errorStepIndexTitle')}
                   value={q.proofCritiqueErrorStep ?? 0}
                   onChange={e => {
                     const max = Math.max(0, (q.proofCritiqueSteps?.length ?? 1) - 1);
@@ -422,17 +441,17 @@ export function QuestionEditor({
                   className="w-24 px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-rose-400"
                 />
                 <span className="text-[10px] text-gray-400 ml-2">
-                  (вкупно чекори: {q.proofCritiqueSteps?.length ?? 0})
+                  ({t('duggaEditor.totalSteps')} {q.proofCritiqueSteps?.length ?? 0})
                 </span>
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот кликнува на погрешниот чекор и пишува образложение. 50% поени за точен чекор + 50% AI оценка на образложението.</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.proofCritiqueNote')}</p>
             </div>
           )}
 
           {q.type === 'proof_steps' && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Точен редослед на чекори (еден чекор по ред)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.proofStepsOrderLabel')}</label>
                 <textarea
                   rows={4}
                   value={(q.expectedProof?.steps ?? []).map(s => s.text).join('\n')}
@@ -441,12 +460,12 @@ export function QuestionEditor({
                       .map(text => ({ id: newOptId(), text }));
                     upd({ expectedProof: { ...(q.expectedProof ?? { steps: [] }), steps } });
                   }}
-                  placeholder={"Чекор 1: ...\nЧекор 2: ...\nЧекор 3: ..."}
+                  placeholder={t('duggaEditor.proofStepsPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-400 resize-y"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Дистрактори (погрешни чекори — опционално, еден по ред)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.distractorsLabel')}</label>
                 <textarea
                   rows={2}
                   value={(q.expectedProof?.distractors ?? []).map(s => s.text).join('\n')}
@@ -455,46 +474,46 @@ export function QuestionEditor({
                       .map(text => ({ id: newOptId(), text }));
                     upd({ expectedProof: { steps: q.expectedProof?.steps ?? [], ...q.expectedProof, distractors } });
                   }}
-                  placeholder={"Погрешен чекор кој не припаѓа во доказот..."}
+                  placeholder={t('duggaEditor.distractorsPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-violet-400 resize-y"
                 />
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот ги подредува сите чекори (точни + дистрактори, измешани). Оценување: точна позиција на секој точен чекор, казна за вклучен дистрактор.</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.proofStepsNote')}</p>
             </div>
           )}
 
           {q.type === 'geometry_construct' && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Опис на бараната конструкција</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.constructionDescLabel')}</label>
                 <textarea
                   rows={3}
                   value={q.expectedConstruction?.description ?? ''}
                   onChange={e => upd({ expectedConstruction: { ...(q.expectedConstruction ?? { description: '' }), description: e.target.value } })}
-                  placeholder="пр. Конструирај симетрала на отсечка AB користејќи шестар и линијар."
+                  placeholder={t('duggaEditor.constructionDescPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-400 resize-y"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Рубрика за AI оценување (опционално)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.rubricLabel')}</label>
                 <textarea
                   rows={2}
                   value={q.expectedConstruction?.rubric ?? ''}
                   onChange={e => upd({ expectedConstruction: { description: q.expectedConstruction?.description ?? '', ...q.expectedConstruction, rubric: e.target.value } })}
-                  placeholder="пр. Бодувај: точност на конструкцијата (50%), објаснување на чекорите (30%), точна ознака (20%)"
+                  placeholder={t('duggaEditor.rubricPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-400 resize-y"
                 />
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот пишува белешки за конструкцијата (опционално со GeoGebra алатка како скица — вклучи ја преку „🛠 Алатки за ученикот" подолу). AI оценува врз основа на белешките и описот.</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.geometryNote')}</p>
             </div>
           )}
 
           {q.type === 'function_match' && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Базна функција</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.baseFunctionLabel')}</label>
                 <select
-                  title="Базна функција"
+                  title={t('duggaEditor.baseFunctionLabel')}
                   value={q.expectedTransform?.fnKey ?? 'sin'}
                   onChange={e => upd({ expectedTransform: { ...(q.expectedTransform ?? { target: { a: 1, b: 1, c: 0, d: 0 } }), fnKey: e.target.value as BaseFunctionKey } })}
                   className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400"
@@ -506,7 +525,7 @@ export function QuestionEditor({
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
-                  Цел: y = a·f(b·x + c) + d
+                  {t('duggaEditor.targetLabel')}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {(['a', 'b', 'c', 'd'] as const).map(k => (
@@ -514,7 +533,7 @@ export function QuestionEditor({
                       <label className="text-[10px] font-bold text-gray-500 block mb-0.5">{k}</label>
                       <input
                         type="number" step={0.1}
-                        title={`Целна вредност на ${k}`}
+                        title={`${t('duggaEditor.targetValueTitle')} ${k}`}
                         value={q.expectedTransform?.target[k] ?? (k === 'a' || k === 'b' ? 1 : 0)}
                         onChange={e => {
                           const base = q.expectedTransform ?? { fnKey: 'sin' as BaseFunctionKey, target: { a: 1, b: 1, c: 0, d: 0 } };
@@ -526,7 +545,7 @@ export function QuestionEditor({
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот ги подесува a, b, c, d со слајдери додека кривата не се совпадне со целната крива.</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.functionMatchNote')}</p>
             </div>
           )}
 
@@ -534,71 +553,71 @@ export function QuestionEditor({
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Целен агол</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.targetAngle')}</label>
                   <input
                     type="number" step={1}
-                    title="Целен агол"
+                    title={t('duggaEditor.targetAngle')}
                     value={q.expectedUnitCircle?.angle ?? 0}
                     onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), angle: Number(e.target.value) } })}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-center focus:outline-none focus:ring-1 focus:ring-indigo-400"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Единица</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.unit')}</label>
                   <select
-                    title="Единица за агол"
+                    title={t('duggaEditor.unit')}
                     value={q.expectedUnitCircle?.unit ?? 'deg'}
                     onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), unit: e.target.value as 'deg' | 'rad' } })}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
                   >
-                    <option value="deg">Степени (°)</option>
-                    <option value="rad">Радијани</option>
+                    <option value="deg">{t('duggaEditor.degrees')}</option>
+                    <option value="rad">{t('duggaEditor.radians')}</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Што се проверува</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.whatIsChecked')}</label>
                 <select
-                  title="Што се проверува"
+                  title={t('duggaEditor.whatIsChecked')}
                   value={q.expectedUnitCircle?.match ?? 'either'}
                   onChange={e => upd({ expectedUnitCircle: { ...(q.expectedUnitCircle ?? { angle: 0, unit: 'deg' }), match: e.target.value as 'angle' | 'point' | 'either' } })}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
                 >
-                  <option value="either">Или агол или точка (пофлексибилно)</option>
-                  <option value="angle">Само агол</option>
-                  <option value="point">Само (x, y) точка</option>
+                  <option value="either">{t('duggaEditor.matchEither')}</option>
+                  <option value="angle">{t('duggaEditor.matchAngleOnly')}</option>
+                  <option value="point">{t('duggaEditor.matchPointOnly')}</option>
                 </select>
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот ја влече точката на единечна кружница (или користи слајдер) додека не го погоди целниот агол/точка.</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.unitCircleNote')}</p>
             </div>
           )}
 
           {q.type === 'student_chart' && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Тип на дијаграм</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.chartType')}</label>
                 <select
-                  title="Тип на дијаграм"
+                  title={t('duggaEditor.chartType')}
                   value={q.expectedChart?.kind ?? 'bar'}
                   onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { data: [] }), kind: e.target.value as 'bar' | 'line' | 'scatter' | 'pie' } })}
                   className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
                 >
-                  <option value="bar">Стапчест</option>
-                  <option value="line">Линиски</option>
-                  <option value="scatter">Точки</option>
-                  <option value="pie">Кружен</option>
+                  <option value="bar">{t('duggaEditor.chartBar')}</option>
+                  <option value="line">{t('duggaEditor.chartLine')}</option>
+                  <option value="scatter">{t('duggaEditor.chartScatter')}</option>
+                  <option value="pie">{t('duggaEditor.chartPie')}</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <input type="text" value={q.expectedChart?.xLabel ?? ''}
                   onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar', data: [] }), xLabel: e.target.value } })}
-                  placeholder="Ознака X-оска" className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                  placeholder={t('duggaEditor.xAxisLabel')} className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 <input type="text" value={q.expectedChart?.yLabel ?? ''}
                   onChange={e => upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar', data: [] }), yLabel: e.target.value } })}
-                  placeholder="Ознака Y-оска" className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                  placeholder={t('duggaEditor.yAxisLabel')} className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Точни (x, y) парови (еден по ред: x, y)</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaEditor.correctPairsLabel')}</label>
                 <textarea
                   rows={4}
                   value={(q.expectedChart?.data ?? []).map(p => `${p.x}, ${p.y}`).join('\n')}
@@ -609,26 +628,26 @@ export function QuestionEditor({
                     }).filter(p => p.x !== '');
                     upd({ expectedChart: { ...(q.expectedChart ?? { kind: 'bar' }), data } });
                   }}
-                  placeholder={"Јануари, 10\nФевруари, 15\nМарт, 8"}
+                  placeholder={t('duggaEditor.chartDataPlaceholder')}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y"
                 />
               </div>
-              <p className="text-[10px] text-gray-400">Ученикот ги внесува податоците и го избира типот на дијаграм; се оценува тип (20%) + ознаки (20%) + точност на податоците (60%).</p>
+              <p className="text-[10px] text-gray-400">{t('duggaEditor.chartNote')}</p>
             </div>
           )}
 
           {/* Solution / Hint */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-50">
             <div>
-              <label className="text-xs font-semibold text-gray-400 mb-1 block">Решение (за наставник)</label>
+              <label className="text-xs font-semibold text-gray-400 mb-1 block">{t('duggaEditor.solutionForTeacher')}</label>
               <textarea value={q.solution ?? ''} onChange={e => upd({ solution: e.target.value })}
-                placeholder="Чекор-по-чекор решение..." rows={2}
+                placeholder={t('duggaEditor.solutionPlaceholder')} rows={2}
                 className="w-full px-3 py-2 rounded-xl border border-gray-100 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-200 resize-none" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-400 mb-1 block">Hint (за ученик)</label>
+              <label className="text-xs font-semibold text-gray-400 mb-1 block">{t('duggaEditor.hintForStudent')}</label>
               <textarea value={q.hint ?? ''} onChange={e => upd({ hint: e.target.value })}
-                placeholder="Насока за ученикот..." rows={2}
+                placeholder={t('duggaEditor.hintPlaceholder')} rows={2}
                 className="w-full px-3 py-2 rounded-xl border border-gray-100 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-200 resize-none" />
             </div>
           </div>
@@ -661,9 +680,10 @@ export function AIGenerateModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [temperature, setTemperature] = useState(0.7);
   const [depth, setDepth] = useState<'brief' | 'standard' | 'deep'>('standard');
+  const { t } = useLanguage();
 
   const handleGenerate = async () => {
-    if (!topics.trim()) { setError('Внеси тема(и).'); return; }
+    if (!topics.trim()) { setError(t('duggaAiGen.needTopics')); return; }
     setLoading(true); setError('');
     try {
       const raw = await duggaAPI.generateTestQuestions({
@@ -706,11 +726,11 @@ export function AIGenerateModal({
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg === 'json_empty') {
-        setError('AI не врати валидни прашања. Обиди се со пониска температура (0.7) или промени ги темите.');
+        setError(t('duggaAiGen.emptyJsonError'));
       } else if (msg.includes('quota') || msg.includes('429')) {
-        setError('AI квотата е исцрпена. Обиди се по малку.');
+        setError(t('duggaAiGen.quotaError'));
       } else {
-        setError('Неуспешно генерирање — можен проблем со мрежата или AI сервисот. Обиди се повторно.');
+        setError(t('duggaAiGen.genericError'));
       }
     } finally {
       setLoading(false);
@@ -725,44 +745,44 @@ export function AIGenerateModal({
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">AI Генерирање на прашања</h3>
-            <p className="text-xs text-gray-400">Gemini AI ги генерира прашањата врз основа на MK програмата</p>
+            <h3 className="font-bold text-gray-900">{t('duggaAiGen.header')}</h3>
+            <p className="text-xs text-gray-400">{t('duggaAiGen.headerDesc')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Разред</label>
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaAiGen.grade')}</label>
             <select value={grade} onChange={e => setGrade(Number(e.target.value))}
               className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
-              {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}. разред</option>)}
+              {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}{t('duggaAiGen.gradeSuffix')}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Тип на тест</label>
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaAiGen.testType')}</label>
             <select value={testType} onChange={e => setTestType(e.target.value as DuggaTestType)}
               className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
-              {TEST_TYPES.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.label}</option>)}
+              {TEST_TYPES.map(tt => <option key={tt.id} value={tt.id}>{tt.emoji} {t(tt.label)}</option>)}
             </select>
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">Теми (разделени со запирка)</label>
+          <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaAiGen.topicsLabel')}</label>
           <input value={topics} onChange={e => setTopics(e.target.value)}
-            placeholder="пр. Квадратни равенки, Функции, Тригонометрија"
+            placeholder={t('duggaAiGen.topicsPlaceholder')}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-gray-500 mb-1 block">Број на прашања: {count}</label>
+          <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaAiGen.questionCountLabel')} {count}</label>
           <input type="range" min={4} max={30} value={count} onChange={e => setCount(Number(e.target.value))}
             className="w-full accent-violet-500" />
           <div className="flex justify-between text-xs text-gray-400 mt-0.5"><span>4</span><span>30</span></div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-gray-500 mb-2 block">DoK распределба</label>
+          <label className="text-xs font-semibold text-gray-500 mb-2 block">{t('duggaAiGen.dokDistribution')}</label>
           <div className="grid grid-cols-4 gap-2">
             {([1,2,3,4] as DuggaDok[]).map(d => (
               <div key={d} className="text-center">
@@ -782,14 +802,14 @@ export function AIGenerateModal({
             onClick={() => setShowAdvanced(v => !v)}
             className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
           >
-            <span className="text-xs font-semibold text-gray-500">⚙️ Напредни AI параметри</span>
+            <span className="text-xs font-semibold text-gray-500">{t('duggaAiGen.advancedParams')}</span>
             <span className="text-gray-400 text-xs">{showAdvanced ? '▲' : '▼'}</span>
           </button>
           {showAdvanced && (
             <div className="px-4 pb-4 pt-3 space-y-4 bg-white">
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">
-                  Температура (креативност): <span className="text-violet-600 font-bold">{temperature.toFixed(1)}</span>
+                  {t('duggaAiGen.temperatureLabel')} <span className="text-violet-600 font-bold">{temperature.toFixed(1)}</span>
                 </label>
                 <input
                   type="range" min={0} max={2} step={0.1}
@@ -798,16 +818,16 @@ export function AIGenerateModal({
                   className="w-full accent-violet-500"
                 />
                 <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-                  <span>0.0 — точно/строго</span>
-                  <span>0.7 — балансирано</span>
-                  <span>2.0 — креативно</span>
+                  <span>{t('duggaAiGen.tempStrict')}</span>
+                  <span>{t('duggaAiGen.tempBalanced')}</span>
+                  <span>{t('duggaAiGen.tempCreative')}</span>
                 </div>
                 {temperature > 1.2 && (
-                  <p className="text-[10px] text-amber-600 mt-1">⚠ Висока температура може да предизвика невалиден JSON. Препорачано: 0.5–1.0</p>
+                  <p className="text-[10px] text-amber-600 mt-1">{t('duggaAiGen.highTempWarning')}</p>
                 )}
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Длабочина на прашањата</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaAiGen.depthLabel')}</label>
                 <div className="flex gap-2">
                   {(['brief', 'standard', 'deep'] as const).map(d => (
                     <button
@@ -820,12 +840,12 @@ export function AIGenerateModal({
                           : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300'
                       }`}
                     >
-                      {d === 'brief' ? '📋 Кратко' : d === 'standard' ? '📝 Стандард' : '📚 Длабоко'}
+                      {d === 'brief' ? t('duggaAiGen.depthBrief') : d === 'standard' ? t('duggaAiGen.depthStandard') : t('duggaAiGen.depthDeep')}
                     </button>
                   ))}
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1">
-                  {depth === 'brief' ? 'Кратки прашања, минимални решенија.' : depth === 'deep' ? 'Детални прашања со педагошки коментари и повеќе методи.' : 'Стандарден баланс на длабочина и јасност.'}
+                  {depth === 'brief' ? t('duggaAiGen.depthBriefNote') : depth === 'deep' ? t('duggaAiGen.depthDeepNote') : t('duggaAiGen.depthStandardNote')}
                 </p>
               </div>
             </div>
@@ -836,11 +856,11 @@ export function AIGenerateModal({
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors">
-            Откажи
+            {t('duggaAiGen.cancel')}
           </button>
           <button type="button" onClick={handleGenerate} disabled={loading}
             className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Генерирање...</> : <><Sparkles className="w-4 h-4" /> Генерирај</>}
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('duggaAiGen.generating')}</> : <><Sparkles className="w-4 h-4" /> {t('duggaAiGen.generate')}</>}
           </button>
         </div>
       </div>

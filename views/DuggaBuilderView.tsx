@@ -282,7 +282,7 @@ export function DuggaBuilderView() {
               <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaBuilder.type')}</label>
               <select value={testType} onChange={e => setTestType(e.target.value as DuggaTestType)}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
-                {TEST_TYPES.map(tt => <option key={tt.id} value={tt.id}>{tt.emoji} {tt.label}</option>)}
+                {TEST_TYPES.map(tt => <option key={tt.id} value={tt.id}>{tt.emoji} {t(tt.label)}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
@@ -392,10 +392,10 @@ export function DuggaBuilderView() {
               <div className="flex flex-wrap gap-2 justify-center">
                 {Q_TYPES.map(qt => (
                   <button type="button" key={qt.id} onClick={() => addQuestion(qt.id)}
-                    title={qt.desc}
+                    title={t(qt.desc)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 transition-colors">
                     {qt.icon}
-                    <span>{qt.label}</span>
+                    <span>{t(qt.label)}</span>
                   </button>
                 ))}
               </div>
