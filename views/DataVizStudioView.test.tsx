@@ -25,6 +25,8 @@ const MK_TAB_LABELS: Record<string, string> = {
   'dataviz.tab.geo2d': '2D Геометрија',
   'dataviz.tab.solid': '3D Геометрија',
   'dataviz.tab.conic': 'Конусни пресеци',
+  'dataviz.dataImported': 'Податоците се увезени во DataViz Studio ✅',
+  'dataviz.livePreview': 'Live преглед',
 };
 vi.mock('../i18n/LanguageContext', () => ({
   useLanguage: () => ({ t: (key: string) => MK_TAB_LABELS[key] ?? key, language: 'mk' }),

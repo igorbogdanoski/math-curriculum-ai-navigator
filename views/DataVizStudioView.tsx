@@ -49,13 +49,18 @@ const FractionsLabLazy = lazy(() =>
   import('../components/dataviz/FractionsLab').then(m => ({ default: m.FractionsLab }))
 );
 
-const LabLoading: React.FC = () => (
-  <div className="flex items-center justify-center py-16 text-sm text-gray-500">
-    <div className="animate-pulse">Се вчитува лаб...</div>
-  </div>
-);
+const LabLoading: React.FC = () => {
+  const { t } = useLanguage();
+  return (
+    <div className="flex items-center justify-center py-16 text-sm text-gray-500">
+      <div className="animate-pulse">{t('dataviz.labLoading')}</div>
+    </div>
+  );
+};
 
 // ─── Chart type definitions ──────────────────────────────────────────────────
+// label/desc hold i18n keys (Wave 15.2), not literal text — resolved via t() at
+// every render site, same convention as DuggaQuestionEditor's Q_TYPES/TEST_TYPES.
 interface ChartTypeDef {
   id: ChartType;
   label: string;
@@ -65,28 +70,28 @@ interface ChartTypeDef {
 }
 
 const CHART_TYPES: ChartTypeDef[] = [
-  { id: 'bar',                     label: 'Столбест верт.',       emoji: '📊', desc: 'Споредба категории, МОН 2–13р.',       minCols: 1 },
-  { id: 'bar-horizontal',          label: 'Столбест хориз.',      emoji: '📉', desc: 'Категории со долги имиња',             minCols: 1 },
-  { id: 'stacked-bar',             label: 'Наредени столбови',    emoji: '📶', desc: 'Повеќе серии наредени, МОН 4–9р.',     minCols: 2 },
-  { id: 'stacked-bar-horizontal',  label: 'Наредени хориз.',      emoji: '☰',  desc: 'Хориз. наредени, МОН 4–9р.',          minCols: 2 },
-  { id: 'divided-bar',             label: 'Делен (100%) Бар',     emoji: '🔲', desc: 'Пропорционален — Divided Bar, МОН 5+', minCols: 2 },
-  { id: 'line',                    label: 'Линиски',               emoji: '📈', desc: 'Тренд низ времето (прави сегменти)',  minCols: 1 },
-  { id: 'motion',                  label: 'График на движење',     emoji: '🚗', desc: 's–t / v–t — праволиниски сегменти, физика', minCols: 1 },
-  { id: 'area',                    label: 'Површински',            emoji: '🏔️', desc: 'Акумулирани вредности',              minCols: 1 },
-  { id: 'pie',                     label: 'Пита',                  emoji: '🥧', desc: 'Делови од целина',                    minCols: 1 },
-  { id: 'scatter',                 label: 'Расеан (Scatter)',      emoji: '✦',  desc: 'Корелација X-Y',                      minCols: 2 },
-  { id: 'scatter-trend',           label: 'Scatter + Тренд',      emoji: '📐', desc: 'Линеарна регресија R²',               minCols: 2 },
-  { id: 'bubble',                  label: 'Balloon (Bubble)',      emoji: '🫧', desc: 'Три димензии',                        minCols: 3 },
-  { id: 'histogram',               label: 'Хистограм',             emoji: '▬',  desc: 'Распределба на податоци',             minCols: 1 },
-  { id: 'frequency-polygon',       label: 'Фрекв. многуаголник',  emoji: '📿', desc: 'Линија на фреквенции, МОН 6–9р.',     minCols: 1 },
-  { id: 'cumulative-frequency',    label: 'Кумулат. фреквенција', emoji: '〰', desc: 'Огива — кумулатив, МОН 8–13р.',       minCols: 1 },
-  { id: 'back-to-back-histogram',  label: 'B-to-B Хистограм',     emoji: '⇔',  desc: 'Споредба 2 групи, МОН 7–9р.',         minCols: 2 },
-  { id: 'pareto',                  label: 'Парето дијаграм',       emoji: '🎯', desc: 'Сортиран + кумул. %, МОН 9–13р.',    minCols: 1 },
-  { id: 'box-whisker',             label: 'Box-and-Whisker',       emoji: '⊟',  desc: 'Квартили + медијана',                 minCols: 1 },
-  { id: 'stem-leaf',               label: 'Стебло-Листови',       emoji: '🌿', desc: 'Сите вредности, МОН 6-8р.',           minCols: 1 },
-  { id: 'dot-plot',                label: 'Точкаст дијаграм',     emoji: '⠿',  desc: 'Броење на точки, МОН 5-7р.',          minCols: 1 },
-  { id: 'heatmap',                 label: 'Топлинска карта',       emoji: '🌡️', desc: 'Корелации, МОН IX одд.',              minCols: 2 },
-  { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
+  { id: 'bar',                     label: 'dataviz.chartType.bar.label',          emoji: '📊', desc: 'dataviz.chartType.bar.desc',          minCols: 1 },
+  { id: 'bar-horizontal',          label: 'dataviz.chartType.barH.label',         emoji: '📉', desc: 'dataviz.chartType.barH.desc',         minCols: 1 },
+  { id: 'stacked-bar',             label: 'dataviz.chartType.stackedBar.label',   emoji: '📶', desc: 'dataviz.chartType.stackedBar.desc',   minCols: 2 },
+  { id: 'stacked-bar-horizontal',  label: 'dataviz.chartType.stackedBarH.label',  emoji: '☰',  desc: 'dataviz.chartType.stackedBarH.desc',  minCols: 2 },
+  { id: 'divided-bar',             label: 'dataviz.chartType.dividedBar.label',   emoji: '🔲', desc: 'dataviz.chartType.dividedBar.desc',   minCols: 2 },
+  { id: 'line',                    label: 'dataviz.chartType.line.label',         emoji: '📈', desc: 'dataviz.chartType.line.desc',         minCols: 1 },
+  { id: 'motion',                  label: 'dataviz.chartType.motion.label',       emoji: '🚗', desc: 'dataviz.chartType.motion.desc',       minCols: 1 },
+  { id: 'area',                    label: 'dataviz.chartType.area.label',         emoji: '🏔️', desc: 'dataviz.chartType.area.desc',         minCols: 1 },
+  { id: 'pie',                     label: 'dataviz.chartType.pie.label',          emoji: '🥧', desc: 'dataviz.chartType.pie.desc',          minCols: 1 },
+  { id: 'scatter',                 label: 'dataviz.chartType.scatter.label',      emoji: '✦',  desc: 'dataviz.chartType.scatter.desc',      minCols: 2 },
+  { id: 'scatter-trend',           label: 'dataviz.chartType.scatterTrend.label', emoji: '📐', desc: 'dataviz.chartType.scatterTrend.desc', minCols: 2 },
+  { id: 'bubble',                  label: 'dataviz.chartType.bubble.label',       emoji: '🫧', desc: 'dataviz.chartType.bubble.desc',       minCols: 3 },
+  { id: 'histogram',               label: 'dataviz.chartType.histogram.label',    emoji: '▬',  desc: 'dataviz.chartType.histogram.desc',    minCols: 1 },
+  { id: 'frequency-polygon',       label: 'dataviz.chartType.freqPolygon.label',  emoji: '📿', desc: 'dataviz.chartType.freqPolygon.desc',  minCols: 1 },
+  { id: 'cumulative-frequency',    label: 'dataviz.chartType.cumFreq.label',      emoji: '〰', desc: 'dataviz.chartType.cumFreq.desc',      minCols: 1 },
+  { id: 'back-to-back-histogram',  label: 'dataviz.chartType.b2bHistogram.label', emoji: '⇔',  desc: 'dataviz.chartType.b2bHistogram.desc', minCols: 2 },
+  { id: 'pareto',                  label: 'dataviz.chartType.pareto.label',       emoji: '🎯', desc: 'dataviz.chartType.pareto.desc',       minCols: 1 },
+  { id: 'box-whisker',             label: 'dataviz.chartType.boxWhisker.label',   emoji: '⊟',  desc: 'dataviz.chartType.boxWhisker.desc',   minCols: 1 },
+  { id: 'stem-leaf',               label: 'dataviz.chartType.stemLeaf.label',     emoji: '🌿', desc: 'dataviz.chartType.stemLeaf.desc',     minCols: 1 },
+  { id: 'dot-plot',                label: 'dataviz.chartType.dotPlot.label',      emoji: '⠿',  desc: 'dataviz.chartType.dotPlot.desc',      minCols: 1 },
+  { id: 'heatmap',                 label: 'dataviz.chartType.heatmap.label',      emoji: '🌡️', desc: 'dataviz.chartType.heatmap.desc',      minCols: 2 },
+  { id: 'pictogram',               label: 'dataviz.chartType.pictogram.label',    emoji: '🌟', desc: 'dataviz.chartType.pictogram.desc',    minCols: 1 },
 ];
 
 export type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions';
@@ -96,15 +101,16 @@ type FnSubTab = 'grapher' | 'sliders';
 
 const FnTabPanel: React.FC = () => {
   const [sub, setSub] = useState<FnSubTab>('grapher');
+  const { t } = useLanguage();
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-500" /> Граф на функции
+            <TrendingUp className="w-5 h-5 text-cyan-500" /> {t('dataviz.fnTitle')}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Исцртај функции · истражувај трансформации · МОН V–XIII одд.
+            {t('dataviz.fnDesc')}
           </p>
         </div>
         <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
@@ -113,14 +119,14 @@ const FnTabPanel: React.FC = () => {
             onClick={() => setSub('grapher')}
             className={`px-3 py-1.5 transition-colors ${sub === 'grapher' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
-            Граф функции
+            {t('dataviz.fnGrapherBtn')}
           </button>
           <button
             type="button"
             onClick={() => setSub('sliders')}
             className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${sub === 'sliders' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
-            Слајдери за функции
+            {t('dataviz.fnSlidersBtn')}
           </button>
         </div>
       </div>
@@ -157,7 +163,7 @@ export const DataVizStudioView: React.FC = () => {
       if (parsed.tableData) setTableData(parsed.tableData);
       if (parsed.config) setConfig(prev => ({ ...prev, ...parsed.config }));
       sessionStorage.removeItem('dataviz_import');
-      addNotification('Податоците се увезени во DataViz Studio ✅', 'success');
+      addNotification(t('dataviz.dataImported'), 'success');
     } catch { /* ignore malformed data */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -175,15 +181,15 @@ export const DataVizStudioView: React.FC = () => {
       link.download = `${config.title || 'dijagram'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      addNotification('PNG извезен (300dpi) ✅', 'success');
+      addNotification(t('dataviz.pngExported'), 'success');
     } catch {
-      addNotification('Грешка при извоз.', 'error');
+      addNotification(t('dataviz.exportError'), 'error');
     } finally { setExporting(false); }
   };
 
   const exportSVG = () => {
     const svgEl = chartRef.current?.querySelector('svg');
-    if (!svgEl) { addNotification('SVG не е достапен за овој тип на дијаграм. Користете PNG.', 'info'); return; }
+    if (!svgEl) { addNotification(t('dataviz.svgNotAvailable'), 'info'); return; }
     const serialized = new XMLSerializer().serializeToString(svgEl);
     const blob = new Blob([serialized], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
@@ -191,7 +197,7 @@ export const DataVizStudioView: React.FC = () => {
     link.download = `${config.title || 'dijagram'}.svg`;
     link.href = url; link.click();
     URL.revokeObjectURL(url);
-    addNotification('SVG извезен ✅', 'success');
+    addNotification(t('dataviz.svgExported'), 'success');
   };
 
   const printChart = async () => {
@@ -199,7 +205,7 @@ export const DataVizStudioView: React.FC = () => {
     const canvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
     const dataUrl = canvas.toDataURL('image/png');
     const win = window.open('', '_blank');
-    if (!win) { addNotification('Попап е блокиран. Дозволете попапи за оваа страница.', 'warning'); return; }
+    if (!win) { addNotification(t('dataviz.popupBlocked'), 'warning'); return; }
     const safeTitle = config.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     win.document.write(`<html><head><title>${safeTitle}</title><style>body{margin:20px;font-family:sans-serif}h2{font-size:16px;margin-bottom:12px}img{max-width:100%}@media print{body{margin:10px}}</style></head><body><h2>${safeTitle}</h2><img src="${dataUrl}" onload="window.print()"/></body></html>`);
     win.document.close();
@@ -213,10 +219,10 @@ export const DataVizStudioView: React.FC = () => {
       canvas.toBlob(async blob => {
         if (!blob) return;
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        addNotification('Дијаграмот е копиран во clipboard! Залепи го каде сакаш (Ctrl+V).', 'success');
+        addNotification(t('dataviz.clipboardCopied'), 'success');
       });
     } catch {
-      addNotification('Clipboard копирање не е поддржано во овој прелистувач.', 'warning');
+      addNotification(t('dataviz.clipboardUnsupported'), 'warning');
     } finally { setExporting(false); }
   };
 
@@ -235,10 +241,10 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'solid'  as StudioTab, label: t('dataviz.tab.solid'),  icon: Box,            color: 'orange'  },
     { id: 'conic'  as StudioTab, label: t('dataviz.tab.conic'),  icon: Triangle,       color: 'violet'  },
     { id: 'algebra' as StudioTab, label: t('dataviz.tab.algebra'), icon: LayoutGrid,    color: 'indigo'  },
-    { id: 'trig'      as StudioTab, label: 'Тригонометрија',         icon: Sigma,         color: 'violet'  },
-    { id: 'numtheory'  as StudioTab, label: 'Теорија на броеви',     icon: Sigma,         color: 'emerald' },
-    { id: 'placevalue' as StudioTab, label: 'Месна вредност',         icon: Layers,        color: 'green'   },
-    { id: 'fractions'  as StudioTab, label: 'Дропки',                 icon: PieChart,      color: 'blue'    },
+    { id: 'trig'      as StudioTab, label: t('dataviz.tab.trig'),         icon: Sigma,         color: 'violet'  },
+    { id: 'numtheory'  as StudioTab, label: t('dataviz.tab.numtheory'),   icon: Sigma,         color: 'emerald' },
+    { id: 'placevalue' as StudioTab, label: t('dataviz.tab.placevalue'),  icon: Layers,        color: 'green'   },
+    { id: 'fractions'  as StudioTab, label: t('dataviz.tab.fractions'),   icon: PieChart,      color: 'blue'    },
   ];
 
   return (
@@ -252,7 +258,7 @@ export const DataVizStudioView: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-gray-900">DataViz Studio</h1>
-              <p className="text-xs text-gray-400">Графици · Калкулус · Линеарна Алгебра · Статистика · Веројатност · AI</p>
+              <p className="text-xs text-gray-400">{t('dataviz.headerSubtitle')}</p>
             </div>
           </div>
 
@@ -287,13 +293,13 @@ export const DataVizStudioView: React.FC = () => {
               {/* Chart type selector */}
               <div className="bg-white rounded-2xl border border-gray-200 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-1.5">
-                  <Eye className="w-3.5 h-3.5" /> Тип на дијаграм
+                  <Eye className="w-3.5 h-3.5" /> {t('dataviz.chartTypeLabel')}
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {CHART_TYPES.map(ct => (
                     <button key={ct.id} type="button"
                       onClick={() => updateConfig('type', ct.id)}
-                      title={ct.desc}
+                      title={t(ct.desc)}
                       className={`flex flex-col items-center p-2.5 rounded-xl border-2 transition ${
                         config.type === ct.id
                           ? 'border-indigo-500 bg-indigo-50'
@@ -301,7 +307,7 @@ export const DataVizStudioView: React.FC = () => {
                       }`}>
                       <span className="text-2xl leading-none mb-1">{ct.emoji}</span>
                       <span className={`text-[10px] font-bold text-center leading-tight ${config.type === ct.id ? 'text-indigo-700' : 'text-gray-600'}`}>
-                        {ct.label}
+                        {t(ct.label)}
                       </span>
                     </button>
                   ))}
@@ -311,7 +317,7 @@ export const DataVizStudioView: React.FC = () => {
               {/* Data table */}
               <div className="bg-white rounded-2xl border border-gray-200 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-1.5">
-                  <FileSpreadsheet className="w-3.5 h-3.5" /> Податоци
+                  <FileSpreadsheet className="w-3.5 h-3.5" /> {t('dataviz.dataLabel')}
                 </p>
                 <DataTable data={tableData} onChange={setTableData} />
               </div>
@@ -322,7 +328,7 @@ export const DataVizStudioView: React.FC = () => {
                   onClick={() => setShowCustomize(v => !v)}
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
                   <span className="text-xs font-bold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-                    <Palette className="w-3.5 h-3.5" /> Прилагодување
+                    <Palette className="w-3.5 h-3.5" /> {t('dataviz.customize')}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showCustomize ? 'rotate-180' : ''}`} />
                 </button>
@@ -331,36 +337,36 @@ export const DataVizStudioView: React.FC = () => {
                   <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
                     <div className="grid grid-cols-1 gap-3 mt-4">
                       <div>
-                        <label className="text-xs font-bold text-gray-500 mb-1 block">Наслов на дијаграм</label>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">{t('dataviz.chartTitleLabel')}</label>
                         <input value={config.title} onChange={e => updateConfig('title', e.target.value)}
                           className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                          placeholder="Мој дијаграм" />
+                          placeholder={t('dataviz.chartTitlePlaceholder')} />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-xs font-bold text-gray-500 mb-1 block">Оска X</label>
+                          <label className="text-xs font-bold text-gray-500 mb-1 block">{t('dataviz.xAxisLabel')}</label>
                           <input value={config.xLabel} onChange={e => updateConfig('xLabel', e.target.value)}
                             className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                            placeholder="Категории" />
+                            placeholder={t('dataviz.xAxisPlaceholder')} />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-500 mb-1 block">Оска Y</label>
+                          <label className="text-xs font-bold text-gray-500 mb-1 block">{t('dataviz.yAxisLabel')}</label>
                           <input value={config.yLabel} onChange={e => updateConfig('yLabel', e.target.value)}
                             className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                            placeholder="Вредност" />
+                            placeholder={t('dataviz.yAxisPlaceholder')} />
                         </div>
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-gray-500 mb-1 block">Единица за мерење</label>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">{t('dataviz.unitLabel')}</label>
                         <input value={config.unit} onChange={e => updateConfig('unit', e.target.value)}
                           className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                          placeholder="°C, km, %, ден..." />
+                          placeholder={t('dataviz.unitPlaceholder')} />
                       </div>
                     </div>
 
                     {/* Color palettes */}
                     <div>
-                      <label className="text-xs font-bold text-gray-500 mb-2 block">Палета на бои</label>
+                      <label className="text-xs font-bold text-gray-500 mb-2 block">{t('dataviz.colorPalette')}</label>
                       <div className="grid grid-cols-1 gap-1.5">
                         {Object.entries(COLOR_PALETTES).map(([name, colors]) => (
                           <button key={name} type="button"
@@ -384,8 +390,8 @@ export const DataVizStudioView: React.FC = () => {
                     {/* Toggles */}
                     <div className="flex gap-4">
                       {[
-                        { key: 'showLegend', label: 'Легенда' },
-                        { key: 'showGrid',   label: 'Мрежа' },
+                        { key: 'showLegend', label: t('dataviz.showLegend') },
+                        { key: 'showGrid',   label: t('dataviz.showGrid') },
                       ].map(({ key, label }) => (
                         <label key={key} className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox"
@@ -401,7 +407,7 @@ export const DataVizStudioView: React.FC = () => {
                     {(['histogram', 'frequency-polygon', 'cumulative-frequency', 'back-to-back-histogram'] as ChartType[]).includes(config.type) && (
                       <div>
                         <label className="text-xs font-bold text-gray-500 mb-1 block flex items-center justify-between">
-                          <span>Број на класи (bins)</span>
+                          <span>{t('dataviz.binsLabel')}</span>
                           <span className="text-indigo-600 font-extrabold">{config.bins ?? 8}</span>
                         </label>
                         <input
@@ -409,8 +415,8 @@ export const DataVizStudioView: React.FC = () => {
                           value={config.bins ?? 8}
                           onChange={e => updateConfig('bins', parseInt(e.target.value, 10))}
                           className="w-full accent-indigo-600"
-                          aria-label="Број на класи за хистограм"
-                          title="Број на класи за хистограм"
+                          aria-label={t('dataviz.binsAria')}
+                          title={t('dataviz.binsAria')}
                         />
                         <div className="flex justify-between text-[9px] text-gray-400 mt-0.5">
                           <span>2</span><span>20</span>
@@ -428,10 +434,10 @@ export const DataVizStudioView: React.FC = () => {
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <p className="text-xs font-bold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-                    <Eye className="w-3.5 h-3.5" /> Live преглед
+                    <Eye className="w-3.5 h-3.5" /> {t('dataviz.livePreview')}
                   </p>
                   <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                    {CHART_TYPES.find(t => t.id === config.type)?.label}
+                    {(() => { const match = CHART_TYPES.find(c => c.id === config.type); return match ? t(match.label) : ''; })()}
                   </span>
                 </div>
                 <div ref={chartRef} className="p-5 bg-white">
@@ -452,12 +458,12 @@ export const DataVizStudioView: React.FC = () => {
               {/* Export actions */}
               <div className="bg-white rounded-2xl border border-gray-200 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-1.5">
-                  <Download className="w-3.5 h-3.5" /> Извоз
+                  <Download className="w-3.5 h-3.5" /> {t('dataviz.exportLabel')}
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <button type="button" onClick={() => setGammaOpen(true)}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-xl text-xs font-bold hover:opacity-90 transition shadow-md col-span-1">
-                    <Eye className="w-4 h-4" />Gamma<span className="font-normal opacity-80">Слајд</span>
+                    <Eye className="w-4 h-4" />Gamma<span className="font-normal opacity-80">{t('dataviz.gammaSlide')}</span>
                   </button>
                   <button type="button" onClick={exportPNG} disabled={exporting}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-60 transition">
@@ -465,11 +471,11 @@ export const DataVizStudioView: React.FC = () => {
                   </button>
                   <button type="button" onClick={exportSVG}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition">
-                    <Download className="w-4 h-4" />SVG<span className="font-normal opacity-70">Скалабилен</span>
+                    <Download className="w-4 h-4" />SVG<span className="font-normal opacity-70">{t('dataviz.svgScalable')}</span>
                   </button>
                   <button type="button" onClick={printChart}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-gray-800 text-white rounded-xl text-xs font-bold hover:bg-gray-900 transition">
-                    <Printer className="w-4 h-4" />Печати<span className="font-normal opacity-70">А4</span>
+                    <Printer className="w-4 h-4" />{t('dataviz.print')}<span className="font-normal opacity-70">{t('dataviz.printA4')}</span>
                   </button>
                   <button type="button" onClick={addToClipboard} disabled={exporting}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 disabled:opacity-60 transition">
@@ -477,23 +483,23 @@ export const DataVizStudioView: React.FC = () => {
                   </button>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2 text-center">
-                  PNG и SVG се подготвени за вметнување во работен лист, квиз или тест.
+                  {t('dataviz.exportNote')}
                 </p>
               </div>
 
               {/* Tips */}
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
                 <p className="text-xs font-bold text-indigo-600 mb-2 flex items-center gap-1.5">
-                  <Settings2 className="w-3.5 h-3.5" /> Педагошки совети
+                  <Settings2 className="w-3.5 h-3.5" /> {t('dataviz.pedagogicalTips')}
                 </p>
                 <ul className="text-xs text-indigo-700 space-y-1">
-                  <li>• <strong>Scatter / Bubble</strong> — 3 или 4 колони: Ознака, X, Y [, Големина]</li>
-                  <li>• <strong>Хистограм / Фрекв. полигон / Огива</strong> — прва колона се игнорира; прилагоди ги класите</li>
-                  <li>• <strong>B-to-B Хистограм</strong> — 3 колони: Ознака, Серија1, Серија2</li>
-                  <li>• <strong>Наредени / Делен бар</strong> — 2+ колони со серии; Делен бар нормализира на 100%</li>
-                  <li>• <strong>Пиктограм ★</strong> — идеален за I–IV одд.; скалата се прилагодува автоматски</li>
-                  <li>• <strong>Парето</strong> — автоматски сортира опаѓачки + додава кумулатив. линија (80/20 правило)</li>
-                  <li>• Копирај во clipboard → залепи директно во Word/PowerPoint/Canva</li>
+                  <li>• {t('dataviz.tip1')}</li>
+                  <li>• {t('dataviz.tip2')}</li>
+                  <li>• {t('dataviz.tip3')}</li>
+                  <li>• {t('dataviz.tip4')}</li>
+                  <li>• {t('dataviz.tip5')}</li>
+                  <li>• {t('dataviz.tip6')}</li>
+                  <li>• {t('dataviz.tip7')}</li>
                 </ul>
               </div>
             </div>
@@ -506,10 +512,10 @@ export const DataVizStudioView: React.FC = () => {
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <Triangle className="h-5 w-5 text-teal-600" />
-                GeoGebra — Интерактивна математика
+                {t('dataviz.geogebraTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Функции, геометрија, CAS калкулатор и 3D простор — директно во апликацијата
+                {t('dataviz.geogebraDesc')}
               </p>
             </div>
             <SilentErrorBoundary>
@@ -527,9 +533,9 @@ export const DataVizStudioView: React.FC = () => {
         {activeTab === 'paper' && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
-              <h2 className="text-lg font-bold text-gray-800">Математичка хартија</h2>
+              <h2 className="text-lg font-bold text-gray-800">{t('dataviz.paperTitle')}</h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Генерирај 6 типови математички мрежи — прилагодени за печатење или цртање.
+                {t('dataviz.paperDesc')}
               </p>
             </div>
             <MathPaperGenerator />
@@ -541,10 +547,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-violet-500" /> AI Асистент за статистика
+                <Sparkles className="w-5 h-5 text-violet-500" /> {t('dataviz.aiTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Генерирај педагошки задачи, создавај реалистични податоци или анализирај ги вашите вредности.
+                {t('dataviz.aiDesc')}
               </p>
             </div>
             <AIStatsAssistant
@@ -564,10 +570,10 @@ export const DataVizStudioView: React.FC = () => {
           <div>
             <div className="mb-5 bg-white rounded-2xl border border-gray-200 p-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Sigma className="w-5 h-5 text-rose-500" /> Лабораторија за Веројатност
+                <Sigma className="w-5 h-5 text-rose-500" /> {t('dataviz.probTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Симулирај монета, коцка, спинер и составени настани · Теоретска vs. Експериментална веројатност
+                {t('dataviz.probDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="prob" />
@@ -586,10 +592,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <FlaskConical className="w-5 h-5 text-fuchsia-500" /> Напредна Статистика
+                <FlaskConical className="w-5 h-5 text-fuchsia-500" /> {t('dataviz.statsTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Нормална дистрибуција · Регресија · Баесова теорема · Монте Карло · Хи-квадрат тест
+                {t('dataviz.statsDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="stats" />
@@ -604,10 +610,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <FunctionSquare className="w-5 h-5 text-amber-500" /> Анализа — Калкулус
+                <FunctionSquare className="w-5 h-5 text-amber-500" /> {t('dataviz.calcTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Изводи (тангента) · Риманови суми (интеграли) · Граници на функции
+                {t('dataviz.calcDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="calc" />
@@ -622,10 +628,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Shapes className="w-5 h-5 text-pink-500" /> 2D Геометрија — Планиметрија
+                <Shapes className="w-5 h-5 text-pink-500" /> {t('dataviz.geo2dTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Триаголник · Питагорова теорема · Кружница · Многуаголници — МОН V–VIII одд.
+                {t('dataviz.geo2dDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="geo2d" />
@@ -640,10 +646,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Box className="w-5 h-5 text-orange-500" /> 3D Геометрија — Полиедри
+                <Box className="w-5 h-5 text-orange-500" /> {t('dataviz.solidTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                17 тела · Платонски · Архимедски · Призми · Антипризми · Пирамиди · Планови и проекции · Мрежи
+                {t('dataviz.solidDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="solid" />
@@ -660,10 +666,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Triangle className="w-5 h-5 text-violet-500" /> Конусни пресеци
+                <Triangle className="w-5 h-5 text-violet-500" /> {t('dataviz.conicTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Елипса · Хипербола · Парабола — слајдери a, b, h, k, θ · фокуси · асимптоти · ротациска анимација
+                {t('dataviz.conicDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="conic" />
@@ -680,10 +686,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-sky-500" /> Линеарна Алгебра
+                <Layers className="w-5 h-5 text-sky-500" /> {t('dataviz.linalgTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Матрични операции · 2D вектори и скаларен производ · Линеарни трансформации
+                {t('dataviz.linalgDesc')}
               </p>
             </div>
             <SilentErrorBoundary>
@@ -699,10 +705,10 @@ export const DataVizStudioView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <LayoutGrid className="w-5 h-5 text-indigo-500" /> Алгебарски Плочки
+                <LayoutGrid className="w-5 h-5 text-indigo-500" /> {t('dataviz.algebraTitle')}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Визуелна алгебра со плочки · Собирање/Одземање поими · Решавање равенки — МОН VI–VIII одд.
+                {t('dataviz.algebraDesc')}
               </p>
             </div>
             <LabCurriculumInfo labId="algebra" />
@@ -767,17 +773,17 @@ export const DataVizStudioView: React.FC = () => {
       {gammaOpen && (
         <SilentErrorBoundary name="GammaMode" fallback={
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 text-white" onClick={() => setGammaOpen(false)}>
-            <p className="text-slate-400">Gamma Mode не можеше да се вчита. Кликни за да затвориш.</p>
+            <p className="text-slate-400">{t('dataviz.gammaLoadError')}</p>
           </div>
         }>
           <GammaModeModal
             data={{
-              title: config.title || 'Дијаграм',
+              title: config.title || t('dataviz.diagramFallback'),
               topic: config.xLabel || 'DataViz Studio',
               gradeLevel: 0,
               slides: [{
                 type: 'chart-embed',
-                title: config.title || 'Дијаграм',
+                title: config.title || t('dataviz.diagramFallback'),
                 content: [
                   ...(config.xLabel ? [`X: ${config.xLabel}`] : []),
                   ...(config.yLabel ? [`Y: ${config.yLabel}`] : []),
