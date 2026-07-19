@@ -72,6 +72,24 @@ describe('detectMathDomain', () => {
     expect(detectMathDomain('Проценти и сразмер')).toBe('arithmetic');
   });
 
+  it('detects arithmetic — прости броеви (number theory, Wave 8.3)', () => {
+    expect(detectMathDomain('Прости броеви и делители')).toBe('arithmetic');
+  });
+
+  it('detects arithmetic — месна вредност (place value, Wave 8.3)', () => {
+    expect(detectMathDomain('Месна вредност на цифрите')).toBe('arithmetic');
+  });
+
+  // ── Trigonometry (routed into geometry, Wave 8.3) ────────────────────────────
+
+  it('detects geometry — тригонометрија', () => {
+    expect(detectMathDomain('Тригонометриски функции')).toBe('geometry');
+  });
+
+  it('detects geometry — синус и косинус', () => {
+    expect(detectMathDomain('Синусова и косинусова теорема')).toBe('geometry');
+  });
+
   // ── Edge cases ───────────────────────────────────────────────────────────────
 
   it('returns other for empty string', () => {
@@ -115,5 +133,15 @@ describe('DOMAIN_TOOLS', () => {
         expect(isRealRoute).toBe(true);
       }
     }
+  });
+
+  it('routes fractions/trig/numtheory/placevalue to their real dedicated labs (Wave 8.3)', () => {
+    const arithmeticRoutes = DOMAIN_TOOLS.arithmetic.map(t => t.route);
+    expect(arithmeticRoutes).toContain('/data-viz?tab=fractions');
+    expect(arithmeticRoutes).toContain('/data-viz?tab=numtheory');
+    expect(arithmeticRoutes).toContain('/data-viz?tab=placevalue');
+
+    const geometryRoutes = DOMAIN_TOOLS.geometry.map(t => t.route);
+    expect(geometryRoutes).toContain('/data-viz?tab=trig');
   });
 });

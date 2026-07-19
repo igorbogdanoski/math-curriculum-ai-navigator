@@ -26,6 +26,9 @@ const DOMAIN_KEYWORDS: Record<MathDomain, string[]> = {
     'пирамида', 'конус', 'цилиндар', 'сфера', 'призма', 'обем',
     '3d', 'дводимензионал', 'тродимензионал', 'координат',
     'triangle', 'circle', 'geometry', 'angle', 'vector',
+    // 2026-07-19 (Wave 8.3, audit_2026_07_18_full_app_review): trigonometry has its own
+    // dedicated lab (/data-viz?tab=trig) but no keywords routed a trig topic here at all.
+    'тригонометр', 'синус', 'косинус', 'тангенс', 'котангенс', 'радијан',
   ],
   statistics: [
     'веројатност', 'статист', 'дијаграм', 'средна вредност', 'медијан',
@@ -42,6 +45,11 @@ const DOMAIN_KEYWORDS: Record<MathDomain, string[]> = {
     'ирационал', 'делив', 'множење', 'делење', 'собирање', 'одземање',
     'дропки', 'fraction', 'decimal', 'integer', 'ratio', 'proportion',
     'сразмер',
+    // 2026-07-19 (Wave 8.3, audit_2026_07_18_full_app_review): number theory and place
+    // value each have a dedicated lab (/data-viz?tab=numtheory, ?tab=placevalue) but no
+    // keywords routed those topics here.
+    'прост број', 'прости броеви', 'нзд', 'нзс', 'делители', 'разложув',
+    'месна вредност', 'позицион',
   ],
   other: [],
 };
@@ -91,6 +99,7 @@ export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; ic
     { label: 'Геометрија 2D лаб', route: '/data-viz?tab=geo2d', icon: '△' },
     { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷' },
     { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
+    { label: 'Тригонометрија лаб', route: '/data-viz?tab=trig', icon: '📐' },
     { label: 'GeoGebra', route: '/math-tools?tab=geogebra', icon: '📐' },
   ],
   statistics: [
@@ -105,6 +114,9 @@ export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; ic
     { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
   ],
   arithmetic: [
+    { label: 'Дропки лаб', route: '/data-viz?tab=fractions', icon: '🍕' },
+    { label: 'Теорија на броеви лаб', route: '/data-viz?tab=numtheory', icon: '🔢' },
+    { label: 'Месна вредност лаб', route: '/data-viz?tab=placevalue', icon: '🧮' },
     { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
