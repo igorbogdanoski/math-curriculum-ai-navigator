@@ -12,6 +12,7 @@ import {
   Loader2, Wand2, Download, CheckCircle, XCircle, BarChart2,
   ChevronDown, ChevronUp, ArrowLeft, UserCog,
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const VARIANT_BADGE: Record<string, string> = {
   A: 'bg-blue-100 text-blue-700',
@@ -24,12 +25,12 @@ function pct(score: number, max: number): number {
   return max > 0 ? Math.round((score / max) * 100) : 0;
 }
 
-function gradeLabel(p: number): string {
-  if (p >= 90) return '5 (Одличен)';
-  if (p >= 75) return '4 (Многу добар)';
-  if (p >= 60) return '3 (Добар)';
-  if (p >= 50) return '2 (Доволен)';
-  return '1 (Недоволен)';
+function gradeLabel(p: number, t: (key: string) => string): string {
+  if (p >= 90) return t('examResults.grade5');
+  if (p >= 75) return t('examResults.grade4');
+  if (p >= 60) return t('examResults.grade3');
+  if (p >= 50) return t('examResults.grade2');
+  return t('examResults.grade1');
 }
 function gradeColor(p: number): string {
   if (p >= 90) return 'text-emerald-700';
@@ -44,6 +45,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
   const { addNotification } = useNotification();
   const { firebaseUser } = useAuth();
   const { params } = useRouter([]);
+  const { t } = useLanguage();
 
   const sessionId = id ?? params?.id ?? '';
 
@@ -85,9 +87,9 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
       setResponses(prev => prev.map(r =>
         r.id === response.id ? { ...r, score, maxScore, aiFeedback: feedback, gradedAt: new Date() as any } : r,
       ));
-      addNotification(`${response.studentName} оценет: ${score}/${maxScore} (${pct(score, maxScore)}%)`, 'success');
+      addNotification(`${response.studentName} ${t('examResults.gradedLabel')}: ${score}/${maxScore} (${pct(score, maxScore)}%)`, 'success');
     } catch {
-      addNotification('Грешка при AI оценување.', 'error');
+      addNotification(t('examResults.aiGradingError'), 'error');
     }
     setGradingId(null);
   };
@@ -110,7 +112,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     try {
       await examService.saveGradingResult(session.id, response.id, { score, maxScore: response.maxScore ?? 0, aiFeedback: feedback });
     } catch {
-      addNotification('Грешка при зачувување на измената.', 'error');
+      addNotification(t('examResults.saveOverrideError'), 'error');
     }
   };
 
@@ -124,7 +126,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     );
   }
   if (!session) {
-    return <div className="p-8 text-gray-500">Испитот не е пронајден.</div>;
+    return <div className="p-8 text-gray-500">{t('examResults.notFound')}</div>;
   }
 
   const submitted = responses.filter(r => r.status === 'submitted');
@@ -146,8 +148,8 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Резултати — {session.title}</h1>
-            <p className="text-sm text-gray-500">{session.gradeLevel}. одд. · {submitted.length} предале</p>
+            <h1 className="text-xl font-bold text-gray-900">{t('examResults.resultsPrefix')}{session.title}</h1>
+            <p className="text-sm text-gray-500">{session.gradeLevel}{t('examResults.gradeSuffix')} · {submitted.length} {t('examResults.submittedSuffix')}</p>
           </div>
         </div>
 
@@ -155,21 +157,21 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl p-4 border border-gray-200 text-center shadow-sm">
             <p className="text-2xl font-bold text-gray-800">{submitted.length}</p>
-            <p className="text-xs text-gray-500">Предале</p>
+            <p className="text-xs text-gray-500">{t('examResults.submitted')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-gray-200 text-center shadow-sm">
             <p className="text-2xl font-bold text-indigo-600">{graded.length}</p>
-            <p className="text-xs text-gray-500">Оценети</p>
+            <p className="text-xs text-gray-500">{t('examResults.graded')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-gray-200 text-center shadow-sm">
             <p className={`text-2xl font-bold ${avgScore != null ? gradeColor(avgScore) : 'text-gray-400'}`}>
               {avgScore != null ? `${avgScore}%` : '—'}
             </p>
-            <p className="text-xs text-gray-500">Просек</p>
+            <p className="text-xs text-gray-500">{t('examResults.average')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-gray-200 text-center shadow-sm">
             <p className="text-2xl font-bold text-gray-800">{session.variants.A.length}</p>
-            <p className="text-xs text-gray-500">Прашања/вар.</p>
+            <p className="text-xs text-gray-500">{t('examResults.questionsPerVariant')}</p>
           </div>
         </div>
 
@@ -182,14 +184,14 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
             className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-sm font-semibold"
           >
             {gradingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            AI Оцени ги сите
+            {t('examResults.gradeAllAi')}
           </button>
           <button
             type="button"
             onClick={handlePrint}
             className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 hover:border-indigo-400 text-gray-700 rounded-xl text-sm font-semibold"
           >
-            <Download className="w-4 h-4" /> Печати / PDF
+            <Download className="w-4 h-4" /> {t('examResults.printPdf')}
           </button>
         </div>
 
@@ -197,10 +199,10 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-indigo-500" />
-            <span className="font-semibold text-gray-800">Листа на ученици</span>
+            <span className="font-semibold text-gray-800">{t('examResults.studentList')}</span>
           </div>
           {responses.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">Нема предадени одговори.</div>
+            <div className="p-8 text-center text-gray-400 text-sm">{t('examResults.noSubmissions')}</div>
           ) : (
             <div className="divide-y divide-gray-50">
               {responses.map(r => {
@@ -215,14 +217,14 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                     >
                       <span className="font-medium text-gray-800 flex-1">{r.studentName}</span>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${VARIANT_BADGE[r.variantKey] ?? ''}`}>
-                        Вар. {r.variantKey}
+                        {t('examResults.variantPrefix')} {r.variantKey}
                       </span>
                       {r.status !== 'submitted' && (
-                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Не предал</span>
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t('examResults.notSubmitted')}</span>
                       )}
                       {scorePct != null ? (
                         <span className={`font-bold text-sm ${gradeColor(scorePct)}`}>
-                          {r.score}/{r.maxScore} ({scorePct}%) — {gradeLabel(scorePct)}
+                          {r.score}/{r.maxScore} ({scorePct}%) — {gradeLabel(scorePct, t)}
                         </span>
                       ) : r.status === 'submitted' ? (
                         <button
@@ -232,7 +234,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                           className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold disabled:opacity-50"
                         >
                           {gradingId === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                          Оцени
+                          {t('examResults.grade')}
                         </button>
                       ) : null}
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
@@ -258,7 +260,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                                       min={0}
                                       max={q.points}
                                       value={fb.points}
-                                      aria-label={`Поени за прашање ${qi + 1}`}
+                                      aria-label={`${t('examResults.pointsForQuestion')} ${qi + 1}`}
                                       onChange={e => handleOverridePoints(r, q.id, Number(e.target.value), q.points)}
                                       className="w-10 bg-transparent text-right font-bold focus:outline-none focus:underline"
                                     />
@@ -268,10 +270,10 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                               </div>
                               <div className="mt-1.5 flex flex-col gap-1 text-xs">
                                 <span className="text-gray-500">
-                                  Ученик: <span className="text-gray-800 font-medium">{studentAns}</span>
+                                  {t('examResults.student')} <span className="text-gray-800 font-medium">{studentAns}</span>
                                 </span>
                                 <span className="text-emerald-700">
-                                  Точно: <span className="font-medium">{q.answer}</span>
+                                  {t('examResults.correct')} <span className="font-medium">{q.answer}</span>
                                 </span>
                                 {fb && (
                                   <span className="text-gray-500 flex items-center gap-1">
@@ -281,7 +283,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
                                 )}
                                 {fb?.manuallyOverriddenBy && (
                                   <span className="text-indigo-600 flex items-center gap-1 font-semibold">
-                                    <UserCog className="w-3 h-3" /> Рачно изменето
+                                    <UserCog className="w-3 h-3" /> {t('examResults.manuallyOverridden')}
                                   </span>
                                 )}
                               </div>

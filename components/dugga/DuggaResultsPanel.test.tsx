@@ -9,6 +9,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DuggaResultsPanel } from './DuggaResultsPanel';
+import { LanguageProvider } from '../../i18n/LanguageContext';
 import { getTestSubmissions, gradeSubmissionQuestion } from '../../services/firestoreService.dugga';
 import type { DuggaTest, DuggaSubmission } from '../../services/firestoreService.dugga';
 
@@ -16,6 +17,10 @@ vi.mock('../../services/firestoreService.dugga', () => ({
   getTestSubmissions: vi.fn(),
   gradeSubmissionQuestion: vi.fn(),
 }));
+
+function renderPanel(props: { test: DuggaTest; onClose: () => void }) {
+  return render(<LanguageProvider><DuggaResultsPanel {...props} /></LanguageProvider>);
+}
 
 function makeTest(): DuggaTest {
   return {
@@ -48,17 +53,18 @@ function makeSubmission(over: Partial<DuggaSubmission> = {}): DuggaSubmission {
 describe('DuggaResultsPanel — per-student manual grading', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('preferred_language', 'mk');
     vi.mocked(getTestSubmissions).mockResolvedValue([makeSubmission()]);
   });
 
   it('shows a pending-review badge on the student row', async () => {
-    render(<DuggaResultsPanel test={makeTest()} onClose={vi.fn()} />);
+    renderPanel({ test: makeTest(), onClose: vi.fn() });
     fireEvent.click(await screen.findByRole('button', { name: 'Ученици' }));
     expect(await screen.findByLabelText('Чека рачна проверка')).toBeTruthy();
   });
 
   it('opens the student detail and shows an editable input only for the null-correct question', async () => {
-    render(<DuggaResultsPanel test={makeTest()} onClose={vi.fn()} />);
+    renderPanel({ test: makeTest(), onClose: vi.fn() });
     fireEvent.click(await screen.findByRole('button', { name: 'Ученици' }));
     fireEvent.click(await screen.findByText('Петар Петровски'));
 
@@ -71,7 +77,7 @@ describe('DuggaResultsPanel — per-student manual grading', () => {
 
   it('saves a manual grade and reflects it immediately without re-fetching', async () => {
     vi.mocked(gradeSubmissionQuestion).mockResolvedValue(undefined);
-    render(<DuggaResultsPanel test={makeTest()} onClose={vi.fn()} />);
+    renderPanel({ test: makeTest(), onClose: vi.fn() });
     fireEvent.click(await screen.findByRole('button', { name: 'Ученици' }));
     fireEvent.click(await screen.findByText('Петар Петровски'));
 
@@ -88,7 +94,7 @@ describe('DuggaResultsPanel — per-student manual grading', () => {
   });
 
   it('does not call the service when the input is left empty', async () => {
-    render(<DuggaResultsPanel test={makeTest()} onClose={vi.fn()} />);
+    renderPanel({ test: makeTest(), onClose: vi.fn() });
     fireEvent.click(await screen.findByRole('button', { name: 'Ученици' }));
     fireEvent.click(await screen.findByText('Петар Петровски'));
 

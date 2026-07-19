@@ -4,6 +4,7 @@ import { getTestSubmissions, gradeSubmissionQuestion } from '../../services/fire
 import type { DuggaTest, DuggaSubmission } from '../../services/firestoreService.dugga';
 import { DOK_COLORS } from './duggaLibraryConstants';
 import { isAnswerCorrect, gradeLabel, gradeBg } from './duggaResultsScoring';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Per-student submission detail + manual-grading control ───────────────────
 // 2026-07-19 (audit_2026_07_18_full_app_review, Wave 5.2): questions where
@@ -20,6 +21,7 @@ function SubmissionDetail({ test, submission, onBack, onGraded }: {
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const results = submission.questionResults ?? {};
   const questions = test.questions.filter(q => q.type !== 'section_header');
@@ -51,16 +53,16 @@ function SubmissionDetail({ test, submission, onBack, onGraded }: {
   return (
     <div className="space-y-3">
       <button type="button" onClick={onBack} className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700">
-        <ChevronLeft className="w-3.5 h-3.5" /> Назад кон учениците
+        <ChevronLeft className="w-3.5 h-3.5" /> {t('duggaResults.backToStudents')}
       </button>
       <div className="flex items-center justify-between px-1">
         <div>
           <p className="font-bold text-sm text-gray-800">{submission.studentName}</p>
-          <p className="text-xs text-gray-400">{submission.score}/{submission.totalPoints} поени · {submission.percentage}%</p>
+          <p className="text-xs text-gray-400">{submission.score}/{submission.totalPoints} {t('duggaResults.points')} · {submission.percentage}%</p>
         </div>
         {(submission.pendingReviewPoints ?? 0) > 0 && (
           <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
-            <Clock className="w-3 h-3" /> {submission.pendingReviewPoints} поени чекаат
+            <Clock className="w-3 h-3" /> {submission.pendingReviewPoints} {t('duggaResults.pointsPending')}
           </span>
         )}
       </div>
@@ -75,7 +77,7 @@ function SubmissionDetail({ test, submission, onBack, onGraded }: {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-700 line-clamp-2">{q.text.replace(/<[^>]*>/g, '')}</p>
                   {!r ? (
-                    <p className="text-xs text-gray-400 italic mt-1">Нема запишан резултат за ова прашање (поднесено пред оваа функција).</p>
+                    <p className="text-xs text-gray-400 italic mt-1">{t('duggaResults.noRecordedResult')}</p>
                   ) : needsReview ? (
                     <div className="flex items-center gap-2 mt-2">
                       <input
@@ -88,19 +90,19 @@ function SubmissionDetail({ test, submission, onBack, onGraded }: {
                         onChange={e => setDrafts(d => ({ ...d, [q.id]: e.target.value }))}
                         className="w-16 px-2 py-1 text-xs rounded-lg border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400"
                       />
-                      <span className="text-xs text-gray-500">/ {r.maxPoints} поени</span>
+                      <span className="text-xs text-gray-500">/ {r.maxPoints} {t('duggaResults.points')}</span>
                       <button
                         type="button"
                         onClick={() => save(q.id, r.maxPoints)}
                         disabled={savingId === q.id}
                         className="text-xs font-bold bg-amber-500 text-white px-3 py-1 rounded-lg hover:bg-amber-600 disabled:opacity-50"
                       >
-                        {savingId === q.id ? 'Зачувување…' : 'Зачувај'}
+                        {savingId === q.id ? t('duggaResults.saving') : t('duggaResults.save')}
                       </button>
                     </div>
                   ) : (
                     <p className={`text-xs font-bold mt-1 ${r.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {r.earned}/{r.maxPoints} поени {r.correct ? '✓' : ''}
+                      {r.earned}/{r.maxPoints} {t('duggaResults.points')} {r.correct ? '✓' : ''}
                     </p>
                   )}
                 </div>
@@ -120,6 +122,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<ResultsTab>('overview');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setSelectedSubmissionId(null);
@@ -145,9 +148,9 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
     });
 
   const tabs: { id: ResultsTab; label: string }[] = [
-    { id: 'overview', label: 'Преглед' },
-    { id: 'questions', label: 'По прашање' },
-    { id: 'students', label: 'Ученици' },
+    { id: 'overview', label: t('duggaResults.tabOverview') },
+    { id: 'questions', label: t('duggaResults.tabByQuestion') },
+    { id: 'students', label: t('duggaResults.tabStudents') },
   ];
 
   return (
@@ -157,7 +160,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
         <div className="p-5 border-b border-gray-200 flex items-center justify-between shrink-0">
           <div>
             <h2 className="font-bold text-gray-900 truncate max-w-sm">{test.title}</h2>
-            <p className="text-xs text-gray-500">{n} поднесувања · {test.questions.filter(q => q.type !== 'section_header').length} прашања</p>
+            <p className="text-xs text-gray-500">{n} {t('duggaResults.submissions')} · {test.questions.filter(q => q.type !== 'section_header').length} {t('duggaResults.questions')}</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors shrink-0">
             <X className="w-5 h-5 text-gray-500" />
@@ -190,8 +193,8 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
           {!loading && n === 0 && (
             <div className="text-center py-10 text-gray-400">
               <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Нема поднесувања за овој тест.</p>
-              <p className="text-xs mt-1">Сподели го кодот <span className="font-mono font-bold text-indigo-600">{test.shareCode}</span> со учениците.</p>
+              <p className="text-sm">{t('duggaResults.noSubmissions')}</p>
+              <p className="text-xs mt-1">{t('duggaResults.shareCode')} <span className="font-mono font-bold text-indigo-600">{test.shareCode}</span> {t('duggaResults.withStudents')}</p>
             </div>
           )}
 
@@ -202,21 +205,21 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-indigo-50 rounded-xl">
                   <div className="text-2xl font-black text-indigo-700">{n}</div>
-                  <div className="text-xs text-indigo-600 mt-0.5">Ученици</div>
+                  <div className="text-xs text-indigo-600 mt-0.5">{t('duggaResults.students')}</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-xl">
                   <div className="text-2xl font-black text-green-700">{avgPct}%</div>
-                  <div className="text-xs text-green-600 mt-0.5">Просек</div>
+                  <div className="text-xs text-green-600 mt-0.5">{t('duggaResults.average')}</div>
                 </div>
                 <div className="text-center p-3 bg-amber-50 rounded-xl">
                   <div className="text-2xl font-black text-amber-700">{pass}/{n}</div>
-                  <div className="text-xs text-amber-600 mt-0.5">Положиле (≥50%)</div>
+                  <div className="text-xs text-amber-600 mt-0.5">{t('duggaResults.passed')}</div>
                 </div>
               </div>
 
               {/* Grade distribution */}
               <div className="p-4 bg-gray-50 rounded-2xl">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Распределба на оценки</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('duggaResults.gradeDistribution')}</p>
                 <div className="flex items-end gap-1 h-20">
                   {[
                     { label: '1', range: '0–49%', color: 'bg-red-400', count: submissions.filter(s => s.percentage < 50).length },
@@ -247,7 +250,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
                       <span className="text-xs font-black text-red-600">!</span>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-red-700">Најтешко прашање ({worst.pct}% точни)</p>
+                      <p className="text-xs font-bold text-red-700">{t('duggaResults.hardestQuestion')} ({worst.pct}{t('duggaResults.correctPct')})</p>
                       <p className="text-xs text-red-600 mt-0.5 line-clamp-2">{worst.q.text.replace(/<[^>]*>/g, '')}</p>
                     </div>
                   </div>
@@ -277,7 +280,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
                             <span className={`text-xs font-bold w-10 text-right ${pct >= 75 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{pct}%</span>
                           </>
                         ) : (
-                          <span className="text-xs text-gray-400 italic">AI оценување</span>
+                          <span className="text-xs text-gray-400 italic">{t('duggaResults.aiGrading')}</span>
                         )}
                         <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${DOK_COLORS[q.dok]}`}>DoK {q.dok}</span>
                       </div>
@@ -304,7 +307,7 @@ export function DuggaResultsPanel({ test, onClose }: { test: DuggaTest; onClose:
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {(sub.pendingReviewPoints ?? 0) > 0 && (
-                      <Clock className="w-3.5 h-3.5 text-amber-500" aria-label="Чека рачна проверка" />
+                      <Clock className="w-3.5 h-3.5 text-amber-500" aria-label={t('duggaResults.awaitingManualReview')} />
                     )}
                     <div className="text-right">
                       <div className="text-sm font-bold text-gray-800">{sub.score}/{sub.totalPoints}</div>

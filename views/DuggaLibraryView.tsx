@@ -13,6 +13,7 @@ import { AssignDuggaModal } from '../components/dugga/AssignDuggaModal';
 import { DuggaResultsPanel } from '../components/dugga/DuggaResultsPanel';
 import { EmptyState } from '../components/common/EmptyState';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ export function DuggaLibraryView() {
   const { firebaseUser } = useAuth();
   const { addNotification } = useNotification();
   const { navigate } = useNavigation();
+  const { t } = useLanguage();
 
   const [tab, setTab] = useState<LibraryTab>('my');
   const {
@@ -45,31 +47,31 @@ export function DuggaLibraryView() {
   }, [navigate]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Избриши го тестот? Ова не може да се врати.')) return;
+    if (!confirm(t('duggaLibrary.confirmDelete'))) return;
     try {
       await deleteDuggaTest(id);
-      addNotification('Тестот е избришан.', 'success');
+      addNotification(t('duggaLibrary.deleted'), 'success');
     } catch (err) {
       logger.error('[DuggaLibraryView] failed to delete test', err);
-      addNotification('Грешка при бришење на тестот.', 'error');
+      addNotification(t('duggaLibrary.deleteError'), 'error');
     }
-  }, [addNotification]);
+  }, [addNotification, t]);
 
   const handleTogglePublic = useCallback(async (id: string, isPublic: boolean) => {
     try {
       await updateDuggaTest(id, { isPublic });
-      addNotification(isPublic ? 'Тестот е јавно споделен.' : 'Тестот е направен приватен.', 'success');
+      addNotification(isPublic ? t('duggaLibrary.madePublic') : t('duggaLibrary.madePrivate'), 'success');
     } catch (err) {
       logger.error('[DuggaLibraryView] failed to toggle test visibility', err);
-      addNotification('Грешка при промена на видливоста.', 'error');
+      addNotification(t('duggaLibrary.visibilityError'), 'error');
     }
-  }, [addNotification]);
+  }, [addNotification, t]);
 
   const handleCopyCode = useCallback((code: string) => {
     navigator.clipboard.writeText(code).then(() => {
-      addNotification(`Код ${code} е копиран!`, 'success');
+      addNotification(t('duggaLibrary.codeCopied').replace('{code}', code), 'success');
     });
-  }, [addNotification]);
+  }, [addNotification, t]);
 
   const sourceTests = tab === 'my' ? myTests : publicTests;
 
@@ -93,32 +95,32 @@ export function DuggaLibraryView() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Дига Библиотека</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Управувај со тестовите и следи ги резултатите</p>
+          <h1 className="text-2xl font-black text-gray-900">{t('duggaLibrary.title')}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{t('duggaLibrary.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <button type="button"
             onClick={() => navigate('/dugga/play')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm font-semibold hover:border-indigo-300 hover:text-indigo-700 transition-colors">
             <BookOpen className="w-4 h-4" />
-            Играј со Код
+            {t('duggaLibrary.playWithCode')}
           </button>
           <button type="button"
             onClick={() => navigate('/dugga/build')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors">
             <Plus className="w-4 h-4" />
-            Нов Тест
+            {t('duggaLibrary.newTest')}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-2xl p-1 w-fit">
-        {([['my', 'Мои тестови'], ['public', 'Јавна библиотека']] as const).map(([t, label]) => (
-          <button type="button" key={t} onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+        {([['my', t('duggaLibrary.tabMine')], ['public', t('duggaLibrary.tabPublic')]] as const).map(([tabId, label]) => (
+          <button type="button" key={tabId} onClick={() => setTab(tabId)}
+            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${tab === tabId ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {label}
-            {t === 'my' && myTests.length > 0 && (
+            {tabId === 'my' && myTests.length > 0 && (
               <span className="ml-1.5 text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full">{myTests.length}</span>
             )}
           </button>
@@ -130,43 +132,43 @@ export function DuggaLibraryView() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Пребарај по наслов, тема, код..."
+            placeholder={t('duggaLibrary.searchPlaceholder')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent" />
         </div>
         <select value={filterGrade === 'all' ? 'all' : String(filterGrade)}
           onChange={e => setFilterGrade(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-          aria-label="Филтер по разред"
+          aria-label={t('duggaLibrary.filterGrade')}
           className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
-          <option value="all">Сите разреди</option>
+          <option value="all">{t('duggaLibrary.allGrades')}</option>
           {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
-            <option key={g} value={g}>{g}. разред</option>
+            <option key={g} value={g}>{g}{t('duggaLibrary.gradeSuffix')}</option>
           ))}
         </select>
         <select value={filterTrack}
           onChange={e => setFilterTrack(e.target.value)}
-          aria-label="Филтер по насока"
+          aria-label={t('duggaLibrary.filterTrack')}
           className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
-          <option value="all">Сите насоки</option>
+          <option value="all">{t('duggaLibrary.allTracks')}</option>
           {availableTracks.map(tr => (
             <option key={tr} value={tr}>{tr}</option>
           ))}
         </select>
         <select value={filterTestType}
           onChange={e => setFilterTestType(e.target.value)}
-          aria-label="Филтер по тип на тест"
+          aria-label={t('duggaLibrary.filterType')}
           className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
-          <option value="all">Сите типови</option>
-          <option value="topic">Тематски</option>
-          <option value="midterm">Полугодишен</option>
-          <option value="annual">Годишен</option>
-          <option value="exam">Завршен испит</option>
-          <option value="custom">Прилагоден</option>
+          <option value="all">{t('duggaLibrary.allTypes')}</option>
+          <option value="topic">{t('duggaLibrary.typeTopic')}</option>
+          <option value="midterm">{t('duggaLibrary.typeMidterm')}</option>
+          <option value="annual">{t('duggaLibrary.typeAnnual')}</option>
+          <option value="exam">{t('duggaLibrary.typeExam')}</option>
+          <option value="custom">{t('duggaLibrary.typeCustom')}</option>
         </select>
         <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white cursor-pointer">
           <input type="checkbox" checked={onlyFinalExam}
             onChange={e => setOnlyFinalExam(e.target.checked)}
             className="accent-indigo-600" />
-          Само завршни испити
+          {t('duggaLibrary.onlyFinalExams')}
         </label>
       </div>
 
@@ -179,20 +181,20 @@ export function DuggaLibraryView() {
         tab === 'my' ? (
           <EmptyState
             icon={<ClipboardList className="w-8 h-8" />}
-            title="Немаш зачувани тестови"
-            message="Создади го твојот прв Dugga тест за да започнеш."
+            title={t('duggaLibrary.emptyMineTitle')}
+            message={t('duggaLibrary.emptyMineMessage')}
           >
             <button type="button" onClick={() => navigate('/dugga/build')}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors">
               <Plus className="w-4 h-4" />
-              Направи прв тест
+              {t('duggaLibrary.makeFirstTest')}
             </button>
           </EmptyState>
         ) : (
           <EmptyState
             icon={<ClipboardList className="w-8 h-8" />}
-            title="Нема јавни тестови"
-            message="Нема јавни тестови кои одговараат на пребарувањето."
+            title={t('duggaLibrary.emptyPublicTitle')}
+            message={t('duggaLibrary.emptyPublicMessage')}
           />
         )
       ) : (
@@ -225,7 +227,7 @@ export function DuggaLibraryView() {
             className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
           >
             {loadingMorePublic ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Вчитај уште →
+            {t('duggaLibrary.loadMore')}
           </button>
         </div>
       )}
@@ -242,7 +244,7 @@ export function DuggaLibraryView() {
           teacherUid={firebaseUser.uid}
           onClose={() => setAssignTest(null)}
           onSuccess={() => {
-            addNotification(`„${assignTest.title}" е доделен на класата! 📋`, 'success');
+            addNotification(`„${assignTest.title}" ${t('duggaLibrary.assignedToClass')}`, 'success');
             setAssignTest(null);
           }}
         />
