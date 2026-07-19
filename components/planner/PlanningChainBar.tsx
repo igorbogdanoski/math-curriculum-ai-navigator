@@ -42,10 +42,9 @@ export const PlanningChainBar: React.FC<Props> = ({ currentStep }) => {
     }
   };
 
-  const getStatus = (stepKey: PlanStep, stepIdx: number): 'done' | 'current' | 'upcoming' => {
+  const getStatus = (stepKey: PlanStep, stepIdx: number): 'done' | 'current' | 'skipped' | 'upcoming' => {
     if (stepIdx === currentIdx) return 'current';
-    if (stepIdx < currentIdx && isDone(stepKey)) return 'done';
-    if (stepIdx < currentIdx) return 'done'; // passed steps are considered done visually
+    if (stepIdx < currentIdx) return isDone(stepKey) ? 'done' : 'skipped';
     return 'upcoming';
   };
 
@@ -62,12 +61,14 @@ export const PlanningChainBar: React.FC<Props> = ({ currentStep }) => {
           const stepClasses = {
             done:     'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100',
             current:  'bg-blue-50 border-blue-400 text-blue-700 ring-2 ring-blue-300 ring-offset-1',
+            skipped:  'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100',
             upcoming: 'bg-gray-50 border-gray-200 text-gray-400 cursor-default',
           }[status];
 
           const iconClasses = {
             done:     'bg-emerald-100',
             current:  'bg-blue-100',
+            skipped:  'bg-amber-100',
             upcoming: 'bg-gray-100',
           }[status];
 
@@ -78,7 +79,7 @@ export const PlanningChainBar: React.FC<Props> = ({ currentStep }) => {
                 onClick={() => status !== 'upcoming' && navigate(step.route)}
                 disabled={status === 'upcoming'}
                 aria-current={status === 'current' ? 'step' : undefined}
-                title={step.label}
+                title={status === 'skipped' ? `${step.label} (не е зачувано)` : step.label}
                 className={`
                   flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200
                   ${stepClasses}
@@ -86,7 +87,13 @@ export const PlanningChainBar: React.FC<Props> = ({ currentStep }) => {
               >
                 {/* Status dot */}
                 <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${iconClasses}`}>
-                  {status === 'done' ? '✓' : status === 'current' ? <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse block" /> : <span className="w-1.5 h-1.5 rounded-full bg-gray-300 block" />}
+                  {status === 'done'
+                    ? '✓'
+                    : status === 'current'
+                    ? <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse block" />
+                    : status === 'skipped'
+                    ? '?'
+                    : <span className="w-1.5 h-1.5 rounded-full bg-gray-300 block" />}
                 </span>
                 <span className="hidden sm:inline">{step.shortLabel}</span>
                 <span className="sm:hidden">{step.icon}</span>

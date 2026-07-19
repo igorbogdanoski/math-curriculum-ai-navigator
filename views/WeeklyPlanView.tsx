@@ -157,6 +157,7 @@ export const WeeklyPlanView: React.FC = () => {
   const [showScheduleConfig, setShowScheduleConfig] = useState(false);
   const [periodsPerDay, setPeriodsPerDay] = useState<[number, number, number, number, number]>([1, 1, 1, 1, 0]);
   const [thematicLessonMap, setThematicLessonMap] = useState<Record<number, string>>({});
+  const [weekTopicHasThematicPlan, setWeekTopicHasThematicPlan] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedWeek, setLastSavedWeek] = useState<number | null>(null);
   const [showParentLetter, setShowParentLetter] = useState(false);
@@ -201,6 +202,7 @@ export const WeeklyPlanView: React.FC = () => {
   // Auto-load thematic lessons for the current week's topic
   useEffect(() => {
     setThematicLessonMap({});
+    setWeekTopicHasThematicPlan(false);
     if (!firebaseUser?.uid || !selectedPlan || !curriculum) return;
     const topicEntry = buildTopicRanges(selectedPlan.planData).find(
       r => weekNumber >= r.weekStart && weekNumber <= r.weekEnd,
@@ -225,6 +227,7 @@ export const WeeklyPlanView: React.FC = () => {
       const map: Record<number, string> = {};
       saved.plan.lessons.forEach((l, i) => { map[i + 1] = l.lessonUnit; });
       setThematicLessonMap(map);
+      setWeekTopicHasThematicPlan(true);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser?.uid, selectedPlanId, weekNumber, curriculum]);
@@ -249,6 +252,21 @@ export const WeeklyPlanView: React.FC = () => {
   );
 
   const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan?.planData.grade) ?? null;
+
+  // 2026-07-19 (Wave 6.4, audit_2026_07_18_full_app_review): sync PlanningChainBar's
+  // real completion state whenever the user arrives here directly (not only when
+  // clicking through from a prior chain step) — annual is done once a real saved
+  // plan is selected, thematic only once loadThematicPlanEdit above actually found a
+  // saved thematic plan for this week's topic, weekly only once this exact week was saved.
+  useEffect(() => {
+    if (!selectedPlan) return;
+    setPlanningState({
+      annualPlanId: selectedPlan.id,
+      themeName: weekTopicHasThematicPlan ? (topicForWeek?.topic.title ?? null) : null,
+      weekRange: lastSavedWeek === weekNumber ? [weekNumber, weekNumber] : null,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlan?.id, weekTopicHasThematicPlan, topicForWeek, lastSavedWeek, weekNumber]);
 
   // 2026-07-19 (Wave 6.2, audit_2026_07_18_full_app_review): the week
   // navigator used to hard-cap at 36 regardless of the plan's actual length —

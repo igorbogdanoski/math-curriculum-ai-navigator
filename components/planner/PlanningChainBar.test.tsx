@@ -34,12 +34,26 @@ describe('PlanningChainBar', () => {
     expect(stepButton('Годишна').getAttribute('aria-current')).toBeNull();
   });
 
-  it('treats every step before the current one as done, regardless of context state', () => {
-    // No annualPlanId/themeName set, yet these earlier steps are still "passed" visually.
+  it('keeps steps before the current one clickable even when not actually completed ("skipped")', () => {
+    // No annualPlanId/themeName set — earlier steps stay navigable, but must not
+    // be shown as "done" (see next test): they are visually distinct "skipped" steps.
     render(<PlanningChainBar currentStep="lesson" />);
     expect(stepButton('Годишна').disabled).toBe(false);
     expect(stepButton('Тематска').disabled).toBe(false);
     expect(stepButton('Неделна').disabled).toBe(false);
+    expect(stepButton('Годишна').title).toBe('Годишна програма (не е зачувано)');
+  });
+
+  it('shows a real "done" checkmark only when the context confirms that step is actually saved', () => {
+    mockPlanningState = { annualPlanId: 'plan-1', themeName: 'Броеви', weekRange: null };
+    render(<PlanningChainBar currentStep="lesson" />);
+    expect(stepButton('Годишна').title).toBe('Годишна програма');
+    expect(stepButton('Годишна').textContent).toContain('✓');
+    expect(stepButton('Тематска').title).toBe('Тематски план');
+    expect(stepButton('Тематска').textContent).toContain('✓');
+    // weekRange is still null, so this passed step is "skipped", not "done"
+    expect(stepButton('Неделна').title).toBe('Неделен план (не е зачувано)');
+    expect(stepButton('Неделна').textContent).not.toContain('✓');
   });
 
   it('disables steps after the current one ("upcoming")', () => {
