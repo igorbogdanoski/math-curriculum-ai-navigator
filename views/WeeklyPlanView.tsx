@@ -20,6 +20,7 @@ import { WeeklyCollabModal } from '../components/planner/WeeklyCollabModal';
 import type { SavedWeeklyPlan } from '../services/firestoreService.weeklyPlans';
 import { useReactToPrint } from 'react-to-print';
 import { PrintShell } from '../components/common/PrintShell';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -47,21 +48,37 @@ interface WeeklySlot {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+// Day/month names are language-dependent — built inside the component from
+// t() (see buildWeekDays/buildWeekToMonth below) rather than as module-level
+// hardcoded MK constants (Wave 6.1b, audit_2026_07_18_full_app_review).
 
-const MK_DAYS = ['Понеделник', 'Вторник', 'Среда', 'Четврток', 'Петок'];
-const MK_DAYS_SHORT = ['Пон', 'Вто', 'Сре', 'Чет', 'Пет'];
+function buildWeekDays(t: (key: string) => string): string[] {
+  return [t('weeklyPlan.days.mon'), t('weeklyPlan.days.tue'), t('weeklyPlan.days.wed'), t('weeklyPlan.days.thu'), t('weeklyPlan.days.fri')];
+}
 
-const WEEK_TO_MONTH: Record<number, string> = {
-  1: 'Септември', 2: 'Септември', 3: 'Септември', 4: 'Септември',
-  5: 'Октомври',  6: 'Октомври',  7: 'Октомври',  8: 'Октомври',
-  9: 'Ноември',  10: 'Ноември', 11: 'Ноември',  12: 'Ноември',
-  13: 'Декември', 14: 'Декември', 15: 'Декември', 16: 'Декември',
-  17: 'Јануари',  18: 'Јануари',  19: 'Јануари',  20: 'Јануари',
-  21: 'Февруари', 22: 'Февруари', 23: 'Февруари', 24: 'Февруари',
-  25: 'Март',     26: 'Март',     27: 'Март',     28: 'Март',
-  29: 'Април',    30: 'Април',    31: 'Април',    32: 'Април',
-  33: 'Мај',      34: 'Мај',      35: 'Мај',      36: 'Јуни',
-};
+function buildWeekDaysShort(t: (key: string) => string): string[] {
+  return [t('planner.days.mon'), t('planner.days.tue'), t('planner.days.wed'), t('planner.days.thu'), t('planner.days.fri')];
+}
+
+function buildWeekToMonth(t: (key: string) => string): Record<number, string> {
+  const months = [
+    t('weeklyPlan.months.sep'), t('weeklyPlan.months.oct'), t('weeklyPlan.months.nov'), t('weeklyPlan.months.dec'),
+    t('weeklyPlan.months.jan'), t('weeklyPlan.months.feb'), t('weeklyPlan.months.mar'), t('weeklyPlan.months.apr'),
+    t('weeklyPlan.months.may'), t('weeklyPlan.months.jun'),
+  ];
+  const map: Record<number, string> = {};
+  // 4 weeks/month for the first 8 months (Sep-Apr), then May gets 4 and June
+  // absorbs the remainder — matches the original 36-week academic-year layout.
+  const weeksPerMonth = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+  let week = 1;
+  months.forEach((month, i) => {
+    for (let w = 0; w < weeksPerMonth[i] && week <= 40; w++) {
+      map[week] = month;
+      week++;
+    }
+  });
+  return map;
+}
 
 // Topic color by index (cycles)
 const TOPIC_COLORS = [
@@ -127,6 +144,11 @@ export const WeeklyPlanView: React.FC = () => {
   const { addNotification } = useNotification();
   const { annualPlanId, grade, setPlanningState } = usePlanning();
   const { curriculum } = useCurriculum();
+  const { t } = useLanguage();
+
+  const MK_DAYS = useMemo(() => buildWeekDays(t), [t]);
+  const MK_DAYS_SHORT = useMemo(() => buildWeekDaysShort(t), [t]);
+  const WEEK_TO_MONTH = useMemo(() => buildWeekToMonth(t), [t]);
 
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
@@ -162,7 +184,7 @@ export const WeeklyPlanView: React.FC = () => {
         }
       } catch (err) {
         logger.error('WeeklyPlanView: load plans error', err);
-        addNotification('Грешка при вчитување на плановите.', 'error');
+        addNotification(t('weeklyPlan.errors.loadPlans'), 'error');
       } finally {
         setIsLoadingPlans(false);
       }
@@ -228,6 +250,14 @@ export const WeeklyPlanView: React.FC = () => {
 
   const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan?.planData.grade) ?? null;
 
+  // 2026-07-19 (Wave 6.2, audit_2026_07_18_full_app_review): the week
+  // navigator used to hard-cap at 36 regardless of the plan's actual length —
+  // AnnualPlanGeneratorView lets teachers pick anywhere from 20 to 40 weeks,
+  // so a 40-week plan's last 4 weeks were simply unreachable here. Derived
+  // from the plan itself now, falling back to 36 only for legacy plans saved
+  // before totalWeeks was recorded.
+  const maxWeek = selectedPlan?.planData.totalWeeks ?? 36;
+
   const handleGenerateLesson = (slot: WeeklySlot) => {
     if (!selectedPlan) return;
     const lessonUnit = thematicLessonMap[slot.lessonNumber];
@@ -273,7 +303,7 @@ export const WeeklyPlanView: React.FC = () => {
   const handleSave = async () => {
     if (!firebaseUser?.uid || !selectedPlan || slots.length === 0) return;
     const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan.planData.grade);
-    if (!gradeObj) { addNotification('Не е пронајдено одделение.', 'error'); return; }
+    if (!gradeObj) { addNotification(t('weeklyPlan.errors.noGradeFound'), 'error'); return; }
     setIsSaving(true);
     try {
       await saveWeeklyPlan(
@@ -286,9 +316,9 @@ export const WeeklyPlanView: React.FC = () => {
         slots,
       );
       setLastSavedWeek(weekNumber);
-      addNotification(`✅ Неделен план (Нед. ${weekNumber}) е зачуван!`, 'success');
+      addNotification(`✅ ${t('weeklyPlan.title')} (${t('weeklyPlan.weekAbbrev')} ${weekNumber}) ${t('weeklyPlan.savedExclaim')}`, 'success');
     } catch {
-      addNotification('Грешка при зачувување.', 'error');
+      addNotification(t('weeklyPlan.errors.saveFailed'), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -328,7 +358,7 @@ export const WeeklyPlanView: React.FC = () => {
         <div className="flex items-center gap-3">
           <ICONS.calendar className="w-8 h-8 text-brand-primary flex-shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-brand-primary">Неделен план</h1>
+            <h1 className="text-2xl font-bold text-brand-primary">{t('weeklyPlan.title')}</h1>
             {selectedPlan && (
               <p className="text-sm text-gray-500">{selectedPlan.subject} — {selectedPlan.grade}</p>
             )}
@@ -341,7 +371,7 @@ export const WeeklyPlanView: React.FC = () => {
             <select
               value={selectedPlanId}
               onChange={e => setSelectedPlanId(e.target.value)}
-              aria-label="Избери годишен план"
+              aria-label={t('weeklyPlan.selectPlanAriaLabel')}
               className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
             >
               {plans.map(p => (
@@ -363,13 +393,13 @@ export const WeeklyPlanView: React.FC = () => {
               ←
             </button>
             <span className="px-3 py-2 font-semibold min-w-[90px] text-center text-sm border-l border-r border-gray-300">
-              Недела {weekNumber}
+              {t('weeklyPlan.weekPrefix')} {weekNumber}
             </span>
             <button
               type="button"
-              onClick={() => setWeekNumber(w => Math.min(36, w + 1))}
+              onClick={() => setWeekNumber(w => Math.min(maxWeek, w + 1))}
               className="px-3 py-2 hover:bg-gray-100 transition-colors text-gray-700"
-              disabled={weekNumber >= 36}
+              disabled={weekNumber >= maxWeek}
             >
               →
             </button>
@@ -381,14 +411,14 @@ export const WeeklyPlanView: React.FC = () => {
             className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
           >
             <ICONS.settings className="w-4 h-4" />
-            Распоред
+            {t('weeklyPlan.scheduleButton')}
           </button>
 
           <button
             type="button"
             onClick={handleSave}
             disabled={isSaving || !selectedPlan || slots.length === 0}
-            title="Зачувај неделен план"
+            title={t('weeklyPlan.saveTitle')}
             className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:bg-gray-300 transition-colors"
           >
             {isSaving
@@ -397,7 +427,7 @@ export const WeeklyPlanView: React.FC = () => {
                 ? <ICONS.check className="w-4 h-4" />
                 : <ICONS.bookmark className="w-4 h-4" />
             }
-            {lastSavedWeek === weekNumber ? 'Зачувано' : 'Зачувај'}
+            {lastSavedWeek === weekNumber ? t('weeklyPlan.saved') : t('common.save')}
           </button>
 
           {topicForWeek && (
@@ -406,7 +436,7 @@ export const WeeklyPlanView: React.FC = () => {
               onClick={() => setShowParentLetter(true)}
               className="flex items-center gap-2 px-3 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-sm transition-colors"
             >
-              ✉️ Родителско писмо
+              {t('weeklyPlan.parentLetterButton')}
             </button>
           )}
 
@@ -424,7 +454,7 @@ export const WeeklyPlanView: React.FC = () => {
             className="flex items-center gap-2 px-3 py-2 bg-brand-primary text-white rounded-lg text-sm hover:bg-brand-secondary"
           >
             <ICONS.printer className="w-4 h-4" />
-            Испечати
+            {t('annualPlan.officialModal.print')}
           </button>
         </div>
       </div>
@@ -433,14 +463,14 @@ export const WeeklyPlanView: React.FC = () => {
       <div className="no-print flex flex-wrap items-center gap-3 mb-4 text-sm text-gray-600">
         <ICONS.calendar className="w-4 h-4 text-gray-400 shrink-0" />
         <span>
-          <strong>{WEEK_TO_MONTH[weekNumber] ?? 'Недела'}</strong>
-          {' · '}Недела {weekNumber} од 36
+          <strong>{WEEK_TO_MONTH[weekNumber] ?? t('weeklyPlan.weekPrefix')}</strong>
+          {' · '}{t('weeklyPlan.weekPrefix')} {weekNumber} {t('weeklyPlan.of')} {maxWeek}
           {' · '}
-          <strong>{weeklyHours} ч/нед.</strong>
+          <strong>{weeklyHours} {t('weeklyPlan.hoursPerWeekAbbrev')}</strong>
         </span>
         {gradeObj && gradeObj.level <= 5 ? (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 border border-amber-300 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
-            ⚖️ Законска обврска 1–5 одд.
+            {t('weeklyPlan.legalObligation')}
           </span>
         ) : null}
         {topicForWeek && (
@@ -452,7 +482,7 @@ export const WeeklyPlanView: React.FC = () => {
               {topicForWeek.topic.title}
             </span>
             <span className="text-gray-400 text-xs">
-              (Нед. {topicForWeek.weekStart}–{topicForWeek.weekEnd})
+              ({t('weeklyPlan.weekAbbrev')} {topicForWeek.weekStart}–{topicForWeek.weekEnd})
             </span>
           </span>
         )}
@@ -462,7 +492,7 @@ export const WeeklyPlanView: React.FC = () => {
       {showScheduleConfig && (
         <Card className="no-print mb-4 p-4">
           <p className="text-sm font-semibold text-gray-700 mb-3">
-            Број на часови по ден (вкупно: {weeklyHours} ч/нед.)
+            {t('weeklyPlan.periodsPerDayLabel')} ({t('weeklyPlan.periodsPerDayTotal')}: {weeklyHours} {t('weeklyPlan.hoursPerWeekAbbrev')})
           </p>
           <div className="flex flex-wrap gap-4">
             {MK_DAYS_SHORT.map((day, idx) => (
@@ -495,18 +525,18 @@ export const WeeklyPlanView: React.FC = () => {
       {isLoadingPlans ? (
         <div className="flex items-center justify-center h-48 text-gray-400">
           <ICONS.spinner className="w-8 h-8 animate-spin mr-3" />
-          Вчитување на плановите...
+          {t('weeklyPlan.loadingPlans')}
         </div>
       ) : plans.length === 0 ? (
         <Card className="p-8 text-center">
           <ICONS.calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">Немате зачувани годишни планови.</p>
+          <p className="text-gray-500 mb-4">{t('weeklyPlan.noPlans')}</p>
           <button
             type="button"
             onClick={() => navigate('/annual-planner')}
             className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary text-sm"
           >
-            Создај годишна програма
+            {t('weeklyPlan.createAnnualPlan')}
           </button>
         </Card>
       ) : !selectedPlan ? null : (
@@ -515,8 +545,8 @@ export const WeeklyPlanView: React.FC = () => {
           <div className="absolute -left-[9999px] top-0">
             <PrintShell
               ref={weeklyPrintRef}
-              title="Неделен наставен план"
-              subtitle={`${selectedPlan.subject} · Недела ${weekNumber} од 36 · ${WEEK_TO_MONTH[weekNumber] ?? ''}`}
+              title={t('weeklyPlan.printTitle')}
+              subtitle={`${selectedPlan.subject} · ${t('weeklyPlan.weekPrefix')} ${weekNumber} ${t('weeklyPlan.of')} ${maxWeek} · ${WEEK_TO_MONTH[weekNumber] ?? ''}`}
               teacherName={user?.name ?? ''}
               schoolName={user?.schoolName ?? ''}
               grade={selectedPlan.planData.grade?.replace(/\D/g, '') ?? ''}
@@ -525,12 +555,12 @@ export const WeeklyPlanView: React.FC = () => {
               <table className="weekly-grid-table w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="border border-gray-500 bg-gray-200 px-2 py-1 font-bold text-left w-14 print-header-bg">Час</th>
+                    <th className="border border-gray-500 bg-gray-200 px-2 py-1 font-bold text-left w-14 print-header-bg">{t('weeklyPlan.period')}</th>
                     {MK_DAYS.map((day, idx) => (
                       <th key={day} className="border border-gray-500 bg-gray-200 px-2 py-1 font-bold text-center print-header-bg">
                         {day}
                         {periodsPerDay[idx] > 0 && (
-                          <div className="text-[8pt] font-normal text-gray-600">{periodsPerDay[idx]} ч.</div>
+                          <div className="text-[8pt] font-normal text-gray-600">{periodsPerDay[idx]} {t('weeklyPlan.hoursAbbrev')}</div>
                         )}
                       </th>
                     ))}
@@ -549,13 +579,13 @@ export const WeeklyPlanView: React.FC = () => {
                           <td key={dayIdx} className={`border border-gray-500 px-2 py-1 align-top min-h-[60px] ${noClass ? 'bg-gray-50' : 'bg-white'}`}>
                             {!noClass && slot ? (
                               <div>
-                                <div className="text-[8pt] text-gray-500 mb-0.5">Час {slot.lessonNumber}</div>
+                                <div className="text-[8pt] text-gray-500 mb-0.5">{t('weeklyPlan.period')} {slot.lessonNumber}</div>
                                 <div className="text-[9pt] font-medium">{slot.topicTitle}</div>
                               </div>
                             ) : noClass ? (
                               <span className="text-gray-300 text-[8pt]">—</span>
                             ) : (
-                              <span className="text-gray-400 text-[8pt] italic">Нема</span>
+                              <span className="text-gray-400 text-[8pt] italic">{t('weeklyPlan.none')}</span>
                             )}
                           </td>
                         );
@@ -576,7 +606,7 @@ export const WeeklyPlanView: React.FC = () => {
               </colgroup>
               <thead>
                 <tr>
-                  <th scope="col" className="border border-gray-300 bg-gray-50 p-2 text-xs text-gray-500 font-medium">Час</th>
+                  <th scope="col" className="border border-gray-300 bg-gray-50 p-2 text-xs text-gray-500 font-medium">{t('weeklyPlan.period')}</th>
                   {MK_DAYS.map((day, idx) => (
                     <th
                       key={day}
@@ -588,7 +618,7 @@ export const WeeklyPlanView: React.FC = () => {
                       <span className="sm:hidden">{MK_DAYS_SHORT[idx]}</span>
                       {periodsPerDay[idx] > 0 && (
                         <span className="block text-xs font-normal text-gray-400">
-                          {periodsPerDay[idx]} ч.
+                          {periodsPerDay[idx]} {t('weeklyPlan.hoursAbbrev')}
                         </span>
                       )}
                     </th>
@@ -599,7 +629,7 @@ export const WeeklyPlanView: React.FC = () => {
                 {Array.from({ length: maxPeriods }, (_, periodIdx) => (
                   <tr key={periodIdx}>
                     <td className="border border-gray-200 bg-gray-50 p-2 text-center text-xs font-semibold text-gray-500 whitespace-nowrap">
-                      Час {periodIdx + 1}
+                      {t('weeklyPlan.period')} {periodIdx + 1}
                     </td>
                     {[0, 1, 2, 3, 4].map(dayIdx => {
                       const slot = slots.find(
@@ -621,7 +651,7 @@ export const WeeklyPlanView: React.FC = () => {
                         return (
                           <td key={dayIdx} className="border border-gray-200 p-2 align-top">
                             <div className="min-h-[80px] flex items-center justify-center text-gray-300 text-xs border-2 border-dashed border-gray-200 rounded-lg">
-                              Нема лекција
+                              {t('weeklyPlan.noLesson')}
                             </div>
                           </td>
                         );
@@ -635,7 +665,7 @@ export const WeeklyPlanView: React.FC = () => {
                             className={`rounded-lg border p-2 min-h-[80px] flex flex-col gap-1 ${colorClass}`}
                           >
                             <span className="text-[10px] font-bold uppercase opacity-60">
-                              Лекција {slot.lessonNumber}
+                              {t('weeklyPlan.lessonLabel')} {slot.lessonNumber}
                             </span>
                             <span className="text-sm font-semibold leading-tight flex-1">
                               {lessonTitle ?? slot.topicTitle}
@@ -649,10 +679,10 @@ export const WeeklyPlanView: React.FC = () => {
                               type="button"
                               onClick={() => handleGenerateLesson(slot)}
                               className="no-print mt-1 self-start text-[10px] flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
-                              title="Генерирај подготовка за овој час"
+                              title={t('weeklyPlan.generateLessonTitle')}
                             >
                               <ICONS.sparkles className="w-3 h-3" />
-                              Генерирај час
+                              {t('weeklyPlan.generateLessonButton')}
                             </button>
                           </div>
                         </td>
@@ -667,7 +697,7 @@ export const WeeklyPlanView: React.FC = () => {
           {/* ── Topic legend ── */}
           {topicRanges.length > 1 && (
             <div className="no-print mt-6">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Теми во годишниот план</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('weeklyPlan.topicsLegendTitle')}</p>
               <div className="flex flex-wrap gap-2">
                 {topicRanges.map(r => {
                   const isCurrent = weekNumber >= r.weekStart && weekNumber <= r.weekEnd;
@@ -682,7 +712,7 @@ export const WeeklyPlanView: React.FC = () => {
                       }`}
                     >
                       {r.topic.title}
-                      <span className="ml-1 opacity-60">Нед.{r.weekStart}–{r.weekEnd}</span>
+                      <span className="ml-1 opacity-60">{t('weeklyPlan.weekAbbrev')}{r.weekStart}–{r.weekEnd}</span>
                     </button>
                   );
                 })}
@@ -697,7 +727,7 @@ export const WeeklyPlanView: React.FC = () => {
                 planType="weekly"
                 planSummary={{
                   grade: selectedPlan.planData.grade ?? '',
-                  title: `Недела ${weekNumber} — ${topicForWeek?.topic?.title ?? selectedPlan.subject}`,
+                  title: `${t('weeklyPlan.weekPrefix')} ${weekNumber} — ${topicForWeek?.topic?.title ?? selectedPlan.subject}`,
                   topics: topicRanges.map(r => r.topic.title),
                   activities: Object.values(thematicLessonMap).filter(Boolean),
                   weeks: 1,
@@ -710,19 +740,19 @@ export const WeeklyPlanView: React.FC = () => {
           <div className="no-print mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
               <div className="text-2xl font-bold text-blue-700">{weeklyHours}</div>
-              <div className="text-xs text-blue-500 mt-1">Часови оваа недела</div>
+              <div className="text-xs text-blue-500 mt-1">{t('weeklyPlan.stat.hoursThisWeek')}</div>
             </div>
             <div className="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-100">
               <div className="text-2xl font-bold text-emerald-700">{slots.length}</div>
-              <div className="text-xs text-emerald-500 mt-1">Планирани лекции</div>
+              <div className="text-xs text-emerald-500 mt-1">{t('weeklyPlan.stat.plannedLessons')}</div>
             </div>
             <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
               <div className="text-2xl font-bold text-amber-700">{topicForWeek?.topicIdx != null ? topicForWeek.topicIdx + 1 : '—'}</div>
-              <div className="text-xs text-amber-500 mt-1">Тема по ред</div>
+              <div className="text-xs text-amber-500 mt-1">{t('weeklyPlan.stat.topicOrder')}</div>
             </div>
             <div className="bg-purple-50 rounded-lg p-3 text-center border border-purple-100">
               <div className="text-2xl font-bold text-purple-700">{topicRanges.length}</div>
-              <div className="text-xs text-purple-500 mt-1">Вкупно теми</div>
+              <div className="text-xs text-purple-500 mt-1">{t('weeklyPlan.stat.totalTopics')}</div>
             </div>
           </div>
         </>
@@ -745,7 +775,7 @@ export const WeeklyPlanView: React.FC = () => {
           planId={`${firebaseUser.uid}_${gradeObj.id}_w${weekNumber}`}
           gradeId={gradeObj.id}
           weekNumber={weekNumber}
-          ownerName={user?.name ?? 'Наставник'}
+          ownerName={user?.name ?? t('common.teacher')}
           onViewShared={(plan, ownerName) => {
             setCollabSharedPlan({ plan, ownerName });
             setShowCollabModal(false);
@@ -759,10 +789,10 @@ export const WeeklyPlanView: React.FC = () => {
         <div className="fixed bottom-4 right-4 z-40 bg-white rounded-2xl shadow-2xl border border-violet-200 p-4 max-w-xs w-full">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[10px] font-black text-violet-600 uppercase tracking-wide">Live — план на {collabSharedPlan.ownerName}</p>
-              <p className="text-xs text-slate-600 mt-0.5">Нед. {collabSharedPlan.plan.weekNumber} · {collabSharedPlan.plan.slots.length} часови</p>
+              <p className="text-[10px] font-black text-violet-600 uppercase tracking-wide">{t('weeklyPlan.collabBanner.livePlanOf')} {collabSharedPlan.ownerName}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{t('weeklyPlan.weekAbbrev')} {collabSharedPlan.plan.weekNumber} · {collabSharedPlan.plan.slots.length} {t('weeklyPlan.hoursSuffixWord')}</p>
             </div>
-            <button type="button" onClick={() => setCollabSharedPlan(null)} aria-label="Затвори" className="p-0.5 hover:bg-gray-100 rounded-lg flex-shrink-0">
+            <button type="button" onClick={() => setCollabSharedPlan(null)} aria-label={t('common.close')} className="p-0.5 hover:bg-gray-100 rounded-lg flex-shrink-0">
               <ICONS.close className="w-3.5 h-3.5 text-gray-400" />
             </button>
           </div>
