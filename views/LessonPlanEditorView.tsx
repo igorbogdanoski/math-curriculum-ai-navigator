@@ -42,6 +42,7 @@ import { ReflectionModal, type ReflectionState } from '../components/lesson-plan
 import { OfficialLessonFormModal } from '../components/lesson-plan-editor/OfficialLessonFormModal';
 import { LessonPlanSidebar } from '../components/lesson-plan-editor/LessonPlanSidebar';
 import { usePlanEditorModals } from '../components/lesson-plan-editor/usePlanEditorModals';
+import { useLanguage } from '../i18n/LanguageContext';
 
 
 interface LessonPlanEditorViewProps {
@@ -60,6 +61,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const { addNotification } = useNotification();
   const { user, firebaseUser } = useAuth();
   const { isOnline } = useNetworkStatus();
+  const { t } = useLanguage();
 
   const [plan, setPlan, clearDraft, lastSaved] = usePersistentState<Partial<LessonPlan>>(
     id ? `lesson-plan-draft-${id}` : 'lesson-plan-new-draft',
@@ -94,8 +96,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   // S96.2 — Scenario Bank → Lesson Plan Bridge
   const handleImportScenario = useCallback((entry: ScenarioBankEntry) => {
     setConfirmDialog({
-      message: 'Ова ќе ги замени постоечките сценарио полиња. Продолжи?',
-      title: 'Увези сценарио',
+      message: t('lessonPlan.confirmImportScenario.message'),
+      title: t('lessonPlan.confirmImportScenario.title'),
       variant: 'warning',
       onConfirm: () => {
         setPlan(prev => ({
@@ -107,10 +109,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           },
         }));
         setConfirmDialog(null);
-        addNotification('Сценариото е увезено во планот ✓', 'success');
+        addNotification(t('lessonPlan.scenarioImported'), 'success');
       },
     });
-  }, [addNotification, setPlan, setConfirmDialog]);
+  }, [addNotification, setPlan, setConfirmDialog, t]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -175,7 +177,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           }
           // Notify about remaining queued scenarios
           if (draft.remaining > 0) {
-            addNotification(`📥 Уште ${draft.remaining} сценарио(а) во редица — ќе се отворат по ред по зачувување.`, 'info');
+            addNotification(`${t('lessonPlan.queuedScenariosPrefix')} ${draft.remaining} ${t('lessonPlan.queuedScenariosSuffix')}`, 'info');
           }
         } catch { /* silently ignore — non-critical */ }
       })();
@@ -186,7 +188,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       if (existingPlan) {
         setPlan(existingPlan);
       } else {
-        addNotification(`Подготовката со ID ${id} не е пронајдена.`, 'error');
+        addNotification(`${t('lessonPlan.notFound.prefix')} ${id} ${t('lessonPlan.notFound.suffix')}`, 'error');
         navigate('/my-lessons');
       }
     } else {
@@ -201,7 +203,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               grade: gradeData?.level ?? 6,
               topicId: matchedTopic?.id || '',
               theme: prefillTopic,
-              subject: prefillSubject || 'Математика',
+              subject: prefillSubject || t('lessonPlan.defaultSubject'),
               title: unitTitle,
               ...(prefillLessonNumber ? { lessonNumber: parseInt(prefillLessonNumber, 10) || undefined } : {}),
             };
@@ -229,7 +231,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   const handleSave = useCallback(async () => {
     if (!plan.title) {
-      addNotification('Насловот е задолжителен.', 'error');
+      addNotification(t('lessonPlan.titleRequired'), 'error');
       return;
     }
     setIsSaving(true);
@@ -239,7 +241,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         clearDraft();
         if (isMounted.current) {
           setIsDirty(false);
-          addNotification('Подготовката е успешно ажурирана!', 'success');
+          addNotification(t('lessonPlan.updateSuccess'), 'success');
           setPostSaveNav({ plan, key: `lesson_${Date.now()}`, navigateTo: '/my-lessons' });
           setShowReflection(true);
         }
@@ -248,14 +250,14 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         clearDraft();
         if (isMounted.current) {
           setIsDirty(false);
-          addNotification('Подготовката е успешно креирана!', 'success');
+          addNotification(t('lessonPlan.createSuccess'), 'success');
           setPostSaveNav({ plan, key: `lesson_${newPlanId}`, navigateTo: `/planner/lesson/${newPlanId}` });
           // Auto-share to Scenario Bank if opted in
           if (autoShareToBank && firebaseUser?.uid && user) {
             publishScenario({
               plan: { ...(plan as LessonPlan), id: newPlanId },
               authorUid: firebaseUser.uid,
-              authorName: user.name ?? 'Наставник',
+              authorName: user.name ?? t('common.teacher'),
               schoolName: user.schoolName,
               isPublic: true,
               // Preserve the real author's name when this plan was uploaded from a
@@ -263,7 +265,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               // whoever clicked "publish", not who actually wrote it.
               originalAuthorName: plan.originalAuthor || undefined,
             }).then((bankId) => {
-              addNotification('✅ Автоматски споделено во Банката!', 'success');
+              addNotification(t('lessonPlan.autoSharedToBank'), 'success');
               // So a later "Уреди педагошки модел" edits this same entry instead of duplicating it.
               setPlan(prev => ({ ...prev, scenarioBankId: bankId }));
             }).catch(() => {});
@@ -275,12 +277,12 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     } catch (error) {
       logger.error('Failed to save lesson plan:', error);
       if (isMounted.current) {
-        addNotification('Грешка при зачувување на подготовката.', 'error');
+        addNotification(t('lessonPlan.saveError'), 'error');
       }
     } finally {
       if (isMounted.current) setIsSaving(false);
     }
-  }, [plan, isEditing, addNotification, clearDraft, navigate, addLessonPlan, updateLessonPlan]);
+  }, [plan, isEditing, addNotification, clearDraft, navigate, addLessonPlan, updateLessonPlan, t]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -299,8 +301,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   };
 
   const handlePublishToBank = () => {
-    if (!plan.title) { addNotification('Треба наслов за да споделите.', 'error'); return; }
-    if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'error'); return; }
+    if (!plan.title) { addNotification(t('lessonPlan.needTitleToShare'), 'error'); return; }
+    if (!firebaseUser?.uid || !user) { addNotification(t('lessonPlan.needLogin'), 'error'); return; }
     modals.setShowPublishDialog(true);
   };
 
@@ -311,7 +313,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       const bankId = await publishScenario({
         plan: plan as import('../types').LessonPlan,
         authorUid: firebaseUser.uid,
-        authorName: user.name ?? 'Наставник',
+        authorName: user.name ?? t('common.teacher'),
         schoolName: user.schoolName,
         teachingModel: opts.teachingModel ?? undefined,
         dokLevel: opts.dokLevel ?? undefined,
@@ -324,10 +326,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       });
       setPlan(prev => ({ ...prev, scenarioBankId: bankId }));
       modals.setShowPublishDialog(false);
-      addNotification(opts.isPublic ? '✅ Сценариото е јавно споделено во Банката!' : '🔒 Сценариото е зачувано приватно.', 'success');
+      addNotification(opts.isPublic ? t('lessonPlan.publishedPublic') : t('lessonPlan.publishedPrivate'), 'success');
       navigate('/scenario-bank');
     } catch {
-      addNotification('Грешка при споделување.', 'error');
+      addNotification(t('lessonPlan.shareError'), 'error');
     } finally {
       modals.setIsPublishingToBank(false);
     }
@@ -343,9 +345,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         authorNotes: opts.authorNotes,
       });
       modals.setShowEditMetadataDialog(false);
-      addNotification('✅ Метаподатоците се ажурирани!', 'success');
+      addNotification(t('lessonPlan.metadataUpdated'), 'success');
     } catch {
-      addNotification('Грешка при ажурирање.', 'error');
+      addNotification(t('lessonPlan.metadataUpdateError'), 'error');
     } finally {
       modals.setIsPublishingToBank(false);
     }
@@ -368,8 +370,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   if (!curriculum) {
     return (
       <div className="p-8 text-center text-red-500">
-        <h2 className="text-2xl font-bold">Податоците за наставната програма не можеа да се вчитаат.</h2>
-        <p className="mt-2">Ве молиме обидете се повторно да ја вчитате страницата.</p>
+        <h2 className="text-2xl font-bold">{t('lessonPlan.curriculumLoadError.heading')}</h2>
+        <p className="mt-2">{t('lessonPlan.curriculumLoadError.desc')}</p>
       </div>
     );
   }
@@ -496,10 +498,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <button type="button" onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
-            &larr; Назад кон моите подготовки
+            {t('lessonPlan.backToMyLessons')}
           </button>
           <h1 className="text-4xl font-bold text-brand-primary">
-            {isEditing ? 'Уреди подготовка за час' : 'Креирај нова подготовка'}
+            {isEditing ? t('lessonPlan.title.edit') : t('lessonPlan.title.new')}
           </h1>
         </div>
 
@@ -507,13 +509,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           <div className="flex flex-col items-end gap-2 text-sm">
             <div className="flex items-center text-gray-500 gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border">
               <ICONS.check className="w-4 h-4 text-green-500" />
-              <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>{t('lessonPlan.autoSavedAt')} {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <button
               type="button"
               onClick={() => {
                 modals.setConfirmDialog({
-                  message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
+                  message: t('lessonPlan.discardDraft.confirm'),
                   variant: 'danger',
                   onConfirm: () => { modals.setConfirmDialog(null); clearDraft(); }
                 });
@@ -521,7 +523,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
             >
               <ICONS.trash className="w-3.5 h-3.5" />
-              Отфрли нацрт
+              {t('lessonPlan.discardDraft.button')}
             </button>
           </div>
         )}
@@ -533,7 +535,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             <Card>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">{t('lessonPlan.offline')}</span></div>}
                   <AIContextSelector
                     plan={plan}
                     onGenerate={ai.handleGenerateWithAI}
@@ -542,7 +544,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 </div>
 
                 <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">{t('lessonPlan.offline')}</span></div>}
                   <AIPedagogicalAnalysisDisplay
                     analysis={ai.aiAnalysis}
                     onAnalyze={ai.handleAnalyze}
@@ -564,7 +566,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 {ai.isGeneratingIllustration && (
                   <div className="flex flex-col items-center justify-center p-8 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200 animate-pulse">
                     <ICONS.spinner className="w-10 h-10 text-teal-500 animate-spin mb-3" />
-                    <p className="text-teal-700 font-semibold text-lg">Генерирам илустрација за вашата активност...</p>
+                    <p className="text-teal-700 font-semibold text-lg">{t('lessonPlan.generatingIllustration')}</p>
                   </div>
                 )}
 
@@ -572,7 +574,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   <div className="mt-6 relative">
                     <button
                       type="button"
-                      title="Отстрани илустрација"
+                      title={t('lessonPlan.removeIllustration')}
                       onClick={() => ai.setGeneratedIllustration(null)}
                       className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
                     >
@@ -589,11 +591,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                       onClick={ai.handleGenerateInfographic}
                       disabled={ai.isGeneratingInfographic}
                       className="flex items-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-lg shadow hover:bg-purple-700 transition-colors font-semibold disabled:bg-purple-300 text-sm"
-                      title="Генерирај инфографик за овој час (Premium)"
+                      title={t('lessonPlan.generateInfographicTitle')}
                     >
                       {ai.isGeneratingInfographic
-                        ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Генерирам…</>
-                        : <>🎨 Инфографик</>}
+                        ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> {t('lessonPlan.generating')}</>
+                        : <>{t('lessonPlan.infographicButton')}</>}
                     </button>
                   )}
                   <button
@@ -601,10 +603,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     onClick={() => modals.setShowOfficialLessonForm(true)}
                     disabled={!plan.title}
                     className="flex items-center gap-2 bg-white border border-blue-300 text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold disabled:opacity-40 text-sm"
-                    title="Официјален МОН образец за Подготовка за час"
+                    title={t('lessonPlan.officialFormTitle')}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    МОН Образец
+                    {t('lessonPlan.officialFormButton')}
                   </button>
                   <LessonPlanExportMenu
                     disabled={!plan.title}
@@ -617,7 +619,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     type="button"
                     disabled={modals.isPublishingToBank || !plan.title}
                     onClick={handlePublishToBank}
-                    title="Сподели во Банката на Сценарија"
+                    title={t('lessonPlan.shareToBankTitle')}
                     className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold disabled:bg-gray-400"
                   >
                     {modals.isPublishingToBank ? (
@@ -625,17 +627,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     ) : (
                       <ICONS.share className="w-4 h-4" />
                     )}
-                    <span className="hidden sm:inline">Во Банката</span>
+                    <span className="hidden sm:inline">{t('lessonPlan.shareToBankButton')}</span>
                   </button>
                   {plan.scenarioBankId && (
                     <button
                       type="button"
                       onClick={() => modals.setShowEditMetadataDialog(true)}
-                      title="Промени педагошки модел / DoK ниво на веќе споделеното сценарио"
+                      title={t('lessonPlan.editMetadataTitle')}
                       className="flex items-center gap-2 bg-white border border-emerald-300 text-emerald-700 px-4 py-3 rounded-lg hover:bg-emerald-50 transition-colors font-semibold text-sm"
                     >
                       <ICONS.sparkles className="w-4 h-4" />
-                      <span className="hidden sm:inline">Уреди педагошки модел</span>
+                      <span className="hidden sm:inline">{t('lessonPlan.editMetadataButton')}</span>
                     </button>
                   )}
                   {!isEditing && (
@@ -646,24 +648,24 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                         onChange={e => setAutoShareToBank(e.target.checked)}
                         className="w-3.5 h-3.5 rounded accent-emerald-600"
                       />
-                      <span>Сподели во Банката</span>
+                      <span>{t('lessonPlan.autoShareCheckbox')}</span>
                     </label>
                   )}
                   <button
                     type="submit"
                     disabled={isSaving}
-                    title="Зачувај (Ctrl+S)"
+                    title={t('lessonPlan.saveTitle')}
                     className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
                   >
                     {isSaving ? (
                       <>
                         <ICONS.spinner className="w-5 h-5 mr-2 animate-spin" />
-                        <span>Зачувувам...</span>
+                        <span>{t('lessonPlan.saving')}</span>
                       </>
                     ) : (
                       <>
                         <ICONS.check className="w-5 h-5 mr-2" />
-                        {isEditing ? 'Зачувај промени' : 'Зачувај подготовка'}
+                        {isEditing ? t('lessonPlan.saveChanges') : t('lessonPlan.saveNew')}
                       </>
                     )}
                   </button>
@@ -672,11 +674,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     <button
                       type="button"
                       onClick={() => modals.setExecOpen(true)}
-                      title="Стартувај ја реализацијата на часот"
+                      title={t('lessonPlan.startClassTitle')}
                       className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold"
                     >
                       <span>🏫</span>
-                      <span className="hidden sm:inline">Стартувај час</span>
+                      <span className="hidden sm:inline">{t('lessonPlan.startClassButton')}</span>
                     </button>
                   )}
                 </div>
@@ -698,10 +700,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
       <div id="printable-area" className="hidden print:block">
         <div className="mb-6 border-b pb-4">
-          <p className="text-md text-gray-500">Предмет: {plan.subject}</p>
-          <p className="text-md text-gray-500">Тема: {plan.theme}</p>
+          <p className="text-md text-gray-500">{t('lessonPlan.print.subject')} {plan.subject}</p>
+          <p className="text-md text-gray-500">{t('lessonPlan.print.theme')} {plan.theme}</p>
           <h1 className="text-2xl font-bold text-brand-primary mt-2">{plan.title}</h1>
-          <p className="text-lg text-gray-600">{plan.grade}. Одделение</p>
+          <p className="text-lg text-gray-600">{plan.grade}. {t('lessonPlan.print.gradeSuffix')}</p>
         </div>
         <LessonPlanDisplay plan={plan as LessonPlan} />
       </div>
@@ -710,8 +712,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
             <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-              <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-              <button type="button" title="Затвори алатки" onClick={() => modals.setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+              <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />{t('lessonPlan.mathToolsHeader')}</h3>
+              <button type="button" title={t('lessonPlan.closeToolsTitle')} onClick={() => modals.setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 relative overflow-hidden bg-slate-50">
               <MathToolsPanel
@@ -726,7 +728,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                       { tool, dataUrl, createdAt: new Date().toISOString() },
                     ],
                   }));
-                  addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} сликата е додадена во планот.`, 'success');
+                  addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} ${t('lessonPlan.imageAddedSuffix')}`, 'success');
                 }}
               />
             </div>
@@ -744,11 +746,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       <button
         type="button"
         className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
-        title="Математички Алатки (GeoGebra, Desmos, Алгебарски Плочки...)"
+        title={t('lessonPlan.mathToolsFabTitle')}
         onClick={() => modals.openMathTools('scratchpad')}
       >
         <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">{t('lessonPlan.mathToolsFabLabel')}</span>
       </button>
       {modals.confirmDialog && (
         <ConfirmDialog
