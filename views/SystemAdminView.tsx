@@ -5,7 +5,7 @@ import { ShieldAlert, Copy, Check } from 'lucide-react';
 import { getRagStats, type RagStats } from '../services/ragService';
 import { firestoreService } from '../services/firestoreService';
 import { useCurriculum } from '../hooks/useCurriculum';
-import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread } from '../services/firestoreService.forum';
+import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread, approveForumThread } from '../services/firestoreService.forum';
 import { type UserActivityRecord } from '../utils/cohortMetrics';
 
 import { AdminSchoolsTab } from './admin/AdminSchoolsTab';
@@ -215,6 +215,21 @@ export const SystemAdminView: React.FC = () => {
         }
     };
 
+    // 2026-07-19 (Wave 8.6, audit_2026_07_18_full_app_review): reportForumThread() has always
+    // written moderationStatus='pending' + reportedBy/reportReason, but nothing in the admin UI
+    // ever surfaced them — reports silently accumulated with no way for an admin to see or
+    // resolve them. This clears a report without deleting the thread (the reported content
+    // stays up, matching reportForumThread's own "don't insta-hide" design).
+    const handleForumApprove = async (threadId: string) => {
+        setForumActionUid(threadId);
+        try {
+            await approveForumThread(threadId);
+            setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, moderationStatus: 'approved', reportedBy: [], reportReason: null } : t));
+        } finally {
+            setForumActionUid(null);
+        }
+    };
+
     const handleCreateSchool = async (e: React.FormEvent) => {
         e.preventDefault();
         setSchoolError('');
@@ -378,6 +393,7 @@ export const SystemAdminView: React.FC = () => {
                     forumActionUid={forumActionUid}
                     handleForumDelete={handleForumDelete}
                     handleForumRestore={handleForumRestore}
+                    handleForumApprove={handleForumApprove}
                     onRefresh={loadForumThreads}
                 />
             )}
