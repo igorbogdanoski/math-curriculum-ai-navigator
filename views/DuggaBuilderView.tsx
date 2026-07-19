@@ -13,6 +13,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import {
   Q_TYPES, TEST_TYPES, DOK_COLORS, newQId, makeBlankQuestion, QuestionEditor, AIGenerateModal,
 } from '../components/dugga/DuggaQuestionEditor';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // (Q_TYPES/TEST_TYPES/DOK_COLORS/newQId/newOptId/makeBlankQuestion/QuestionEditor/AIGenerateModal
 //  extracted to components/dugga/DuggaQuestionEditor.tsx)
@@ -50,12 +51,13 @@ function readBuilderSeed(): {
 export function DuggaBuilderView() {
   const { user, firebaseUser } = useAuth();
   const { addNotification } = useNotification();
+  const { t } = useLanguage();
 
   const seed = readBuilderSeed();
 
   const [loadingInit, setLoadingInit] = useState(!!(seed.editId || seed.adaptId));
   const [title, setTitle] = useState(
-    seed.conceptLabel ? `Дига тест: ${seed.conceptLabel}` : '',
+    seed.conceptLabel ? `${t('duggaBuilder.titlePrefix')} ${seed.conceptLabel}` : '',
   );
   const [description, setDescription] = useState('');
   const [grade, setGrade] = useState(seed.grade ?? 8);
@@ -82,7 +84,7 @@ export function DuggaBuilderView() {
     if (!targetId) return;
     getDuggaTest(targetId).then(existing => {
       if (!existing) { setLoadingInit(false); return; }
-      setTitle(seed.editId ? existing.title : `Адаптирано: ${existing.title}`);
+      setTitle(seed.editId ? existing.title : `${t('duggaBuilder.adaptedPrefix')} ${existing.title}`);
       setDescription(existing.description ?? '');
       setGrade(existing.grade);
       setTestType(existing.testType);
@@ -133,19 +135,19 @@ export function DuggaBuilderView() {
 
   const handleAIGenerated = (newQs: DuggaQuestion[]) => {
     setQuestions(qs => [...qs.filter(q => q.text.trim() !== ''), ...newQs]);
-    addNotification(`${newQs.length} прашања генерирани!`, 'success');
+    addNotification(t('duggaBuilder.questionsGenerated').replace('{n}', String(newQs.length)), 'success');
   };
 
   const handleSave = async () => {
-    if (!title.trim()) { addNotification('Внеси наслов на тестот.', 'error'); return; }
-    if (!firebaseUser?.uid) { addNotification('Мора да си најавен.', 'error'); return; }
+    if (!title.trim()) { addNotification(t('duggaBuilder.needTitle'), 'error'); return; }
+    if (!firebaseUser?.uid) { addNotification(t('duggaBuilder.needLogin'), 'error'); return; }
     setSaving(true);
     try {
       const testData = {
         title: title.trim(),
         description: description.trim(),
         teacherUid: firebaseUser.uid,
-        teacherName: user?.name ?? 'Наставник',
+        teacherName: user?.name ?? t('duggaBuilder.teacherFallback'),
         grade, track: user?.secondaryTrack ?? 'primary',
         topics: [], testType, questions,
         isPublic, totalPoints,
@@ -158,22 +160,22 @@ export function DuggaBuilderView() {
         } : {}),
         ...(savedId ? {
           lastEditedByUid: firebaseUser.uid,
-          lastEditedByName: user?.name ?? 'Наставник',
+          lastEditedByName: user?.name ?? t('duggaBuilder.teacherFallback'),
         } : {}),
       };
       if (savedId) {
         await updateDuggaTest(savedId, testData);
-        addNotification('Тестот е зачуван!', 'success');
+        addNotification(t('duggaBuilder.saved'), 'success');
       } else {
         const id = await createDuggaTest(testData);
         setSavedId(id);
         const saved = await getDuggaTest(id);
         if (saved) setSavedCode(saved.shareCode);
         if (adaptProvenance) await incrementDuggaAdaptCount(adaptProvenance.fromId);
-        addNotification('Тестот е зачуван!', 'success');
+        addNotification(t('duggaBuilder.saved'), 'success');
       }
     } catch {
-      addNotification('Грешка при зачувување.', 'error');
+      addNotification(t('duggaBuilder.saveError'), 'error');
     } finally {
       setSaving(false);
     }
@@ -191,7 +193,7 @@ export function DuggaBuilderView() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-purple-50">
         <div className="text-center space-y-3">
           <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto" />
-          <p className="text-sm text-gray-500">{seed.editId ? 'Вчитување на тестот за уредување...' : 'Вчитување на тестот за адаптација...'}</p>
+          <p className="text-sm text-gray-500">{seed.editId ? t('duggaBuilder.loadingEdit') : t('duggaBuilder.loadingAdapt')}</p>
         </div>
       </div>
     );
@@ -206,19 +208,24 @@ export function DuggaBuilderView() {
             <ClipboardList className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900">Дига — Градител на тестови</h1>
-            <p className="text-xs text-gray-400">{questions.length} прашања · {totalPoints} поени · ~{estimatedMinutes} мин</p>
+            <h1 className="text-lg font-bold text-gray-900">{t('duggaBuilder.header')}</h1>
+            <p className="text-xs text-gray-400">
+              {t('duggaBuilder.questionsPointsTime')
+                .replace('{n}', String(questions.length))
+                .replace('{points}', String(totalPoints))
+                .replace('{min}', String(estimatedMinutes))}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setShowPreview(p => !p)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors">
               {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              {showPreview ? 'Уреди' : 'Преглед'}
+              {showPreview ? t('duggaBuilder.edit') : t('duggaBuilder.preview')}
             </button>
             <button type="button" onClick={handleSave} disabled={saving}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Зачувај
+              {t('duggaBuilder.save')}
             </button>
           </div>
         </div>
@@ -230,13 +237,13 @@ export function DuggaBuilderView() {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 flex items-center gap-3">
             <GitFork className="w-5 h-5 text-amber-600 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-800">Адаптација на туѓ тест</p>
+              <p className="text-sm font-semibold text-amber-800">{t('duggaBuilder.adaptationOfOthers')}</p>
               <p className="text-xs text-amber-600 truncate">
-                Оригинал: <span className="font-medium">„{adaptProvenance.fromTitle}"</span>
-                {' '}од <span className="font-medium">{adaptProvenance.authorName}</span>
+                {t('duggaBuilder.original')} <span className="font-medium">„{adaptProvenance.fromTitle}"</span>
+                {' '}{t('duggaBuilder.by')} <span className="font-medium">{adaptProvenance.authorName}</span>
               </p>
             </div>
-            <span className="text-xs text-amber-500">Ова ќе се зачува како твој нов тест</span>
+            <span className="text-xs text-amber-500">{t('duggaBuilder.willSaveAsNew')}</span>
           </div>
         )}
 
@@ -245,12 +252,12 @@ export function DuggaBuilderView() {
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-4">
             <Share2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-emerald-800">Тестот е зачуван! Код за ученици:</p>
+              <p className="text-sm font-semibold text-emerald-800">{t('duggaBuilder.savedShareCode')}</p>
               <p className="text-2xl font-black text-emerald-700 tracking-widest mt-0.5">{savedCode}</p>
             </div>
             <button type="button" onClick={copyCode} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition-colors">
               {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {codeCopied ? 'Копирано' : 'Копирај'}
+              {codeCopied ? t('duggaBuilder.copied') : t('duggaBuilder.copy')}
             </button>
           </div>
         )}
@@ -258,30 +265,30 @@ export function DuggaBuilderView() {
         {/* Test metadata */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Наслов на тестот</label>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{t('duggaBuilder.testTitle')}</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              placeholder="пр. Тест — Квадратни равенки — 8 одд."
+              placeholder={t('duggaBuilder.titlePlaceholder')}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-violet-200" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Разред</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaBuilder.grade')}</label>
               <select value={grade} onChange={e => setGrade(Number(e.target.value))}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
-                {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}. разред</option>)}
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}{t('duggaBuilder.gradeSuffix')}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Тип</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaBuilder.type')}</label>
               <select value={testType} onChange={e => setTestType(e.target.value as DuggaTestType)}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
-                {TEST_TYPES.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.label}</option>)}
+                {TEST_TYPES.map(tt => <option key={tt.id} value={tt.id}>{tt.emoji} {tt.label}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Опис (изборно)</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">{t('duggaBuilder.descriptionOptional')}</label>
               <input value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Краток опис за учениците..."
+                placeholder={t('duggaBuilder.descriptionPlaceholder')}
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
             </div>
           </div>
@@ -290,7 +297,7 @@ export function DuggaBuilderView() {
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublic ? 'bg-violet-600' : 'bg-gray-200'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
-            <span className="text-sm text-gray-600">Јавен тест (во библиотека)</span>
+            <span className="text-sm text-gray-600">{t('duggaBuilder.publicTest')}</span>
           </div>
         </div>
 
@@ -298,12 +305,12 @@ export function DuggaBuilderView() {
         <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl p-4 flex items-center gap-4">
           <Zap className="w-6 h-6 text-white flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-white font-semibold text-sm">AI генерирање</p>
-            <p className="text-violet-200 text-xs">Gemini генерира прашања по разред, тема и DoK распределба</p>
+            <p className="text-white font-semibold text-sm">{t('duggaBuilder.aiGenerate')}</p>
+            <p className="text-violet-200 text-xs">{t('duggaBuilder.aiGenerateDesc')}</p>
           </div>
           <button type="button" onClick={() => setShowAIModal(true)}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-violet-700 text-sm font-bold rounded-xl hover:bg-violet-50 transition-colors flex-shrink-0">
-            <Sparkles className="w-4 h-4" /> Генерирај
+            <Sparkles className="w-4 h-4" /> {t('duggaBuilder.generate')}
           </button>
         </div>
 
@@ -311,16 +318,16 @@ export function DuggaBuilderView() {
         {showPreview ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
             <div className="border-b border-gray-100 pb-4">
-              <h2 className="text-xl font-bold text-gray-900">{title || '(без наслов)'}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{title || t('duggaBuilder.untitled')}</h2>
               {description && <p className="text-gray-500 text-sm mt-1">{description}</p>}
               <div className="flex gap-3 mt-2 text-xs text-gray-400">
-                <span>{grade}. разред</span>
+                <span>{grade}{t('duggaBuilder.gradeSuffix')}</span>
                 <span>·</span>
-                <span>{questions.length} прашања</span>
+                <span>{questions.length} {t('duggaBuilder.questions')}</span>
                 <span>·</span>
-                <span>{totalPoints} поени</span>
+                <span>{totalPoints} {t('duggaBuilder.points')}</span>
                 <span>·</span>
-                <span>~{estimatedMinutes} мин</span>
+                <span>~{estimatedMinutes} {t('duggaBuilder.minAbbrev')}</span>
               </div>
             </div>
             {questions.map((q, i) => (
@@ -331,7 +338,7 @@ export function DuggaBuilderView() {
                     <div className="font-medium text-gray-800">
                       {q.type === 'section_header'
                         ? <span className="text-lg font-bold text-violet-700">{q.text}</span>
-                        : <MathRenderer text={q.text || '(без текст)'} />
+                        : <MathRenderer text={q.text || t('duggaBuilder.noText')} />
                       }
                     </div>
                     {q.type === 'multiple_choice' && q.options && (
@@ -346,8 +353,8 @@ export function DuggaBuilderView() {
                     )}
                     {q.type === 'true_false' && (
                       <div className="mt-2 flex gap-3">
-                        <span className="px-3 py-1 rounded-lg border border-gray-200 text-sm">☐ Точно</span>
-                        <span className="px-3 py-1 rounded-lg border border-gray-200 text-sm">☐ Неточно</span>
+                        <span className="px-3 py-1 rounded-lg border border-gray-200 text-sm">{t('duggaBuilder.previewTrue')}</span>
+                        <span className="px-3 py-1 rounded-lg border border-gray-200 text-sm">{t('duggaBuilder.previewFalse')}</span>
                       </div>
                     )}
                     {(q.type === 'short_answer' || q.type === 'fill_blanks') && (
@@ -359,7 +366,7 @@ export function DuggaBuilderView() {
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${DOK_COLORS[q.dok]}`}>DoK{q.dok}</span>
-                    <p className="text-xs text-gray-400 mt-1">{q.points}п</p>
+                    <p className="text-xs text-gray-400 mt-1">{q.points}{t('duggaQuestion.pointsAbbrev')}</p>
                   </div>
                 </div>
               </div>
@@ -381,14 +388,14 @@ export function DuggaBuilderView() {
 
             {/* Add question */}
             <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-400 mb-3 text-center">Додај прашање</p>
+              <p className="text-xs font-semibold text-gray-400 mb-3 text-center">{t('duggaBuilder.addQuestion')}</p>
               <div className="flex flex-wrap gap-2 justify-center">
-                {Q_TYPES.map(t => (
-                  <button type="button" key={t.id} onClick={() => addQuestion(t.id)}
-                    title={t.desc}
+                {Q_TYPES.map(qt => (
+                  <button type="button" key={qt.id} onClick={() => addQuestion(qt.id)}
+                    title={qt.desc}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-xs text-gray-600 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 transition-colors">
-                    {t.icon}
-                    <span>{t.label}</span>
+                    {qt.icon}
+                    <span>{qt.label}</span>
                   </button>
                 ))}
               </div>
