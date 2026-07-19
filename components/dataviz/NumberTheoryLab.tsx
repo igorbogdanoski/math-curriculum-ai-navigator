@@ -8,16 +8,20 @@ import {
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ── Curriculum badges ──────────────────────────────────────────────────────────
+// Reuses trigLab.badge.* keys — same MK wording ("МОН"/"одд."/"Гимн.") as
+// TrigonometryLab's identical badge component, no need for a duplicate set.
 function CurriculumBadges({ cur }: { cur: CurriculumRef }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-wrap gap-1 mt-2">
       {cur.primary?.map(p => (
-        <span key={p} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН {p} одд.</span>
+        <span key={p} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('trigLab.badge.mon')} {p} {t('trigLab.badge.gradeSuffix')}</span>
       ))}
       {cur.gymnasium?.map(g => (
-        <span key={g} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">Гимн. {g}</span>
+        <span key={g} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">{t('trigLab.badge.gymnasium')} {g}</span>
       ))}
     </div>
   );
@@ -48,6 +52,7 @@ const RADIAL_CX = 180, RADIAL_CY = 180, RADIAL_R = 150;
 const RADIAL_STEP_MS = 900;
 
 function RadialSieveView() {
+  const { t } = useLanguage();
   const steps = useMemo(() => sieveSteps(RADIAL_LIMIT), []);
   const numbers = useMemo(() => Array.from({ length: RADIAL_LIMIT - 1 }, (_, i) => i + 2), []);
   const [stepIdx, setStepIdx] = useState(0);
@@ -86,20 +91,20 @@ function RadialSieveView() {
             playing ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
-          {playing ? '⏸ Пауза' : finished ? '▶ Прегледај повторно' : '▶ Играј'}
+          {playing ? `⏸ ${t('numTheoryLab.radial.pause')}` : finished ? `▶ ${t('numTheoryLab.radial.replay')}` : `▶ ${t('numTheoryLab.radial.play')}`}
         </button>
         <button type="button" onClick={reset}
           className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
-          ↺ Ресетирај
+          ↺ {t('numTheoryLab.radial.reset')}
         </button>
         {currentPrime !== null && !finished && (
-          <span className="text-xs font-bold text-amber-600">Тековен прост број: {currentPrime}</span>
+          <span className="text-xs font-bold text-amber-600">{t('numTheoryLab.radial.currentPrime')} {currentPrime}</span>
         )}
         {finished && (
-          <span className="text-xs font-bold text-emerald-700">Готово — {primeCount} прости броеви до 100</span>
+          <span className="text-xs font-bold text-emerald-700">{t('numTheoryLab.radial.donePrefix')} {primeCount} {t('numTheoryLab.radial.doneSuffix')}</span>
         )}
       </div>
-      <svg viewBox="0 0 360 360" role="img" aria-label="Анимирано решето на Ератостен, кружен приказ" className="w-full max-w-[380px]">
+      <svg viewBox="0 0 360 360" role="img" aria-label={t('numTheoryLab.radial.ariaLabel')} className="w-full max-w-[380px]">
         {numbers.map((n, i) => {
           const pos = radialPos(i, numbers.length, RADIAL_CX, RADIAL_CY, RADIAL_R);
           const isCrossed = crossedOut.has(n);
@@ -135,6 +140,7 @@ const ULAM_LIMIT = 400;
 const ULAM_CELL = 9;
 
 function UlamSpiralView() {
+  const { t } = useLanguage();
   const points = useMemo(() => ulamSpiralPositions(ULAM_LIMIT), []);
   const sieveMap = useMemo(() => sieve(ULAM_LIMIT), []);
 
@@ -148,9 +154,9 @@ function UlamSpiralView() {
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-[11px] text-slate-500 text-center max-w-md">
-        Секој број 1–{ULAM_LIMIT} е поставен во спирала; простите броеви се обоени. Забележи ги дијагоналните „траги" — тоа е класичниот Улам-ефект.
+        {t('numTheoryLab.ulam.descPrefix')}{ULAM_LIMIT} {t('numTheoryLab.ulam.descSuffix')}
       </p>
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Улам спирала на прости броеви" className="w-full max-w-[420px]">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={t('numTheoryLab.ulam.ariaLabel')} className="w-full max-w-[420px]">
         {points.map(p => {
           const isP = sieveMap[p.n];
           const cx = (p.x - minX) * ULAM_CELL + ULAM_CELL / 2;
@@ -158,7 +164,7 @@ function UlamSpiralView() {
           const tooltip = p.n < 2
             ? `${p.n}`
             : isP
-              ? `${p.n} е прост`
+              ? `${p.n} ${t('numTheoryLab.isPrimeSuffix')}`
               : `${p.n} = ${primeFactors(p.n).map(f => f.exp > 1 ? `${f.base}^${f.exp}` : `${f.base}`).join('·')}`;
           return (
             <rect
@@ -177,6 +183,7 @@ function UlamSpiralView() {
 }
 
 function PrimesTab() {
+  const { t } = useLanguage();
   const [checkN, setCheckN] = useState('');
   const [sieveView, setSieveView] = useState<'grid' | 'radial' | 'spiral'>('grid');
 
@@ -195,28 +202,28 @@ function PrimesTab() {
     <div className="space-y-5">
       <div>
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-          <h3 className="text-sm font-bold text-slate-700">🔢 Решето на Ератостен (2–100)</h3>
+          <h3 className="text-sm font-bold text-slate-700">🔢 {t('numTheoryLab.primes.sieveTitle')}</h3>
           <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
             <button type="button" onClick={() => setSieveView('grid')}
               className={`px-2.5 py-1 rounded text-xs font-bold transition ${
                 sieveView === 'grid' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              🔲 Мрежа
+              🔲 {t('numTheoryLab.primes.viewGrid')}
             </button>
             <button type="button" onClick={() => setSieveView('radial')}
               className={`px-2.5 py-1 rounded text-xs font-bold transition ${
                 sieveView === 'radial' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              ⭕ Кружен приказ
+              ⭕ {t('numTheoryLab.primes.viewRadial')}
             </button>
             <button type="button" onClick={() => setSieveView('spiral')}
               className={`px-2.5 py-1 rounded text-xs font-bold transition ${
                 sieveView === 'spiral' ? 'bg-white shadow text-emerald-700' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              🌀 Улам спирала
+              🌀 {t('numTheoryLab.primes.viewSpiral')}
             </button>
           </div>
         </div>
@@ -228,7 +235,7 @@ function PrimesTab() {
                   key={n}
                   title={
                     sieveMap[n]
-                      ? `${n} е прост`
+                      ? `${n} ${t('numTheoryLab.isPrimeSuffix')}`
                       : `${n} = ${primeFactors(n).map(f => f.exp > 1 ? `${f.base}^${f.exp}` : `${f.base}`).join('·')}`
                   }
                   className={`inline-flex items-center justify-center w-8 h-8 rounded text-xs cursor-default transition-transform hover:scale-110 ${getCellStyle(n, sieveMap)}`}
@@ -238,11 +245,11 @@ function PrimesTab() {
               ))}
             </div>
             <div className="flex flex-wrap gap-3 mt-3 text-[11px] text-slate-600">
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-200 ring-1 ring-emerald-300" /> Прост</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-200" /> Делив со 2</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200" /> Делив со 3</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-200" /> Делив со 5</span>
-              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-violet-200" /> Делив со 7</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-200 ring-1 ring-emerald-300" /> {t('numTheoryLab.primes.legendPrime')}</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-200" /> {t('numTheoryLab.primes.legendDiv2')}</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-200" /> {t('numTheoryLab.primes.legendDiv3')}</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-200" /> {t('numTheoryLab.primes.legendDiv5')}</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-violet-200" /> {t('numTheoryLab.primes.legendDiv7')}</span>
             </div>
           </>
         )}
@@ -251,7 +258,7 @@ function PrimesTab() {
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <h3 className="text-sm font-bold text-slate-700 mb-3">🔍 Тест на простост и факторизација</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-3">🔍 {t('numTheoryLab.primes.testTitle')}</h3>
         <div className="flex items-center gap-3 flex-wrap">
           <input
             type="number"
@@ -259,15 +266,15 @@ function PrimesTab() {
             max={9999}
             value={checkN}
             onChange={e => setCheckN(e.target.value)}
-            placeholder="Внеси број (2–9999)"
+            placeholder={t('numTheoryLab.primes.inputPlaceholder')}
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-emerald-300"
           />
           {isValid && (
             checkIsPrime ? (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">✓ Прост број!</span>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">{t('numTheoryLab.primes.isPrimeResult')}</span>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">Составен број</span>
+                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">{t('numTheoryLab.primes.isComposite')}</span>
                 <span className="font-mono text-sm text-slate-700">
                   {parsed} = {factors.map((f, i) => (
                     <React.Fragment key={f.base}>
@@ -283,14 +290,14 @@ function PrimesTab() {
         </div>
         {isValid && (
           <p className="text-xs text-slate-500 mt-2">
-            Простите броеви до √{parsed} ≈ {Math.sqrt(parsed).toFixed(1)}:{' '}
+            {t('numTheoryLab.primes.primesUpToSqrt')}{parsed} ≈ {Math.sqrt(parsed).toFixed(1)}:{' '}
             {primesTo100.filter(p => p <= Math.ceil(Math.sqrt(parsed))).join(', ')}
           </p>
         )}
       </div>
 
       <p className="text-xs text-slate-500">
-        Прости броеви до 100: <strong>{primesTo100.length}</strong> — 2, 3, 5, 7, 11, … 97
+        {t('numTheoryLab.primes.totalPrimesPrefix')} <strong>{primesTo100.length}</strong> — 2, 3, 5, 7, 11, … 97
       </p>
     </div>
   );
@@ -298,6 +305,7 @@ function PrimesTab() {
 
 // ── Tab 2: GCD / LCM ─────────────────────────────────────────────────────────
 function GcdLcmTab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(48);
   const [b, setB] = useState(18);
 
@@ -335,14 +343,14 @@ function GcdLcmTab() {
     <div className="space-y-5">
       <div className="flex items-end gap-4 flex-wrap">
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Број a</label>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.gcd.numberA')}</label>
           <input type="number" min={1} max={999} value={a}
             onChange={e => setA(Number(e.target.value))}
             className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Број b</label>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.gcd.numberB')}</label>
           <input type="number" min={1} max={999} value={b}
             onChange={e => setB(Number(e.target.value))}
             className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
@@ -350,35 +358,34 @@ function GcdLcmTab() {
         </div>
         <div className="flex gap-3">
           <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-5 py-3 text-center">
-            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">НЗД (GCD)</p>
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">{t('numTheoryLab.gcd.gcdLabel')}</p>
             <p className="text-3xl font-black text-emerald-700">{g}</p>
           </div>
           <div className="rounded-xl bg-blue-50 border border-blue-200 px-5 py-3 text-center">
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">НЗС (LCM)</p>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">{t('numTheoryLab.gcd.lcmLabel')}</p>
             <p className="text-3xl font-black text-blue-700">{l}</p>
           </div>
         </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">Разложување на прости множители</h3>
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">{t('numTheoryLab.gcd.factorizationTitle')}</h3>
         <FactDisplay n={aVal} factors={factA} />
         <FactDisplay n={bVal} factors={factB} />
         <p className="text-xs text-slate-500 mt-2">
-          НЗД = производ на заеднички прости делители (помали степени) ·
-          НЗС = производ на сите прости делители (поголеми степени)
+          {t('numTheoryLab.gcd.explanation')}
         </p>
       </div>
 
       <div>
         <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-          Euclidean Algorithm — {steps.length} чекор{steps.length === 1 ? '' : 'а'}
+          Euclidean Algorithm — {steps.length} {steps.length === 1 ? t('numTheoryLab.gcd.stepSingular') : t('numTheoryLab.gcd.stepPlural')}
         </h3>
         <div className="overflow-x-auto">
           <table className="text-sm w-full border-collapse">
             <thead>
               <tr className="bg-slate-100 text-slate-600 text-xs font-bold">
-                <th className="px-3 py-2 text-left rounded-tl-lg">Чекор</th>
+                <th className="px-3 py-2 text-left rounded-tl-lg">{t('numTheoryLab.gcd.stepColumn')}</th>
                 <th className="px-3 py-2 text-center">a</th>
                 <th className="px-3 py-2 text-center">b</th>
                 <th className="px-3 py-2 text-center">q = ⌊a÷b⌋</th>
@@ -393,7 +400,7 @@ function GcdLcmTab() {
                   <td className="px-3 py-2 text-center font-mono font-bold text-slate-700">{s.b}</td>
                   <td className="px-3 py-2 text-center font-mono text-indigo-600">{s.q}</td>
                   <td className={`px-3 py-2 text-center font-mono font-bold ${s.r === 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
-                    {s.r === 0 ? `0 ← НЗД = ${s.b}` : s.r}
+                    {s.r === 0 ? `0 ${t('numTheoryLab.gcd.gcdArrow')} ${s.b}` : s.r}
                   </td>
                 </tr>
               ))}
@@ -413,6 +420,7 @@ function clockPos(val: number, m: number) {
 }
 
 function ModularTab() {
+  const { t } = useLanguage();
   const [m, setM] = useState(7);
   const [a, setA] = useState(3);
   const [b, setB] = useState(5);
@@ -436,7 +444,7 @@ function ModularTab() {
     <div className="space-y-5">
       <div className="flex gap-3 items-end flex-wrap">
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Модул m (2–12)</label>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.modular.modulusLabel')}</label>
           <input type="number" min={2} max={12} value={m}
             onChange={e => setM(Number(e.target.value))}
             className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
@@ -500,19 +508,19 @@ function ModularTab() {
           <div className="flex gap-3 mt-2 text-[11px] justify-center">
             <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-emerald-600" /> a</span>
             <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-red-600" /> b</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-indigo-600" /> резултат</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full bg-indigo-600" /> {t('numTheoryLab.modular.resultLegend')}</span>
           </div>
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Табела mod {mVal}</h3>
+            <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wide">{t('numTheoryLab.modular.tableTitlePrefix')} {mVal}</h3>
             <div className="flex gap-1">
               {(['add', 'mul'] as const).map(o => (
                 <button key={o} type="button" onClick={() => setTableOp(o)}
                   className={`px-2 py-0.5 rounded text-xs font-bold transition ${tableOp === o ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                 >
-                  {o === 'add' ? 'Собирање' : 'Множење'}
+                  {o === 'add' ? t('numTheoryLab.modular.addition') : t('numTheoryLab.modular.multiplication')}
                 </button>
               ))}
             </div>
@@ -573,6 +581,7 @@ function MiniBarChart({ values }: { values: number[] }) {
 }
 
 function SequencesTab() {
+  const { t } = useLanguage();
   const [seqType, setSeqType] = useState<'fib' | 'arith' | 'geo'>('fib');
   const [a1, setA1] = useState(1);
   const [d, setD] = useState(3);
@@ -587,14 +596,14 @@ function SequencesTab() {
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
         {([
-          { id: 'fib' as const, label: '🌀 Фибоначи' },
-          { id: 'arith' as const, label: '➕ Аритметичка' },
-          { id: 'geo' as const, label: '✖️ Геометриска' },
-        ]).map(t => (
-          <button key={t.id} type="button" onClick={() => setSeqType(t.id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${seqType === t.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          { id: 'fib' as const, label: `🌀 ${t('numTheoryLab.seq.fibonacci')}` },
+          { id: 'arith' as const, label: `➕ ${t('numTheoryLab.seq.arithmetic')}` },
+          { id: 'geo' as const, label: `✖️ ${t('numTheoryLab.seq.geometric')}` },
+        ]).map(seq => (
+          <button key={seq.id} type="button" onClick={() => setSeqType(seq.id)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${seqType === seq.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            {t.label}
+            {seq.label}
           </button>
         ))}
       </div>
@@ -611,7 +620,7 @@ function SequencesTab() {
           </div>
           <MiniBarChart values={fibSeq} />
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
-            <p className="text-xs font-bold text-amber-700">Златен однос φ ≈ 1.6180339… — приближување низ соодносот F(n+1)/F(n):</p>
+            <p className="text-xs font-bold text-amber-700">{t('numTheoryLab.seq.goldenRatio')}</p>
             <div className="flex flex-wrap gap-2">
               {fibSeq.slice(1).map((f, i) => (
                 <span key={i} className="text-xs font-mono bg-white rounded px-2 py-0.5 border border-amber-200 text-slate-600">
@@ -627,17 +636,17 @@ function SequencesTab() {
         <div className="space-y-4">
           <div className="flex gap-3 flex-wrap items-end">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Прв член a₁</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.firstTerm')}</label>
               <input type="number" value={a1} onChange={e => setA1(Number(e.target.value))}
                 className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Разлика d</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.commonDifference')}</label>
               <input type="number" value={d} onChange={e => setD(Number(e.target.value))}
                 className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Членови n</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.numTerms')}</label>
               <input type="number" min={2} max={15} value={nTerms} onChange={e => setNTerms(Number(e.target.value))}
                 className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
@@ -653,11 +662,11 @@ function SequencesTab() {
           <MiniBarChart values={arithSeq} />
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1">
             <p className="text-xs text-slate-700">
-              <span className="font-bold">Општ член:</span>{' '}
+              <span className="font-bold">{t('numTheoryLab.seq.generalTerm')}</span>{' '}
               <span className="font-mono">a_n = {a1} + (n−1)·({d}) = {d}n + {a1 - d}</span>
             </p>
             <p className="text-xs text-slate-700">
-              <span className="font-bold">Сума S_n</span> = n·(a₁ + a_n) / 2
+              <span className="font-bold">{t('numTheoryLab.seq.sumSn')}</span> = n·(a₁ + a_n) / 2
             </p>
           </div>
         </div>
@@ -667,17 +676,17 @@ function SequencesTab() {
         <div className="space-y-4">
           <div className="flex gap-3 flex-wrap items-end">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Прв член a₁</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.firstTerm')}</label>
               <input type="number" value={a1} onChange={e => setA1(Number(e.target.value))}
                 className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Количник r</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.commonRatio')}</label>
               <input type="number" step={0.5} value={r} onChange={e => setR(Number(e.target.value))}
                 className="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Членови n</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">{t('numTheoryLab.seq.numTerms')}</label>
               <input type="number" min={2} max={12} value={nTerms} onChange={e => setNTerms(Number(e.target.value))}
                 className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
@@ -695,7 +704,7 @@ function SequencesTab() {
           <MiniBarChart values={geoSeq.map(v => isFinite(v) ? Math.sign(v) * Math.min(Math.abs(v), 1e6) : 0)} />
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1">
             <p className="text-xs text-slate-700">
-              <span className="font-bold">Општ член:</span>{' '}
+              <span className="font-bold">{t('numTheoryLab.seq.generalTerm')}</span>{' '}
               <span className="font-mono">a_n = {a1}·{r}^(n−1)</span>
             </p>
             {Math.abs(r) < 1 && a1 !== 0 && (
@@ -737,39 +746,40 @@ function ExercisesTab() {
 type Tab = 'primes' | 'gcd' | 'modular' | 'sequences' | 'exercises';
 
 export default function NumberTheoryLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('primes');
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'primes',    label: '🔢 Прости броеви' },
-    { id: 'gcd',       label: '⊂ НЗД / НЗС' },
-    { id: 'modular',   label: '🕐 Модуларна' },
-    { id: 'sequences', label: '📈 Низи' },
-    { id: 'exercises', label: '✏️ Вежбај' },
+    { id: 'primes',    label: `🔢 ${t('numTheoryLab.tab.primes')}` },
+    { id: 'gcd',       label: `⊂ ${t('numTheoryLab.tab.gcd')}` },
+    { id: 'modular',   label: `🕐 ${t('numTheoryLab.tab.modular')}` },
+    { id: 'sequences', label: `📈 ${t('numTheoryLab.tab.sequences')}` },
+    { id: 'exercises', label: `✏️ ${t('numTheoryLab.tab.exercises')}` },
   ];
 
   return (
     <div className="space-y-4">
       <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100 p-4">
-        <h2 className="text-base font-bold text-gray-800">Лабораторија за теорија на броеви</h2>
+        <h2 className="text-base font-bold text-gray-800">{t('numTheoryLab.title')}</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Прости броеви · НЗД &amp; НЗС · Модуларна аритметика · Низи · Вежбај
+          {t('numTheoryLab.subtitle')}
         </p>
         <CurriculumBadges cur={NUMTHEORY_CURRICULUM} />
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {tabs.map(t => (
+        {tabs.map(tabItem => (
           <button
-            key={t.id}
+            key={tabItem.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => setTab(tabItem.id)}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              tab === t.id
+              tab === tabItem.id
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>

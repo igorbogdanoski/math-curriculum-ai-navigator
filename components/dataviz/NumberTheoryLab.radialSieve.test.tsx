@@ -2,18 +2,26 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import NumberTheoryLab from './NumberTheoryLab';
+import { LanguageProvider } from '../../i18n/LanguageContext';
 
 // /data-viz is auth-gated, so the animation couldn't be browser-tested end-to-end
 // without production credentials — this drives the actual play/pause/reset state
 // machine with fake timers instead (same auth-wall substitution as
 // FractionsLab.test.tsx). Defaults to the 'primes' tab, so no extra navigation needed.
 
+function render_() {
+  return render(<LanguageProvider><NumberTheoryLab /></LanguageProvider>);
+}
+
 describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
-  beforeEach(() => { vi.useFakeTimers(); });
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.setItem('preferred_language', 'mk');
+  });
   afterEach(() => { vi.useRealTimers(); });
 
   it('grid view is shown by default; toggling reveals the radial view', () => {
-    render(<NumberTheoryLab />);
+    render_();
     expect(screen.queryByRole('img', { name: /Анимирано решето/ })).toBeNull();
 
     fireEvent.click(screen.getByText('⭕ Кружен приказ'));
@@ -24,7 +32,7 @@ describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
   });
 
   it('play advances through steps over time, highlighting each prime in order', () => {
-    render(<NumberTheoryLab />);
+    render_();
     fireEvent.click(screen.getByText('⭕ Кружен приказ'));
     fireEvent.click(screen.getByText('▶ Играј'));
 
@@ -39,7 +47,7 @@ describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
   });
 
   it('reset returns to the initial (unplayed) state', () => {
-    render(<NumberTheoryLab />);
+    render_();
     fireEvent.click(screen.getByText('⭕ Кружен приказ'));
     fireEvent.click(screen.getByText('▶ Играј'));
     act(() => { vi.advanceTimersByTime(900); });
@@ -51,7 +59,7 @@ describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
   });
 
   it('finishes after all steps and reports the correct final prime count (25 primes ≤ 100)', () => {
-    render(<NumberTheoryLab />);
+    render_();
     fireEvent.click(screen.getByText('⭕ Кружен приказ'));
     fireEvent.click(screen.getByText('▶ Играј'));
 
@@ -66,8 +74,10 @@ describe('NumberTheoryLab — radial Sieve of Eratosthenes animation', () => {
 });
 
 describe('NumberTheoryLab — Ulam spiral view', () => {
+  beforeEach(() => { localStorage.setItem('preferred_language', 'mk'); });
+
   it('toggling to the spiral view hides grid/radial and shows the spiral SVG', () => {
-    render(<NumberTheoryLab />);
+    render_();
     expect(screen.queryByRole('img', { name: /Улам спирала/ })).toBeNull();
 
     fireEvent.click(screen.getByText('🌀 Улам спирала'));
