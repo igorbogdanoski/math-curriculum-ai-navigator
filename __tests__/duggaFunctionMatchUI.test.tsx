@@ -4,10 +4,15 @@
  * and a target curve overlay, wired through this pass.
  */
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QuestionCard } from '../components/dugga/DuggaQuestionCard';
+import { LanguageProvider } from '../i18n/LanguageContext';
 import type { DuggaQuestion } from '../services/firestoreService.dugga';
+
+function renderCard(props: React.ComponentProps<typeof QuestionCard>) {
+  return render(<LanguageProvider><QuestionCard {...props} /></LanguageProvider>);
+}
 
 function makeQ(patch: Partial<DuggaQuestion>): DuggaQuestion {
   return {
@@ -22,8 +27,12 @@ function makeQ(patch: Partial<DuggaQuestion>): DuggaQuestion {
 }
 
 describe('function_match answer input', () => {
+  beforeEach(() => {
+    localStorage.setItem('preferred_language', 'mk');
+  });
+
   it('renders FunctionTransformer with the base function locked (no selector)', () => {
-    render(<QuestionCard q={makeQ({})} idx={0} answer="" onChange={() => {}} showResults={false} />);
+    renderCard({ q: makeQ({}), idx: 0, answer: '', onChange: () => {}, showResults: false });
     expect(screen.getByTestId('function-transformer')).toBeTruthy();
     expect(screen.queryByTestId('function-transformer-select')).toBeNull();
     expect(screen.getByTestId('function-transformer-target')).toBeTruthy();
@@ -31,27 +40,25 @@ describe('function_match answer input', () => {
 
   it('emits JSON params via onChange when a slider moves', () => {
     const onChange = vi.fn();
-    render(<QuestionCard q={makeQ({})} idx={0} answer="" onChange={onChange} showResults={false} />);
+    renderCard({ q: makeQ({}), idx: 0, answer: '', onChange, showResults: false });
     const sliderA = screen.getByTestId('function-transformer-slider-a');
     fireEvent.change(sliderA, { target: { value: '2' } });
     expect(onChange).toHaveBeenCalledWith('q1', JSON.stringify({ a: 2, b: 1, c: 0, d: 0 }));
   });
 
   it('restores initialParams from a previously-saved JSON answer', () => {
-    render(
-      <QuestionCard
-        q={makeQ({})}
-        idx={0}
-        answer={JSON.stringify({ a: 2, b: 1, c: 0, d: 1 })}
-        onChange={() => {}}
-        showResults={false}
-      />,
-    );
+    renderCard({
+      q: makeQ({}),
+      idx: 0,
+      answer: JSON.stringify({ a: 2, b: 1, c: 0, d: 1 }),
+      onChange: () => {},
+      showResults: false,
+    });
     expect(screen.getByTestId('function-transformer-match-status').textContent).toContain('Ја погоди');
   });
 
   it('shows an error message when expectedTransform is missing', () => {
-    render(<QuestionCard q={makeQ({ expectedTransform: undefined })} idx={0} answer="" onChange={() => {}} showResults={false} />);
+    renderCard({ q: makeQ({ expectedTransform: undefined }), idx: 0, answer: '', onChange: () => {}, showResults: false });
     expect(screen.getByText(/нема поставена цел/)).toBeTruthy();
   });
 });

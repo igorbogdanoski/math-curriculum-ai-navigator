@@ -12,6 +12,7 @@ import { UnitCirclePicker } from '../dataviz/UnitCirclePicker';
 import { StudentChartInput } from './StudentChartInput';
 import type { DuggaQuestion } from '../../services/firestoreService.dugga';
 import type { QResult } from '../../utils/duggaScoring';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 /**
  * Deterministic shuffle seeded by a string (e.g. question id) — same seed
@@ -52,6 +53,7 @@ function OpenEndedAnswer({
   rows: number;
   placeholder: string;
 }) {
+  const { t } = useLanguage();
   const editor = q.answerInput ?? defaultEditor;
   // For 'mixed' editor, render a toggle (legacy essay behaviour).
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -71,7 +73,7 @@ function OpenEndedAnswer({
           className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${useMath ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'}`}
         >
           <Sigma className="w-3.5 h-3.5" />
-          {useMath ? 'Мат. уредник вклучен' : 'Вклучи мат. уредник'}
+          {useMath ? t('duggaQuestion.mathEditorOn') : t('duggaQuestion.mathEditorOff')}
         </button>
       )}
 
@@ -108,6 +110,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
   q: DuggaQuestion; answer: string; onChange: (v: string) => void; disabled: boolean;
   solutionImageUrl?: string; onSolutionImage?: (url: string) => void;
 }) {
+  const { t } = useLanguage();
   switch (q.type) {
     case 'multiple_choice': {
       const opts = q.options ?? [];
@@ -148,28 +151,36 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
       );
     }
     case 'true_false': {
-      const opts = ['Точно', 'Неточно'];
+      // Values stay in MK — they're compared literally against q.correctAnswer
+      // (authored in MK, see utils/duggaScoring.ts's true_false/statement_eval case)
+      // — only the displayed label is translated.
+      const opts: [string, string][] = [['Точно', t('duggaQuestion.true')], ['Неточно', t('duggaQuestion.false')]];
       return (
         <div className="flex gap-3 mt-3">
-          {opts.map(v => (
+          {opts.map(([v, label]) => (
             <button type="button" key={v} disabled={disabled}
               className={`flex-1 py-3 rounded-xl font-semibold text-sm border-2 transition-all ${answer === v ? (v === 'Точно' ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500') : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-white'} ${disabled ? 'cursor-default' : ''}`}
               onClick={() => !disabled && onChange(v)}>
-              {v === 'Точно' ? '✓ Точно' : '✗ Неточно'}
+              {v === 'Точно' ? `✓ ${label}` : `✗ ${label}`}
             </button>
           ))}
         </div>
       );
     }
     case 'statement_eval': {
-      const opts = ['Точно', 'Неточно', 'Делумно точно'];
+      // Same MK-value/translated-label split as true_false above.
+      const opts: [string, string][] = [
+        ['Точно', t('duggaQuestion.true')],
+        ['Неточно', t('duggaQuestion.false')],
+        ['Делумно точно', t('duggaQuestion.partiallyTrue')],
+      ];
       return (
         <div className="flex gap-2 flex-wrap mt-3">
-          {opts.map(v => (
+          {opts.map(([v, label]) => (
             <button type="button" key={v} disabled={disabled}
               className={`px-5 py-2.5 rounded-xl font-medium text-sm border-2 transition-all ${answer === v ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-white'} ${disabled ? 'cursor-default' : ''}`}
               onClick={() => !disabled && onChange(v)}>
-              {v}
+              {label}
             </button>
           ))}
         </div>
@@ -188,7 +199,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           onSolutionImage={onSolutionImage}
           defaultEditor="math"
           rows={1}
-          placeholder="Внеси го одговорот..."
+          placeholder={t('duggaQuestion.enterAnswerPlaceholder')}
         />
       );
     }
@@ -204,7 +215,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           onSolutionImage={onSolutionImage}
           defaultEditor="mixed"
           rows={5}
-          placeholder="Напиши го твоето решение / доказ..."
+          placeholder={t('duggaQuestion.writeSolutionPlaceholder')}
         />
       );
     }
@@ -212,14 +223,14 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
       const currentOrder = answer ? answer.split('|') : (q.orderItems ?? []);
       return (
         <div className="mt-3 space-y-2">
-          <p className="text-xs text-gray-500 mb-1">Постави ги во точен редослед:</p>
+          <p className="text-xs text-gray-500 mb-1">{t('duggaQuestion.orderHint')}</p>
           {currentOrder.map((item, idx) => (
             <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-gray-200 bg-gray-50">
               <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
               <span className="flex-1 text-sm text-gray-800"><MathRenderer text={item} /></span>
               {!disabled && (
                 <div className="flex gap-0.5">
-                  <button type="button" disabled={idx === 0} aria-label="Помести нагоре"
+                  <button type="button" disabled={idx === 0} aria-label={t('duggaQuestion.moveUp')}
                     onClick={() => {
                       const next = [...currentOrder];
                       [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
@@ -228,7 +239,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
                     className="p-1 hover:bg-gray-200 rounded disabled:opacity-20 transition-colors">
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
-                  <button type="button" disabled={idx === currentOrder.length - 1} aria-label="Помести надолу"
+                  <button type="button" disabled={idx === currentOrder.length - 1} aria-label={t('duggaQuestion.moveDown')}
                     onClick={() => {
                       const next = [...currentOrder];
                       [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
@@ -258,13 +269,13 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
               <select disabled={disabled} value={parsed[pair.left] ?? ''}
-                aria-label={`Поврзи: ${pair.left}`}
+                aria-label={`${t('duggaQuestion.matchAria')} ${pair.left}`}
                 onChange={e => {
                   const next = { ...parsed, [pair.left]: e.target.value };
                   onChange(JSON.stringify(next));
                 }}
                 className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50">
-                <option value="">— избери —</option>
+                <option value="">{t('duggaQuestion.selectPlaceholder')}</option>
                 {rightOptions.map((r, ri) => <option key={ri} value={r}>{r}</option>)}
               </select>
             </div>
@@ -296,7 +307,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
                     <td key={ci} className="border border-gray-200 px-2 py-1.5 text-center bg-white">
                       {cell === '' ? (
                         <input type="text" disabled={disabled} value={cells[`${ri}_${ci}`] ?? ''}
-                          aria-label={`Ред ${ri + 1}, колона ${ci + 1}`}
+                          aria-label={t('duggaQuestion.rowColAria').replace('{row}', String(ri + 1)).replace('{col}', String(ci + 1))}
                           placeholder="?"
                           onChange={e => {
                             const next = { ...cells, [`${ri}_${ci}`]: e.target.value };
@@ -326,8 +337,8 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
             <div key={ii} className="flex items-center gap-2">
               <span className="text-xs text-gray-500 w-5 text-right shrink-0">{ii + 1}.</span>
               <input type="text" disabled={disabled} value={item}
-                aria-label={`Ставка ${ii + 1}`}
-                placeholder={`${ii + 1}. одговор`}
+                aria-label={t('duggaQuestion.itemAria').replace('{n}', String(ii + 1))}
+                placeholder={t('duggaQuestion.itemAnswerPlaceholder').replace('{n}', String(ii + 1))}
                 onChange={e => {
                   const next = [...items];
                   next[ii] = e.target.value;
@@ -342,9 +353,9 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
     case 'diagram_annotate': {
       return (
         <div className="mt-3 space-y-3">
-          {q.imageUrl && <img src={q.imageUrl} alt="Дијаграм" className="max-w-full rounded-xl border border-gray-200" />}
+          {q.imageUrl && <img src={q.imageUrl} alt={t('duggaQuestion.diagramAlt')} className="max-w-full rounded-xl border border-gray-200" />}
           <textarea rows={4} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-            placeholder="Опиши ги означените делови..."
+            placeholder={t('duggaQuestion.annotateePlaceholder')}
             className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
         </div>
       );
@@ -359,7 +370,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           <table className="text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-3 py-2" aria-label="Ред"></th>
+                <th className="border border-gray-200 px-3 py-2" aria-label={t('duggaQuestion.rowAria')}></th>
                 {headers.map((h, hi) => (
                   <th key={hi} className="border border-gray-200 px-4 py-2 text-center font-semibold text-gray-700">
                     <MathRenderer text={h} />
@@ -376,7 +387,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
                   {headers.map((_, ci) => (
                     <td key={ci} className="border border-gray-200 px-4 py-2 text-center">
                       <input type="checkbox" className="accent-indigo-600 w-4 h-4" disabled={disabled}
-                        aria-label={`${row[0] ?? `Ред ${ri + 1}`} — ${headers[ci] ?? `Кол ${ci + 1}`}`}
+                        aria-label={`${row[0] ?? t('duggaQuestion.rowFallback').replace('{n}', String(ri + 1))} — ${headers[ci] ?? t('duggaQuestion.colFallback').replace('{n}', String(ci + 1))}`}
                         checked={!!checked[`${ri}_${ci}`]}
                         onChange={e => {
                           const next = { ...checked, [`${ri}_${ci}`]: e.target.checked };
@@ -394,14 +405,14 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
     case 'multi_part': {
       return (
         <textarea rows={6} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-          placeholder="Одговори на сите делови..."
+          placeholder={t('duggaQuestion.multiPartPlaceholder')}
           className="w-full mt-3 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
       );
     }
     case 'inline_select': {
       return (
         <input type="text" disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-          placeholder="Одговор..."
+          placeholder={t('duggaQuestion.answerPlaceholder')}
           className="w-full mt-3 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
       );
     }
@@ -409,17 +420,17 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
       return (
         <div className="mt-3 space-y-2">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 text-xs text-yellow-800">
-            Замисли дека му/и го објаснуваш концептот <strong>„{q.feynmanConcept || q.text}"</strong> на дете од 10 години. Пиши со свои зборови — без учебнички дефиниции.
+            {t('duggaQuestion.feynmanIntro1')} <strong>„{q.feynmanConcept || q.text}"</strong> {t('duggaQuestion.feynmanIntro2')}
           </div>
           <textarea
             rows={5}
             disabled={disabled}
             value={answer}
             onChange={e => onChange(e.target.value)}
-            placeholder="Пример: Па значи, замисли дека имаш кутии со топки..."
+            placeholder={t('duggaQuestion.feynmanPlaceholder')}
             className="w-full rounded-xl border-2 border-yellow-300 bg-white px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50"
           />
-          <p className="text-[10px] text-gray-400">Твоето објаснување ќе биде оценето од AI по Феинман рубрика (точност · едноставност · комплетност · без жаргон).</p>
+          <p className="text-[10px] text-gray-400">{t('duggaQuestion.feynmanFooter')}</p>
         </div>
       );
     }
@@ -435,7 +446,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
       return (
         <div className="mt-3 space-y-3">
           <div className="bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 text-xs text-rose-800 font-medium">
-            Во следниот доказ постои намерна грешка. Кликни на чекорот кој е погрешен, потоа објасни зошто.
+            {t('duggaQuestion.proofCritiqueIntro')}
           </div>
           <ol className="space-y-2">
             {steps.map((step, i) => {
@@ -454,7 +465,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
                   >
                     <span className="font-bold mr-2 text-gray-400">{i + 1}.</span>
                     <MathRenderer text={step} />
-                    {isSelected && <span className="ml-2 text-xs bg-rose-600 text-white rounded-full px-2 py-0.5">❌ Избрано</span>}
+                    {isSelected && <span className="ml-2 text-xs bg-rose-600 text-white rounded-full px-2 py-0.5">{t('duggaQuestion.selected')}</span>}
                   </button>
                 </li>
               );
@@ -466,11 +477,11 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
               disabled={disabled}
               value={reason}
               onChange={e => update({ reason: e.target.value })}
-              placeholder="Зошто е овој чекор погрешен? Опиши ја грешката..."
+              placeholder={t('duggaQuestion.proofCritiquePlaceholder')}
               className="w-full rounded-xl border-2 border-rose-300 bg-white px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:bg-gray-50"
             />
           )}
-          <p className="text-[10px] text-gray-400">50% поени за точниот чекор + 50% AI оценка на образложението.</p>
+          <p className="text-[10px] text-gray-400">{t('duggaQuestion.proofCritiqueFooter')}</p>
         </div>
       );
     }
@@ -488,14 +499,14 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
       const byId = new Map(pool.map(s => [s.id, s.text]));
       return (
         <div className="mt-3 space-y-2">
-          <p className="text-xs text-gray-500 mb-1">Постави ги чекорите во точен редослед (внимавај — некои може да не припаѓаат):</p>
+          <p className="text-xs text-gray-500 mb-1">{t('duggaQuestion.proofStepsHint')}</p>
           {currentIds.map((id, idx) => (
             <div key={id} className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-gray-200 bg-gray-50">
               <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
               <span className="flex-1 text-sm text-gray-800"><MathRenderer text={byId.get(id) ?? ''} /></span>
               {!disabled && (
                 <div className="flex gap-0.5">
-                  <button type="button" disabled={idx === 0} aria-label="Помести нагоре"
+                  <button type="button" disabled={idx === 0} aria-label={t('duggaQuestion.moveUp')}
                     onClick={() => {
                       const next = [...currentIds];
                       [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
@@ -504,7 +515,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
                     className="p-1 hover:bg-gray-200 rounded disabled:opacity-20 transition-colors">
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
-                  <button type="button" disabled={idx === currentIds.length - 1} aria-label="Помести надолу"
+                  <button type="button" disabled={idx === currentIds.length - 1} aria-label={t('duggaQuestion.moveDown')}
                     onClick={() => {
                       const next = [...currentIds];
                       [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
@@ -525,18 +536,18 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
         <div className="mt-3 space-y-2">
           {q.expectedConstruction?.description && (
             <div className="bg-teal-50 border border-teal-200 rounded-xl px-3 py-2 text-xs text-teal-800">
-              <strong>Барана конструкција:</strong> {q.expectedConstruction.description}
+              <strong>{t('duggaQuestion.requestedConstruction')}</strong> {q.expectedConstruction.description}
             </div>
           )}
           <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-            placeholder="Опиши ги чекорите на конструкцијата што ги направи (користи ја GeoGebra алатката подолу како скица, ако е достапна)..."
+            placeholder={t('duggaQuestion.geometryPlaceholder')}
             className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent disabled:bg-gray-50" />
         </div>
       );
     }
     case 'function_match': {
       if (!q.expectedTransform) {
-        return <p className="mt-3 text-xs text-red-500">Прашањето нема поставена цел (expectedTransform).</p>;
+        return <p className="mt-3 text-xs text-red-500">{t('duggaQuestion.noTargetSet')}</p>;
       }
       let initialParams: { a: number; b: number; c: number; d: number } | undefined;
       try { initialParams = answer ? JSON.parse(answer) : undefined; } catch { /* */ }
@@ -577,7 +588,7 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
     default:
       return (
         <input type="text" disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-          placeholder="Одговор..."
+          placeholder={t('duggaQuestion.answerPlaceholder')}
           className="w-full mt-3 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
       );
   }
@@ -598,6 +609,7 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
   result?: QResult; showResults: boolean;
   solutionImageUrl?: string; onSolutionImage?: (id: string, url: string) => void;
 }) {
+  const { t } = useLanguage();
   if (q.type === 'section_header') {
     return (
       <div className="pt-4 pb-1">
@@ -631,7 +643,7 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DOK_COLORS[q.dok]}`}>DoK{q.dok}</span>
-          <span className="text-xs font-semibold text-gray-500">{q.points}п</span>
+          <span className="text-xs font-semibold text-gray-500">{q.points}{t('duggaQuestion.pointsAbbrev')}</span>
           {showResults && result && (
             result.correct === true
               ? <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -662,9 +674,9 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
           {result.viaCas && (
             <span
               className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
-              title="Одговорот е препознаен како точен со математички мотор за проверка на еквивалентност (не само буквално совпаѓање)."
+              title={t('duggaQuestion.verifiedTitle')}
             >
-              <Sigma className="w-3 h-3" /> Проверено со математички мотор
+              <Sigma className="w-3 h-3" /> {t('duggaQuestion.verifiedBadge')}
             </span>
           )}
           {result.feedback && (
@@ -672,19 +684,19 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
           )}
           {result.aiGrade && (
             <div className="text-xs bg-blue-50 rounded-xl p-3 border border-blue-200 whitespace-pre-line">
-              <span className="font-semibold text-blue-700 block mb-1">AI Оценување:</span>
+              <span className="font-semibold text-blue-700 block mb-1">{t('duggaQuestion.aiGradingLabel')}</span>
               {result.aiGrade}
             </div>
           )}
           {q.hint && result.correct !== true && (
             <p className="text-xs text-amber-700 italic bg-amber-50 rounded-lg px-3 py-1.5 border border-amber-200">
-              Совет: {q.hint}
+              {t('duggaQuestion.hintPrefix')} {q.hint}
             </p>
           )}
           {q.solution && (
             <details className="text-xs">
               <summary className="cursor-pointer text-indigo-600 font-semibold hover:text-indigo-800">
-                Прикажи решение
+                {t('duggaQuestion.showSolution')}
               </summary>
               <div className="mt-1.5 p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-gray-700">
                 <MathRenderer text={q.solution} />
@@ -692,7 +704,7 @@ export function QuestionCard({ q, idx, answer, onChange, result, showResults, so
             </details>
           )}
           <div className="text-xs font-bold text-right text-gray-700">
-            {result.earned} / {result.maxPoints} поени
+            {result.earned} / {result.maxPoints} {t('duggaQuestion.points')}
           </div>
         </div>
       )}
