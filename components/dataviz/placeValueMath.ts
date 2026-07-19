@@ -66,18 +66,19 @@ export function toWordFormMK(n: number): string {
 
 export type GradeRange = 'g1' | 'g2' | 'g3';
 
+// 2026-07-19 (Wave 8.4, audit_2026_07_18_full_app_review): `label`/`description` used to be
+// baked-in MK strings here — moved to i18n keys (built in PlaceValueLab.tsx's gradeLabel()/
+// gradeDescription() helpers) so this data constant doesn't hardcode a UI language.
 export interface GradeConfig {
-  label: string;
   max: number;
   showThousands: boolean;
   showHundreds: boolean;
-  description: string;
 }
 
 export const GRADE_CONFIGS: Record<GradeRange, GradeConfig> = {
-  g1: { label: 'I–II одд.', max: 99,   showThousands: false, showHundreds: false, description: 'Единици и десетици (0–99)' },
-  g2: { label: 'III–IV одд.', max: 999,  showThousands: false, showHundreds: true,  description: 'Единици, десетици и стотици (0–999)' },
-  g3: { label: 'V–VI одд.',  max: 9999, showThousands: true,  showHundreds: true,  description: 'Илјадарки, стотики, десетици, единици (0–9999)' },
+  g1: { max: 99,   showThousands: false, showHundreds: false },
+  g2: { max: 999,  showThousands: false, showHundreds: true },
+  g3: { max: 9999, showThousands: true,  showHundreds: true },
 };
 
 export function randomNumber(grade: GradeRange): number {

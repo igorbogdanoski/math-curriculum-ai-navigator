@@ -8,6 +8,13 @@ import type { Decomposition, GradeRange } from './placeValueMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
+
+const gradeLabel = (g: GradeRange, t: (k: string) => string): string =>
+  ({ g1: t('placeValueLab.grade.g1'), g2: t('placeValueLab.grade.g2'), g3: t('placeValueLab.grade.g3') }[g]);
+
+const gradeDescription = (g: GradeRange, t: (k: string) => string): string =>
+  ({ g1: t('placeValueLab.grade.g1Desc'), g2: t('placeValueLab.grade.g2Desc'), g3: t('placeValueLab.grade.g3Desc') }[g]);
 
 // ─── SVG Dienes block primitives ─────────────────────────────────────────────
 
@@ -108,6 +115,7 @@ const PER_ROW_CUBE = 5;
 interface BlockDisplayProps { decomp: Decomposition; showThousands: boolean; showHundreds: boolean; }
 
 const BlockDisplay: React.FC<BlockDisplayProps> = ({ decomp, showThousands, showHundreds }) => {
+  const { t } = useLanguage();
   const PAD = 16;
   const SECTION_GAP = 18;
   const flatColW  = FLAT_SIZE + DEPTH + GAP;
@@ -201,7 +209,7 @@ const BlockDisplay: React.FC<BlockDisplayProps> = ({ decomp, showThousands, show
     }
     elems.push(
       <text key="lbl" x={startX + (PER_ROW_ROD * colW) / 2} y={sectionY + maxH + 16}
-        textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">Десетици</text>
+        textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">{t('placeValueLab.tens')}</text>
     );
     return elems;
   };
@@ -217,22 +225,22 @@ const BlockDisplay: React.FC<BlockDisplayProps> = ({ decomp, showThousands, show
     }
     elems.push(
       <text key="lbl" x={startX + (PER_ROW_CUBE * colW) / 2} y={sectionY + maxH + 16}
-        textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">Единици</text>
+        textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">{t('placeValueLab.ones')}</text>
     );
     return elems;
   };
 
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 340 }}>
-      {showThousands && decomp.thousands > 0 && renderFlats(decomp.thousands, thousandsX, 'Илјадарки', true)}
-      {showHundreds  && decomp.hundreds > 0  && renderFlats(decomp.hundreds, hundredsX, 'Стотки')}
+      {showThousands && decomp.thousands > 0 && renderFlats(decomp.thousands, thousandsX, t('placeValueLab.thousands'), true)}
+      {showHundreds  && decomp.hundreds > 0  && renderFlats(decomp.hundreds, hundredsX, t('placeValueLab.hundreds'))}
       {decomp.tens   > 0 && renderRods(decomp.tens, tensX)}
       {decomp.ones   > 0 && renderCubes(decomp.ones, onesX)}
 
       {/* Empty state */}
       {decomp.thousands === 0 && decomp.hundreds === 0 && decomp.tens === 0 && decomp.ones === 0 && (
         <text x={svgW / 2} y={svgH / 2} textAnchor="middle" fontSize={14} fill="#9ca3af">
-          Внеси број за да видиш блокови
+          {t('placeValueLab.empty')}
         </text>
       )}
     </svg>
@@ -272,6 +280,7 @@ const ComposeControl: React.FC<ComposeControlProps> = ({ label, value, max, colo
 type Mode = 'show' | 'practice' | 'compose';
 
 export const PlaceValueLab: React.FC = () => {
+  const { t } = useLanguage();
   const [grade, setGrade] = useState<GradeRange>('g2');
   const [mode, setMode] = useState<Mode>('show');
 
@@ -298,9 +307,9 @@ export const PlaceValueLab: React.FC = () => {
   const showDecomp = decomposeNumber(showNumber);
 
   const MODES: { id: Mode; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'show',     label: 'Прикажи',  icon: Eye      },
-    { id: 'practice', label: 'Вежбај',   icon: PenLine  },
-    { id: 'compose',  label: 'Состави',  icon: Layers   },
+    { id: 'show',     label: t('placeValueLab.mode.show'),     icon: Eye      },
+    { id: 'practice', label: t('placeValueLab.mode.practice'), icon: PenLine  },
+    { id: 'compose',  label: t('placeValueLab.mode.compose'),  icon: Layers   },
   ];
 
   const GRADES: GradeRange[] = ['g1', 'g2', 'g3'];
@@ -310,8 +319,8 @@ export const PlaceValueLab: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-extrabold text-gray-900">Дијенесови блокови — Месна вредност</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{cfg.description}</p>
+          <h2 className="text-lg font-extrabold text-gray-900">{t('placeValueLab.title')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{gradeDescription(grade, t)}</p>
         </div>
         {/* Grade selector */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
@@ -326,7 +335,7 @@ export const PlaceValueLab: React.FC = () => {
                 grade === g ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {GRADE_CONFIGS[g].label}
+              {gradeLabel(g, t)}
             </button>
           ))}
         </div>
@@ -352,7 +361,7 @@ export const PlaceValueLab: React.FC = () => {
       {mode === 'show' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-semibold text-gray-700 shrink-0">Внеси број:</label>
+            <label className="text-sm font-semibold text-gray-700 shrink-0">{t('placeValueLab.show.inputLabel')}</label>
             <input
               type="number"
               min={0}
@@ -364,7 +373,7 @@ export const PlaceValueLab: React.FC = () => {
             />
             {showNumber > 0 && (
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-gray-500">Проширена форма:</span>
+                <span className="text-xs font-semibold text-gray-500">{t('placeValueLab.show.expandedForm')}</span>
                 <span className="text-base font-bold text-emerald-700">{toExpandedForm(showNumber)}</span>
               </div>
             )}
@@ -381,25 +390,25 @@ export const PlaceValueLab: React.FC = () => {
               <div className={`grid ${cfg.showThousands ? 'grid-cols-4' : cfg.showHundreds ? 'grid-cols-3' : 'grid-cols-2'} divide-x divide-gray-200`}>
                 {cfg.showThousands && (
                   <div className="p-3 text-center bg-purple-50">
-                    <div className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Илјадарки</div>
+                    <div className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">{t('placeValueLab.thousands')}</div>
                     <div className="text-4xl font-black text-purple-700">{showDecomp.thousands}</div>
                     <div className="text-xs text-purple-400 mt-1">× 1000</div>
                   </div>
                 )}
                 {cfg.showHundreds && (
                   <div className="p-3 text-center bg-green-50">
-                    <div className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">Стотки</div>
+                    <div className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">{t('placeValueLab.hundreds')}</div>
                     <div className="text-4xl font-black text-green-700">{showDecomp.hundreds}</div>
                     <div className="text-xs text-green-400 mt-1">× 100</div>
                   </div>
                 )}
                 <div className="p-3 text-center bg-yellow-50">
-                  <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">Десетици</div>
+                  <div className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-1">{t('placeValueLab.tens')}</div>
                   <div className="text-4xl font-black text-yellow-700">{showDecomp.tens}</div>
                   <div className="text-xs text-yellow-400 mt-1">× 10</div>
                 </div>
                 <div className="p-3 text-center bg-red-50">
-                  <div className="text-xs font-bold text-red-500 uppercase tracking-wider mb-1">Единици</div>
+                  <div className="text-xs font-bold text-red-500 uppercase tracking-wider mb-1">{t('placeValueLab.ones')}</div>
                   <div className="text-4xl font-black text-red-600">{showDecomp.ones}</div>
                   <div className="text-xs text-red-400 mt-1">× 1</div>
                 </div>
@@ -439,21 +448,21 @@ export const PlaceValueLab: React.FC = () => {
       {mode === 'compose' && (
         <div className="space-y-4">
           <p className="text-sm font-semibold text-gray-700">
-            Состави го бројот со додавање блокови — клик на <strong>+</strong> и <strong>−</strong>:
+            {t('placeValueLab.compose.instructionPrefix')} <strong>+</strong> {t('placeValueLab.compose.and')} <strong>−</strong>:
           </p>
 
           <div className="flex flex-wrap gap-3">
             {cfg.showThousands && (
-              <ComposeControl label="Илјадарки" value={compose.thousands} max={9} color="border-purple-200 bg-purple-50"
+              <ComposeControl label={t('placeValueLab.thousands')} value={compose.thousands} max={9} color="border-purple-200 bg-purple-50"
                 onChange={v => setCompose(p => ({ ...p, thousands: v }))} />
             )}
             {cfg.showHundreds && (
-              <ComposeControl label="Стотки" value={compose.hundreds} max={9} color="border-green-200 bg-green-50"
+              <ComposeControl label={t('placeValueLab.hundreds')} value={compose.hundreds} max={9} color="border-green-200 bg-green-50"
                 onChange={v => setCompose(p => ({ ...p, hundreds: v }))} />
             )}
-            <ComposeControl label="Десетици" value={compose.tens} max={9} color="border-yellow-200 bg-yellow-50"
+            <ComposeControl label={t('placeValueLab.tens')} value={compose.tens} max={9} color="border-yellow-200 bg-yellow-50"
               onChange={v => setCompose(p => ({ ...p, tens: v }))} />
-            <ComposeControl label="Единици" value={compose.ones} max={9} color="border-red-200 bg-red-50"
+            <ComposeControl label={t('placeValueLab.ones')} value={compose.ones} max={9} color="border-red-200 bg-red-50"
               onChange={v => setCompose(p => ({ ...p, ones: v }))} />
           </div>
 
@@ -474,30 +483,30 @@ export const PlaceValueLab: React.FC = () => {
           <button type="button"
             onClick={() => setCompose({ thousands: 0, hundreds: 0, tens: 0, ones: 0 })}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-            <RefreshCw className="w-3.5 h-3.5" /> Исчисти
+            <RefreshCw className="w-3.5 h-3.5" /> {t('placeValueLab.reset')}
           </button>
         </div>
       )}
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-gray-100">
-        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Легенда:</span>
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('placeValueLab.legend.title')}</span>
         <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
           <svg width="16" height="16" viewBox="0 0 16 16"><rect x="0" y="0" width="14" height="14" fill={C_FLAT_FACE} stroke={C_FLAT_GRID} strokeWidth="1" rx="1" /></svg>
-          Рамна плоча = 100
+          {t('placeValueLab.legend.flat')}
         </span>
         <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
           <svg width="10" height="16" viewBox="0 0 10 16"><rect x="0" y="0" width="8" height="14" fill={C_ROD_FACE} stroke={C_ROD_GRID} strokeWidth="1" rx="1" /></svg>
-          Прачка = 10
+          {t('placeValueLab.legend.rod')}
         </span>
         <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
           <svg width="12" height="12" viewBox="0 0 12 12"><rect x="0" y="0" width="10" height="10" fill={C_CUBE_FACE} stroke={C_CUBE_RIGHT} strokeWidth="1" rx="1" /></svg>
-          Коцка = 1
+          {t('placeValueLab.legend.cube')}
         </span>
         {cfg.showThousands && (
           <span className="flex items-center gap-1.5 text-xs font-semibold text-purple-600">
             <svg width="14" height="14" viewBox="0 0 14 14"><rect x="0" y="0" width="12" height="12" fill={C_FLAT_FACE} stroke={C_FLAT_GRID} strokeWidth="1" rx="1" /></svg>
-            Куп плочи = 1 000
+            {t('placeValueLab.legend.thousandsCube')}
           </span>
         )}
       </div>
