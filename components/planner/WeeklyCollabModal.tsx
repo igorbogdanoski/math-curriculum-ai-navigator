@@ -23,7 +23,7 @@ import {
 interface Props {
   /** Owner's planId used as the collab key */
   planId: string;
-  gradeId: string;
+  annualPlanId: string;
   weekNumber: number;
   ownerName: string;
   onViewShared: (plan: SavedWeeklyPlan, ownerName: string) => void;
@@ -33,7 +33,7 @@ interface Props {
 const MK_DAYS = ['Пон', 'Вто', 'Сре', 'Чет', 'Пет'];
 
 export const WeeklyCollabModal: React.FC<Props> = ({
-  planId, gradeId, weekNumber, ownerName, onViewShared, onClose,
+  planId, annualPlanId, weekNumber, ownerName, onViewShared, onClose,
 }) => {
   const { firebaseUser, user } = useAuth();
   const [tab, setTab] = useState<'share' | 'view'>('share');
@@ -61,7 +61,7 @@ export const WeeklyCollabModal: React.FC<Props> = ({
   }, [tab, planId, firebaseUser?.uid, user?.name, ownerName]);
 
   const shareUrl = collab
-    ? `${window.location.origin}/weekly-plan?collab=${collab.shareToken}&grade=${gradeId}&week=${weekNumber}&owner=${encodeURIComponent(ownerName)}`
+    ? `${window.location.origin}/weekly-plan?collab=${collab.shareToken}&plan=${annualPlanId}&week=${weekNumber}&owner=${encodeURIComponent(ownerName)}`
     : '';
 
   const handleCopyLink = async () => {
@@ -84,12 +84,12 @@ export const WeeklyCollabModal: React.FC<Props> = ({
     const params = new URLSearchParams(window.location.search);
     const token = params.get('collab');
     const ownerParam = params.get('owner');
-    const gradeParam = params.get('grade');
+    const planParam = params.get('plan');
     const weekParam = params.get('week');
-    if (token && ownerParam && gradeParam && weekParam) {
+    if (token && ownerParam && planParam && weekParam) {
       setTab('view');
       setTokenInput(token);
-      handleFindByToken(token, ownerParam, gradeParam, parseInt(weekParam, 10));
+      handleFindByToken(token, ownerParam, planParam, parseInt(weekParam, 10));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -97,7 +97,7 @@ export const WeeklyCollabModal: React.FC<Props> = ({
   const handleFindByToken = async (
     token: string = tokenInput,
     ownerOverride?: string,
-    gradeOverride?: string,
+    planOverride?: string,
     weekOverride?: number,
   ) => {
     setIsSearching(true);
@@ -109,16 +109,16 @@ export const WeeklyCollabModal: React.FC<Props> = ({
         setViewError('Кодот не е пронајден или не е за неделен план.');
         return;
       }
-      // planId format: same as weekly plan docId which we need: uid_gradeId_wWeek
+      // planId format: same as weekly plan docId which we need: uid_annualPlanId_wWeek
       // found.planId is the weekly_plans docId
-      const [ownerUid, gId, wPart] = found.planId.split('_');
+      const [ownerUid, planIdPart, wPart] = found.planId.split('_');
       const wNum = weekOverride ?? parseInt(wPart?.replace('w', '') ?? '1', 10);
-      const resolvedGrade = gradeOverride ?? gId;
+      const resolvedPlanId = planOverride ?? planIdPart;
       const resolvedOwner = ownerOverride ?? found.ownerName;
       setSharedOwner(resolvedOwner);
 
       if (unsubRef.current) unsubRef.current();
-      unsubRef.current = subscribeSharedWeeklyPlan(ownerUid, resolvedGrade, wNum, plan => {
+      unsubRef.current = subscribeSharedWeeklyPlan(ownerUid, resolvedPlanId, wNum, plan => {
         if (!plan) { setViewError('Планот сè уште не е зачуван.'); return; }
         setSharedPlan(plan);
         setViewError(null);

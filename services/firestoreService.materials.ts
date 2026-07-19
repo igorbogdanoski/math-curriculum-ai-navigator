@@ -771,6 +771,17 @@ export interface AnnualPlanDoc {
   ratingsByUid?: Record<string, number>;
   avgRating?: number;
   ratingCount?: number;
+  /**
+   * Wave 6.3 (audit_2026_07_18_full_app_review): "MK/YYYY-YYYY" academic-year
+   * label, set when a teacher copies one of their own plans forward into a
+   * new school year. Distinct from the fork fields above (isForked/
+   * originalPlanId), which describe cross-teacher lineage — this is the same
+   * author copying their own plan, so it deliberately does not increment the
+   * source plan's public `forks` counter or show the "forked from" banner.
+   */
+  schoolYear?: string;
+  /** The plan (by the same author) this was copied forward from, if any. */
+  copiedFromPlanId?: string;
 }
 
 export const toggleAnnualPlanPublic = async (planId: string, isPublic: boolean): Promise<void> => {

@@ -329,7 +329,7 @@ export const WeeklyPlanView: React.FC = () => {
     if (!firebaseUser?.uid || !selectedPlan) return;
     const gradeObj = resolveGradeByLabel(curriculum?.grades ?? [], selectedPlan.planData.grade);
     if (!gradeObj) return;
-    loadWeeklyPlan(firebaseUser.uid, gradeObj.id, weekNumber).then(saved => {
+    loadWeeklyPlan(firebaseUser.uid, selectedPlan.id, weekNumber).then(saved => {
       if (saved) {
         setPeriodsPerDay(saved.periodsPerDay);
         setLastSavedWeek(weekNumber);
@@ -770,10 +770,10 @@ export const WeeklyPlanView: React.FC = () => {
       )}
 
       {/* Weekly Collab Modal */}
-      {showCollabModal && firebaseUser?.uid && gradeObj && (
+      {showCollabModal && firebaseUser?.uid && gradeObj && selectedPlan && (
         <WeeklyCollabModal
-          planId={`${firebaseUser.uid}_${gradeObj.id}_w${weekNumber}`}
-          gradeId={gradeObj.id}
+          planId={`${firebaseUser.uid}_${selectedPlan.id}_w${weekNumber}`}
+          annualPlanId={selectedPlan.id}
           weekNumber={weekNumber}
           ownerName={user?.name ?? t('common.teacher')}
           onViewShared={(plan, ownerName) => {

@@ -5,7 +5,18 @@
  * Required by MK law for grades 1–5 (weekly planning is mandatory).
  *
  * Collection: weekly_plans
- * Document ID: {uid}_{gradeId}_{weekNumber}
+ * Document ID: {uid}_{annualPlanId}_{weekNumber}
+ *
+ * 2026-07-19 (audit_2026_07_18_full_app_review, Wave 6.3): the doc ID used to be
+ * {uid}_{gradeId}_{weekNumber} — scoped only by grade, not by which annual plan
+ * (i.e. which school year) the week belongs to. A teacher who taught the same
+ * grade in two different years, or who copies a prior year's annual plan
+ * forward, would silently overwrite last year's saved week N with this year's
+ * week N the moment they hit Save, since both plans share the same gradeId.
+ * Scoping by annualPlanId instead (every academic_annual_plans doc already has
+ * a unique Firestore ID) makes each plan's weekly data independent regardless
+ * of grade reuse across years. `gradeId`/`gradeLevel` are kept as plain data
+ * fields (still useful for querying/display) — only the document key changed.
  */
 
 import {
@@ -14,6 +25,7 @@ import {
   serverTimestamp, type Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { getCurrentSchoolYear } from '../utils/schoolYear';
 
 export interface WeeklyPlanSlot {
   dayIdx: number;
@@ -38,14 +50,8 @@ export interface SavedWeeklyPlan {
 
 const COLLECTION = 'weekly_plans';
 
-function makeId(uid: string, gradeId: string, weekNumber: number): string {
-  return `${uid}_${gradeId}_w${weekNumber}`;
-}
-
-function currentSchoolYear(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  return now.getMonth() >= 8 ? `${year}/${year + 1}` : `${year - 1}/${year}`;
+function makeId(uid: string, annualPlanId: string, weekNumber: number): string {
+  return `${uid}_${annualPlanId}_w${weekNumber}`;
 }
 
 export const saveWeeklyPlan = async (
@@ -57,13 +63,13 @@ export const saveWeeklyPlan = async (
   periodsPerDay: [number, number, number, number, number],
   slots: WeeklyPlanSlot[],
 ): Promise<void> => {
-  const id = makeId(uid, gradeId, weekNumber);
+  const id = makeId(uid, annualPlanId, weekNumber);
   await setDoc(doc(db, COLLECTION, id), {
     uid,
     gradeId,
     gradeLevel,
     weekNumber,
-    schoolYear: currentSchoolYear(),
+    schoolYear: getCurrentSchoolYear(),
     annualPlanId,
     periodsPerDay,
     slots,
@@ -73,10 +79,10 @@ export const saveWeeklyPlan = async (
 
 export const loadWeeklyPlan = async (
   uid: string,
-  gradeId: string,
+  annualPlanId: string,
   weekNumber: number,
 ): Promise<SavedWeeklyPlan | null> => {
-  const id = makeId(uid, gradeId, weekNumber);
+  const id = makeId(uid, annualPlanId, weekNumber);
   const snap = await getDoc(doc(db, COLLECTION, id));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as SavedWeeklyPlan;
@@ -99,11 +105,11 @@ export const fetchMyWeeklyPlans = async (uid: string): Promise<SavedWeeklyPlan[]
  */
 export const subscribeSharedWeeklyPlan = (
   ownerUid: string,
-  gradeId: string,
+  annualPlanId: string,
   weekNumber: number,
   onData: (plan: SavedWeeklyPlan | null) => void,
 ): Unsubscribe => {
-  const id = `${ownerUid}_${gradeId}_w${weekNumber}`;
+  const id = makeId(ownerUid, annualPlanId, weekNumber);
   return onSnapshot(doc(db, COLLECTION, id), snap => {
     if (!snap.exists()) { onData(null); return; }
     onData({ id: snap.id, ...snap.data() } as SavedWeeklyPlan);

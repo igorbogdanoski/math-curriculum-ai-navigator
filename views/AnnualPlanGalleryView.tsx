@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useNavigation } from '../contexts/NavigationContext';
 import { createAnnualPlan, rateAnnualPlan, toggleAnnualPlanLike } from '../services/firestoreService.materials';
 import { firestorePage } from '../services/firestorePagination';
+import { getNextSchoolYear } from '../utils/schoolYear';
 
 type FilterMode = 'public' | 'mine';
 
@@ -34,6 +35,8 @@ interface SavedPlan {
     avgRating?: number;
     ratingCount?: number;
     ratingsByUid?: Record<string, number>;
+    schoolYear?: string;
+    copiedFromPlanId?: string;
 }
 
 export const AnnualPlanGalleryView: React.FC = () => {
@@ -49,6 +52,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const { navigate } = useNavigation();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [isForking, setIsForking] = useState(false);
+    const [isCopyingYear, setIsCopyingYear] = useState(false);
     const [ratingPending, setRatingPending] = useState<string | null>(null);
     const [likePending, setLikePending] = useState<string | null>(null);
 
@@ -195,7 +199,42 @@ export const AnnualPlanGalleryView: React.FC = () => {
         });
     };
 
-    const filteredPlans = plans.filter(p => 
+    const handleCopyToNewYear = async (plan: SavedPlan) => {
+        if (!user || !firebaseUser?.uid) { addNotification("Мора да сте најавени за да копирате план.", 'warning'); return; }
+        if (isCopyingYear) return;
+
+        const nextYear = getNextSchoolYear(plan.schoolYear);
+
+        setConfirmDialog({
+            message: `Дали сакате да го копирате планот за ${plan.subject} (${plan.grade}) во учебната ${nextYear} година? Ова креира нова, независна копија — оригиналниот план останува непроменет.`,
+            title: 'Копирај за нова учебна година',
+            variant: 'info',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                setIsCopyingYear(true);
+                try {
+                    const newId = await createAnnualPlan(
+                        firebaseUser.uid,
+                        { ...plan.planData },
+                        {
+                            schoolYear: nextYear,
+                            copiedFromPlanId: plan.id,
+                        }
+                    );
+
+                    addNotification(`Планот е копиран за ${nextYear}! Отвора уредувач...`, 'success');
+                    navigate(`/annual-planner/${newId}`);
+                } catch (error) {
+                    logger.error("Failed to copy plan to new school year:", error);
+                    addNotification("Настана грешка при копирањето.", 'error');
+                } finally {
+                    setIsCopyingYear(false);
+                }
+            }
+        });
+    };
+
+    const filteredPlans = plans.filter(p =>
         p.subject.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.grade.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -296,9 +335,19 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                     <span className="text-sm font-medium text-brand-primary bg-blue-50 px-2 py-0.5 rounded">
                                         {plan.grade}
                                     </span>
+                                    {plan.schoolYear && (
+                                        <span className="text-sm font-medium text-teal-600 bg-teal-50 px-2 py-0.5 rounded ml-1">
+                                            {plan.schoolYear}
+                                        </span>
+                                    )}
                                     {plan.isForked && (
                                         <div className="text-[10px] text-indigo-500 mt-1">
                                             ↳ {plan.originalAuthorName ? `Оригинално од: ${plan.originalAuthorName}` : 'Форкнат план'}
+                                        </div>
+                                    )}
+                                    {plan.copiedFromPlanId && (
+                                        <div className="text-[10px] text-teal-500 mt-1">
+                                            ↳ Копиран од претходна учебна година
                                         </div>
                                     )}
                                 </div>
@@ -344,15 +393,27 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                 </div>
 
                                 {plan.userId === firebaseUser?.uid ? (
-                                    <button
-                                        type="button"
-                                        title="Уреди го овој план"
-                                        aria-label="Уреди план"
-                                        className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                                        onClick={() => navigate(`/annual-planner/${plan.id}`)}
-                                    >
-                                        <ICONS.edit className="w-3.5 h-3.5" /> Уреди
-                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            title={`Копирај го овој план за учебната ${getNextSchoolYear(plan.schoolYear)} година`}
+                                            aria-label="Копирај за нова учебна година"
+                                            disabled={isCopyingYear}
+                                            className="px-3 py-1.5 text-xs font-semibold border border-teal-300 text-teal-600 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={() => handleCopyToNewYear(plan)}
+                                        >
+                                            {isCopyingYear ? <ICONS.spinner className="w-3.5 h-3.5 animate-spin" /> : <ICONS.calendar className="w-3.5 h-3.5" />} {getNextSchoolYear(plan.schoolYear)}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            title="Уреди го овој план"
+                                            aria-label="Уреди план"
+                                            className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                            onClick={() => navigate(`/annual-planner/${plan.id}`)}
+                                        >
+                                            <ICONS.edit className="w-3.5 h-3.5" /> Уреди
+                                        </button>
+                                    </div>
                                 ) : (
                                     <button
                                         type="button"
