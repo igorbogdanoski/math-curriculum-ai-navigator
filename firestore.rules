@@ -971,6 +971,15 @@ service cloud.firestore {
         allow create, update: if isAuthenticated() && request.auth.uid == studentId;
         allow delete: if isAdmin();
       }
+
+      // 2026-07-19 (Wave 8.1, audit_2026_07_18_full_app_review): pollCorrectIndex used to
+      // live directly on the session doc above, which every student reads in real time —
+      // meaning the correct answer was visible in the network payload before the host ever
+      // clicked "reveal". Held here instead, readable only by the host, and copied onto the
+      // public session doc by revealGammaPollResults() only at the actual reveal moment.
+      match /host_private/{docId} {
+        allow read, write: if isOwner(get(/databases/$(database)/documents/live_gamma/$(pin)).data.hostUid);
+      }
     }
 
     // Teacher's own saved Gamma presentations — auto-saved by GammaModeModal on mount

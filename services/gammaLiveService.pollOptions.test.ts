@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { setGammaPollOptions, revealGammaPollResults, broadcastGammaSlide, sendGammaExitTicket, setGammaPacingMode, addGammaAnnotationStroke, clearGammaAnnotationStrokes, tallyPollResponses, type GammaLiveResponse, type GammaAnnotationStroke } from './gammaLiveService';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import type { AIGeneratedAssessment } from '../types';
 
 vi.mock('../firebaseConfig', () => ({ db: {} }));
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn((...args) => ['doc-ref', ...args]),
+  getDoc: vi.fn(() => Promise.resolve({ exists: () => false, data: () => ({}) })),
   updateDoc: vi.fn(),
   setDoc: vi.fn(),
   deleteDoc: vi.fn(),
@@ -17,7 +18,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 describe('setGammaPollOptions', () => {
-  it('writes the given options and defaults correctIndex/revealed for an opinion poll (no correctIndex arg)', async () => {
+  it('writes options to the public doc with pollCorrectIndex always null (never leaked publicly)', async () => {
     await setGammaPollOptions('123456', ['А', 'Б']);
     expect(doc).toHaveBeenCalledWith({}, 'live_gamma', '123456');
     expect(updateDoc).toHaveBeenCalledWith(
@@ -26,19 +27,27 @@ describe('setGammaPollOptions', () => {
     );
   });
 
-  it('writes the given correctIndex when the poll has a designated correct answer', async () => {
+  it('writes the real correctIndex only to the host-private subdoc', async () => {
     await setGammaPollOptions('123456', ['А', 'Б', 'В'], 1);
     expect(updateDoc).toHaveBeenCalledWith(
       ['doc-ref', {}, 'live_gamma', '123456'],
-      { pollOptions: ['А', 'Б', 'В'], pollCorrectIndex: 1, pollRevealed: false },
+      { pollOptions: ['А', 'Б', 'В'], pollCorrectIndex: null, pollRevealed: false },
+    );
+    expect(setDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456', 'host_private', 'state'],
+      { pollCorrectIndex: 1 },
     );
   });
 
-  it('clears the poll by writing null', async () => {
+  it('clears the poll by writing null to both docs', async () => {
     await setGammaPollOptions('123456', null);
     expect(updateDoc).toHaveBeenCalledWith(
       ['doc-ref', {}, 'live_gamma', '123456'],
       { pollOptions: null, pollCorrectIndex: null, pollRevealed: false },
+    );
+    expect(setDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456', 'host_private', 'state'],
+      { pollCorrectIndex: null },
     );
   });
 
@@ -49,9 +58,23 @@ describe('setGammaPollOptions', () => {
 });
 
 describe('revealGammaPollResults', () => {
-  it('sets pollRevealed to true', async () => {
+  it('reads the host-private correctIndex and copies it onto the public doc alongside pollRevealed', async () => {
+    vi.mocked(getDoc).mockResolvedValueOnce({ exists: () => true, data: () => ({ pollCorrectIndex: 2 }) } as never);
     await revealGammaPollResults('123456');
-    expect(updateDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456'], { pollRevealed: true });
+    expect(getDoc).toHaveBeenCalledWith(['doc-ref', {}, 'live_gamma', '123456', 'host_private', 'state']);
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { pollRevealed: true, pollCorrectIndex: 2 },
+    );
+  });
+
+  it('falls back to null when the host-private doc has no correctIndex (opinion poll)', async () => {
+    vi.mocked(getDoc).mockResolvedValueOnce({ exists: () => false, data: () => ({}) } as never);
+    await revealGammaPollResults('123456');
+    expect(updateDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456'],
+      { pollRevealed: true, pollCorrectIndex: null },
+    );
   });
 
   it('swallows write failures', async () => {
@@ -66,6 +89,14 @@ describe('broadcastGammaSlide', () => {
     expect(updateDoc).toHaveBeenCalledWith(
       ['doc-ref', {}, 'live_gamma', '123456'],
       { slideIdx: 3, responseCount: 0, handsUids: [], pollOptions: null, pollCorrectIndex: null, pollRevealed: false, annotationStrokes: [] },
+    );
+  });
+
+  it('also clears the host-private correctIndex so a stale answer never lingers into the next slide', async () => {
+    await broadcastGammaSlide('123456', 3);
+    expect(setDoc).toHaveBeenCalledWith(
+      ['doc-ref', {}, 'live_gamma', '123456', 'host_private', 'state'],
+      { pollCorrectIndex: null },
     );
   });
 });

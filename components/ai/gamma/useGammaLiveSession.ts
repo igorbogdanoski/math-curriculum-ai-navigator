@@ -6,6 +6,7 @@ import {
   endGammaLive,
   subscribeGammaSession,
   subscribeGammaResponses,
+  subscribeGammaHostPrivateState,
   setGammaPollOptions,
   revealGammaPollResults,
   setGammaPacingMode,
@@ -49,6 +50,7 @@ export function useGammaLiveSession({
 
   const liveUnsubRef = useRef<(() => void) | null>(null);
   const liveSessionUnsubRef = useRef<(() => void) | null>(null);
+  const hostPrivateUnsubRef = useRef<(() => void) | null>(null);
 
   const startLiveSession = useCallback(async () => {
     if (!firebaseUid || isStartingLive || gammaLivePin) return;
@@ -62,10 +64,13 @@ export function useGammaLiveSession({
       liveSessionUnsubRef.current = subscribeGammaSession(pin, session => {
         setLiveHandsCount(session?.handsUids?.length ?? 0);
         setActivePollOptions(session?.pollOptions ?? null);
-        setActivePollCorrectIndex(session?.pollCorrectIndex ?? null);
         setActivePollRevealed(session?.pollRevealed ?? false);
         setPacingModeDisplay(session?.pacingMode ?? 'locked');
       });
+      // Sourced from the host-private subdoc (not the public session doc above) so the
+      // teacher keeps seeing the correct answer highlighted while the poll is still running,
+      // pre-reveal — see firestore.rules' host_private/state match and gammaLiveService.ts.
+      hostPrivateUnsubRef.current = subscribeGammaHostPrivateState(pin, setActivePollCorrectIndex);
     } catch {
       addNotification('Gamma Live: грешка при старт', 'error');
     } finally {
@@ -81,6 +86,8 @@ export function useGammaLiveSession({
     liveUnsubRef.current = null;
     liveSessionUnsubRef.current?.();
     liveSessionUnsubRef.current = null;
+    hostPrivateUnsubRef.current?.();
+    hostPrivateUnsubRef.current = null;
     setGammaLivePin(null);
     setLiveResponses([]);
     setLiveHandsCount(0);
@@ -159,7 +166,11 @@ export function useGammaLiveSession({
   }, [currentSlideIdx]);
 
   // Cleanup live subscriptions on unmount
-  useEffect(() => () => { liveUnsubRef.current?.(); liveSessionUnsubRef.current?.(); }, []);
+  useEffect(() => () => {
+    liveUnsubRef.current?.();
+    liveSessionUnsubRef.current?.();
+    hostPrivateUnsubRef.current?.();
+  }, []);
 
   return {
     gammaLivePin, isStartingLive, liveResponses, liveHandsCount,

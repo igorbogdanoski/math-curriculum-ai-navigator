@@ -5,7 +5,7 @@
  *   live_gamma/{pin}/responses/{studentId} — student answers
  */
 import {
-  doc, setDoc, updateDoc, onSnapshot,
+  doc, getDoc, setDoc, updateDoc, onSnapshot,
   collection, serverTimestamp, arrayUnion, arrayRemove,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -25,7 +25,9 @@ export interface GammaLiveSession {
   handsUids: string[];
   /** Live poll options for the current slide, set ad-hoc by the host; null when no poll is active. */
   pollOptions?: string[] | null;
-  /** Index into pollOptions marking the correct answer; null = opinion poll, no right answer. */
+  /** Index into pollOptions marking the correct answer — only present on this public doc AFTER
+   *  revealGammaPollResults() copies it over from the host-private subcollection below; null
+   *  beforehand (also true for opinion polls with no right answer, even after reveal). */
   pollCorrectIndex?: number | null;
   /** Whether poll results are currently visible to students (host-controlled reveal moment). */
   pollRevealed?: boolean;
@@ -94,6 +96,7 @@ export async function broadcastGammaSlide(pin: string, slideIdx: number): Promis
       pollOptions: null, pollCorrectIndex: null, pollRevealed: false,
       annotationStrokes: [],
     });
+    await setDoc(doc(db, 'live_gamma', pin, 'host_private', 'state'), { pollCorrectIndex: null });
   } catch (err) {
     logger.warn('[GammaLive] broadcastSlide failed:', err);
   }
@@ -123,24 +126,31 @@ export async function clearGammaAnnotationStrokes(pin: string): Promise<void> {
 /** Sets (or clears, with null) the live poll options for the current slide. A freshly-started
  *  poll always starts unrevealed — the host explicitly reveals results via
  *  revealGammaPollResults(). Host-only — covered by firestore.rules' isOwner(hostUid)
- *  full-write branch on the session doc. */
+ *  full-write branch on the session doc. The correct answer itself is written only to the
+ *  host_private/state subdoc (see firestore.rules), never to the public session doc, so
+ *  students can't read it out of the live snapshot before the host reveals it. */
 export async function setGammaPollOptions(pin: string, options: string[] | null, correctIndex?: number | null): Promise<void> {
   try {
     await updateDoc(doc(db, 'live_gamma', pin), {
       pollOptions: options,
-      pollCorrectIndex: correctIndex ?? null,
+      pollCorrectIndex: null,
       pollRevealed: false,
     });
+    await setDoc(doc(db, 'live_gamma', pin, 'host_private', 'state'), { pollCorrectIndex: correctIndex ?? null });
   } catch (err) {
     logger.warn('[GammaLive] setPollOptions failed:', err);
   }
 }
 
 /** Reveals live poll results to students — the Kahoot-style "moment" the host triggers once
- *  ready, rather than results always being visible immediately after voting. */
+ *  ready, rather than results always being visible immediately after voting. Copies the
+ *  correct-answer index from the host-private subdoc onto the public session doc, which is
+ *  the only point at which students' live snapshot of live_gamma/{pin} gains that field. */
 export async function revealGammaPollResults(pin: string): Promise<void> {
   try {
-    await updateDoc(doc(db, 'live_gamma', pin), { pollRevealed: true });
+    const privateSnap = await getDoc(doc(db, 'live_gamma', pin, 'host_private', 'state'));
+    const pollCorrectIndex = privateSnap.exists() ? (privateSnap.data().pollCorrectIndex ?? null) : null;
+    await updateDoc(doc(db, 'live_gamma', pin), { pollRevealed: true, pollCorrectIndex });
   } catch (err) {
     logger.warn('[GammaLive] revealPollResults failed:', err);
   }
@@ -192,6 +202,21 @@ export function subscribeGammaSession(
     callback(snap.exists() ? (snap.data() as GammaLiveSession) : null);
   }, err => {
     logger.warn('[GammaLive] subscribeSession error:', err);
+    callback(null);
+  });
+}
+
+/** Host-only: streams the live-private correct-answer index (see host_private/state in
+ *  firestore.rules) so the teacher's own dashboard can highlight the correct option while a
+ *  poll is running, without that value ever touching the public session doc students read. */
+export function subscribeGammaHostPrivateState(
+  pin: string,
+  callback: (pollCorrectIndex: number | null) => void,
+): () => void {
+  return onSnapshot(doc(db, 'live_gamma', pin, 'host_private', 'state'), snap => {
+    callback(snap.exists() ? (snap.data().pollCorrectIndex ?? null) : null);
+  }, err => {
+    logger.warn('[GammaLive] subscribeHostPrivateState error:', err);
     callback(null);
   });
 }

@@ -64,6 +64,7 @@ vi.mock('../../../services/gammaLiveService', () => ({
   endGammaLive: vi.fn().mockResolvedValue(undefined),
   subscribeGammaSession: vi.fn(() => () => {}),
   subscribeGammaResponses: vi.fn(() => () => {}),
+  subscribeGammaHostPrivateState: vi.fn(() => () => {}),
   broadcastGammaSlide: vi.fn().mockResolvedValue(undefined),
   setGammaPollOptions: vi.fn().mockResolvedValue(undefined),
   revealGammaPollResults: vi.fn().mockResolvedValue(undefined),

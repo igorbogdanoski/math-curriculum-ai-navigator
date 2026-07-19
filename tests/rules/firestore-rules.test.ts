@@ -968,6 +968,31 @@ d('SEC-2 — Firestore rules coverage', () => {
         studentName: 'hijacked', answer: '0', slideIdx: 0,
       }));
     });
+
+    it('host_private/state: only the host can read/write it — a student cannot read the poll correct-answer before reveal (Wave 8.1)', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('live_gamma/666666').set({
+          pin: '666666', hostUid: 'host1', topic: 'Т', gradeLevel: 5, slideIdx: 0,
+          slides: [], isActive: true, responseCount: 0, handsUids: [],
+        });
+      });
+      const host = testEnv.authenticatedContext('host1');
+      const hf = host.firestore() as unknown as {
+        doc(p: string): { set(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> };
+      };
+      await assertSucceeds(hf.doc('live_gamma/666666/host_private/state').set({ pollCorrectIndex: 1 }));
+      await assertSucceeds(hf.doc('live_gamma/666666/host_private/state').get());
+
+      const student = testEnv.authenticatedContext('student-uid-1', { firebase: { sign_in_provider: 'anonymous' } });
+      const sf = student.firestore() as unknown as {
+        doc(p: string): { get(): Promise<unknown>; set(d: Record<string, unknown>): Promise<unknown> };
+      };
+      await assertFails(sf.doc('live_gamma/666666/host_private/state').get());
+      await assertFails(sf.doc('live_gamma/666666/host_private/state').set({ pollCorrectIndex: 1 }));
+    });
   });
 
   describe('gamma_presentations/{id} — owner-scoped Gamma library (2026-07-12)', () => {
