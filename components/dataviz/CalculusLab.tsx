@@ -3,6 +3,7 @@ import { generateCalculusSet } from './calculusMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Math helpers ─────────────────────────────────────────────────────────────
 type FnDef = { label: string; f: (x: number) => number; df: (x: number) => number; antiderivative?: (x: number) => number; latexLabel: string };
@@ -51,6 +52,7 @@ function fmt(v: number) { return isNaN(v) || !isFinite(v) ? '—' : v.toFixed(4)
 
 // ─── Derivative sub-tab ───────────────────────────────────────────────────────
 function DerivativeLab() {
+  const { t } = useLanguage();
   const [fnIdx, setFnIdx] = useState(0);
   const [xPos, setXPos] = useState(1.0);
   const fn = FUNCTIONS[fnIdx];
@@ -98,15 +100,15 @@ function DerivativeLab() {
         <label className="text-sm font-semibold text-gray-600 w-16">x =</label>
         <input type="range" min={xMin} max={xMax} step={0.05} value={xPos}
           onChange={e => setXPos(parseFloat(e.target.value))}
-          className="flex-1 accent-indigo-600" aria-label="x позиција" />
+          className="flex-1 accent-indigo-600" aria-label={t('dataviz.calcLab.xPosition')} />
         <span className="w-14 text-right text-sm font-bold text-indigo-700">{xPos.toFixed(2)}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: fn.latexLabel, value: '—', sub: 'функција' },
-          { label: `f(${xPos.toFixed(2)})`, value: fmt(fx), sub: 'вредност' },
-          { label: `f′(${xPos.toFixed(2)})`, value: fmt(dfx), sub: 'извод', highlight: true },
+          { label: fn.latexLabel, value: '—', sub: t('dataviz.calcLab.function') },
+          { label: `f(${xPos.toFixed(2)})`, value: fmt(fx), sub: t('dataviz.calcLab.value') },
+          { label: `f′(${xPos.toFixed(2)})`, value: fmt(dfx), sub: t('dataviz.calcLab.derivative'), highlight: true },
         ].map(({ label, value, sub, highlight }) => (
           <div key={label} className={`rounded-xl p-3 text-center border ${highlight ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'}`}>
             <p className="text-[11px] text-gray-400 font-semibold">{sub}</p>
@@ -147,8 +149,7 @@ function DerivativeLab() {
       </div>
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700">
-        <strong>Геометриско значење:</strong> Изводот f′(x₀) е наклонот на тангентата на кривата во точката (x₀, f(x₀)).
-        Нумеричка апроксимација: f′(x) ≈ [f(x+h)−f(x−h)] / 2h за мало h.
+        <strong>{t('dataviz.calcLab.geomMeaning')}</strong> {t('dataviz.calcLab.geomMeaningBody')}
       </div>
     </div>
   );
@@ -158,6 +159,7 @@ function DerivativeLab() {
 type RiemannMethod = 'left' | 'right' | 'midpoint' | 'trapezoid';
 
 function RiemannLab() {
+  const { t } = useLanguage();
   const [fnIdx, setFnIdx] = useState(0);
   const [a, setA] = useState(0);
   const [b, setB] = useState(2);
@@ -216,8 +218,8 @@ function RiemannLab() {
   const zeroY = toSVG(0, 0, xMin, xMax, yMin, yMax);
 
   const METHODS: { id: RiemannMethod; label: string }[] = [
-    { id: 'left', label: 'Лева' }, { id: 'right', label: 'Десна' },
-    { id: 'midpoint', label: 'Средина' }, { id: 'trapezoid', label: 'Трапез' },
+    { id: 'left', label: t('dataviz.calcLab.methodLeft') }, { id: 'right', label: t('dataviz.calcLab.methodRight') },
+    { id: 'midpoint', label: t('dataviz.calcLab.methodMidpoint') }, { id: 'trapezoid', label: t('dataviz.calcLab.methodTrapezoid') },
   ];
 
   return (
@@ -233,9 +235,9 @@ function RiemannLab() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
-          { label: 'Долна граница a', val: a, setVal: setA, min: -2, max: b - 0.1, step: 0.1, color: 'emerald' },
-          { label: 'Горна граница b', val: b, setVal: setB, min: a + 0.1, max: 3, step: 0.1, color: 'emerald' },
-          { label: `Правоаголници n = ${n}`, val: n, setVal: (v: number) => setN(Math.round(v)), min: 1, max: 50, step: 1, color: 'emerald' },
+          { label: t('dataviz.calcLab.lowerBound'), val: a, setVal: setA, min: -2, max: b - 0.1, step: 0.1, color: 'emerald' },
+          { label: t('dataviz.calcLab.upperBound'), val: b, setVal: setB, min: a + 0.1, max: 3, step: 0.1, color: 'emerald' },
+          { label: t('dataviz.calcLab.rectangles').replace('{n}', String(n)), val: n, setVal: (v: number) => setN(Math.round(v)), min: 1, max: 50, step: 1, color: 'emerald' },
         ].map(({ label, val, setVal, min, max, step, color }) => (
           <div key={label}>
             <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
@@ -259,15 +261,15 @@ function RiemannLab() {
 
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-200">
-          <p className="text-[11px] text-gray-400 font-semibold">Апроксимација</p>
+          <p className="text-[11px] text-gray-400 font-semibold">{t('dataviz.calcLab.approx')}</p>
           <p className="text-lg font-extrabold text-emerald-700">{fmt(approx)}</p>
         </div>
         <div className="rounded-xl p-3 text-center bg-gray-50 border border-gray-200">
-          <p className="text-[11px] text-gray-400 font-semibold">Точна вредност</p>
+          <p className="text-[11px] text-gray-400 font-semibold">{t('dataviz.calcLab.exactValue')}</p>
           <p className="text-lg font-extrabold text-gray-700">{exact !== null ? fmt(exact) : '—'}</p>
         </div>
         <div className="rounded-xl p-3 text-center bg-amber-50 border border-amber-200">
-          <p className="text-[11px] text-gray-400 font-semibold">Грешка |Δ|</p>
+          <p className="text-[11px] text-gray-400 font-semibold">{t('dataviz.calcLab.errorLabel')}</p>
           <p className="text-lg font-extrabold text-amber-700">{error !== null ? fmt(error) : '—'}</p>
         </div>
       </div>
@@ -304,8 +306,8 @@ function RiemannLab() {
       </div>
 
       <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-700">
-        <strong>Римановата сума:</strong> ∫ᵃᵇ f(x) dx ≈ Σ f(xᵢ*)·Δx &nbsp;|&nbsp;
-        Зголемувањето на n ја намалува грешката. Методот трапез конвергира побрзо (ред O(h²) наспроти O(h)).
+        <strong>{t('dataviz.calcLab.riemannSum')}</strong> ∫ᵃᵇ f(x) dx ≈ Σ f(xᵢ*)·Δx &nbsp;|&nbsp;
+        {t('dataviz.calcLab.riemannSumBody')}
       </div>
     </div>
   );
@@ -313,6 +315,7 @@ function RiemannLab() {
 
 // ─── Limits sub-tab ───────────────────────────────────────────────────────────
 function LimitsLab() {
+  const { t } = useLanguage();
   const [fnIdx, setFnIdx] = useState(0);
   const lf = LIMIT_FUNCTIONS[fnIdx];
 
@@ -360,8 +363,8 @@ function LimitsLab() {
 
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: `x → ${lf.approach}⁻ (оддолу)`, rows: leftRows, color: 'rose' },
-          { label: `x → ${lf.approach}⁺ (одгоре)`, rows: rightRows, color: 'indigo' },
+          { label: t('dataviz.calcLab.belowLabel').replace('{val}', String(lf.approach)), rows: leftRows, color: 'rose' },
+          { label: t('dataviz.calcLab.aboveLabel').replace('{val}', String(lf.approach)), rows: rightRows, color: 'indigo' },
         ].map(({ label, rows, color }) => (
           <div key={label}>
             <p className={`text-[11px] font-bold text-${color}-600 mb-1.5 uppercase tracking-wide`}>{label}</p>
@@ -394,8 +397,8 @@ function LimitsLab() {
       </div>
 
       <div className="bg-violet-50 border border-violet-100 rounded-xl p-3 text-xs text-violet-700">
-        <strong>Дефиниција:</strong> Ако f(x) → L кога x → a и оддолу и одгоре, велиме дека lim<sub>x→a</sub> f(x) = L.
-        Шупливиот круг покажува дека f(a) може да не биде дефинирана во таа точка.
+        <strong>{t('dataviz.calcLab.definition')}</strong> {t('dataviz.calcLab.definitionPart1')}<sub>x→a</sub> {t('dataviz.calcLab.definitionPart2')}
+        {t('dataviz.calcLab.definitionPart3')}
       </div>
     </div>
   );
@@ -420,23 +423,24 @@ import { LogExpLab } from './LogExpLab';
 type CalcTab = 'deriv' | 'riemann' | 'limits' | 'logexp' | 'exercises';
 
 export function CalculusLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<CalcTab>('deriv');
 
   const TABS: { id: CalcTab; label: string; color: string }[] = [
-    { id: 'deriv',     label: '∂ Изводи',           color: 'indigo'  },
-    { id: 'riemann',   label: '∫ Риманови суми',     color: 'emerald' },
-    { id: 'limits',    label: 'lim Граници',         color: 'violet'  },
-    { id: 'logexp',    label: 'log / exp',           color: 'amber'   },
-    { id: 'exercises', label: '✏️ Вежбај',           color: 'rose'    },
+    { id: 'deriv',     label: t('dataviz.calcLab.tabDeriv'),    color: 'indigo'  },
+    { id: 'riemann',   label: t('dataviz.calcLab.tabRiemann'),  color: 'emerald' },
+    { id: 'limits',    label: t('dataviz.calcLab.tabLimits'),   color: 'violet'  },
+    { id: 'logexp',    label: t('dataviz.calcLab.tabLogExp'),   color: 'amber'   },
+    { id: 'exercises', label: t('dataviz.calcLab.tabExercises'), color: 'rose'    },
   ];
 
   return (
     <div className="space-y-5">
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === t.id ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {t.label}
+        {TABS.map(ct => (
+          <button key={ct.id} type="button" onClick={() => setTab(ct.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === ct.id ? `border-${ct.color}-500 bg-${ct.color}-50 text-${ct.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {ct.label}
           </button>
         ))}
       </div>
