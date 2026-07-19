@@ -50,7 +50,7 @@
         "В": "$2(x+2) < x+2$",
         "Г": "$2(x+2) \\le x+2$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Б",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -76,7 +76,7 @@
         "В": "$x \\in \\{3,9\\}$",
         "Г": "$x \\in \\{0,3,6,9\\}$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Б",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -102,7 +102,7 @@
         "В": "$1 \\notin B$",
         "Г": "$1 \\in A \\cup B$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Г",
       "topic": "Интервали",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -128,7 +128,7 @@
         "В": "$a = b$",
         "Г": "$a = -b$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "В",
       "topic": "Линеарни равенки со параметар",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -154,7 +154,7 @@
         "В": "$k \\in (-\\infty, 2]$",
         "Г": "$k \\in [2, \\infty)$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "А",
       "topic": "Квадратни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -180,7 +180,7 @@
         "В": "$6\\sqrt{6}\\text{ cm}$",
         "Г": "$3\\sqrt{6}\\text{ cm}$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Б",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -207,7 +207,7 @@
         "В": "$180\\text{ cm}^3$",
         "Г": "$60\\text{ cm}^3$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Б",
       "topic": "Пирамида",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -234,7 +234,7 @@
         "В": "$12(\\pi - 3\\sqrt{3})\\text{ cm}^2$",
         "Г": "$(36\\sqrt{3} - 12\\pi)\\text{ cm}^2$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "В",
       "topic": "Кружница и круг",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -261,7 +261,7 @@
         "В": "$60\\text{ cm}^2$",
         "Г": "$80\\text{ cm}^2$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "Б",
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -288,7 +288,7 @@
         "В": "$\\alpha = 126^\\circ$ dir.",
         "Г": "$\\alpha = 252^\\circ$ dir."
       },
-      "correctAnswer": "X",
+      "correctAnswer": "А",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -314,7 +314,7 @@
         "В": "$2x - 3y + 5 = 0$",
         "Г": "$2x + 3y - 5 = 0$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": "А",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,

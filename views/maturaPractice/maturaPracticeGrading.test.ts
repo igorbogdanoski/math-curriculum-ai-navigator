@@ -183,6 +183,15 @@ describe('recordMcSpacedReview', () => {
     expect(recordMaturaSpacedReview).not.toHaveBeenCalled();
   });
 
+  // 2026-07-19 (audit_2026_07_18_full_app_review, Wave 4 follow-up): needsReview questions
+  // (our own ingested data is internally inconsistent — not a state-committee void) get the
+  // same never-score treatment as voided.
+  it('does not record anything for a needsReview question, regardless of what was selected', () => {
+    const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: null as unknown as string, needsReview: true, reviewReason: 'изборите не одговараат на премисата' });
+    recordMcSpacedReview('u1', q, 'А');
+    expect(recordMaturaSpacedReview).not.toHaveBeenCalled();
+  });
+
   it('records a correct MC answer normally for a non-voided question', () => {
     const q = makeQ({ part: 1, questionType: 'mc', correctAnswer: 'А', points: 1 });
     recordMcSpacedReview('u1', q, 'А');

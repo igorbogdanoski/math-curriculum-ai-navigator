@@ -143,8 +143,8 @@ ${item.questionText}
     onUpdate({ submitted: true });
   }, [onUpdate]);
 
-  const mcCorrect = !open && !item.voided && state.submitted && state.mcPick === item.correctAnswer?.trim();
-  const mcWrong   = !open && !item.voided && state.submitted && state.mcPick !== item.correctAnswer?.trim();
+  const mcCorrect = !open && !item.voided && !item.needsReview && state.submitted && state.mcPick === item.correctAnswer?.trim();
+  const mcWrong   = !open && !item.voided && !item.needsReview && state.submitted && state.mcPick !== item.correctAnswer?.trim();
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -185,8 +185,24 @@ ${item.questionText}
         </div>
       )}
 
+      {/* ── Part 1 MC: needsReview (our own ingested data is inconsistent for this question,
+           not a state-committee decision — see MaturaQuestion.needsReview) ── */}
+      {!open && item.needsReview && (
+        <div className="px-5 pb-4 space-y-2 mt-2">
+          {availableChoices.map(choice => (
+            <div key={choice} className="w-full flex items-start gap-3 px-4 py-2.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-left opacity-60">
+              <span className="font-black shrink-0">{choice}.</span>
+              <MathRenderer text={item.choices![choice]!} />
+            </div>
+          ))}
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            <span className="font-bold">Ова прашање моментално не се бодува</span> — детектиран е проблем со внесените податоци{item.reviewReason ? ` (${item.reviewReason})` : ''}. Не влијае на резултатот.
+          </div>
+        </div>
+      )}
+
       {/* ── Part 1 MC ── */}
-      {!open && !item.voided && (
+      {!open && !item.voided && !item.needsReview && (
         <div className="px-5 pb-4 space-y-2 mt-2">
           {availableChoices.map((choice, choiceIdx) => {
             const isCorrectChoice = choice === item.correctAnswer?.trim();

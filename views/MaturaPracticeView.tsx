@@ -191,8 +191,9 @@ export function MaturaPracticeView() {
     states.slice(0, current).forEach((s, i) => {
       const item = queue[i];
       // Officially voided questions carry no correct answer and are excluded from both
-      // the numerator and denominator — they're not part of the scored exam at all.
-      if (!item || item.voided) return;
+      // the numerator and denominator — they're not part of the scored exam at all. Same
+      // exclusion for needsReview questions (our own data defect, not a state-committee void).
+      if (!item || item.voided || item.needsReview) return;
       max += item.points;
       if (!isOpen(item) && s.submitted && s.mcPick === item.correctAnswer?.trim()) scored += 1;
       else if (item.part === 2 && s.aiGrade) scored += s.aiGrade.score;
@@ -217,7 +218,7 @@ export function MaturaPracticeView() {
 
     queue.forEach((item, i) => {
       const s = states[i];
-      if (item.voided) return;
+      if (item.voided || item.needsReview) return;
       if (topicArea && item.topicArea !== topicArea) return;
       matched++;
       if (!isOpen(item)) {
@@ -238,7 +239,7 @@ export function MaturaPracticeView() {
     if (matched === 0) {
       queue.forEach((item, i) => {
         const s = states[i];
-        if (item.voided) return;
+        if (item.voided || item.needsReview) return;
         if (!isOpen(item)) {
           max += 1;
           if (s.submitted && s.mcPick === item.correctAnswer?.trim()) scored += 1;

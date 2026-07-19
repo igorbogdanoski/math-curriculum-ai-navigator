@@ -19,7 +19,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const VALID_CHOICES = ['А', 'Б', 'В', 'Г'];
-const VALID_CORRECT_ANSWERS = [...VALID_CHOICES, 'X'];
+// 2026-07-19 (Wave 4.2, audit_2026_07_18_full_app_review): 'X' used to be accepted here as a
+// placeholder for "answer not yet backfilled" — removed now that the last 13 X placeholders
+// across the whole matura dataset were closed out (11 copied from the sibling MK/AL exam's
+// answer key, 2 marked `needsReview` instead, since their ingested choices don't match any
+// correct answer). A real import should never produce 'X' again; if one does, it's a bug.
+const VALID_CORRECT_ANSWERS = [...VALID_CHOICES];
 const VALID_TOPIC_AREAS = [
   'algebra', 'analiza', 'geometrija', 'statistika',
   'kombinatorika', 'trigonometrija', 'matrici-vektori', 'broevi', 'logika',
@@ -140,6 +145,14 @@ if (Array.isArray(questions)) {
           errors.push(`${loc}: voided question must not have a correctAnswer`);
         if (!q.voidedReason)
           warnings.push(`${loc}: voided question is missing voidedReason`);
+      } else if (q.needsReview) {
+        // Our own ingested data is internally inconsistent for this question (see
+        // MaturaQuestion.needsReview) — same "no correctAnswer, never auto-score" contract
+        // as voided, but distinct: it's our data defect, not a state-committee decision.
+        if (q.correctAnswer)
+          errors.push(`${loc}: needsReview question must not have a correctAnswer`);
+        if (!q.reviewReason)
+          warnings.push(`${loc}: needsReview question is missing reviewReason`);
       } else if (!q.correctAnswer) {
         errors.push(`${loc}: missing correctAnswer`);
       } else if (!VALID_CORRECT_ANSWERS.includes(q.correctAnswer)) {

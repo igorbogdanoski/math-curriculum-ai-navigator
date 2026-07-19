@@ -56,6 +56,8 @@ interface LocalMaturaRawQuestion {
   curriculumRefs?: MaturaCurriculumRefs;
   voided?: boolean;
   voidedReason?: string;
+  needsReview?: boolean;
+  reviewReason?: string;
 }
 
 interface LocalMaturaRawExam {
@@ -124,6 +126,17 @@ export interface MaturaQuestion {
    */
   voided?: boolean;
   voidedReason?: string;
+  /**
+   * True when our own ingested data for this question is internally inconsistent (e.g. the
+   * premise doesn't produce any of the listed choices, likely an OCR/transcription defect
+   * from the original import) — distinct from `voided`, which means the state exam committee
+   * itself discarded the question. correctAnswer is null and this question must never be
+   * auto-scored or fed into spaced repetition, same as voided, but the UI must not claim the
+   * state committee voided it — see reviewReason for the actual explanation.
+   * See audit_2026_07_18_full_app_review, Wave 4 (2026-07-19 follow-up), for provenance.
+   */
+  needsReview?: boolean;
+  reviewReason?: string;
 }
 
 /** Cached AI grade result stored in `matura_ai_grades/{cacheKey}`. */
