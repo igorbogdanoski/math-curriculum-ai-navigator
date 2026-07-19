@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" width="240" height="300" role="img" aria-label="Рамностран конус залепен врз рамностран цилиндар со иста основа">
+  <g fill="none" stroke="#1f2937" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- cylinder body -->
+    <line x1="60" y1="140" x2="60" y2="260" />
+    <line x1="180" y1="140" x2="180" y2="260" />
+    <!-- cylinder bottom (visible) -->
+    <ellipse cx="120" cy="260" rx="60" ry="16" />
+    <!-- shared base between cone and cylinder (hidden, dashed) -->
+    <ellipse cx="120" cy="140" rx="60" ry="16" stroke-dasharray="5 5" />
+    <!-- cone slant sides -->
+    <line x1="60" y1="140" x2="120" y2="30" />
+    <line x1="180" y1="140" x2="120" y2="30" />
+    <!-- radius marker on cylinder base -->
+    <line x1="120" y1="260" x2="180" y2="260" stroke-dasharray="3 3" stroke-width="1.5" />
+  </g>
+  <text x="150" y="256" font-family="sans-serif" font-size="13" fill="#1f2937">r</text>
+  <text x="34" y="200" font-family="sans-serif" font-size="13" fill="#1f2937">H</text>
+  <text x="128" y="90" font-family="sans-serif" font-size="13" fill="#1f2937">l</text>
+</svg>
