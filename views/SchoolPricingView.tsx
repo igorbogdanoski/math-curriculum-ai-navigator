@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Building2, Users, CheckCircle2, Send, Shield, Headphones, BarChart3, Crown } from 'lucide-react';
 import { schoolService } from '../services/firestoreService.school';
+import { SUPPORT_EMAIL } from '../data/pricingConstants';
 
 const SCHOOL_FEATURES = [
   { icon: Users,      label: 'Неограничени наставници',      desc: 'Цело училиште под еден план' },
@@ -182,7 +183,7 @@ export const SchoolPricingView: React.FC = () => {
                 </div>
 
                 {status === 'error' && (
-                  <p className="text-red-500 text-xs">Грешка при испраќање. Обидете се повторно или пишете на contact@mismath.net</p>
+                  <p className="text-red-500 text-xs">Грешка при испраќање. Обидете се повторно или пишете на {SUPPORT_EMAIL}</p>
                 )}
 
                 <button
@@ -196,8 +197,8 @@ export const SchoolPricingView: React.FC = () => {
 
                 <p className="text-xs text-center text-slate-400">
                   Или директно на{' '}
-                  <a href="mailto:contact@mismath.net" className="text-indigo-600 hover:underline font-medium">
-                    contact@mismath.net
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600 hover:underline font-medium">
+                    {SUPPORT_EMAIL}
                   </a>
                 </p>
               </form>

@@ -3,14 +3,7 @@ import { Helmet } from 'react-helmet-async';
 
 import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-// ── Pricing constants ──────────────────────────────────────────────────────
-const PRO_PRICE_MKD = 1500;
-const PRO_PRICE_MONTHLY = Math.round(PRO_PRICE_MKD / 12);
-const BANK_ACCOUNT = '210501596102457';
-const BANK_NAME = 'НЛБ Банка';
-const BANK_RECIPIENT = 'Игор Богданоски';
-const CONTACT_EMAIL = 'bogdanoskiigor@gmail.com';
+import { PRO_PRICE_MKD, PRO_PRICE_MONTHLY, BANK_ACCOUNT, BANK_NAME, BANK_RECIPIENT, SUPPORT_EMAIL as CONTACT_EMAIL } from '../data/pricingConstants';
 
 // ── Feature comparison ─────────────────────────────────────────────────────
 const FEATURES: Array<{ label: string; free: string | boolean; pro: string | boolean; school: string | boolean }> = [

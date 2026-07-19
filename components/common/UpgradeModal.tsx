@@ -4,6 +4,7 @@ import { X, Sparkles, Check, Crown, Users, Loader2, ExternalLink } from 'lucide-
 import { useAuth } from '../../contexts/AuthContext';
 import { AppError, ErrorCode } from '../../utils/errors';
 import { ModalContainer } from './ModalContainer';
+import { PRO_PRICE_MKD, PRO_PRICE_MONTHLY, SUPPORT_EMAIL } from '../../data/pricingConstants';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -93,10 +94,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
                 <h4 className="text-lg font-bold text-gray-800">Pro Наставник</h4>
               </div>
               <div className="mb-1">
-                <span className="text-3xl font-black text-gray-900">1200</span>
+                <span className="text-3xl font-black text-gray-900">{PRO_PRICE_MKD}</span>
                 <span className="text-gray-500 font-medium"> МКД / год.</span>
               </div>
-              <p className="text-xs text-gray-500 mb-4">Само 100 денари месечно. Целосен пристап до сите алатки.</p>
+              <p className="text-xs text-gray-500 mb-4">Само {PRO_PRICE_MONTHLY} денари месечно. Целосен пристап до сите алатки.</p>
 
               {/* Primary: Stripe */}
               <button
@@ -125,8 +126,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
                   <p><strong>Сметка:</strong> 210501596102457</p>
                   <p><strong>Цел:</strong> Претплата за AI Navigator</p>
                   <p className="text-gray-500 pt-1">Пратете доказ на:</p>
-                  <a href="mailto:bogdanoskiigor@gmail.com" className="text-indigo-600 font-bold flex items-center gap-1 hover:underline">
-                    ✉️ bogdanoskiigor@gmail.com
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-600 font-bold flex items-center gap-1 hover:underline">
+                    ✉️ {SUPPORT_EMAIL}
                   </a>
                 </div>
               </details>
@@ -156,8 +157,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
               <div className="mt-auto bg-purple-50 p-3 rounded-lg text-sm text-purple-900">
                 <p className="font-bold mb-1">Побарајте понуда:</p>
                 Контактирајте нè за официјална понуда на:<br/>
-                <a href="mailto:contact@mismath.net" className="text-purple-700 font-bold block mt-1 hover:underline">
-                  contact@mismath.net
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-purple-700 font-bold block mt-1 hover:underline">
+                  {SUPPORT_EMAIL}
                 </a>
               </div>
             </div>
