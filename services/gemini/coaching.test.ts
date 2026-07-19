@@ -86,6 +86,25 @@ describe('coachLiveWork', () => {
     const level3Prompt: string = mockCallGeminiProxy.mock.calls[1][0].contents[0].parts[0].text;
     expect(level3Prompt).toContain('Ниво на насока (3/3)');
   });
+
+  it('substitutes a safe fallback hint when the model output looks like a bare final-answer disclosure (MK)', async () => {
+    mockCallGeminiProxy.mockResolvedValueOnce({ text: 'Конечниот одговор е x = 3.' });
+    const result = await coachingAPI.coachLiveWork('base64img', 'image/png', '2x + 3 = 9', 0);
+    expect(result.hint).not.toContain('x = 3');
+    expect(result.hint.length).toBeGreaterThan(0);
+  });
+
+  it('substitutes a safe fallback hint for an English-phrased disclosure (defense against image-borne jailbreaks)', async () => {
+    mockCallGeminiProxy.mockResolvedValueOnce({ text: 'The final answer is 42.' });
+    const result = await coachingAPI.coachLiveWork('base64img', 'image/png', '2x + 3 = 9', 0);
+    expect(result.hint).not.toContain('42');
+  });
+
+  it('passes through a normal Socratic hint unchanged (no false positive)', async () => {
+    mockCallGeminiProxy.mockResolvedValueOnce({ text: 'Провери го знакот кога го пренесуваш членот.' });
+    const result = await coachingAPI.coachLiveWork('base64img', 'image/png', '2x + 3 = 9', 0);
+    expect(result.hint).toBe('Провери го знакот кога го пренесуваш членот.');
+  });
 });
 
 describe('extractProblemsFromImage', () => {

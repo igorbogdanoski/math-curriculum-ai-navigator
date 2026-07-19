@@ -3,6 +3,33 @@ import {
     checkDailyQuotaGuard, SAFETY_SETTINGS, callGeminiProxy,
     sanitizePromptInput, getAILanguageRule, Type,
 } from './core';
+import { logger } from '../../utils/logger';
+
+// 2026-07-19 (Wave 8.2, audit_2026_07_18_full_app_review): a defense-in-depth check on the
+// model's OUTPUT, not just the input — the prompt-injection blocklist in sanitizePromptInput
+// only screens problemText, but the model also sees the photographed notebook image, which
+// could itself contain a jailbreak attempt (e.g. written text asking the AI to reveal the
+// answer) that never passes through sanitizePromptInput at all. If a hint slips through
+// looking like a bare final-answer reveal, swap it for a safe generic nudge instead of
+// forwarding it to the student.
+const ANSWER_DISCLOSURE_PATTERNS: RegExp[] = [
+  /конечниот\s+одговор\s+е/i,
+  /(точниот|финалниот)\s+одговор\s+е/i,
+  /одговорот\s+е\s*[:=]?\s*[-\d]/i,
+  /решението\s+е\s*[:=]?\s*[-\d]/i,
+  /the\s+(final\s+)?answer\s+is/i,
+  /the\s+solution\s+is/i,
+  /p[eë]rgjigjja\s+(p[eë]rfundimtare\s+)?[eë]sht[eë]/i,
+  /zgjidhja\s+[eë]sht[eë]/i,
+  /(do[ğg]ru\s+)?cevap\s*(şu|şudur|:)/i,
+  /sonu[cç]\s*(şu|şudur|:)/i,
+];
+
+function looksLikeAnswerDisclosure(text: string): boolean {
+  return ANSWER_DISCLOSURE_PATTERNS.some(re => re.test(text));
+}
+
+const SAFE_FALLBACK_HINT = 'Продолжи со следниот чекор — провери повторно внимателно што веќе имаш напишано.';
 
 export const coachingAPI = {
 
@@ -50,7 +77,12 @@ async coachLiveWork(
       generationConfig: { temperature: 0.4, maxOutputTokens: 150 },
       skipTierOverride: true,
     });
-    return { hint: response.text.trim() };
+    const hint = response.text.trim();
+    if (looksLikeAnswerDisclosure(hint)) {
+      logger.warn('[coachLiveWork] Model output looked like a final-answer disclosure — substituting a safe fallback hint.');
+      return { hint: SAFE_FALLBACK_HINT };
+    }
+    return { hint };
   },
 
 /**

@@ -17,6 +17,18 @@ export function sanitizePromptInput(text: string | undefined | null, maxLength =
     .replace(/disregard\s+(all\s+)?(prior|previous|above|earlier)\s+(instructions?|prompts?|context)/gi, '[filtered]')
     .replace(/forget\s+(everything|all|prior|previous)/gi, '[filtered]')
     .replace(/act\s+as\s+(if\s+you\s+are|a\s+)?(?:dan|jailbreak|unrestricted|evil)/gi, '[filtered]')
+    // MK/SQ/TR equivalents of the English jailbreak phrases above — the generic blocklist
+    // only ever caught English, so a student could type the same instruction-override
+    // attempt in the app's other three UI languages and sail through unfiltered.
+    .replace(/(игнорирај|занемари)\s+(ги\s+)?(претходните?|горенаведените?)\s+(инструкции|упатства|прашањ[ае])/gi, '[filtered]')
+    .replace(/заборави\s+(сѐ|сè|се|ги\s+сите)/gi, '[filtered]')
+    .replace(/однесувај\s+се\s+како\s+(dan|jailbreak|без\s+ограничувања)/gi, '[filtered]')
+    .replace(/injoro\s+(udh[eë]zimet|instruksionet)\s+(e\s+m[eë]parshme|paraprake)/gi, '[filtered]')
+    .replace(/harro\s+(gjith[cç]ka|t[eë]\s+gjitha)/gi, '[filtered]')
+    .replace(/sillu\s+si\s+(dan|jailbreak|i\s*\/?\s*e\s+papërkufizuar)/gi, '[filtered]')
+    .replace(/[oö]nceki\s+talimatlar[ıi]\s*(yok\s*say|unut)/gi, '[filtered]')
+    .replace(/her\s*[sş]eyi\s+unut/gi, '[filtered]')
+    .replace(/(dan|jailbreak|s[ıi]n[ıi]rs[ıi]z)\s+gibi\s+davran/gi, '[filtered]')
     .replace(/\{\{.*?\}\}/g, '[filtered]')
     .replace(/\s+/g, ' ')
     .trim()
