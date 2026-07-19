@@ -135,6 +135,7 @@ export const LessonPlanSidebar: React.FC<LessonPlanSidebarProps> = ({
       {(plan.theme || plan.title) && (
         <ContextualMathTools
           topicTitle={plan.theme || plan.title}
+          gradeContext={plan.grade != null ? { grade: plan.grade, secondaryTrack: plan.secondaryTrack } : undefined}
           onNavigate={(path) => {
             const tabMatch = path.match(/\/math-tools\?tab=(.+)/);
             if (tabMatch) {

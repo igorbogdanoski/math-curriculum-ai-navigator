@@ -14,7 +14,7 @@ import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
 import { CoachBubble } from '../common/CoachBubble';
 import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
 import { resolveGradeByLabel, findTopicByFuzzyTitle } from '../../utils/gradeMatch';
-import { detectMathDomain } from '../../utils/mathDomainDetector';
+import { ContextualMathTools } from '../lesson-plan-editor/ContextualMathTools';
 import { publishThematicPlanToBank } from '../../services/firestoreService.scenarioBank';
 import { PublishScenarioDialog, type PublishScenarioOptions } from '../scenario-bank/PublishScenarioDialog';
 import { getPedagogicalModelInfo } from '../../data/educationalModelsInfo';
@@ -442,18 +442,17 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         </div>
                     )}
 
-                    {/* Algebra Tiles suggestion for algebra topics */}
-                    {detectMathDomain(selectedTopicObj?.title ?? prefillThemeName ?? '') === 'algebra' && (
-                        <div className="mb-3 flex items-start gap-3 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
-                            <span className="text-xl mt-0.5">🔲</span>
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold text-indigo-800">{t('thematicPlan.algebraTiles.title')}</p>
-                                <p className="text-[10px] text-indigo-600 mt-0.5 leading-relaxed">
-                                    {t('thematicPlan.algebraTiles.desc1')} <strong>„{t('thematicPlan.algebraTiles.buttonName')}"</strong> {t('thematicPlan.algebraTiles.desc2')}
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                    {/* Wave 9.3 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): was a
+                        hardcoded algebra-only banner with no navigation — replaced with the same
+                        generic, grade-aware ContextualMathTools used in the Lesson Plan Editor, so
+                        every domain (not just algebra) gets a real click-to-navigate suggestion here. */}
+                    <div className="mb-3">
+                        <ContextualMathTools
+                            topicTitle={selectedTopicObj?.title ?? prefillThemeName ?? ''}
+                            gradeContext={selectedGradeObj ? { grade: selectedGradeObj.level, secondaryTrack: selectedGradeObj.secondaryTrack } : undefined}
+                            onNavigate={navigate}
+                        />
+                    </div>
 
                     <div className="max-h-[55vh] overflow-y-auto overflow-x-auto border rounded-lg">
                         <table className="min-w-full divide-y divide-gray-200">

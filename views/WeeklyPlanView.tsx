@@ -12,6 +12,7 @@ import { resolveGradeByLabel } from '../utils/gradeMatch';
 import { Card } from '../components/common/Card';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { loadThematicPlanEdit } from '../services/firestoreService.plans';
+import { ContextualMathTools } from '../components/lesson-plan-editor/ContextualMathTools';
 import { saveWeeklyPlan, loadWeeklyPlan } from '../services/firestoreService.weeklyPlans';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 import { PlanningChainBar } from '../components/planner/PlanningChainBar';
@@ -505,6 +506,19 @@ export const WeeklyPlanView: React.FC = () => {
           </span>
         )}
       </div>
+
+      {/* Wave 9.3 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): Weekly Plan
+          previously had zero lab surfacing — reuses the same ContextualMathTools as the Lesson
+          Plan Editor / Annual Plan / Thematic Plan. */}
+      {topicForWeek && (
+        <div className="no-print mb-4">
+          <ContextualMathTools
+            topicTitle={topicForWeek.topic.title}
+            gradeContext={gradeObj ? { grade: gradeObj.level, secondaryTrack: gradeObj.secondaryTrack } : undefined}
+            onNavigate={navigate}
+          />
+        </div>
+      )}
 
       {/* ── Schedule config panel ── */}
       {showScheduleConfig && (

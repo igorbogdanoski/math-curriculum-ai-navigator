@@ -6,6 +6,8 @@
  * in the lesson plan editor sidebar.
  */
 
+import type { SecondaryTrack } from '../types/curriculum';
+
 export type MathDomain =
   | 'algebra'
   | 'geometry'
@@ -77,6 +79,18 @@ export function detectMathDomain(topicTitle: string): MathDomain {
   return bestDomain;
 }
 
+export interface DomainTool {
+  label: string;
+  route: string;
+  icon: string;
+  /** Inclusive grade bounds. Omitted on either side means "no bound" — the tool spans that
+   * whole side of the primary/secondary divide (e.g. the function grapher or GeoGebra). Set
+   * only on tools that are genuinely grade-locked (trig, calculus, conic sections are
+   * secondary-only in the MK curriculum; fractions/number-theory/place-value are primary-only). */
+  minGrade?: number;
+  maxGrade?: number;
+}
+
 /**
  * Tool sets surfaced in ContextualMathTools per domain.
  *
@@ -89,7 +103,7 @@ export function detectMathDomain(topicTitle: string): MathDomain {
  * registered routes — fixed 2026-07-06. This mapping is read directly by
  * StudentTutorView too, so every entry here must be a real `navigate()` target.
  */
-export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; icon: string }[]> = {
+export const DOMAIN_TOOLS: Record<MathDomain, DomainTool[]> = {
   algebra: [
     { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
@@ -97,26 +111,26 @@ export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; ic
   ],
   geometry: [
     { label: 'Геометрија 2D лаб', route: '/data-viz?tab=geo2d', icon: '△' },
-    { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷' },
-    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
-    { label: 'Тригонометрија лаб', route: '/data-viz?tab=trig', icon: '📐' },
+    { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷', minGrade: 6 },
+    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙', minGrade: 10 },
+    { label: 'Тригонометрија лаб', route: '/data-viz?tab=trig', icon: '📐', minGrade: 9 },
     { label: 'GeoGebra', route: '/math-tools?tab=geogebra', icon: '📐' },
   ],
   statistics: [
     { label: 'Лаб за веројатност', route: '/data-viz?tab=prob', icon: '🎲' },
-    { label: 'Статистика лаб', route: '/data-viz?tab=stats', icon: '📊' },
+    { label: 'Статистика лаб', route: '/data-viz?tab=stats', icon: '📊', minGrade: 10 },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
   calculus: [
-    { label: 'Калкулус лаб', route: '/data-viz?tab=calc', icon: '∫' },
+    { label: 'Калкулус лаб', route: '/data-viz?tab=calc', icon: '∫', minGrade: 10 },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
-    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙' },
+    { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙', minGrade: 10 },
     { label: 'Десмос', route: '/math-tools?tab=desmos', icon: '∿' },
   ],
   arithmetic: [
-    { label: 'Дропки лаб', route: '/data-viz?tab=fractions', icon: '🍕' },
-    { label: 'Теорија на броеви лаб', route: '/data-viz?tab=numtheory', icon: '🔢' },
-    { label: 'Месна вредност лаб', route: '/data-viz?tab=placevalue', icon: '🧮' },
+    { label: 'Дропки лаб', route: '/data-viz?tab=fractions', icon: '🍕', maxGrade: 9 },
+    { label: 'Теорија на броеви лаб', route: '/data-viz?tab=numtheory', icon: '🔢', maxGrade: 9 },
+    { label: 'Месна вредност лаб', route: '/data-viz?tab=placevalue', icon: '🧮', maxGrade: 9 },
     { label: 'Алгебарски плочки', route: '/data-viz?tab=algebra', icon: '🔲' },
     { label: 'График на функција', route: '/data-viz?tab=fn', icon: '📈' },
   ],
@@ -124,3 +138,27 @@ export const DOMAIN_TOOLS: Record<MathDomain, { label: string; route: string; ic
     { label: 'DataViz Studio', route: '/data-viz', icon: '📊' },
   ],
 };
+
+export interface GradeContext {
+  grade: number;
+  secondaryTrack?: SecondaryTrack;
+}
+
+/**
+ * Grade-aware tool lookup for a domain. Filters out tools whose min/maxGrade bound excludes
+ * the caller's grade — but if filtering would leave nothing (e.g. an "arithmetic" topic
+ * detected on a grade-11 plan, where all 3 primary-only labs get filtered out), falls back to
+ * the unfiltered list rather than surfacing nothing; an imperfect suggestion beats none.
+ * `secondaryTrack` isn't used to filter yet (no track-specific tool exists today) — it's part
+ * of the signature so callers don't need to change again when one is added.
+ */
+export function getToolsForDomain(domain: MathDomain, gradeContext?: GradeContext): DomainTool[] {
+  const tools = DOMAIN_TOOLS[domain];
+  if (!gradeContext) return tools;
+  const filtered = tools.filter(tool => {
+    if (tool.minGrade != null && gradeContext.grade < tool.minGrade) return false;
+    if (tool.maxGrade != null && gradeContext.grade > tool.maxGrade) return false;
+    return true;
+  });
+  return filtered.length > 0 ? filtered : tools;
+}

@@ -58,6 +58,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const { lessonPlans } = usePlanner();
     const { t } = useLanguage();
 
+    // Wave 9.3 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): grade context for
+    // ContextualMathTools' grade-aware lab filtering, mirroring LessonPlanSidebar's usage.
+    const selectedGradeObj = useMemo(
+        () => curriculum?.grades.find(g => g.id === selectedGradeId),
+        [curriculum, selectedGradeId],
+    );
+
     // ── S94-E5: Lesson count per topic title (for Progress Tracker badges) ──────
     const lessonCountMap = useMemo(() => {
         const map = new Map<string, number>();
@@ -604,6 +611,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                         } : null);
                                                     }}
                                                     exploreGradeId={selectedGradeId}
+                                                    gradeContext={selectedGradeObj ? { grade: selectedGradeObj.level, secondaryTrack: selectedGradeObj.secondaryTrack } : undefined}
                                                     overlayNote={overlays.get(idx)?.note}
                                                     overlayColor={overlays.get(idx)?.color}
                                                     onNoteChange={(note, color) => handleNoteChange(idx, topic.title, note, color)}

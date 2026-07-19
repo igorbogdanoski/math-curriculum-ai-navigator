@@ -6,6 +6,7 @@ import { DokBadge } from '../common/DokBadge';
 import { SuggestRevisionModal } from './SuggestRevisionModal';
 import { ObservationModal } from './ObservationModal';
 import { AcademyBadgeRow } from '../academy/AcademyBadgeChip';
+import { ContextualMathTools } from '../lesson-plan-editor/ContextualMathTools';
 
 const BLOOM_LABELS: Record<string, string> = {
   '1': 'Помнење', '2': 'Разбирање', '3': 'Примена',
@@ -40,11 +41,12 @@ interface Props {
   onEdit?: (entry: ScenarioBankEntry) => void;
   onDiscuss?: (entry: ScenarioBankEntry) => void;
   onPrint?: (entry: ScenarioBankEntry) => void;
+  onNavigate?: (path: string) => void;
 }
 
 export const ScenarioCard: React.FC<Props> = ({
   entry, currentUid, currentName = 'Наставник', currentSchool = '',
-  onRate, onFork, onUse, onSave, onEdit, onDiscuss, onPrint,
+  onRate, onFork, onUse, onSave, onEdit, onDiscuss, onPrint, onNavigate,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -152,6 +154,15 @@ export const ScenarioCard: React.FC<Props> = ({
                   </span>
                 ))}
               </div>
+            )}
+            {/* Wave 9.3 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): Scenario Bank
+                previously had zero lab surfacing at all. */}
+            {onNavigate && (
+              <ContextualMathTools
+                topicTitle={entry.topicTitle}
+                gradeContext={{ grade: entry.grade, secondaryTrack: entry.secondaryTrack ?? undefined }}
+                onNavigate={onNavigate}
+              />
             )}
           </div>
         )}

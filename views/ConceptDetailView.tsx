@@ -28,6 +28,7 @@ import { firestoreService } from '../services/firestoreService';
 import type { SavedQuestion, DokLevel } from '../types';
 import type { ConceptMastery } from '../services/firestoreService';
 import { MisconceptionMiniLessonCard } from '../components/analytics/MisconceptionMiniLessonCard';
+import { getRelatedLabsForConcept } from '../data/labCurriculumMap';
 import { ConceptScenariosPreview } from '../components/concept/ConceptScenariosPreview';
 
 const KnowledgeGraphView = React.lazy(() =>
@@ -198,6 +199,49 @@ function MaturaQuestionsBlock({ conceptId }: { conceptId: string }) {
               );
             })
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── RelatedLabsBlock (Wave 9.2, audit_2026_07_18_full_app_review 2026-07-19 post-closure) ────
+// Reverse of ContextualMathTools: given a concept, surface the matching interactive lab(s),
+// grade-filtered the same way the planning chain is. See data/labCurriculumMap.ts.
+
+function RelatedLabsBlock({ conceptTitle, gradeLevel, onNavigate }: {
+  conceptTitle: string;
+  gradeLevel: number;
+  onNavigate: (path: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const tools = getRelatedLabsForConcept(conceptTitle, { grade: gradeLevel });
+  if (tools.length === 0) return null;
+
+  return (
+    <div className="mt-6 border border-sky-100 rounded-2xl overflow-hidden bg-white">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-sky-50 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">🧪</span>
+          <span className="font-bold text-sm text-gray-800">Поврзани лаборатории</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">{tools.length}</span>
+        </div>
+        <span className="text-gray-400 text-sm font-bold">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="border-t border-sky-100 p-3 grid grid-cols-2 gap-1.5">
+          {tools.map(tool => (
+            <button
+              key={tool.route}
+              type="button"
+              onClick={() => onNavigate(tool.route)}
+              className="flex items-center gap-1.5 px-2 py-2 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg text-xs font-medium text-sky-700 transition-colors text-left"
+            >
+              <span className="text-base leading-none">{tool.icon}</span>
+              <span className="truncate">{tool.label}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -775,6 +819,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         
         {/* Матурски прашања (B1/N2) */}
         <div className="max-w-4xl mx-auto px-4">
+          <RelatedLabsBlock conceptTitle={concept.title} gradeLevel={grade.level} onNavigate={navigate} />
           <MaturaQuestionsBlock conceptId={concept.id} />
         </div>
 

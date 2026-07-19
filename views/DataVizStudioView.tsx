@@ -20,6 +20,7 @@ import { FunctionTransformer } from '../components/math/FunctionTransformer';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
+import { LabCurriculumInfo } from '../components/dataviz/LabCurriculumInfo';
 import { useNotification } from '../contexts/NotificationContext';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -88,7 +89,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions';
+export type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -569,6 +570,7 @@ export const DataVizStudioView: React.FC = () => {
                 Симулирај монета, коцка, спинер и составени настани · Теоретска vs. Експериментална веројатност
               </p>
             </div>
+            <LabCurriculumInfo labId="prob" />
             <ProbabilityLab
               onSendToDataViz={(td, cfg) => {
                 setTableData(td);
@@ -590,6 +592,7 @@ export const DataVizStudioView: React.FC = () => {
                 Нормална дистрибуција · Регресија · Баесова теорема · Монте Карло · Хи-квадрат тест
               </p>
             </div>
+            <LabCurriculumInfo labId="stats" />
             <SilentErrorBoundary>
               <SecondaryStatsLab />
             </SilentErrorBoundary>
@@ -607,6 +610,7 @@ export const DataVizStudioView: React.FC = () => {
                 Изводи (тангента) · Риманови суми (интеграли) · Граници на функции
               </p>
             </div>
+            <LabCurriculumInfo labId="calc" />
             <SilentErrorBoundary>
               <CalculusLab />
             </SilentErrorBoundary>
@@ -624,6 +628,7 @@ export const DataVizStudioView: React.FC = () => {
                 Триаголник · Питагорова теорема · Кружница · Многуаголници — МОН V–VIII одд.
               </p>
             </div>
+            <LabCurriculumInfo labId="geo2d" />
             <SilentErrorBoundary>
               <Geometry2DLab />
             </SilentErrorBoundary>
@@ -641,6 +646,7 @@ export const DataVizStudioView: React.FC = () => {
                 17 тела · Платонски · Архимедски · Призми · Антипризми · Пирамиди · Планови и проекции · Мрежи
               </p>
             </div>
+            <LabCurriculumInfo labId="solid" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <Geometry3DLab />
@@ -660,6 +666,7 @@ export const DataVizStudioView: React.FC = () => {
                 Елипса · Хипербола · Парабола — слајдери a, b, h, k, θ · фокуси · асимптоти · ротациска анимација
               </p>
             </div>
+            <LabCurriculumInfo labId="conic" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <ConicSectionsLab />
@@ -698,6 +705,7 @@ export const DataVizStudioView: React.FC = () => {
                 Визуелна алгебра со плочки · Собирање/Одземање поими · Решавање равенки — МОН VI–VIII одд.
               </p>
             </div>
+            <LabCurriculumInfo labId="algebra" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <AlgebraTilesLazy />
@@ -709,6 +717,7 @@ export const DataVizStudioView: React.FC = () => {
         {/* ══ TAB: TRIGONOMETRY LAB ═════════════════════════════════════════════ */}
         {activeTab === 'trig' && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <LabCurriculumInfo labId="trig" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <TrigonometryLabLazy />
@@ -720,6 +729,7 @@ export const DataVizStudioView: React.FC = () => {
         {/* ══ TAB: NUMBER THEORY LAB ════════════════════════════════════════════ */}
         {activeTab === 'numtheory' && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <LabCurriculumInfo labId="numtheory" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <NumberTheoryLabLazy />
@@ -731,6 +741,7 @@ export const DataVizStudioView: React.FC = () => {
         {/* ══ TAB: PLACE VALUE LAB (Диенесови блокови) ═════════════════════════ */}
         {activeTab === 'placevalue' && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <LabCurriculumInfo labId="placevalue" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <PlaceValueLabLazy />
@@ -742,6 +753,7 @@ export const DataVizStudioView: React.FC = () => {
         {/* ══ TAB: FRACTIONS LAB (Бар, круг, бројна права) ═════════════════════ */}
         {activeTab === 'fractions' && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <LabCurriculumInfo labId="fractions" />
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <FractionsLabLazy />

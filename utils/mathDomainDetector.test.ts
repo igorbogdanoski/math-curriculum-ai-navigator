@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectMathDomain, DOMAIN_TOOLS } from './mathDomainDetector';
+import { detectMathDomain, getToolsForDomain, DOMAIN_TOOLS } from './mathDomainDetector';
 
 describe('detectMathDomain', () => {
   // ── Algebra ─────────────────────────────────────────────────────────────────
@@ -143,5 +143,46 @@ describe('DOMAIN_TOOLS', () => {
 
     const geometryRoutes = DOMAIN_TOOLS.geometry.map(t => t.route);
     expect(geometryRoutes).toContain('/data-viz?tab=trig');
+  });
+});
+
+// ── Wave 9.1 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): grade-aware filtering ──
+
+describe('getToolsForDomain', () => {
+  it('returns the unfiltered list when no gradeContext is given', () => {
+    expect(getToolsForDomain('geometry')).toEqual(DOMAIN_TOOLS.geometry);
+  });
+
+  it('excludes secondary-only labs (trig, conic) for a primary grade', () => {
+    const tools = getToolsForDomain('geometry', { grade: 6 });
+    const routes = tools.map(t => t.route);
+    expect(routes).not.toContain('/data-viz?tab=trig');
+    expect(routes).not.toContain('/data-viz?tab=conic');
+    expect(routes).toContain('/data-viz?tab=geo2d');
+  });
+
+  it('includes secondary-only labs (trig, conic) for a secondary grade', () => {
+    const tools = getToolsForDomain('geometry', { grade: 11 });
+    const routes = tools.map(t => t.route);
+    expect(routes).toContain('/data-viz?tab=trig');
+    expect(routes).toContain('/data-viz?tab=conic');
+  });
+
+  it('excludes primary-only arithmetic labs (fractions/numtheory/placevalue) for a secondary grade', () => {
+    const tools = getToolsForDomain('arithmetic', { grade: 11 });
+    const routes = tools.map(t => t.route);
+    expect(routes).not.toContain('/data-viz?tab=fractions');
+    expect(routes).not.toContain('/data-viz?tab=numtheory');
+    expect(routes).not.toContain('/data-viz?tab=placevalue');
+    // still returns the grade-agnostic tools rather than an empty list
+    expect(routes.length).toBeGreaterThan(0);
+  });
+
+  it('never returns an empty list even when every tool would be filtered out', () => {
+    // "calculus" domain is entirely secondary/grade-agnostic tools — nothing has a maxGrade,
+    // so this can't actually go empty; use "geometry" at grade 3 with all bounded tools
+    // excluded (solid/conic/trig) to confirm the survivors (geo2d/geogebra) are still returned.
+    const tools = getToolsForDomain('geometry', { grade: 3 });
+    expect(tools.length).toBeGreaterThan(0);
   });
 });

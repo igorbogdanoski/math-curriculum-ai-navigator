@@ -626,6 +626,7 @@ export const ScenarioBankView: React.FC = () => {
               onEdit={handleEdit}
               onDiscuss={handleDiscuss}
               onPrint={handlePrint}
+              onNavigate={navigate}
             />
           ))}
         </div>
@@ -673,6 +674,7 @@ export const ScenarioBankView: React.FC = () => {
                     onEdit={handleEdit}
                     onDiscuss={handleDiscuss}
                     onPrint={handlePrint}
+                    onNavigate={navigate}
                   />
                   <div className="mt-1.5 px-1">
                     <button

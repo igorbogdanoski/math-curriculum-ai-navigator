@@ -7,11 +7,12 @@
  */
 
 import React, { useState } from 'react';
-import { detectMathDomain, DOMAIN_TOOLS } from '../../utils/mathDomainDetector';
+import { detectMathDomain, getToolsForDomain, type GradeContext } from '../../utils/mathDomainDetector';
 
 interface Props {
   topicTitle: string | null | undefined;
   onNavigate: (path: string) => void;
+  gradeContext?: GradeContext;
 }
 
 const DOMAIN_LABEL: Record<string, string> = {
@@ -23,13 +24,13 @@ const DOMAIN_LABEL: Record<string, string> = {
   other:      'Математички алатки',
 };
 
-export const ContextualMathTools: React.FC<Props> = ({ topicTitle, onNavigate }) => {
+export const ContextualMathTools: React.FC<Props> = ({ topicTitle, onNavigate, gradeContext }) => {
   const [open, setOpen] = useState(false);
 
   if (!topicTitle) return null;
 
   const domain = detectMathDomain(topicTitle);
-  const tools = DOMAIN_TOOLS[domain];
+  const tools = getToolsForDomain(domain, gradeContext);
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">

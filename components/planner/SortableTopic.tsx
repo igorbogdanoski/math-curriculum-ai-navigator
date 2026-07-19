@@ -5,6 +5,8 @@ import type { TopicOverlay } from '../../services/firestoreService.curriculumOve
 import type { AIGeneratedAnnualPlanTopic } from '../../types';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { getPedagogicalModelInfo } from '../../data/educationalModelsInfo';
+import { ContextualMathTools } from '../lesson-plan-editor/ContextualMathTools';
+import type { GradeContext } from '../../utils/mathDomainDetector';
 
 interface SortableTopicProps {
     topic: AIGeneratedAnnualPlanTopic;
@@ -14,6 +16,7 @@ interface SortableTopicProps {
     onGenerateThematic: () => void;
     onUpdate: (updated: AIGeneratedAnnualPlanTopic) => void;
     exploreGradeId?: string;
+    gradeContext?: GradeContext;
     overlayNote?: string;
     overlayColor?: TopicOverlay['color'];
     onNoteChange: (note: string, color: TopicOverlay['color']) => void;
@@ -29,7 +32,7 @@ const NOTE_COLORS: { key: TopicOverlay['color']; bg: string; border: string; tex
 ];
 
 export const SortableTopic: React.FC<SortableTopicProps> = ({
-    topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate, exploreGradeId,
+    topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate, exploreGradeId, gradeContext,
     overlayNote, overlayColor = 'yellow', onNoteChange, onNoteDelete, lessonCount,
 }) => {
     const { navigate } = useNavigation();
@@ -250,6 +253,15 @@ export const SortableTopic: React.FC<SortableTopicProps> = ({
                     </ul>
                 </div>
             </div>
+            )}
+
+            {/* Wave 9.3 (audit_2026_07_18_full_app_review, 2026-07-19 post-closure): Annual Plan
+                previously had zero lab surfacing at all — reuses the same ContextualMathTools as
+                the Lesson Plan Editor and Thematic Plan. */}
+            {!isEditing && (
+                <div className="px-4 pb-4">
+                    <ContextualMathTools topicTitle={topic.title} gradeContext={gradeContext} onNavigate={navigate} />
+                </div>
             )}
 
             {/* S93-D: Мои Бележки note overlay */}
