@@ -15,6 +15,7 @@ import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
 import { generateConicSet } from './conicsMath';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const W = 460, H = 360;
 const PAD = { top: 20, right: 20, bottom: 28, left: 36 };
@@ -105,6 +106,7 @@ function Slider({ label, value, min, max, step, onChange, color = 'indigo' }: {
 
 // ─── Ellipse ──────────────────────────────────────────────────────────────────
 function EllipseLab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(3); const [b, setB] = useState(2);
   const [h, setH] = useState(0); const [k, setK] = useState(0);
   const [theta, setTheta] = useState(0);
@@ -156,12 +158,12 @@ function EllipseLab() {
   return (
     <div className="space-y-3">
       <div className="space-y-1.5 bg-white rounded-xl border border-gray-200 p-3">
-        <Slider label="a (semi-a)" value={a} min={0.5} max={5} step={0.1} onChange={v => setA(Math.max(v, b))} color="violet" />
-        <Slider label="b (semi-b)" value={b} min={0.1} max={5} step={0.1} onChange={v => setB(Math.min(v, a))} color="violet" />
-        <Slider label="h (x-shift)" value={h} min={-3} max={3} step={0.1} onChange={setH} color="sky" />
-        <Slider label="k (y-shift)" value={k} min={-3} max={3} step={0.1} onChange={setK} color="sky" />
+        <Slider label={t('dataviz.conicLab.sliderA')} value={a} min={0.5} max={5} step={0.1} onChange={v => setA(Math.max(v, b))} color="violet" />
+        <Slider label={t('dataviz.conicLab.sliderB')} value={b} min={0.1} max={5} step={0.1} onChange={v => setB(Math.min(v, a))} color="violet" />
+        <Slider label={t('dataviz.conicLab.sliderH')} value={h} min={-3} max={3} step={0.1} onChange={setH} color="sky" />
+        <Slider label={t('dataviz.conicLab.sliderK')} value={k} min={-3} max={3} step={0.1} onChange={setK} color="sky" />
         <div className="flex items-center gap-2">
-          <Slider label="θ (rot)" value={theta} min={0} max={2 * Math.PI} step={0.05} onChange={setTheta} color="amber" />
+          <Slider label={t('dataviz.conicLab.sliderTheta')} value={theta} min={0} max={2 * Math.PI} step={0.05} onChange={setTheta} color="amber" />
           <button type="button" onClick={() => setPlaying(v => !v)}
             className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${playing ? 'border-red-400 bg-red-50 text-red-600' : 'border-amber-400 bg-amber-50 text-amber-700'}`}>
             {playing ? '⏸' : '▶'}
@@ -171,9 +173,9 @@ function EllipseLab() {
 
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
         {[
-          { l: 'c (focal dist)', v: fmt(c), cl: 'violet' },
-          { l: 'Eccentricity e', v: fmt(ecc), cl: 'violet' },
-          { l: 'Periмeter ≈', v: `${fmt(Math.PI * (3*(a+b) - Math.sqrt((3*a+b)*(a+3*b))))}`  , cl: 'gray' },
+          { l: t('dataviz.conicLab.focalDist'), v: fmt(c), cl: 'violet' },
+          { l: t('dataviz.conicLab.eccentricity'), v: fmt(ecc), cl: 'violet' },
+          { l: t('dataviz.conicLab.perimeter'), v: `${fmt(Math.PI * (3*(a+b) - Math.sqrt((3*a+b)*(a+3*b))))}`  , cl: 'gray' },
         ].map(({ l, v, cl }) => (
           <div key={l} className={`rounded-lg border border-${cl}-200 bg-${cl}-50 p-2`}>
             <p className="text-[9px] text-gray-400">{l}</p>
@@ -194,8 +196,8 @@ function EllipseLab() {
         </svg>
       </div>
       <p className="text-[10px] text-gray-500 bg-violet-50 rounded-lg p-2 border border-violet-100">
-        <strong>Елипса:</strong> (x−{h})²/{a}² + (y−{k})²/{b}² = 1 &nbsp;|&nbsp;
-        PF₁ + PF₂ = 2a = {fmt(2*a)} за секоја точка P
+        <strong>{t('dataviz.conicLab.ellipseInfo')}</strong> (x−{h})²/{a}² + (y−{k})²/{b}² = 1 &nbsp;|&nbsp;
+        PF₁ + PF₂ = 2a = {fmt(2*a)} {t('dataviz.conicLab.ellipseInfoSuffix')}
       </p>
     </div>
   );
@@ -203,6 +205,7 @@ function EllipseLab() {
 
 // ─── Hyperbola ────────────────────────────────────────────────────────────────
 function HyperbolaLab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(2); const [b, setB] = useState(1.5);
   const [h, setH] = useState(0); const [k, setK] = useState(0);
   const [theta, setTheta] = useState(0);
@@ -292,8 +295,8 @@ function HyperbolaLab() {
         </svg>
       </div>
       <p className="text-[10px] text-gray-500 bg-rose-50 rounded-lg p-2 border border-rose-100">
-        <strong>Хипербола:</strong> (x−{h})²/{a}² − (y−{k})²/{b}² = 1 &nbsp;|&nbsp;
-        Асимптоти: y = ±{fmt(slope)}(x−{h}) + {k} &nbsp;|&nbsp; c = {fmt(c)}, e = {fmt(c/a)}
+        <strong>{t('dataviz.conicLab.hyperbolaInfo')}</strong> (x−{h})²/{a}² − (y−{k})²/{b}² = 1 &nbsp;|&nbsp;
+        {t('dataviz.conicLab.asymptotes')} y = ±{fmt(slope)}(x−{h}) + {k} &nbsp;|&nbsp; c = {fmt(c)}, e = {fmt(c/a)}
       </p>
     </div>
   );
@@ -301,6 +304,7 @@ function HyperbolaLab() {
 
 // ─── Parabola ─────────────────────────────────────────────────────────────────
 function ParabolaLab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(0.5);
   const [h, setH] = useState(0); const [k, setK] = useState(0);
   const [theta, setTheta] = useState(0);
@@ -377,8 +381,8 @@ function ParabolaLab() {
         </svg>
       </div>
       <p className="text-[10px] text-gray-500 bg-emerald-50 rounded-lg p-2 border border-emerald-100">
-        <strong>Парабола:</strong> y = {a}(x−{h})² + {k} &nbsp;|&nbsp;
-        Фокус: ({h}, {fmt(focusY)}) &nbsp;|&nbsp; Директриса: y = {fmt(directrixY)} &nbsp;|&nbsp; p = {fmt(p)}
+        <strong>{t('dataviz.conicLab.parabolaInfo')}</strong> y = {a}(x−{h})² + {k} &nbsp;|&nbsp;
+        {t('dataviz.conicLab.focus')} ({h}, {fmt(focusY)}) &nbsp;|&nbsp; {t('dataviz.conicLab.directrix')} y = {fmt(directrixY)} &nbsp;|&nbsp; p = {fmt(p)}
       </p>
     </div>
   );
@@ -397,22 +401,24 @@ function ConicExercisesTab() {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 const CONIC_TABS: { id: ConicType; label: string; color: string }[] = [
-  { id: 'ellipse',   label: 'Елипса',    color: 'violet'  },
-  { id: 'hyperbola', label: 'Хипербола', color: 'rose'    },
-  { id: 'parabola',  label: 'Парабола',  color: 'emerald' },
-  { id: 'exercises', label: '✏️ Вежбај', color: 'sky'     },
+  { id: 'ellipse',   label: 'dataviz.conicLab.tabEllipse',    color: 'violet'  },
+  { id: 'hyperbola', label: 'dataviz.conicLab.tabHyperbola', color: 'rose'    },
+  { id: 'parabola',  label: 'dataviz.conicLab.tabParabola',  color: 'emerald' },
+  { id: 'exercises', label: 'dataviz.conicLab.tabExercises', color: 'sky'     },
 ];
 
 export function ConicSectionsLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<ConicType>('ellipse');
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
-        {CONIC_TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === t.id ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {t.label}
+        {CONIC_TABS.map(ct => (
+          <button key={ct.id} type="button" onClick={() => setTab(ct.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === ct.id ? `border-${ct.color}-500 bg-${ct.color}-50 text-${ct.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {t(ct.label)}
           </button>
         ))}
       </div>
@@ -421,9 +427,9 @@ export function ConicSectionsLab() {
       {tab === 'parabola'   && <ParabolaLab />}
       {tab === 'exercises'  && <ConicExercisesTab />}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
-        <strong>Конусни пресеци</strong> — секции на конус со рамнина под различен агол. &nbsp;
-        Употреба: орбити на планети (елипса), хиперболични патеки на комети, параболични антени. &nbsp;
-        <strong>θ = </strong> агол на ротација — притисни ▶ за анимација.
+        <strong>{t('dataviz.conicLab.footerTitle')}</strong> — {t('dataviz.conicLab.footerBody')} &nbsp;
+        {t('dataviz.conicLab.footerUse')} &nbsp;
+        <strong>θ = </strong> {t('dataviz.conicLab.footerTheta')}
       </div>
     </div>
   );
