@@ -8,16 +8,18 @@ import { UnitCirclePicker } from './UnitCirclePicker';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ── Curriculum badges ─────────────────────────────────────────────────────────
 function CurriculumBadges({ cur }: { cur: CurriculumRef }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-wrap gap-1 mt-2">
       {cur.primary?.map(p => (
-        <span key={p} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН {p} одд.</span>
+        <span key={p} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('trigLab.badge.mon')} {p} {t('trigLab.badge.gradeSuffix')}</span>
       ))}
       {cur.gymnasium?.map(g => (
-        <span key={g} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">Гимн. {g}</span>
+        <span key={g} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">{t('trigLab.badge.gymnasium')} {g}</span>
       ))}
       {cur.vocational?.map(v => (
         <span key={v} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">{v}</span>
@@ -44,6 +46,7 @@ function toSvgX(x: number) { return W * (x - X_MIN) / (X_MAX - X_MIN); }
 function toSvgY(y: number) { return H / 2 - (y / Y_RANGE) * (H / 2 - 10); }
 
 function WaveExplorerTab() {
+  const { t } = useLanguage();
   const [fn, setFn] = useState<WaveFn>('sin');
   const [A, setA] = useState(1);
   const [B, setB] = useState(1);
@@ -75,7 +78,7 @@ function WaveExplorerTab() {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
-          Бранов Истражувач — y = A·{fn}(Bx + C) + D
+          {t('trigLab.wave.titlePrefix')}{fn}{t('trigLab.wave.titleSuffix')}
         </p>
         {/* Function selector */}
         <div className="flex gap-2 mb-4">
@@ -121,10 +124,10 @@ function WaveExplorerTab() {
         {/* Sliders */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'A (Амплитуда)', val: A, set: setA, min: -3, max: 3, step: 0.1, color: 'text-amber-600' },
-            { label: 'B (Фреквенција)', val: B, set: setB, min: 0.1, max: 4, step: 0.1, color: 'text-blue-600' },
-            { label: 'C (Фазен поместај)', val: C, set: setC, min: -Math.PI, max: Math.PI, step: 0.05, color: 'text-green-600' },
-            { label: 'D (Вертик. поместај)', val: D, set: setD, min: -3, max: 3, step: 0.1, color: 'text-purple-600' },
+            { label: `A (${t('trigLab.wave.amplitude')})`, val: A, set: setA, min: -3, max: 3, step: 0.1, color: 'text-amber-600' },
+            { label: `B (${t('trigLab.wave.frequency')})`, val: B, set: setB, min: 0.1, max: 4, step: 0.1, color: 'text-blue-600' },
+            { label: `C (${t('trigLab.wave.phaseShift')})`, val: C, set: setC, min: -Math.PI, max: Math.PI, step: 0.05, color: 'text-green-600' },
+            { label: `D (${t('trigLab.wave.verticalShift')})`, val: D, set: setD, min: -3, max: 3, step: 0.1, color: 'text-purple-600' },
           ].map(({ label, val, set, min, max, step, color }) => (
             <div key={label}>
               <label className={`text-[10px] font-bold uppercase tracking-wide ${color}`}>{label}</label>
@@ -140,10 +143,10 @@ function WaveExplorerTab() {
       {/* Info cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Амплитуда', val: Math.abs(A).toFixed(2), color: 'bg-amber-50 text-amber-700' },
-          { label: 'Период', val: `${T.toFixed(3)} ≈ ${(T / Math.PI).toFixed(2)}π`, color: 'bg-blue-50 text-blue-700' },
-          { label: 'Фреквенција', val: (1 / T).toFixed(3), color: 'bg-green-50 text-green-700' },
-          { label: 'Вертик. поместај', val: D.toFixed(2), color: 'bg-purple-50 text-purple-700' },
+          { label: t('trigLab.wave.amplitude'), val: Math.abs(A).toFixed(2), color: 'bg-amber-50 text-amber-700' },
+          { label: t('trigLab.wave.period'), val: `${T.toFixed(3)} ≈ ${(T / Math.PI).toFixed(2)}π`, color: 'bg-blue-50 text-blue-700' },
+          { label: t('trigLab.wave.frequency'), val: (1 / T).toFixed(3), color: 'bg-green-50 text-green-700' },
+          { label: t('trigLab.wave.verticalShift'), val: D.toFixed(2), color: 'bg-purple-50 text-purple-700' },
         ].map(({ label, val, color }) => (
           <div key={label} className={`rounded-xl p-3 text-xs ${color}`}>
             <p className="font-bold uppercase tracking-wide text-[9px] opacity-70 mb-1">{label}</p>
@@ -157,13 +160,14 @@ function WaveExplorerTab() {
 
 // ── Trig Identities Tab ───────────────────────────────────────────────────────
 function TrigIdentitiesTab() {
+  const { t } = useLanguage();
   const [angle, setAngle] = useState(37);
 
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
-          Тригонометриски идентитети — нумеричка верификација
+          {t('trigLab.identity.title')}
         </p>
         <div className="flex items-center gap-4 mb-4">
           <label className="text-sm font-semibold text-gray-700">θ = {angle}°</label>
@@ -204,16 +208,16 @@ function TrigIdentitiesTab() {
                   </div>
                   {isValid !== null && (
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${isValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {isValid ? '✓ Точно' : '✗ Грешка'}
+                      {isValid ? t('trigLab.identity.correct') : t('trigLab.identity.incorrect')}
                     </span>
                   )}
                 </div>
                 {isNaN(lhs) ? (
-                  <p className="text-xs text-gray-400 mt-2">Не е дефинирано за θ = {angle}°</p>
+                  <p className="text-xs text-gray-400 mt-2">{t('trigLab.identity.undefinedPrefix')} θ = {angle}°</p>
                 ) : (
                   <div className="flex gap-4 mt-2 text-xs font-mono">
-                    <span className="text-blue-700">Лева: <strong>{lhs.toFixed(6)}</strong></span>
-                    <span className="text-purple-700">Десна: <strong>{rhs.toFixed(6)}</strong></span>
+                    <span className="text-blue-700">{t('trigLab.identity.lhs')} <strong>{lhs.toFixed(6)}</strong></span>
+                    <span className="text-purple-700">{t('trigLab.identity.rhs')} <strong>{rhs.toFixed(6)}</strong></span>
                   </div>
                 )}
               </div>
@@ -223,7 +227,7 @@ function TrigIdentitiesTab() {
       </div>
       {/* Quick reference table */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
-        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Табела на специјални агли</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">{t('trigLab.identity.tableTitle')}</p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -290,13 +294,14 @@ function TrigExercisesTab() {
 type Tab = 'circle' | 'wave' | 'identity' | 'exercises';
 
 export default function TrigonometryLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('circle');
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'circle',    label: '⭕ Единечна кружница' },
-    { id: 'wave',      label: '〰 Бранов истражувач' },
-    { id: 'identity',  label: '≡ Идентитети' },
-    { id: 'exercises', label: '✏️ Вежбај' },
+    { id: 'circle',    label: `⭕ ${t('trigLab.tab.circle')}` },
+    { id: 'wave',      label: `〰 ${t('trigLab.tab.wave')}` },
+    { id: 'identity',  label: `≡ ${t('trigLab.tab.identity')}` },
+    { id: 'exercises', label: `✏️ ${t('trigLab.tab.exercises')}` },
   ];
 
   return (
@@ -305,9 +310,9 @@ export default function TrigonometryLab() {
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-4">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-base font-bold text-gray-800">Тригонометриска Лабораторија</h2>
+            <h2 className="text-base font-bold text-gray-800">{t('trigLab.title')}</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Единечна кружница · Амплитуда и Период · Идентитети · Вежбај
+              {t('trigLab.subtitle')}
             </p>
             <CurriculumBadges cur={TRIG_CURRICULUM} />
           </div>

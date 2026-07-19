@@ -2,6 +2,7 @@ import React, { useRef, useCallback } from 'react';
 import {
   toRad, toDeg, radLabel, unitCirclePoint, QUADRANT_LABELS, SPECIAL_ANGLES,
 } from './trigMath';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 /**
  * Interactive unit-circle angle/point picker — extracted from
@@ -24,6 +25,7 @@ export interface UnitCirclePickerProps {
 }
 
 export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, onChange, disabled = false }) => {
+  const { t } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -68,7 +70,7 @@ export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, on
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4">
       <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
-        Интерактивна единечна кружница — влечи ја точката
+        {t('trigLab.circle.intro')}
       </p>
       <div className="flex flex-col sm:flex-row gap-6 items-start">
         {/* SVG circle */}
@@ -76,7 +78,7 @@ export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, on
           ref={svgRef}
           viewBox="0 0 320 320"
           role="img"
-          aria-label={`Единечна кружница, агол ${Math.round(angleDeg)} степени`}
+          aria-label={`${t('trigLab.circle.ariaLabelPrefix')} ${Math.round(angleDeg)} ${t('trigLab.circle.degrees')}`}
           className={`w-full max-w-[320px] select-none ${disabled ? '' : 'cursor-crosshair'}`}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -132,23 +134,23 @@ export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, on
         {/* Values panel */}
         <div className="flex-1 space-y-3 min-w-[200px]">
           <div className="rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: qInfo.color + '18', color: qInfo.color }}>
-            {qInfo.label} · {qInfo.signs}
+            {qInfo.roman} {t('trigLab.circle.quadrant')} · {qInfo.signs}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="bg-amber-50 rounded-xl p-2">
-              <p className="text-amber-500 font-bold uppercase tracking-wide text-[9px]">Агол</p>
+              <p className="text-amber-500 font-bold uppercase tracking-wide text-[9px]">{t('trigLab.circle.angle')}</p>
               <p className="text-amber-800 font-mono text-sm font-bold">{Math.round(angleDeg)}°</p>
               <p className="text-amber-600 font-mono">{radLabel(toRad(angleDeg))}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-2">
               <p className="text-blue-500 font-bold uppercase tracking-wide text-[9px]">cos θ</p>
               <p className="text-blue-800 font-mono text-sm font-bold">{fmt(pt.cos)}</p>
-              <p className="text-blue-400 text-[10px]">x-координата</p>
+              <p className="text-blue-400 text-[10px]">{t('trigLab.circle.xCoord')}</p>
             </div>
             <div className="bg-green-50 rounded-xl p-2">
               <p className="text-green-500 font-bold uppercase tracking-wide text-[9px]">sin θ</p>
               <p className="text-green-800 font-mono text-sm font-bold">{fmt(pt.sin)}</p>
-              <p className="text-green-400 text-[10px]">y-координата</p>
+              <p className="text-green-400 text-[10px]">{t('trigLab.circle.yCoord')}</p>
             </div>
             <div className="bg-purple-50 rounded-xl p-2">
               <p className="text-purple-500 font-bold uppercase tracking-wide text-[9px]">tan θ</p>
@@ -160,7 +162,7 @@ export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, on
           </div>
           {/* Special angle buttons */}
           <div>
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Специјални агли</p>
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('trigLab.circle.specialAngles')}</p>
             <div className="flex flex-wrap gap-1">
               {[0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 270, 330].map(a => (
                 <button
@@ -178,7 +180,7 @@ export const UnitCirclePicker: React.FC<UnitCirclePickerProps> = ({ angleDeg, on
           {/* Slider */}
           <div>
             <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-              Агол: {Math.round(angleDeg)}°
+              {t('trigLab.circle.angle')}: {Math.round(angleDeg)}°
             </label>
             <input
               type="range" min="0" max="359" step="1"

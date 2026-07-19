@@ -77,11 +77,14 @@ export function unitCirclePoint(deg: number, cx: number, cy: number, r: number):
   };
 }
 
-export const QUADRANT_LABELS: Record<1 | 2 | 3 | 4, { label: string; signs: string; color: string }> = {
-  1: { label: 'I квадрант', signs: 'sin+, cos+, tan+', color: '#16a34a' },
-  2: { label: 'II квадрант', signs: 'sin+, cos−, tan−', color: '#2563eb' },
-  3: { label: 'III квадрант', signs: 'sin−, cos−, tan+', color: '#dc2626' },
-  4: { label: 'IV квадрант', signs: 'sin−, cos+, tan−', color: '#9333ea' },
+// 2026-07-19 (Wave 8.4, audit_2026_07_18_full_app_review): `roman` is combined with the
+// translated word for "quadrant" in UnitCirclePicker.tsx — kept separate here (rather than a
+// baked-in MK "I квадрант" string) so this data constant doesn't hardcode a UI language.
+export const QUADRANT_LABELS: Record<1 | 2 | 3 | 4, { roman: string; signs: string; color: string }> = {
+  1: { roman: 'I', signs: 'sin+, cos+, tan+', color: '#16a34a' },
+  2: { roman: 'II', signs: 'sin+, cos−, tan−', color: '#2563eb' },
+  3: { roman: 'III', signs: 'sin−, cos−, tan+', color: '#dc2626' },
+  4: { roman: 'IV', signs: 'sin−, cos+, tan−', color: '#9333ea' },
 };
 
 export const SPECIAL_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
