@@ -132,10 +132,19 @@ if (Array.isArray(questions)) {
         if (q.choices[ch] === undefined)
           errors.push(`${loc}: missing choice "${ch}"`);
       }
-      if (!q.correctAnswer)
+      // Officially voided questions (see MaturaQuestion.voided) have no correct answer by
+      // design — the state exam committee excluded them from scoring — so a null
+      // correctAnswer is expected and correct here, not a data gap.
+      if (q.voided) {
+        if (q.correctAnswer)
+          errors.push(`${loc}: voided question must not have a correctAnswer`);
+        if (!q.voidedReason)
+          warnings.push(`${loc}: voided question is missing voidedReason`);
+      } else if (!q.correctAnswer) {
         errors.push(`${loc}: missing correctAnswer`);
-      else if (!VALID_CORRECT_ANSWERS.includes(q.correctAnswer))
+      } else if (!VALID_CORRECT_ANSWERS.includes(q.correctAnswer)) {
         errors.push(`${loc}: correctAnswer "${q.correctAnswer}" not in А/Б/В/Г/X`);
+      }
     }
 
     // ── Open-specific validation ───────────────────────────────────────────────

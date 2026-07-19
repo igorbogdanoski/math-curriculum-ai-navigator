@@ -313,7 +313,7 @@
         "В": "$20\\text{ cm}$",
         "Г": "$40\\text{ cm}$"
       },
-      "correctAnswer": "X",
+      "correctAnswer": null,
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -326,7 +326,9 @@
       ],
       "hints": [],
       "aiSolution": "Kjo detyrë është anuluar/përjashtuar në çelësin zyrtar sepse përgjigja e saktë nuk është ndër opsionet e ofruara. Perimetri është $20\\text{ cm}$, kështu që brinja është $a=5\\text{ cm}$. Syprina është $P = a \\cdot h = 20$, kështu që lartësia është $h=4\\text{ cm}$. Rrezja e vijës rrethore të brendashkruar është $r = \\frac{h}{2} = 2\\text{ cm}$.",
-      "successRatePercent": null
+      "successRatePercent": null,
+      "voided": true,
+      "voidedReason": "Официјалниот клуч (МАТЕМАТИКА – Клуч-Тест2-2023, matura.gov.mk) го прескокнува прашање 12 во списокот на одговори. Потврдено и математички: за ромб со периметар 20cm (страна 5cm) и плоштина 20cm², радиусот на впишаната кружница е r = Плоштина/полупериметар = 20/10 = 2cm — вредност што не се совпаѓа со ниту една од понудените опции (4, 8, 20, 40cm), што потврдува дека прашањето нема валиден точен одговор меѓу дадените избори."
     },
     {
       "questionNumber": 13,
