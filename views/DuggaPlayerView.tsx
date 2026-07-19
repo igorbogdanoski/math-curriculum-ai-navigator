@@ -17,6 +17,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useExamVisibilityPause } from '../hooks/useExamVisibilityPause';
 import { resolveExamMode } from '../utils/duggaFinalExamMode';
 import { computeSubmissionSeal } from '../utils/duggaSubmissionSeal';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ type Phase = 'code' | 'name' | 'test' | 'submitting' | 'results';
 export function DuggaPlayerView() {
   const { user, firebaseUser } = useAuth();
   const { addNotification } = useNotification();
+  const { t } = useLanguage();
 
   // S65 P2-C — read `?code=XXX` from URL hash so student dashboards / share
   // links can deep-link straight into a test without manual code entry.
@@ -62,7 +64,7 @@ export function DuggaPlayerView() {
   const [maxScore, setMaxScore] = useState(0);
   const [pendingReviewPoints, setPendingReviewPoints] = useState(0);
   const [, setSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState('Оценување...');
+  const [submitStatus, setSubmitStatus] = useState(t('duggaPlayer.grading'));
 
   // S61-E1/E2 — Final exam mode + visibility pause ----------------------------
   const examMode = useMemo(() => (test ? resolveExamMode(test) : null), [test]);
@@ -91,15 +93,15 @@ export function DuggaPlayerView() {
     if (!c) return;
     setLoadingTest(true);
     try {
-      const t = await getDuggaTestByCode(c);
-      if (!t) {
-        addNotification('Тестот не е пронајден. Провери го кодот.', 'error');
+      const fetchedTest = await getDuggaTestByCode(c);
+      if (!fetchedTest) {
+        addNotification(t('duggaPlayer.testNotFound'), 'error');
         return;
       }
-      setTest(t);
+      setTest(fetchedTest);
       // Initialize ordering questions with shuffled order
       const initAnswers: Record<string, string> = {};
-      t.questions.forEach(q => {
+      fetchedTest.questions.forEach(q => {
         if (q.type === 'ordering' && q.orderItems?.length) {
           const shuffled = [...q.orderItems].sort(() => Math.random() - 0.5);
           initAnswers[q.id] = shuffled.join('|');
@@ -108,11 +110,11 @@ export function DuggaPlayerView() {
       setAnswers(initAnswers);
       setPhase('name');
     } catch {
-      addNotification('Грешка при вчитување. Обиди се повторно.', 'error');
+      addNotification(t('duggaPlayer.loadError'), 'error');
     } finally {
       setLoadingTest(false);
     }
-  }, [code, addNotification]);
+  }, [code, addNotification, t]);
 
   // S65 P2-C — auto-load test when ?code=XXX is supplied via deep-link.
   const autoLoadedRef = useRef(false);
@@ -146,8 +148,8 @@ export function DuggaPlayerView() {
         qResults[q.id] = {
           earned: 0, maxPoints: q.points, correct: null,
           feedback: needsManualReview(q)
-            ? 'Наставникот сè уште нема зачувано точен одговор за ова прашање — потребна е рачна проверка.'
-            : 'Потребно дополнително оценување',
+            ? t('duggaPlayer.needsManualReviewFeedback')
+            : t('duggaPlayer.needsMoreGrading'),
         };
       }
       maxPts += q.points;
@@ -156,7 +158,7 @@ export function DuggaPlayerView() {
     // 2a) AI-grade essay/open questions
     const aiQs = gradeable.filter(q => needsAIGrade(q) && q.type !== 'feynman_explain' && q.type !== 'proof_critique' && q.type !== 'geometry_construct');
     if (aiQs.length > 0) {
-      setSubmitStatus(`AI оценување (${aiQs.length} есеј одговори)...`);
+      setSubmitStatus(t('duggaPlayer.gradingEssays').replace('{n}', String(aiQs.length)));
       for (const q of aiQs) {
         try {
           const grade = await duggaAPI.gradeEssayAnswer({
@@ -169,7 +171,7 @@ export function DuggaPlayerView() {
           qResults[q.id] = { earned: aiEarned, maxPoints: q.points, correct: aiEarned >= q.points * 0.7, feedback: '', aiGrade: grade };
           earned += aiEarned;
         } catch {
-          qResults[q.id] = { ...qResults[q.id], feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
+          qResults[q.id] = { ...qResults[q.id], feedback: t('duggaPlayer.aiGradingFailed') };
         }
       }
     }
@@ -177,7 +179,7 @@ export function DuggaPlayerView() {
     // 2b) Feynman-rubric grading
     const feynmanQs = gradeable.filter(q => q.type === 'feynman_explain');
     if (feynmanQs.length > 0) {
-      setSubmitStatus(`Феинман оценување (${feynmanQs.length} одговори)...`);
+      setSubmitStatus(t('duggaPlayer.gradingFeynman').replace('{n}', String(feynmanQs.length)));
       for (const q of feynmanQs) {
         try {
           const fg = await gradeFeynmanAnswer(
@@ -191,11 +193,11 @@ export function DuggaPlayerView() {
             maxPoints: q.points,
             correct: fg.total >= 70,
             feedback: fg.feedback,
-            aiGrade: `Феинман оценка: ${fg.total}/100 (точност ${fg.accuracy}/40 · едноставност ${fg.simplicity}/25 · комплетност ${fg.completeness}/25 · без жаргон ${fg.noJargon}/10)`,
+            aiGrade: `${t('duggaPlayer.feynmanGradeLabel')}: ${fg.total}/100 (${t('duggaPlayer.accuracy')} ${fg.accuracy}/40 · ${t('duggaPlayer.simplicity')} ${fg.simplicity}/25 · ${t('duggaPlayer.completeness')} ${fg.completeness}/25 · ${t('duggaPlayer.noJargon')} ${fg.noJargon}/10)`,
           };
           earned += pts;
         } catch {
-          qResults[q.id] = { ...qResults[q.id], feedback: 'Феинман оценувањето не успеа. Потребна рачна оценка.' };
+          qResults[q.id] = { ...qResults[q.id], feedback: t('duggaPlayer.feynmanFailed') };
         }
       }
     }
@@ -203,7 +205,7 @@ export function DuggaPlayerView() {
     // 2c) proof_critique grading — deterministic step check + AI reason evaluation
     const critiqueQs = gradeable.filter(q => q.type === 'proof_critique');
     if (critiqueQs.length > 0) {
-      setSubmitStatus(`Оценување анализа на доказ (${critiqueQs.length} одговори)...`);
+      setSubmitStatus(t('duggaPlayer.gradingProofCritique').replace('{n}', String(critiqueQs.length)));
       for (const q of critiqueQs) {
         let parsed: { step?: number; reason?: string } = {};
         try { parsed = JSON.parse(answers[q.id] ?? '{}'); } catch { /* ignore */ }
@@ -227,16 +229,16 @@ export function DuggaPlayerView() {
               earned: total, maxPoints: q.points,
               correct: total >= q.points * 0.7,
               feedback: g.feedback ?? '',
-              aiGrade: `Чекор: ${stepPts}/${Math.round(q.points * 0.5)} · Образложение: ${reasonPts}/${Math.round(q.points * 0.5)} · Вкупно: ${total}/${q.points}`,
+              aiGrade: `${t('duggaPlayer.step')}: ${stepPts}/${Math.round(q.points * 0.5)} · ${t('duggaPlayer.reasoning')}: ${reasonPts}/${Math.round(q.points * 0.5)} · ${t('duggaPlayer.total')}: ${total}/${q.points}`,
             };
             earned += total;
           } catch {
             const total = stepPts;
-            qResults[q.id] = { earned: total, maxPoints: q.points, correct: null, feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
+            qResults[q.id] = { earned: total, maxPoints: q.points, correct: null, feedback: t('duggaPlayer.aiGradingFailed') };
             earned += total;
           }
         } else {
-          qResults[q.id] = { earned: stepPts, maxPoints: q.points, correct: stepPts > 0, feedback: stepPts > 0 ? 'Точен чекор!' : 'Погрешен чекор.' };
+          qResults[q.id] = { earned: stepPts, maxPoints: q.points, correct: stepPts > 0, feedback: stepPts > 0 ? t('duggaPlayer.correctStep') : t('duggaPlayer.wrongStep') };
           earned += stepPts;
         }
       }
@@ -245,7 +247,7 @@ export function DuggaPlayerView() {
     // 2d) geometry_construct — dedicated AI grader (description + rubric), not the generic essay grader
     const geometryQs = gradeable.filter(q => q.type === 'geometry_construct');
     if (geometryQs.length > 0) {
-      setSubmitStatus(`Оценување геометриски конструкции (${geometryQs.length} одговори)...`);
+      setSubmitStatus(t('duggaPlayer.gradingGeometry').replace('{n}', String(geometryQs.length)));
       for (const q of geometryQs) {
         try {
           const grade = await duggaAPI.gradeGeometryConstruction({
@@ -260,7 +262,7 @@ export function DuggaPlayerView() {
           qResults[q.id] = { earned: aiEarned, maxPoints: q.points, correct: aiEarned >= q.points * 0.7, feedback: '', aiGrade: grade };
           earned += aiEarned;
         } catch {
-          qResults[q.id] = { earned: 0, maxPoints: q.points, correct: null, feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
+          qResults[q.id] = { earned: 0, maxPoints: q.points, correct: null, feedback: t('duggaPlayer.aiGradingFailed') };
         }
       }
     }
@@ -273,7 +275,7 @@ export function DuggaPlayerView() {
     const gradedMaxPts = maxPts - pendingPts;
 
     // 3) Save to Firestore (with optional tamper-evident seal in finalExamMode)
-    setSubmitStatus('Зачувување...');
+    setSubmitStatus(t('duggaPlayer.saving'));
     const studentUid = firebaseUser?.uid ?? `anon_${Date.now()}`;
     // Merge QR solution-photo URLs into answers as `{qId}__photo` keys
     const mergedAnswers: Record<string, string> = { ...answers };
@@ -300,7 +302,7 @@ export function DuggaPlayerView() {
         testTitle: test.title,
         teacherUid: test.teacherUid,
         studentUid,
-        studentName: studentName.trim() || 'Анонимен ученик',
+        studentName: studentName.trim() || t('duggaPlayer.anonymousStudent'),
         answers: mergedAnswers,
         score: earned,
         totalPoints: maxPts,
@@ -324,7 +326,7 @@ export function DuggaPlayerView() {
 
   const gradedMaxScore = maxScore - pendingReviewPoints;
   const pct = gradedMaxScore > 0 ? Math.round((totalScore / gradedMaxScore) * 100) : 0;
-  const gradeLabel = pct >= 90 ? 'Одличен (5)' : pct >= 75 ? 'Многу добар (4)' : pct >= 60 ? 'Добар (3)' : pct >= 50 ? 'Задоволителен (2)' : 'Недоволен (1)';
+  const gradeLabel = pct >= 90 ? t('duggaPlayer.gradeExcellent') : pct >= 75 ? t('duggaPlayer.gradeVeryGood') : pct >= 60 ? t('duggaPlayer.gradeGood') : pct >= 50 ? t('duggaPlayer.gradeSatisfactory') : t('duggaPlayer.gradeInsufficient');
   const answeredCount = test ? test.questions.filter(q => q.type !== 'section_header' && (answers[q.id] ?? '').length > 0).length : 0;
   const totalAnswerable = test ? test.questions.filter(q => q.type !== 'section_header').length : 0;
 
@@ -337,19 +339,19 @@ export function DuggaPlayerView() {
             <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl">
               <Trophy className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Дига Тест</h1>
-            <p className="text-gray-500 mt-2">Внеси го кодот за тестот добиен од наставникот</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('duggaPlayer.title')}</h1>
+            <p className="text-gray-500 mt-2">{t('duggaPlayer.enterCodeSubtitle')}</p>
           </div>
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Код за тест</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('duggaPlayer.testCode')}</label>
               <input
                 type="text"
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 onKeyDown={e => { if (e.key === 'Enter') fetchTest(); }}
                 maxLength={6}
-                placeholder="пр. AB3K7Z"
+                placeholder={t('duggaPlayer.codePlaceholder')}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 autoComplete="off"
@@ -363,7 +365,7 @@ export function DuggaPlayerView() {
               disabled={loadingTest || code.length < 4}
               className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-lg hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-3">
               {loadingTest ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              {loadingTest ? 'Барање...' : 'Влези во тестот'}
+              {loadingTest ? t('duggaPlayer.searching') : t('duggaPlayer.enterTest')}
             </button>
           </div>
         </div>
@@ -383,14 +385,17 @@ export function DuggaPlayerView() {
               </div>
               <h2 className="text-xl font-bold text-gray-900">{test.title}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {test.questions.filter(q => q.type !== 'section_header').length} прашања · {test.totalPoints} поени · ~{test.estimatedMinutes} мин
+                {t('duggaPlayer.questionsPointsTime')
+                  .replace('{n}', String(test.questions.filter(q => q.type !== 'section_header').length))
+                  .replace('{points}', String(test.totalPoints))
+                  .replace('{min}', String(test.estimatedMinutes))}
               </p>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Твоето ime и презиме</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('duggaPlayer.yourName')}</label>
               <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && setPhase('test')}
-                placeholder="пр. Ана Петровска"
+                placeholder={t('duggaPlayer.namePlaceholder')}
                 className="w-full rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none px-4 py-3 text-sm transition-all" />
             </div>
             {test.description && (
@@ -400,7 +405,7 @@ export function DuggaPlayerView() {
             )}
             <button type="button" onClick={() => setPhase('test')} disabled={!studentName.trim()}
               className="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-base hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
-              Започни го тестот
+              {t('duggaPlayer.startTest')}
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -421,14 +426,13 @@ export function DuggaPlayerView() {
               <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 flex items-center justify-center">
                 <Clock className="w-8 h-8 text-amber-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">Тестот е паузиран</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('duggaPlayer.testPaused')}</h2>
               <p className="text-sm text-gray-600">
-                Излегувањето од прозорецот не е дозволено за време на завршниот испит.
-                Врати се за да продолжиш.
+                {t('duggaPlayer.pauseExplanation')}
               </p>
               {pauseEvents > 1 && (
                 <p className="text-xs text-red-600 font-semibold">
-                  Забележани се {pauseEvents} обиди за излез — ова ќе биде пријавено на наставникот.
+                  {t('duggaPlayer.pauseAttempts').replace('{n}', String(pauseEvents))}
                 </p>
               )}
             </div>
@@ -437,7 +441,7 @@ export function DuggaPlayerView() {
         {examMode?.finalExam && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center">
             <p className="text-xs font-semibold text-amber-800">
-              🔒 Завршен испит: излегувањето од прозорецот ја паузира сесијата.
+              {t('duggaPlayer.finalExamBanner')}
             </p>
           </div>
         )}
@@ -452,10 +456,10 @@ export function DuggaPlayerView() {
               <div className="text-xs text-gray-600 font-medium">
                 <span className={answeredCount === totalAnswerable ? 'text-green-600 font-bold' : ''}>
                   {answeredCount}
-                </span>/{totalAnswerable} одговорено
+                </span>/{totalAnswerable} {t('duggaPlayer.answered')}
               </div>
               <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
-                <div role="progressbar" aria-label="Напредок"
+                <div role="progressbar" aria-label={t('duggaPlayer.progress')}
                   className="h-full rounded-full bg-indigo-500 transition-all"
                   style={{ width: `${totalAnswerable > 0 ? (answeredCount / totalAnswerable) * 100 : 0}%` }} />
               </div>
@@ -478,12 +482,12 @@ export function DuggaPlayerView() {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-gray-600">
               {totalAnswerable - answeredCount > 0
-                ? <span className="text-amber-600 font-medium">{totalAnswerable - answeredCount} прашање(а) без одговор</span>
-                : <span className="text-green-600 font-medium">Сите прашања одговорени</span>}
+                ? <span className="text-amber-600 font-medium">{totalAnswerable - answeredCount} {t('duggaPlayer.unanswered')}</span>
+                : <span className="text-green-600 font-medium">{t('duggaPlayer.allAnswered')}</span>}
             </p>
             <button type="button" onClick={handleSubmit}
               className="px-8 py-3 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg">
-              Предај тест
+              {t('duggaPlayer.submitTest')}
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -500,7 +504,7 @@ export function DuggaPlayerView() {
           <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl animate-pulse">
             <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800">Оценување...</h2>
+          <h2 className="text-xl font-bold text-gray-800">{t('duggaPlayer.grading')}</h2>
           <p className="text-gray-500 text-sm">{submitStatus}</p>
         </div>
       </div>
@@ -520,7 +524,7 @@ export function DuggaPlayerView() {
             <div className="flex items-center justify-center gap-8">
               <div>
                 <div className="text-5xl font-black">{totalScore}</div>
-                <div className="text-indigo-200 text-sm">/ {maxScore} поени</div>
+                <div className="text-indigo-200 text-sm">/ {maxScore} {t('duggaPlayer.points')}</div>
               </div>
               <div className="w-px h-16 bg-white/20" />
               <div>
@@ -532,7 +536,7 @@ export function DuggaPlayerView() {
             </div>
             {pendingReviewPoints > 0 && (
               <p className="text-xs text-indigo-100/90 mt-4 bg-white/10 inline-block px-3 py-1.5 rounded-full">
-                ⏳ {pendingReviewPoints} {pendingReviewPoints === 1 ? 'поен чека' : 'поени чекаат'} рачна проверка од наставникот — процентот погоре е сметан само од веќе оценетите прашања.
+                ⏳ {pendingReviewPoints} {pendingReviewPoints === 1 ? t('duggaPlayer.pointPendingSingular') : t('duggaPlayer.pointsPendingPlural')} {t('duggaPlayer.pendingReviewNote')}
               </p>
             )}
           </div>
@@ -540,7 +544,7 @@ export function DuggaPlayerView() {
 
         {/* Per-question breakdown */}
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-          <h2 className="text-base font-bold text-gray-700">Детален преглед</h2>
+          <h2 className="text-base font-bold text-gray-700">{t('duggaPlayer.detailedReview')}</h2>
           {test.questions.map((q, idx) => (
             <QuestionCard key={q.id} q={q} idx={idx} answer={answers[q.id] ?? ''}
               onChange={handleAnswer} result={results[q.id]} showResults={true}
@@ -561,7 +565,7 @@ export function DuggaPlayerView() {
               }}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
               <RotateCcw className="w-4 h-4" />
-              Нов тест
+              {t('duggaPlayer.newTest')}
             </button>
           </div>
         </div>
