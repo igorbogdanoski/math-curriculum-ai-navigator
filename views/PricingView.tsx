@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy } from 'lucide-react';
+import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRO_PRICE_MKD, PRO_PRICE_MONTHLY, BANK_ACCOUNT, BANK_NAME, BANK_RECIPIENT, SUPPORT_EMAIL as CONTACT_EMAIL } from '../data/pricingConstants';
 
@@ -133,13 +133,38 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export const PricingView: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, firebaseUser } = useAuth();
   const [showBankDetails, setShowBankDetails] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   // Success/cancel URL params
   const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '');
   const paymentStatus = params.get('payment');
+
+  const handleStripeCheckout = async () => {
+    if (!firebaseUser) {
+      setCheckoutError('Прво се најавете за да продолжите.');
+      return;
+    }
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Грешка при плаќање.');
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Непозната грешка.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -267,17 +292,29 @@ export const PricingView: React.FC = () => {
               <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={() => setShowBankDetails(v => !v)}
-                  className="w-full py-3 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-lg text-sm flex items-center justify-center gap-2"
+                  onClick={handleStripeCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full py-3 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <CreditCard className="w-4 h-4" />
-                  {showBankDetails ? 'Скриј детали за уплата' : 'Активирај Pro — плати сега'}
+                  {checkoutLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Се подготвува...</>
+                    : <><CreditCard className="w-4 h-4" /> Активирај Pro — плати со картичка</>}
                 </button>
+                {checkoutError && (
+                  <p className="text-red-100 bg-red-500/20 rounded-lg py-1.5 text-xs text-center">{checkoutError}</p>
+                )}
                 {!isAuthenticated && (
                   <p className="text-indigo-100 text-xs text-center">
-                    <a href="#/" className="underline">Најавете се</a> пред да испратите уплата
+                    <a href="#/" className="underline">Најавете се</a> пред да продолжите со плаќање
                   </p>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setShowBankDetails(v => !v)}
+                  className="w-full text-indigo-100 text-xs text-center hover:text-white transition-colors underline underline-offset-2"
+                >
+                  {showBankDetails ? 'Скриј банкарски трансфер' : 'или плати со банкарски трансфер →'}
+                </button>
               </div>
             )}
           </div>
@@ -387,7 +424,7 @@ export const PricingView: React.FC = () => {
           {!isPro && (
             <button
               type="button"
-              onClick={() => { setShowBankDetails(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="px-8 py-3.5 bg-white text-indigo-700 font-black rounded-xl hover:bg-indigo-50 transition-colors shadow-xl"
             >
               💳 Надгради на Pro — {PRO_PRICE_MKD} МКД/год.
