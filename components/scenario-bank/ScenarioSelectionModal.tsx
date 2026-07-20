@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, CheckSquare, Square, Loader2, Sparkles } from 'lucide-react';
 import type { ScenarioSegment } from '../../services/scenarioSplitter';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   segments: ScenarioSegment[];
@@ -17,6 +18,7 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
   onClose,
   isImporting,
 }) => {
+  const { t } = useLanguage();
   const [selected, setSelected] = useState<Set<number>>(
     new Set(segments.map(s => s.index)),
   );
@@ -50,11 +52,11 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
           <div>
             <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-500" />
-              Детектирани сценарија во документот
+              {t('scenarioBank.sel.title')}
             </h2>
             <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">{fileName}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Затвори" className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="p-1.5 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -69,7 +71,7 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
             {selected.size === segments.length
               ? <CheckSquare className="w-4 h-4" />
               : <Square className="w-4 h-4" />}
-            {selected.size === segments.length ? 'Откажи ги сите' : 'Избери ги сите'}
+            {selected.size === segments.length ? t('scenarioBank.sel.deselectAll') : t('scenarioBank.sel.selectAll')}
           </button>
         </div>
 
@@ -99,7 +101,7 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{preview}…</p>
                     <p className="text-[10px] text-gray-300 mt-1">
-                      {Math.round(seg.text.length / 100) / 10} K знаци
+                      {t('scenarioBank.sel.kChars').replace('{n}', String(Math.round(seg.text.length / 100) / 10))}
                     </p>
                   </div>
                 </div>
@@ -115,7 +117,7 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50"
           >
-            Откажи
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -124,8 +126,8 @@ export const ScenarioSelectionModal: React.FC<Props> = ({
             className="flex-2 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors"
           >
             {isImporting
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Се увезуваат…</>
-              : <><Sparkles className="w-4 h-4" /> Увези избраните ({selected.size})</>}
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('scenarioBank.sel.importing')}</>
+              : <><Sparkles className="w-4 h-4" /> {t('scenarioBank.sel.importSelected').replace('{n}', String(selected.size))}</>}
           </button>
         </div>
       </div>

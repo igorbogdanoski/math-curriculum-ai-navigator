@@ -1,9 +1,11 @@
 import React from 'react';
 import { Loader2, ShieldCheck, Globe, Lock, BadgeCheck } from 'lucide-react';
 import { useScenarioBankAdmin } from '../../hooks/useScenarioBankAdmin';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 /** Admin-only all-entries table for ScenarioBankView's "admin" tab. */
 export const ScenarioBankAdminPanel: React.FC = () => {
+  const { t } = useLanguage();
   const { entries, hasMore, loading, loadMore, refresh } = useScenarioBankAdmin();
 
   return (
@@ -13,10 +15,10 @@ export const ScenarioBankAdminPanel: React.FC = () => {
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-rose-600" />
           <h2 className="text-base font-black text-gray-800">
-            Администраторски преглед — сите сценарија
+            {t('scenarioBank.admin.title')}
           </h2>
           <span className="text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
-            {entries.length}{hasMore ? '+' : ''} вкупно
+            {t('scenarioBank.admin.totalCount').replace('{n}', `${entries.length}${hasMore ? '+' : ''}`)}
           </span>
         </div>
         <button
@@ -25,7 +27,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
           className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
           disabled={loading}
         >
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '↻'} Освежи
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '↻'} {t('scenarioBank.admin.refresh')}
         </button>
       </div>
 
@@ -37,7 +39,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
               {entries.filter(e => e.isPublic).length}
             </p>
             <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-              <Globe className="w-3 h-3" /> Јавни
+              <Globe className="w-3 h-3" /> {t('scenarioBank.admin.public')}
             </p>
           </div>
           <div className="rounded-xl border bg-white p-3">
@@ -45,7 +47,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
               {entries.filter(e => !e.isPublic).length}
             </p>
             <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-              <Lock className="w-3 h-3" /> Приватни нацрти
+              <Lock className="w-3 h-3" /> {t('scenarioBank.admin.privateDrafts')}
             </p>
           </div>
           <div className="rounded-xl border bg-white p-3">
@@ -53,7 +55,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
               {entries.filter(e => e.verifiedByBRO).length}
             </p>
             <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
-              <BadgeCheck className="w-3 h-3" /> БРО Верифиц.
+              <BadgeCheck className="w-3 h-3" /> {t('scenarioBank.admin.broVerified')}
             </p>
           </div>
         </div>
@@ -71,12 +73,12 @@ export const ScenarioBankAdminPanel: React.FC = () => {
           <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-3 py-2.5 font-bold text-gray-600">Наслов</th>
-                <th className="text-left px-3 py-2.5 font-bold text-gray-600">Автор</th>
-                <th className="text-left px-3 py-2.5 font-bold text-gray-600">Одд.</th>
-                <th className="text-left px-3 py-2.5 font-bold text-gray-600">Тема</th>
-                <th className="text-left px-3 py-2.5 font-bold text-gray-600">Статус</th>
-                <th className="text-right px-3 py-2.5 font-bold text-gray-600">Употреби</th>
+                <th className="text-left px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colTitle')}</th>
+                <th className="text-left px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colAuthor')}</th>
+                <th className="text-left px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colGrade')}</th>
+                <th className="text-left px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colTopic')}</th>
+                <th className="text-left px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colStatus')}</th>
+                <th className="text-right px-3 py-2.5 font-bold text-gray-600">{t('scenarioBank.admin.colUses')}</th>
               </tr>
             </thead>
             <tbody>
@@ -86,7 +88,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
                     <p className="font-semibold text-gray-800 truncate">{entry.title}</p>
                     {entry.forkDepth > 0 && (
                       <span className="text-[10px] text-indigo-500">
-                        ↳ Ремикс (ниво {entry.forkDepth}){entry.originalAuthorName ? ` — оригинално од: ${entry.originalAuthorName}` : ''}
+                        ↳ {t('scenarioBank.admin.remixLevel').replace('{n}', String(entry.forkDepth))}{entry.originalAuthorName ? ` ${t('scenarioBank.admin.originalFrom').replace('{name}', entry.originalAuthorName)}` : ''}
                       </span>
                     )}
                   </td>
@@ -96,7 +98,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
                   </td>
                   <td className="px-3 py-2">
                     <span className="font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full">
-                      {entry.grade}. одд.
+                      {t('scenarioBank.admin.gradeAbbrev').replace('{n}', String(entry.grade))}
                     </span>
                   </td>
                   <td className="px-3 py-2 max-w-[160px]">
@@ -105,10 +107,10 @@ export const ScenarioBankAdminPanel: React.FC = () => {
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">
                       {entry.isPublic
-                        ? <span className="flex items-center gap-0.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold"><Globe className="w-2.5 h-2.5" /> Јавно</span>
-                        : <span className="flex items-center gap-0.5 text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold"><Lock className="w-2.5 h-2.5" /> Нацрт</span>
+                        ? <span className="flex items-center gap-0.5 text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold"><Globe className="w-2.5 h-2.5" /> {t('scenarioBank.admin.publicBadge')}</span>
+                        : <span className="flex items-center gap-0.5 text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full font-bold"><Lock className="w-2.5 h-2.5" /> {t('scenarioBank.admin.draftBadge')}</span>
                       }
-                      {entry.verifiedByBRO && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold">БРО</span>}
+                      {entry.verifiedByBRO && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold">{t('scenarioBank.admin.broBadge')}</span>}
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-gray-500">
@@ -131,7 +133,7 @@ export const ScenarioBankAdminPanel: React.FC = () => {
             className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Вчитај уште 30 →
+            {t('scenarioBank.admin.loadMore30')}
           </button>
         </div>
       )}

@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Upload, X, FileText, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { parseUploadedFile, type ParsedDocument } from '../../services/documentParser';
 import { CloudImportMenu } from '../common/CloudImportMenu';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) => {
+  const { t } = useLanguage();
   const [doc, setDoc] = useState<ParsedDocument | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
@@ -25,7 +27,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
       setDoc(parsed);
       setFileName(file.name);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Грешка при читање на датотеката.');
+      setError(e instanceof Error ? e.message : t('scenarioBank.upload.readError'));
     } finally {
       setIsBusy(false);
     }
@@ -49,7 +51,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
     setIsBusy(true);
     try {
       if (!doc.text.trim()) {
-        setError('Не успеа да се прочита текст. Пробајте друга датотека.');
+        setError(t('scenarioBank.upload.noTextError'));
         return;
       }
       onExtracted(doc.text, fileName);
@@ -65,13 +67,13 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
           <div>
             <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
               <Upload className="w-5 h-5 text-indigo-500" />
-              Прикачи старо сценарио
+              {t('scenarioBank.upload.title')}
             </h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              AI ќе ја структурира твојата постоечка подготовка — потоа можеш да ја збогатиш педагошки.
+              {t('scenarioBank.upload.subtitle')}
             </p>
           </div>
-          <button type="button" onClick={onClose} title="Затвори" aria-label="Затвори" className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <button type="button" onClick={onClose} title={t('common.close')} aria-label={t('common.close')} className="p-1.5 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -90,19 +92,19 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
               accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.zip" // future ZIP import
               onChange={onFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              aria-label="Прикачи датотека"
+              aria-label={t('scenarioBank.upload.uploadFile')}
             />
             {doc ? (
               <div className="flex items-center justify-center gap-2 text-sm">
                 <FileText className="w-5 h-5 text-indigo-500" />
                 <span className="font-bold text-gray-800 truncate max-w-[260px]">{fileName}</span>
-                <span className="text-gray-400">({Math.round(doc.charCount / 1000 * 10) / 10} K chars)</span>
+                <span className="text-gray-400">{t('scenarioBank.upload.kChars').replace('{n}', String(Math.round(doc.charCount / 1000 * 10) / 10))}</span>
               </div>
             ) : (
               <div className="text-sm text-gray-500">
                 <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                Повлечи датотека тука или кликни за да избереш<br />
-                <span className="text-xs">PDF, DOCX, TXT, PNG, JPG — до 20 MB</span>
+                {t('scenarioBank.upload.dragOrClick')}<br />
+                <span className="text-xs">{t('scenarioBank.upload.fileTypesHint')}</span>
               </div>
             )}
           </div>
@@ -119,11 +121,11 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
               {doc.truncated && (
                 <span className="text-amber-700 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Долг документ — само прв дел ќе биде анализиран
+                  {t('scenarioBank.upload.longDocWarning')}
                 </span>
               )}
               {doc.images.length > 0 && (
-                <span className="text-emerald-700">📷 {doc.images.length} слика(и) детектирани</span>
+                <span className="text-emerald-700">📷 {t('scenarioBank.upload.imagesDetected').replace('{n}', String(doc.images.length))}</span>
               )}
             </div>
           )}
@@ -136,7 +138,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
           )}
 
           <p className="text-xs text-gray-400">
-            ⚠️ AI само ТРАНСКРИБИРА и СТРУКТУРИРА — не измислува содржина. Ќе можеш да прегледаш и уредиш сè пред да го објавиш во Банката.
+            {t('scenarioBank.upload.aiDisclaimer')}
           </p>
 
           <div className="flex gap-2">
@@ -145,7 +147,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50"
             >
-              Откажи
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -154,7 +156,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors"
             >
               {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {isBusy ? 'Се обработува...' : 'Анализирај со AI'}
+              {isBusy ? t('scenarioBank.upload.processing') : t('scenarioBank.upload.analyzeWithAI')}
             </button>
           </div>
         </div>
