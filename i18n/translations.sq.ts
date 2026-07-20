@@ -1917,6 +1917,7 @@ export const sq: Record<string, string> = {
   'dataviz.geo2dLab.inscribedAngleTheorem': 'Teorema e këndit të brendashkruar:',
   'dataviz.geo2dLab.inscribedAngleBody': 'Këndi i brendashkruar është gjysma e këndit qendror mbi të njëjtin hark.',
   'dataviz.geo2dLab.centralAngleLabel': 'Këndi qendror:',
+  'dataviz.geo2dLab.exactlyHalf': '(saktësisht gjysma!)',
   'dataviz.geo2dLab.polyName3': 'Trekëndësh',
   'dataviz.geo2dLab.polyName4': 'Katërkëndësh (Katror)',
   'dataviz.geo2dLab.polyName5': 'Pesëkëndësh',
@@ -2030,4 +2031,8 @@ export const sq: Record<string, string> = {
   'dataviz.geo2dExp.formulaForType': 'Formula ({type}):',
   'dataviz.geo2dExp.quadAngleSumBody': 'Shuma e këndeve të brendshme të çdo katërkëndëshi =',
   'dataviz.geo2dExp.varignonTheorem': 'Teorema e Varignon-it: Pikat e mesit të brinjëve të çdo katërkëndëshi formojnë gjithmonë një paralelogram!',
+  'dataviz.geo2dExp.violetDashed': '(vijë e ndërprerë vjollcë)',
+  'dataviz.geo2dExp.shoelaceFormula': 'S = Formula e Gausit (Shoelace)',
+  'dataviz.geo2dExp.vertexColonLabel': 'Kulmi:',
+  'dataviz.geo2dExp.rootsColonLabel': 'Rrënjët:',
 };

@@ -1917,6 +1917,7 @@ export const mk: Record<string, string> = {
   'dataviz.geo2dLab.inscribedAngleTheorem': 'Теорема за впишан агол:',
   'dataviz.geo2dLab.inscribedAngleBody': 'Впишаниот агол е половина од централниот агол врз ист лак.',
   'dataviz.geo2dLab.centralAngleLabel': 'Централен агол:',
+  'dataviz.geo2dLab.exactlyHalf': '(точно половина!)',
   'dataviz.geo2dLab.polyName3': 'Триаголник',
   'dataviz.geo2dLab.polyName4': 'Четириаголник (Квадрат)',
   'dataviz.geo2dLab.polyName5': 'Петаголник',
@@ -2030,4 +2031,8 @@ export const mk: Record<string, string> = {
   'dataviz.geo2dExp.formulaForType': 'Формула ({type}):',
   'dataviz.geo2dExp.quadAngleSumBody': 'Збирот на внатрешните агли на секој четириаголник =',
   'dataviz.geo2dExp.varignonTheorem': 'Вариньонова теорема: Средиштата на страните на секој четириаголник секогаш формираат паралелограм!',
+  'dataviz.geo2dExp.violetDashed': '(виолетова испрекината)',
+  'dataviz.geo2dExp.shoelaceFormula': 'S = Гаусова (Shoelace) формула',
+  'dataviz.geo2dExp.vertexColonLabel': 'Теме:',
+  'dataviz.geo2dExp.rootsColonLabel': 'Корени:',
 };

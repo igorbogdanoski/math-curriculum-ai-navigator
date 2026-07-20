@@ -1917,6 +1917,7 @@ export const tr: Record<string, string> = {
   'dataviz.geo2dLab.inscribedAngleTheorem': 'Çevre açı teoremi:',
   'dataviz.geo2dLab.inscribedAngleBody': 'Çevre açı, aynı yayı gören merkez açının yarısıdır.',
   'dataviz.geo2dLab.centralAngleLabel': 'Merkez açı:',
+  'dataviz.geo2dLab.exactlyHalf': '(tam yarısı!)',
   'dataviz.geo2dLab.polyName3': 'Üçgen',
   'dataviz.geo2dLab.polyName4': 'Dörtgen (Kare)',
   'dataviz.geo2dLab.polyName5': 'Beşgen',
@@ -2030,4 +2031,8 @@ export const tr: Record<string, string> = {
   'dataviz.geo2dExp.formulaForType': 'Formül ({type}):',
   'dataviz.geo2dExp.quadAngleSumBody': 'Her dörtgenin iç açılarının toplamı =',
   'dataviz.geo2dExp.varignonTheorem': 'Varignon teoremi: Herhangi bir dörtgenin kenarlarının orta noktaları her zaman bir paralelkenar oluşturur!',
+  'dataviz.geo2dExp.violetDashed': '(mor kesikli çizgi)',
+  'dataviz.geo2dExp.shoelaceFormula': 'S = Gauss (Shoelace) formülü',
+  'dataviz.geo2dExp.vertexColonLabel': 'Tepe:',
+  'dataviz.geo2dExp.rootsColonLabel': 'Kökler:',
 };

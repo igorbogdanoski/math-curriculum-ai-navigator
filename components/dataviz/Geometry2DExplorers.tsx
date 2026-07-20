@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { type Pt, type CurRef, dist, angleDeg, triArea, foot, midpoint, clamp, fmtNum, CurrBadges } from './geometry2dUtils';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Triangle Explorer ────────────────────────────────────────────────────────
 const TRIANGLE_CUR: CurRef = {
@@ -8,16 +9,18 @@ const TRIANGLE_CUR: CurRef = {
   vocational: ['Стручно I год.', 'Стручно II год.', 'Стручно III год.'],
 };
 
+// name fields hold i18n keys (not literal text)
 const PRESETS: { name: string; pts: Pt[] }[] = [
-  { name: 'Рамностран',  pts: [[200,300],[360,300],[280,162]] },
-  { name: 'Правоаголен 3-4-5', pts: [[100,300],[220,300],[100,140]] },
-  { name: 'Рамнокрак',   pts: [[200,300],[340,300],[270,150]] },
-  { name: 'Тапоаголен',  pts: [[80,300],[380,300],[120,200]] },
+  { name: 'dataviz.geo2dExp.presetEquilateral',  pts: [[200,300],[360,300],[280,162]] },
+  { name: 'dataviz.geo2dExp.presetRight345', pts: [[100,300],[220,300],[100,140]] },
+  { name: 'dataviz.geo2dExp.presetIsosceles',   pts: [[200,300],[340,300],[270,150]] },
+  { name: 'dataviz.geo2dExp.presetObtuse',  pts: [[80,300],[380,300],[120,200]] },
 ];
 
 type TriToggle = 'none' | 'heights' | 'medians' | 'bisectors';
 
 export function TriangleExplorer() {
+  const { t } = useLanguage();
   const [pts, setPts] = useState<Pt[]>([[200, 300], [360, 300], [280, 162]]);
   const [toggle, setToggle] = useState<TriToggle>('none');
   const dragging = useRef<number | null>(null);
@@ -68,15 +71,15 @@ export function TriangleExplorer() {
   const valid = sideA + sideB > sideC && sideB + sideC > sideA && sideA + sideC > sideB && areaVal > 1;
 
   const triangleType = useMemo(() => {
-    if (!valid) return 'Невалиден триаголник';
+    if (!valid) return t('dataviz.geo2dExp.invalidTriangle');
     const maxAng = Math.max(angA, angB, angC);
-    const shape = (Math.abs(sideA - sideB) < 2 && Math.abs(sideB - sideC) < 2) ? 'Рамностран'
-      : (Math.abs(sideA - sideB) < 2 || Math.abs(sideB - sideC) < 2 || Math.abs(sideA - sideC) < 2) ? 'Рамнокрак'
-      : 'Разностран';
-    const angle = Math.abs(maxAng - 90) < 1.5 ? 'Правоаголен'
-      : maxAng > 90 ? 'Тапоаголен' : 'Остроаголен';
+    const shape = (Math.abs(sideA - sideB) < 2 && Math.abs(sideB - sideC) < 2) ? t('dataviz.geo2dExp.presetEquilateral')
+      : (Math.abs(sideA - sideB) < 2 || Math.abs(sideB - sideC) < 2 || Math.abs(sideA - sideC) < 2) ? t('dataviz.geo2dExp.presetIsosceles')
+      : t('dataviz.geo2dExp.scalene');
+    const angle = Math.abs(maxAng - 90) < 1.5 ? t('dataviz.geo2dExp.rightAngled')
+      : maxAng > 90 ? t('dataviz.geo2dExp.presetObtuse') : t('dataviz.geo2dExp.acuteAngled');
     return `${angle} · ${shape}`;
-  }, [angA, angB, angC, sideA, sideB, sideC, valid]);
+  }, [angA, angB, angC, sideA, sideB, sideC, valid, t]);
 
   const ptsStr = `${A[0]},${A[1]} ${B[0]},${B[1]} ${C[0]},${C[1]}`;
 
@@ -92,10 +95,10 @@ export function TriangleExplorer() {
   const centroid: Pt = [(A[0] + B[0] + C[0]) / 3, (A[1] + B[1] + C[1]) / 3];
 
   const TOGGLES: { id: TriToggle; label: string }[] = [
-    { id: 'none',      label: 'Основно' },
-    { id: 'heights',   label: 'Висини' },
-    { id: 'medians',   label: 'Медијани' },
-    { id: 'bisectors', label: 'Симетрали' },
+    { id: 'none',      label: t('dataviz.geo2dExp.toggleBasic') },
+    { id: 'heights',   label: t('dataviz.geo2dExp.toggleHeights') },
+    { id: 'medians',   label: t('dataviz.geo2dExp.toggleMedians') },
+    { id: 'bisectors', label: t('dataviz.geo2dExp.toggleBisectors') },
   ];
 
   return (
@@ -105,7 +108,7 @@ export function TriangleExplorer() {
         {PRESETS.map(p => (
           <button key={p.name} type="button" onClick={() => setPts(p.pts)}
             className="px-3 py-1.5 text-xs font-bold rounded-lg border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition">
-            {p.name}
+            {t(p.name)}
           </button>
         ))}
       </div>
@@ -203,7 +206,7 @@ export function TriangleExplorer() {
 
               {!valid && (
                 <text x={210} y={340} textAnchor="middle" fontSize={11} fill="#ef4444" fontWeight="bold">
-                  Нееднаквост на триаголник не е задоволена!
+                  {t('dataviz.geo2dExp.triangleInequalityFail')}
                 </text>
               )}
             </svg>
@@ -223,18 +226,18 @@ export function TriangleExplorer() {
         {/* Stats */}
         <div className="space-y-3">
           <div className={`rounded-xl p-3 border text-center ${valid ? 'bg-indigo-50 border-indigo-200' : 'bg-red-50 border-red-200'}`}>
-            <p className="text-xs text-gray-500 font-semibold uppercase">Тип</p>
+            <p className="text-xs text-gray-500 font-semibold uppercase">{t('dataviz.geo2dExp.typeLabel')}</p>
             <p className={`text-base font-extrabold mt-0.5 ${valid ? 'text-indigo-700' : 'text-red-600'}`}>{triangleType}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Страна a',    val: fmtNum(sideA / 30), unit: 'ед.', color: 'text-indigo-700' },
-              { label: 'Страна b',    val: fmtNum(sideB / 30), unit: 'ед.', color: 'text-indigo-700' },
-              { label: 'Страна c',    val: fmtNum(sideC / 30), unit: 'ед.', color: 'text-indigo-700' },
-              { label: 'Периметар',  val: fmtNum(perim / 30), unit: 'ед.', color: 'text-emerald-700' },
-              { label: 'Плоштина',   val: fmtNum(areaVal / 900), unit: 'ед²', color: 'text-amber-700' },
-              { label: '∠A + ∠B + ∠C', val: fmtNum(angA + angB + angC, 0), unit: '°', color: 'text-rose-700' },
+              { label: t('dataviz.geo2dExp.sideA'),    val: fmtNum(sideA / 30), unit: t('dataviz.geo3dPanels.unit') + '.', color: 'text-indigo-700' },
+              { label: t('dataviz.geo2dExp.sideB'),    val: fmtNum(sideB / 30), unit: t('dataviz.geo3dPanels.unit') + '.', color: 'text-indigo-700' },
+              { label: t('dataviz.geo2dExp.sideC'),    val: fmtNum(sideC / 30), unit: t('dataviz.geo3dPanels.unit') + '.', color: 'text-indigo-700' },
+              { label: t('dataviz.geo3dPanels.perimeterLabel'),  val: fmtNum(perim / 30), unit: t('dataviz.geo3dPanels.unit') + '.', color: 'text-emerald-700' },
+              { label: t('dataviz.geo2dLab.areaLabel'),   val: fmtNum(areaVal / 900), unit: t('dataviz.geo3dPanels.unitSq'), color: 'text-amber-700' },
+              { label: t('dataviz.geo2dExp.angleSumABC'), val: fmtNum(angA + angB + angC, 0), unit: '°', color: 'text-rose-700' },
             ].map(({ label, val, unit, color }) => (
               <div key={label} className="bg-white rounded-xl border border-gray-200 p-2.5 text-center">
                 <p className="text-[10px] text-gray-400 font-semibold">{label}</p>
@@ -257,12 +260,12 @@ export function TriangleExplorer() {
           </div>
 
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-800">
-            <strong>Теорема:</strong> Збирот на внатрешните агли на секој триаголник е <strong>180°</strong>.<br />
-            <strong>Нееднаквост:</strong> a + b &gt; c · b + c &gt; a · a + c &gt; b
+            <strong>{t('dataviz.geo2dLab.theoremLabel')}</strong> {t('dataviz.geo2dExp.triAngleSumBody')} <strong>180°</strong>.<br />
+            <strong>{t('dataviz.geo2dExp.inequalityLabel')}</strong> a + b &gt; c · b + c &gt; a · a + c &gt; b
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={TRIANGLE_CUR} />
           </div>
         </div>
@@ -285,6 +288,7 @@ function qToSVG(mx: number, my: number) {
 }
 
 export function QuadraticExplorer() {
+  const { t } = useLanguage();
   const [a, setA] = useState(1);
   const [b, setB] = useState(-2);
   const [c, setC] = useState(-3);
@@ -318,9 +322,9 @@ export function QuadraticExplorer() {
   const axisX = Q_CX + h * Q_SC;
 
   const sliders: { label: string; desc: string; val: number; set: (v: number) => void; min: number; max: number; step: number; color: string }[] = [
-    { label: 'a', desc: 'насока/ширина', val: a, set: setA, min: -3, max: 3, step: 0.1,  color: '#6366f1' },
-    { label: 'b', desc: 'поместување',   val: b, set: setB, min: -5, max: 5, step: 0.25, color: '#10b981' },
-    { label: 'c', desc: 'y-пресек',      val: c, set: setC, min: -5, max: 5, step: 0.25, color: '#f59e0b' },
+    { label: 'a', desc: t('dataviz.geo2dExp.qDescA'), val: a, set: setA, min: -3, max: 3, step: 0.1,  color: '#6366f1' },
+    { label: 'b', desc: t('dataviz.geo2dExp.qDescB'),   val: b, set: setB, min: -5, max: 5, step: 0.25, color: '#10b981' },
+    { label: 'c', desc: t('dataviz.geo2dExp.qDescC'),      val: c, set: setC, min: -5, max: 5, step: 0.25, color: '#f59e0b' },
   ];
 
   return (
@@ -330,12 +334,12 @@ export function QuadraticExplorer() {
           {sliders.map(({ label, desc, val, set, min, max, step: s, color }) => (
             <div key={label}>
               <div className="flex justify-between text-xs font-bold mb-0.5" style={{ color }}>
-                <span>Коефициент {label} <span className="font-normal text-gray-400">— {desc}</span></span>
+                <span>{t('dataviz.geo2dExp.coefficientLabel').replace('{label}', label)} <span className="font-normal text-gray-400">— {desc}</span></span>
                 <span>{val.toFixed(2)}</span>
               </div>
               <input type="range" min={min} max={max} step={s} value={val}
                 onChange={e => set(parseFloat(e.target.value))}
-                className="w-full" style={{ accentColor: color }} aria-label={`коефициент ${label}`} />
+                className="w-full" style={{ accentColor: color }} aria-label={t('dataviz.geo2dExp.coefficientAria').replace('{label}', label)} />
             </div>
           ))}
 
@@ -391,30 +395,30 @@ export function QuadraticExplorer() {
 
         <div className="space-y-3">
           <div className={`rounded-xl p-3 border-2 text-center ${disc>1e-9?'border-emerald-300 bg-emerald-50':Math.abs(disc)<=1e-9?'border-amber-300 bg-amber-50':'border-red-200 bg-red-50'}`}>
-            <p className="text-[10px] text-gray-400 font-semibold uppercase">Дискриминанта Δ = b² − 4ac</p>
+            <p className="text-[10px] text-gray-400 font-semibold uppercase">{t('dataviz.geo2dExp.discriminantLabel')}</p>
             <p className={`text-2xl font-extrabold mt-1 ${disc>1e-9?'text-emerald-700':Math.abs(disc)<=1e-9?'text-amber-700':'text-red-600'}`}>
               {fmtNum(disc,2)}
             </p>
             <p className={`text-xs font-semibold mt-0.5 ${disc>1e-9?'text-emerald-600':Math.abs(disc)<=1e-9?'text-amber-600':'text-red-500'}`}>
-              {disc>1e-9 ? '2 реални корена' : Math.abs(disc)<=1e-9 ? '1 реален корен (двоен)' : 'Нема реални корени'}
+              {disc>1e-9 ? t('dataviz.geo2dExp.tworoots') : Math.abs(disc)<=1e-9 ? t('dataviz.geo2dExp.oneroot') : t('dataviz.geo2dExp.noroots')}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-violet-200 bg-violet-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Теме h (x)</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dExp.vertexHLabel')}</p>
               <p className="text-base font-extrabold text-violet-700">{isLinear ? '—' : fmtNum(h,3)}</p>
             </div>
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Теме k (y)</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dExp.vertexKLabel')}</p>
               <p className="text-base font-extrabold text-amber-700">{isLinear ? '—' : fmtNum(k,3)}</p>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Корен x₁</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dExp.rootX1')}</p>
               <p className="text-base font-extrabold text-emerald-700">{x1 !== null ? fmtNum(x1,3) : '—'}</p>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Корен x₂</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dExp.rootX2')}</p>
               <p className="text-base font-extrabold text-emerald-700">
                 {x2 !== null && x2 !== x1 ? fmtNum(x2,3) : x1 !== null && x1 === x2 ? '= x₁' : '—'}
               </p>
@@ -423,15 +427,15 @@ export function QuadraticExplorer() {
 
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-800 space-y-1">
             <p className="font-bold">f(x) = ax² + bx + c</p>
-            <p className="font-mono">Теме: h = −b/(2a),  k = c − b²/(4a)</p>
+            <p className="font-mono">{t('dataviz.geo2dExp.vertexColonLabel')} h = −b/(2a),  k = c − b²/(4a)</p>
             <p className="font-mono">Δ = b² − 4ac</p>
-            <p className="font-mono">Корени: x₁,₂ = (−b ± √Δ) / (2a)</p>
-            <p className="mt-1">{a>0 ? '▲ Отворена нагоре (a > 0) — минимум' : a<0 ? '▽ Отворена надолу (a < 0) — максимум' : '— Линеарна (a ≈ 0)'}</p>
-            <p>Оска на симетрија: x = {isLinear ? '—' : fmtNum(h,2)} (виолетова испрекината)</p>
+            <p className="font-mono">{t('dataviz.geo2dExp.rootsColonLabel')} x₁,₂ = (−b ± √Δ) / (2a)</p>
+            <p className="mt-1">{a>0 ? t('dataviz.geo2dExp.openUp') : a<0 ? t('dataviz.geo2dExp.openDown') : t('dataviz.geo2dExp.linearCase')}</p>
+            <p>{t('dataviz.geo2dExp.axisSymmetryQuad')} {isLinear ? '—' : fmtNum(h,2)} {t('dataviz.geo2dExp.violetDashed')}</p>
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={QD_CUR} />
           </div>
         </div>
@@ -449,13 +453,14 @@ const QUAD_CUR: CurRef = {
   vocational: ['Стручно I год.', 'Стручно II год.'],
 };
 
+// name fields hold i18n keys (not literal text)
 const QUAD_PRESETS: { name: string; pts: Pt[] }[] = [
-  { name: 'Квадрат',      pts: [[150,260],[290,260],[290,120],[150,120]] },
-  { name: 'Правоаголник', pts: [[90,270],[330,270],[330,155],[90,155]] },
-  { name: 'Ромб',         pts: [[200,280],[310,185],[200,90],[90,185]] },
-  { name: 'Паралелограм', pts: [[80,265],[280,265],[320,135],[120,135]] },
-  { name: 'Трапез',       pts: [[100,265],[330,265],[270,130],[160,130]] },
-  { name: 'Змеј (Kite)',  pts: [[200,285],[295,185],[200,75],[105,185]] },
+  { name: 'dataviz.geo2dExp.quadSquare',      pts: [[150,260],[290,260],[290,120],[150,120]] },
+  { name: 'dataviz.geo2dExp.quadRectangle', pts: [[90,270],[330,270],[330,155],[90,155]] },
+  { name: 'dataviz.geo2dExp.quadRhombus',         pts: [[200,280],[310,185],[200,90],[90,185]] },
+  { name: 'dataviz.geo2dExp.quadParallelogram', pts: [[80,265],[280,265],[320,135],[120,135]] },
+  { name: 'dataviz.geo2dExp.quadTrapezoid',       pts: [[100,265],[330,265],[270,130],[160,130]] },
+  { name: 'dataviz.geo2dExp.quadKite',  pts: [[200,285],[295,185],[200,75],[105,185]] },
 ];
 
 type QuadToggle = 'none' | 'diagonals' | 'midpoints';
@@ -475,7 +480,9 @@ function quadArea(pts: Pt[]): number {
   return Math.abs(area) / 2;
 }
 
-function detectQuadType(pts: Pt[]): string {
+type QuadTypeId = 'square' | 'rectangle' | 'rhombus' | 'parallelogram' | 'trapezoid' | 'kite' | 'generic';
+
+function detectQuadType(pts: Pt[]): QuadTypeId {
   const [A, B, C, D] = pts;
   const s = [dist(A,B), dist(B,C), dist(C,D), dist(D,A)];
   const ang = [angleDeg(D,A,B), angleDeg(A,B,C), angleDeg(B,C,D), angleDeg(C,D,A)];
@@ -488,26 +495,28 @@ function detectQuadType(pts: Pt[]): string {
   const bcParAD = areParallel2D(C[0]-B[0], C[1]-B[1], D[0]-A[0], D[1]-A[1]);
   const kite1 = eqS(s[0],s[3]) && eqS(s[1],s[2]);
   const kite2 = eqS(s[0],s[1]) && eqS(s[2],s[3]);
-  if (allSidesEq && allRight) return 'Квадрат';
-  if (allRight && oppSidesEq) return 'Правоаголник';
-  if (allSidesEq) return 'Ромб';
-  if (abParDC && bcParAD) return 'Паралелограм';
-  if (abParDC || bcParAD) return 'Трапез';
-  if (kite1 || kite2) return 'Змеј (Kite)';
-  return 'Четириаголник';
+  if (allSidesEq && allRight) return 'square';
+  if (allRight && oppSidesEq) return 'rectangle';
+  if (allSidesEq) return 'rhombus';
+  if (abParDC && bcParAD) return 'parallelogram';
+  if (abParDC || bcParAD) return 'trapezoid';
+  if (kite1 || kite2) return 'kite';
+  return 'generic';
 }
 
-const QUAD_TYPE_STYLE: Record<string, { border: string; bg: string; text: string; formula: string; desc: string }> = {
-  'Квадрат':      { border: 'border-indigo-300', bg: 'bg-indigo-50',  text: 'text-indigo-700',  formula: 'P = 4a  ·  S = a²',            desc: '4 еднакви страни, 4 прави агли' },
-  'Правоаголник': { border: 'border-blue-300',   bg: 'bg-blue-50',    text: 'text-blue-700',    formula: 'P = 2(a+b)  ·  S = a·b',        desc: 'Спротивни страни еднакви, 4 прави агли' },
-  'Ромб':         { border: 'border-violet-300', bg: 'bg-violet-50',  text: 'text-violet-700',  formula: 'P = 4a  ·  S = d₁·d₂/2',       desc: '4 еднакви страни, дијагонали ⊥' },
-  'Паралелограм': { border: 'border-emerald-300',bg: 'bg-emerald-50', text: 'text-emerald-700', formula: 'P = 2(a+b)  ·  S = a·h',        desc: 'Два пара паралелни спротивни страни' },
-  'Трапез':       { border: 'border-amber-300',  bg: 'bg-amber-50',   text: 'text-amber-700',   formula: 'S = (a+c)·h/2',                 desc: 'Точно еден пар паралелни страни' },
-  'Змеј (Kite)':  { border: 'border-rose-300',   bg: 'bg-rose-50',    text: 'text-rose-700',    formula: 'S = d₁·d₂/2',                  desc: 'Два пара соседни еднакви страни' },
-  'Четириаголник':{ border: 'border-gray-300',   bg: 'bg-gray-50',    text: 'text-gray-700',    formula: 'S = Гаусова (Shoelace) формула', desc: 'Општ четириаголник · ∑агли = 360°' },
+// label/desc fields hold i18n keys (not literal text)
+const QUAD_TYPE_STYLE: Record<QuadTypeId, { border: string; bg: string; text: string; formula: string; label: string; desc: string }> = {
+  square:        { border: 'border-indigo-300', bg: 'bg-indigo-50',  text: 'text-indigo-700',  formula: 'P = 4a  ·  S = a²',            label: 'dataviz.geo2dExp.quadSquare', desc: 'dataviz.geo2dExp.quadDescSquare' },
+  rectangle:     { border: 'border-blue-300',   bg: 'bg-blue-50',    text: 'text-blue-700',    formula: 'P = 2(a+b)  ·  S = a·b',        label: 'dataviz.geo2dExp.quadRectangle', desc: 'dataviz.geo2dExp.quadDescRectangle' },
+  rhombus:       { border: 'border-violet-300', bg: 'bg-violet-50',  text: 'text-violet-700',  formula: 'P = 4a  ·  S = d₁·d₂/2',       label: 'dataviz.geo2dExp.quadRhombus', desc: 'dataviz.geo2dExp.quadDescRhombus' },
+  parallelogram: { border: 'border-emerald-300',bg: 'bg-emerald-50', text: 'text-emerald-700', formula: 'P = 2(a+b)  ·  S = a·h',        label: 'dataviz.geo2dExp.quadParallelogram', desc: 'dataviz.geo2dExp.quadDescParallelogram' },
+  trapezoid:     { border: 'border-amber-300',  bg: 'bg-amber-50',   text: 'text-amber-700',   formula: 'S = (a+c)·h/2',                 label: 'dataviz.geo2dExp.quadTrapezoid', desc: 'dataviz.geo2dExp.quadDescTrapezoid' },
+  kite:          { border: 'border-rose-300',   bg: 'bg-rose-50',    text: 'text-rose-700',    formula: 'S = d₁·d₂/2',                  label: 'dataviz.geo2dExp.quadKite', desc: 'dataviz.geo2dExp.quadDescKite' },
+  generic:       { border: 'border-gray-300',   bg: 'bg-gray-50',    text: 'text-gray-700',    formula: 'dataviz.geo2dExp.shoelaceFormula', label: 'dataviz.geo2dExp.quadGeneric', desc: 'dataviz.geo2dExp.quadDescGeneric' },
 };
 
 export function QuadrilateralsExplorer() {
+  const { t } = useLanguage();
   const QSC = 40;
   const [pts, setPts] = useState<Pt[]>([[80,265],[280,265],[320,135],[120,135]]);
   const [toggle, setToggle] = useState<QuadToggle>('none');
@@ -556,12 +565,12 @@ export function QuadrilateralsExplorer() {
   const midAB = midpoint(A,B), midBC = midpoint(B,C), midCD = midpoint(C,D), midDA = midpoint(D,A);
   const ptsStr = `${A[0]},${A[1]} ${B[0]},${B[1]} ${C[0]},${C[1]} ${D[0]},${D[1]}`;
   const vtC = ['#ef4444','#10b981','#3b82f6','#f59e0b'];
-  const qStyle = QUAD_TYPE_STYLE[quadType] ?? QUAD_TYPE_STYLE['Четириаголник'];
+  const qStyle = QUAD_TYPE_STYLE[quadType] ?? QUAD_TYPE_STYLE.generic;
 
   const QTOGGLES: { id: QuadToggle; label: string }[] = [
-    { id: 'none', label: 'Основно' },
-    { id: 'diagonals', label: 'Дијагонали' },
-    { id: 'midpoints', label: 'Средишта' },
+    { id: 'none', label: t('dataviz.geo2dExp.toggleBasic') },
+    { id: 'diagonals', label: t('dataviz.geo2dExp.toggleDiagonals') },
+    { id: 'midpoints', label: t('dataviz.geo2dExp.toggleMidpoints') },
   ];
 
   return (
@@ -570,7 +579,7 @@ export function QuadrilateralsExplorer() {
         {QUAD_PRESETS.map(p => (
           <button key={p.name} type="button" onClick={() => setPts(p.pts)}
             className="px-3 py-1.5 text-xs font-bold rounded-lg border-2 border-teal-200 text-teal-700 hover:bg-teal-50 transition">
-            {p.name}
+            {t(p.name)}
           </button>
         ))}
       </div>
@@ -650,19 +659,19 @@ export function QuadrilateralsExplorer() {
 
         <div className="space-y-3">
           <div className={`rounded-xl p-3 border-2 text-center ${qStyle.border} ${qStyle.bg}`}>
-            <p className="text-xs text-gray-500 font-semibold uppercase">Тип</p>
-            <p className={`text-xl font-extrabold ${qStyle.text} mt-0.5`}>{quadType}</p>
-            <p className={`text-xs ${qStyle.text} opacity-80 mt-0.5`}>{qStyle.desc}</p>
+            <p className="text-xs text-gray-500 font-semibold uppercase">{t('dataviz.geo2dExp.typeLabel')}</p>
+            <p className={`text-xl font-extrabold ${qStyle.text} mt-0.5`}>{t(qStyle.label)}</p>
+            <p className={`text-xs ${qStyle.text} opacity-80 mt-0.5`}>{t(qStyle.desc)}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Страна a (AB)', val: fmtNum(sAB/QSC) + ' ед.', bg: 'bg-red-50',     border: 'border-red-200',    color: 'text-red-700'    },
-              { label: 'Страна b (BC)', val: fmtNum(sBC/QSC) + ' ед.', bg: 'bg-green-50',   border: 'border-green-200',  color: 'text-green-700'  },
-              { label: 'Страна c (CD)', val: fmtNum(sCD/QSC) + ' ед.', bg: 'bg-blue-50',    border: 'border-blue-200',   color: 'text-blue-700'   },
-              { label: 'Страна d (DA)', val: fmtNum(sDA/QSC) + ' ед.', bg: 'bg-amber-50',   border: 'border-amber-200',  color: 'text-amber-700'  },
-              { label: 'Периметар',     val: fmtNum(perim/QSC) + ' ед.', bg: 'bg-teal-50',  border: 'border-teal-200',   color: 'text-teal-700'   },
-              { label: 'Плоштина',      val: fmtNum(areaVal/QSC/QSC) + ' ед²', bg: 'bg-violet-50', border: 'border-violet-200', color: 'text-violet-700' },
+              { label: t('dataviz.geo2dExp.sideAB'), val: fmtNum(sAB/QSC) + ' ' + t('dataviz.geo3dPanels.unit') + '.', bg: 'bg-red-50',     border: 'border-red-200',    color: 'text-red-700'    },
+              { label: t('dataviz.geo2dExp.sideBC'), val: fmtNum(sBC/QSC) + ' ' + t('dataviz.geo3dPanels.unit') + '.', bg: 'bg-green-50',   border: 'border-green-200',  color: 'text-green-700'  },
+              { label: t('dataviz.geo2dExp.sideCD'), val: fmtNum(sCD/QSC) + ' ' + t('dataviz.geo3dPanels.unit') + '.', bg: 'bg-blue-50',    border: 'border-blue-200',   color: 'text-blue-700'   },
+              { label: t('dataviz.geo2dExp.sideDA'), val: fmtNum(sDA/QSC) + ' ' + t('dataviz.geo3dPanels.unit') + '.', bg: 'bg-amber-50',   border: 'border-amber-200',  color: 'text-amber-700'  },
+              { label: t('dataviz.geo3dPanels.perimeterLabel'),     val: fmtNum(perim/QSC) + ' ' + t('dataviz.geo3dPanels.unit') + '.', bg: 'bg-teal-50',  border: 'border-teal-200',   color: 'text-teal-700'   },
+              { label: t('dataviz.geo2dLab.areaLabel'),      val: fmtNum(areaVal/QSC/QSC) + ' ' + t('dataviz.geo3dPanels.unitSq'), bg: 'bg-violet-50', border: 'border-violet-200', color: 'text-violet-700' },
             ].map(({ label, val, bg, border, color }) => (
               <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
                 <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
@@ -693,16 +702,16 @@ export function QuadrilateralsExplorer() {
           </div>
 
           <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 text-xs text-teal-900 space-y-1">
-            <p className="font-bold">Формула ({quadType}):</p>
-            <p className="font-mono">{qStyle.formula}</p>
-            <p className="mt-1"><strong>Теорема:</strong> Збирот на внатрешните агли на секој четириаголник = <strong>360°</strong></p>
+            <p className="font-bold">{t('dataviz.geo2dExp.formulaForType').replace('{type}', t(qStyle.label))}</p>
+            <p className="font-mono">{qStyle.formula.startsWith('dataviz.') ? t(qStyle.formula) : qStyle.formula}</p>
+            <p className="mt-1"><strong>{t('dataviz.geo2dLab.theoremLabel')}</strong> {t('dataviz.geo2dExp.quadAngleSumBody')} <strong>360°</strong></p>
             {toggle === 'midpoints' && (
-              <p className="text-indigo-700 font-semibold mt-1">Вариньонова теорема: Средиштата на страните на секој четириаголник секогаш формираат паралелограм!</p>
+              <p className="text-indigo-700 font-semibold mt-1">{t('dataviz.geo2dExp.varignonTheorem')}</p>
             )}
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={QUAD_CUR} />
           </div>
         </div>

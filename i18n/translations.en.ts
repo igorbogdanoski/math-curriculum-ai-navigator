@@ -1917,6 +1917,7 @@ export const en: Record<string, string> = {
   'dataviz.geo2dLab.inscribedAngleTheorem': 'Inscribed angle theorem:',
   'dataviz.geo2dLab.inscribedAngleBody': 'The inscribed angle is half the central angle subtending the same arc.',
   'dataviz.geo2dLab.centralAngleLabel': 'Central angle:',
+  'dataviz.geo2dLab.exactlyHalf': '(exactly half!)',
   'dataviz.geo2dLab.polyName3': 'Triangle',
   'dataviz.geo2dLab.polyName4': 'Quadrilateral (Square)',
   'dataviz.geo2dLab.polyName5': 'Pentagon',
@@ -2030,4 +2031,8 @@ export const en: Record<string, string> = {
   'dataviz.geo2dExp.formulaForType': 'Formula ({type}):',
   'dataviz.geo2dExp.quadAngleSumBody': 'The sum of the interior angles of every quadrilateral =',
   'dataviz.geo2dExp.varignonTheorem': "Varignon's theorem: The midpoints of the sides of any quadrilateral always form a parallelogram!",
+  'dataviz.geo2dExp.violetDashed': '(violet dashed line)',
+  'dataviz.geo2dExp.shoelaceFormula': "S = Gauss's (Shoelace) formula",
+  'dataviz.geo2dExp.vertexColonLabel': 'Vertex:',
+  'dataviz.geo2dExp.rootsColonLabel': 'Roots:',
 };

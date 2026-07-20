@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 
 import { type Pt, type CurRef, dist, fmtNum, CurrBadges } from './geometry2dUtils';
 import { TriangleExplorer, QuadraticExplorer, QuadrilateralsExplorer } from './Geometry2DExplorers';
+import { useLanguage } from '../../i18n/LanguageContext';
 // ─── Pythagorean Theorem Lab ──────────────────────────────────────────────────
 const PYTH_CUR: CurRef = {
   primary: ['VI', 'VII'],
@@ -17,6 +18,7 @@ const SPECIAL = [
 ];
 
 function PythagoreanLab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(3);
   const [b, setB] = useState(4);
   const [highlight, setHighlight] = useState<'a2' | 'b2' | 'c2' | null>(null);
@@ -55,12 +57,12 @@ function PythagoreanLab() {
         <div className="space-y-3">
           {/* a slider */}
           {[
-            { label: 'Катета a', val: a, set: setA, color: '#3b82f6' },
-            { label: 'Катета b', val: b, set: setB, color: '#10b981' },
+            { label: t('dataviz.geo2dLab.legA'), val: a, set: setA, color: '#3b82f6' },
+            { label: t('dataviz.geo2dLab.legB'), val: b, set: setB, color: '#10b981' },
           ].map(({ label, val, set, color }) => (
             <div key={label}>
               <div className="flex justify-between text-xs font-bold mb-1" style={{ color }}>
-                <span>{label}</span><span>{val} ед.</span>
+                <span>{label}</span><span>{val} {t('dataviz.geo3dPanels.unit')}.</span>
               </div>
               <input type="range" min={1} max={15} step={0.5} value={val}
                 onChange={e => set(parseFloat(e.target.value))}
@@ -127,7 +129,7 @@ function PythagoreanLab() {
         {/* Stats */}
         <div className="space-y-3">
           <div className={`rounded-xl p-4 text-center border-2 transition-all ${highlight === 'a2' ? 'border-blue-500 bg-blue-50' : highlight === 'b2' ? 'border-emerald-500 bg-emerald-50' : highlight === 'c2' ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
-            <p className="text-sm font-bold text-gray-500">Питагорова теорема</p>
+            <p className="text-sm font-bold text-gray-500">{t('dataviz.geo2dLab.pythTheorem')}</p>
             <p className="text-2xl font-extrabold text-gray-800 mt-1 font-mono">a² + b² = c²</p>
             <p className="text-lg font-bold text-indigo-700 mt-2 font-mono">
               {a}² + {b}² = {fmtNum(c * c, 1)}
@@ -139,9 +141,9 @@ function PythagoreanLab() {
 
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'a (катета)', val: `${a} ед.`,         color: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200' },
-              { label: 'b (катета)', val: `${b} ед.`,         color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-              { label: 'c (хипот.)', val: fmtNum(c, 3) + ' ед.', color: 'text-amber-700',  bg: 'bg-amber-50',   border: 'border-amber-200' },
+              { label: t('dataviz.geo2dLab.legALabel'), val: `${a} ${t('dataviz.geo3dPanels.unit')}.`,         color: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200' },
+              { label: t('dataviz.geo2dLab.legBLabel'), val: `${b} ${t('dataviz.geo3dPanels.unit')}.`,         color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+              { label: t('dataviz.geo2dLab.hypLabel'), val: fmtNum(c, 3) + ' ' + t('dataviz.geo3dPanels.unit') + '.', color: 'text-amber-700',  bg: 'bg-amber-50',   border: 'border-amber-200' },
             ].map(({ label, val, color, bg, border }) => (
               <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
                 <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
@@ -151,14 +153,14 @@ function PythagoreanLab() {
           </div>
 
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 space-y-1">
-            <p><strong>Теорема:</strong> Во правоаголен триаголник, квадратот на хипотенузата е еднаков на збирот на квадратите на катетите.</p>
+            <p><strong>{t('dataviz.geo2dLab.theoremLabel')}</strong> {t('dataviz.geo2dLab.theoremBody')}</p>
             <p className="font-mono font-bold">c² = a² + b²</p>
-            <p><strong>Висина на правоаголен триаголник:</strong> h = (a·b)/c = {fmtNum((a * b) / c, 2)} ед.</p>
-            <p><strong>Плоштина:</strong> P = (a·b)/2 = {fmtNum((a * b) / 2, 2)} ед²</p>
+            <p><strong>{t('dataviz.geo2dLab.heightRightTriangle')}</strong> h = (a·b)/c = {fmtNum((a * b) / c, 2)} {t('dataviz.geo3dPanels.unit')}.</p>
+            <p><strong>{t('dataviz.geo2dLab.areaColonLabel')}</strong> P = (a·b)/2 = {fmtNum((a * b) / 2, 2)} {t('dataviz.geo3dPanels.unitSq')}</p>
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={PYTH_CUR} />
           </div>
         </div>
@@ -175,6 +177,7 @@ const CIRCLE_CUR: CurRef = {
 };
 
 function CircleExplorer() {
+  const { t } = useLanguage();
   const [r, setR] = useState(3);
   const [sectorDeg, setSectorDeg] = useState(90);
   const [showChord, setShowChord] = useState(false);
@@ -213,29 +216,29 @@ function CircleExplorer() {
           {/* r slider */}
           <div>
             <div className="flex justify-between text-xs font-bold text-rose-600 mb-1">
-              <span>Полупречник r</span><span>{r} ед.</span>
+              <span>{t('dataviz.geo2dLab.radiusR2')}</span><span>{r} {t('dataviz.geo3dPanels.unit')}.</span>
             </div>
             <input type="range" min={1} max={5} step={0.25} value={r}
               onChange={e => setR(parseFloat(e.target.value))}
-              className="w-full accent-rose-500" aria-label="полупречник" />
+              className="w-full accent-rose-500" aria-label={t('dataviz.geo2dLab.radiusR2')} />
           </div>
 
           {/* Sector slider */}
           <div>
             <div className="flex justify-between text-xs font-bold text-amber-600 mb-1">
-              <span>Агол на сектор θ</span><span>{sectorDeg}°</span>
+              <span>{t('dataviz.geo2dLab.sectorAngle')}</span><span>{sectorDeg}°</span>
             </div>
             <input type="range" min={10} max={350} step={5} value={sectorDeg}
               onChange={e => setSectorDeg(parseInt(e.target.value))}
-              className="w-full accent-amber-500" aria-label="агол" />
+              className="w-full accent-amber-500" aria-label={t('dataviz.geo2dLab.sectorAngle')} />
           </div>
 
           {/* Toggles */}
           <div className="flex gap-2 flex-wrap">
             {[
-              { label: 'Тетива (Chord)', state: showChord, set: setShowChord, color: 'emerald' },
-              { label: 'Тангента', state: showTangent, set: setShowTangent, color: 'violet' },
-              { label: 'Впишан агол', state: showInscribed, set: setShowInscribed, color: 'sky' },
+              { label: t('dataviz.geo2dLab.chordLabel'), state: showChord, set: setShowChord, color: 'emerald' },
+              { label: t('dataviz.geo2dLab.tangentLabel'), state: showTangent, set: setShowTangent, color: 'violet' },
+              { label: t('dataviz.geo2dLab.inscribedAngleLabel'), state: showInscribed, set: setShowInscribed, color: 'sky' },
             ].map(({ label, state, set, color }) => (
               <button key={label} type="button" onClick={() => set(s => !s)}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg border-2 transition ${state ? `border-${color}-500 bg-${color}-50 text-${color}-700` : 'border-gray-200 text-gray-500'}`}>
@@ -272,7 +275,7 @@ function CircleExplorer() {
                 <>
                   <line x1={chordStart[0]} y1={chordStart[1]} x2={chordEnd[0]} y2={chordEnd[1]} stroke="#10b981" strokeWidth={2} />
                   <text x={(chordStart[0] + chordEnd[0]) / 2 + 8} y={(chordStart[1] + chordEnd[1]) / 2}
-                    fontSize={10} fill="#10b981" fontWeight="bold">хорда={fmtNum(chordLen, 2)}</text>
+                    fontSize={10} fill="#10b981" fontWeight="bold">{t('dataviz.geo2dLab.chordEq')}{fmtNum(chordLen, 2)}</text>
                 </>
               )}
 
@@ -282,7 +285,7 @@ function CircleExplorer() {
                   <line x1={sx - 50 * Math.sin(-Math.PI / 2)} y1={sy - 50 * Math.cos(-Math.PI / 2)}
                     x2={sx + 50 * Math.sin(-Math.PI / 2)} y2={sy + 50 * Math.cos(-Math.PI / 2)}
                     stroke="#8b5cf6" strokeWidth={2} strokeDasharray="6 3" />
-                  <text x={sx + 5} y={sy - 14} fontSize={10} fill="#8b5cf6" fontWeight="bold">тангента</text>
+                  <text x={sx + 5} y={sy - 14} fontSize={10} fill="#8b5cf6" fontWeight="bold">{t('dataviz.geo2dLab.tangentSvgLabel')}</text>
                 </>
               )}
 
@@ -308,12 +311,12 @@ function CircleExplorer() {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Полупречник r', val: `${r} ед.`,                color: 'text-rose-700',   bg: 'bg-rose-50',   border: 'border-rose-200' },
-              { label: 'Дијаметар d',  val: `${2 * r} ед.`,            color: 'text-rose-700',   bg: 'bg-rose-50',   border: 'border-rose-200' },
-              { label: 'Обиколка C',   val: fmtNum(circumference, 3) + ' ед.', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
-              { label: 'Плоштина S',   val: fmtNum(areaCircle, 3) + ' ед²',   color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-              { label: 'Должина на лак', val: fmtNum(arcLen, 3) + ' ед.', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
-              { label: 'Плоштина сектор', val: fmtNum(sectorArea, 3) + ' ед²', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
+              { label: t('dataviz.geo2dLab.radiusR2'), val: `${r} ${t('dataviz.geo3dPanels.unit')}.`,                color: 'text-rose-700',   bg: 'bg-rose-50',   border: 'border-rose-200' },
+              { label: t('dataviz.geo2dLab.diameterD'),  val: `${2 * r} ${t('dataviz.geo3dPanels.unit')}.`,            color: 'text-rose-700',   bg: 'bg-rose-50',   border: 'border-rose-200' },
+              { label: t('dataviz.geo2dLab.circumferenceC'),   val: fmtNum(circumference, 3) + ' ' + t('dataviz.geo3dPanels.unit') + '.', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+              { label: t('dataviz.geo2dLab.areaS'),   val: fmtNum(areaCircle, 3) + ' ' + t('dataviz.geo3dPanels.unitSq'),   color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+              { label: t('dataviz.geo2dLab.arcLength'), val: fmtNum(arcLen, 3) + ' ' + t('dataviz.geo3dPanels.unit') + '.', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
+              { label: t('dataviz.geo2dLab.sectorArea'), val: fmtNum(sectorArea, 3) + ' ' + t('dataviz.geo3dPanels.unitSq'), color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
             ].map(({ label, val, color, bg, border }) => (
               <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
                 <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
@@ -323,24 +326,24 @@ function CircleExplorer() {
           </div>
 
           <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs text-rose-900 space-y-1">
-            <p className="font-bold text-rose-700">Формули:</p>
+            <p className="font-bold text-rose-700">{t('dataviz.geo2dLab.formulasLabel')}</p>
             <p className="font-mono">C = 2πr = πd</p>
             <p className="font-mono">S = πr²</p>
             <p className="font-mono">l<sub>лак</sub> = r·θ (θ во радијани)</p>
             <p className="font-mono">S<sub>сектор</sub> = r²·θ/2 = r·l/2</p>
-            <p className="font-bold mt-1">Теорема за впишан агол:</p>
-            <p>Впишаниот агол е половина од централниот агол врз ист лак.</p>
+            <p className="font-bold mt-1">{t('dataviz.geo2dLab.inscribedAngleTheorem')}</p>
+            <p>{t('dataviz.geo2dLab.inscribedAngleBody')}</p>
           </div>
 
           {showInscribed && (
             <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-800">
-              <strong>Централен агол:</strong> {sectorDeg}° &nbsp;→&nbsp;
-              <strong>Впишан агол:</strong> {fmtNum(sectorDeg / 2, 1)}° (точно половина!)
+              <strong>{t('dataviz.geo2dLab.centralAngleLabel')}</strong> {sectorDeg}° &nbsp;→&nbsp;
+              <strong>{t('dataviz.geo2dLab.inscribedAngleLabel')}:</strong> {fmtNum(sectorDeg / 2, 1)}° {t('dataviz.geo2dLab.exactlyHalf')}
             </div>
           )}
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={CIRCLE_CUR} />
           </div>
         </div>
@@ -356,13 +359,15 @@ const POLYGON_CUR: CurRef = {
   vocational: ['Стручно I год.', 'Стручно II год.'],
 };
 
+// values hold i18n keys (not literal text)
 const POLYGON_NAMES: Record<number, string> = {
-  3: 'Триаголник', 4: 'Четириаголник (Квадрат)', 5: 'Петаголник',
-  6: 'Шестаголник', 7: 'Седумаголник', 8: 'Осумаголник',
-  9: 'Девеотаголник', 10: 'Десетаголник', 11: 'Единаесетаголник', 12: 'Дванаесетаголник',
+  3: 'dataviz.geo2dLab.polyName3', 4: 'dataviz.geo2dLab.polyName4', 5: 'dataviz.geo2dLab.polyName5',
+  6: 'dataviz.geo2dLab.polyName6', 7: 'dataviz.geo2dLab.polyName7', 8: 'dataviz.geo2dLab.polyName8',
+  9: 'dataviz.geo2dLab.polyName9', 10: 'dataviz.geo2dLab.polyName10', 11: 'dataviz.geo2dLab.polyName11', 12: 'dataviz.geo2dLab.polyName12',
 };
 
 function PolygonsExplorer() {
+  const { t } = useLanguage();
   const [n, setN] = useState(6);
   const [sideLen, setSideLen] = useState(2);
   const [showAngles, setShowAngles] = useState(true);
@@ -393,28 +398,28 @@ function PolygonsExplorer() {
           {/* n slider */}
           <div>
             <div className="flex justify-between text-xs font-bold text-violet-600 mb-1">
-              <span>Број на страни n</span>
-              <span>{n} — {POLYGON_NAMES[n] ?? `${n}-аголник`}</span>
+              <span>{t('dataviz.geo2dLab.numSidesN')}</span>
+              <span>{n} — {POLYGON_NAMES[n] ? t(POLYGON_NAMES[n]) : t('dataviz.geo2dLab.polyNGeneric').replace('{n}', String(n))}</span>
             </div>
             <input type="range" min={3} max={12} step={1} value={n}
               onChange={e => setN(parseInt(e.target.value))}
-              className="w-full accent-violet-600" aria-label="број на страни" />
+              className="w-full accent-violet-600" aria-label={t('dataviz.geo2dLab.numSidesN')} />
           </div>
 
           {/* Side length */}
           <div>
             <div className="flex justify-between text-xs font-bold text-teal-600 mb-1">
-              <span>Должина на страна a</span><span>{sideLen} ед.</span>
+              <span>{t('dataviz.geo2dLab.sideLengthA')}</span><span>{sideLen} {t('dataviz.geo3dPanels.unit')}.</span>
             </div>
             <input type="range" min={0.5} max={5} step={0.25} value={sideLen}
               onChange={e => setSideLen(parseFloat(e.target.value))}
-              className="w-full accent-teal-600" aria-label="должина" />
+              className="w-full accent-teal-600" aria-label={t('dataviz.geo2dLab.sideLengthA')} />
           </div>
 
           <div className="flex gap-2">
             {[
-              { label: 'Агли', state: showAngles, set: setShowAngles },
-              { label: 'Апотема', state: showApothem, set: setShowApothem },
+              { label: t('dataviz.geo2dLab.anglesLabel'), state: showAngles, set: setShowAngles },
+              { label: t('dataviz.geo2dLab.apothemLabel2'), state: showApothem, set: setShowApothem },
             ].map(({ label, state, set }) => (
               <button key={label} type="button" onClick={() => set(s => !s)}
                 className={`flex-1 px-3 py-1.5 text-xs font-bold rounded-lg border-2 transition ${state ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500'}`}>
@@ -472,7 +477,7 @@ function PolygonsExplorer() {
               {/* n→∞ hint */}
               {n >= 10 && (
                 <text x={cx} y={cy + R + 24} textAnchor="middle" fontSize={10} fill="#7c3aed" fontStyle="italic">
-                  n→∞: правилниот многуаголник → кружница
+                  {t('dataviz.geo2dLab.nInfinityHint')}
                 </text>
               )}
             </svg>
@@ -482,18 +487,18 @@ function PolygonsExplorer() {
         {/* Stats */}
         <div className="space-y-3">
           <div className="rounded-xl p-3 bg-violet-50 border border-violet-200 text-center">
-            <p className="text-xs text-gray-500 font-semibold uppercase">Тело</p>
-            <p className="text-lg font-extrabold text-violet-700">{POLYGON_NAMES[n] ?? `Правилен ${n}-аголник`}</p>
+            <p className="text-xs text-gray-500 font-semibold uppercase">{t('dataviz.geo2dLab.shapeLabel')}</p>
+            <p className="text-lg font-extrabold text-violet-700">{POLYGON_NAMES[n] ? t(POLYGON_NAMES[n]) : t('dataviz.geo2dLab.regularNGon').replace('{n}', String(n))}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Внатрешен агол', val: fmtNum(interiorAngle, 2) + '°', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
-              { label: 'Надворешен агол', val: fmtNum(exteriorAngle, 2) + '°', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
-              { label: 'Збир внатр. агли', val: sumAngles + '°', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
-              { label: 'Апотема',          val: fmtNum(apothem, 3) + ' ед.', color: 'text-teal-700', bg: 'bg-teal-50', border: 'border-teal-200' },
-              { label: 'Периметар',        val: fmtNum(perimeter, 2) + ' ед.', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-              { label: 'Плоштина',         val: fmtNum(area, 3) + ' ед²', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
+              { label: t('dataviz.geo2dLab.interiorAngle'), val: fmtNum(interiorAngle, 2) + '°', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
+              { label: t('dataviz.geo2dLab.exteriorAngle'), val: fmtNum(exteriorAngle, 2) + '°', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
+              { label: t('dataviz.geo2dLab.sumInteriorShort'), val: sumAngles + '°', color: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+              { label: t('dataviz.geo2dLab.apothemLabel2'),          val: fmtNum(apothem, 3) + ' ' + t('dataviz.geo3dPanels.unit') + '.', color: 'text-teal-700', bg: 'bg-teal-50', border: 'border-teal-200' },
+              { label: t('dataviz.geo3dPanels.perimeterLabel'),        val: fmtNum(perimeter, 2) + ' ' + t('dataviz.geo3dPanels.unit') + '.', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+              { label: t('dataviz.geo2dLab.areaLabel'),         val: fmtNum(area, 3) + ' ' + t('dataviz.geo3dPanels.unitSq'), color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
             ].map(({ label, val, color, bg, border }) => (
               <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
                 <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
@@ -503,16 +508,16 @@ function PolygonsExplorer() {
           </div>
 
           <div className="bg-violet-50 border border-violet-100 rounded-xl p-3 text-xs text-violet-900 space-y-1">
-            <p className="font-bold">Формули за правилен n-аголник:</p>
-            <p className="font-mono">Внатрешен агол = (n−2)·180° / n</p>
-            <p className="font-mono">Надворешен агол = 360° / n</p>
-            <p className="font-mono">Збир внатрешни = (n−2)·180°</p>
-            <p className="font-mono">Апотема a = s / (2·tan(π/n))</p>
-            <p className="font-mono">Плоштина P = n·s·a / 2</p>
+            <p className="font-bold">{t('dataviz.geo2dLab.polyFormulasTitle')}</p>
+            <p className="font-mono">{t('dataviz.geo2dLab.polyFormula1')}</p>
+            <p className="font-mono">{t('dataviz.geo2dLab.polyFormula2')}</p>
+            <p className="font-mono">{t('dataviz.geo2dLab.polyFormula3')}</p>
+            <p className="font-mono">{t('dataviz.geo2dLab.polyFormula4')}</p>
+            <p className="font-mono">{t('dataviz.geo2dLab.polyFormula5')}</p>
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={POLYGON_CUR} />
           </div>
         </div>
@@ -533,6 +538,7 @@ function avToSVG(mx: number, my: number) {
 }
 
 function AbsoluteValueLab() {
+  const { t } = useLanguage();
   const [a, setA] = useState(1);
   const [h, setH] = useState(0);
   const [k, setK] = useState(0);
@@ -557,9 +563,9 @@ function AbsoluteValueLab() {
   const axisX = AV_CX + h * AV_SC;
 
   const avSliders: { label: string; desc: string; val: number; set: (v: number) => void; min: number; max: number; step: number; color: string }[] = [
-    { label: 'a', desc: 'нагиб/насока',  val: a, set: setA, min: -3, max: 3, step: 0.1,  color: '#6366f1' },
-    { label: 'h', desc: 'поместување x', val: h, set: setH, min: -4, max: 4, step: 0.25, color: '#10b981' },
-    { label: 'k', desc: 'поместување y', val: k, set: setK, min: -4, max: 4, step: 0.25, color: '#f59e0b' },
+    { label: 'a', desc: t('dataviz.geo2dLab.avDescA'),  val: a, set: setA, min: -3, max: 3, step: 0.1,  color: '#6366f1' },
+    { label: 'h', desc: t('dataviz.geo2dLab.avDescH'), val: h, set: setH, min: -4, max: 4, step: 0.25, color: '#10b981' },
+    { label: 'k', desc: t('dataviz.geo2dLab.avDescK'), val: k, set: setK, min: -4, max: 4, step: 0.25, color: '#f59e0b' },
   ];
 
   return (
@@ -569,12 +575,12 @@ function AbsoluteValueLab() {
           {avSliders.map(({ label, desc, val, set, min, max, step: s, color }) => (
             <div key={label}>
               <div className="flex justify-between text-xs font-bold mb-0.5" style={{ color }}>
-                <span>Параметар {label} <span className="font-normal text-gray-400">— {desc}</span></span>
+                <span>{t('dataviz.geo2dLab.paramLabel').replace('{label}', label)} <span className="font-normal text-gray-400">— {desc}</span></span>
                 <span>{val.toFixed(2)}</span>
               </div>
               <input type="range" min={min} max={max} step={s} value={val}
                 onChange={e => set(parseFloat(e.target.value))}
-                className="w-full" style={{ accentColor: color }} aria-label={`параметар ${label}`} />
+                className="w-full" style={{ accentColor: color }} aria-label={t('dataviz.geo2dLab.paramAria').replace('{label}', label)} />
             </div>
           ))}
 
@@ -628,7 +634,7 @@ function AbsoluteValueLab() {
 
         <div className="space-y-3">
           <div className="rounded-xl p-3 bg-emerald-50 border border-emerald-200 text-center">
-            <p className="text-xs text-gray-400 font-semibold">Функција</p>
+            <p className="text-xs text-gray-400 font-semibold">{t('dataviz.geo2dLab.functionLabel')}</p>
             <p className="text-base font-extrabold text-emerald-700 font-mono">
               f(x) = {fmtNum(a,2)}·|x − {fmtNum(h,2)}| + {fmtNum(k,2)}
             </p>
@@ -636,40 +642,40 @@ function AbsoluteValueLab() {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Теме V (Vertex)</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dLab.vertexVLabel')}</p>
               <p className="text-base font-extrabold text-emerald-700">({fmtNum(h,2)}, {fmtNum(k,2)})</p>
             </div>
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">y-пресек f(0)</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dLab.yInterceptLabel')}</p>
               <p className="text-base font-extrabold text-amber-700">{fmtNum(yInt,3)}</p>
             </div>
             <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">Опсег (Range)</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dLab.rangeLabel')}</p>
               <p className="text-base font-extrabold text-indigo-700">
                 {a > 0 ? `[${fmtNum(k,2)}, ∞)` : a < 0 ? `(−∞, ${fmtNum(k,2)}]` : `{${fmtNum(k,2)}}`}
               </p>
             </div>
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-center">
-              <p className="text-[10px] text-gray-400 font-semibold">x-пресеци</p>
+              <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.geo2dLab.xInterceptsLabel')}</p>
               <p className="text-sm font-extrabold text-rose-700">
                 {hasX
                   ? (Math.abs(xi1-xi2) < 0.01 ? `x = ${fmtNum(xi1,2)}` : `${fmtNum(xi2,2)};  ${fmtNum(xi1,2)}`)
-                  : 'Нема'}
+                  : t('dataviz.geo2dLab.noneLabel')}
               </p>
             </div>
           </div>
 
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-900 space-y-1">
             <p className="font-bold">f(x) = a·|x − h| + k</p>
-            <p>• <strong>h</strong> = хоризонтална позиција на теме</p>
-            <p>• <strong>k</strong> = вертикална позиција на теме</p>
-            <p>• <strong>a &gt; 0</strong>: V-облик нагоре (минимум)&nbsp; <strong>a &lt; 0</strong>: ∧-облик надолу (максимум)</p>
-            <p>• |a| го одредува стрмноста (нагибот на двете краци)</p>
-            <p>• Оска на симетрија: x = h (зелена испрекината линија)</p>
+            <p>• {t('dataviz.geo2dLab.avBullet1')}</p>
+            <p>• {t('dataviz.geo2dLab.avBullet2')}</p>
+            <p>• {t('dataviz.geo2dLab.avBullet3')}</p>
+            <p>• {t('dataviz.geo2dLab.avBullet4')}</p>
+            <p>• {t('dataviz.geo2dLab.avBullet5')}</p>
           </div>
 
           <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
             <CurrBadges cur={AV_CUR} />
           </div>
         </div>
@@ -682,25 +688,26 @@ function AbsoluteValueLab() {
 type Geo2DTab = 'triangle' | 'pythagoras' | 'circle' | 'polygons' | 'quadratic' | 'absvalue' | 'quads';
 
 export function Geometry2DLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Geo2DTab>('triangle');
 
   const TABS: { id: Geo2DTab; label: string; color: string }[] = [
-    { id: 'triangle',  label: '△ Триаголник',        color: 'indigo'  },
-    { id: 'pythagoras',label: '² Питагорова теорема', color: 'blue'    },
-    { id: 'circle',    label: '○ Кружница',           color: 'rose'    },
-    { id: 'polygons',  label: '⬡ Многуаголници',      color: 'violet'  },
-    { id: 'quads',     label: '▱ Четириаголници',     color: 'teal'    },
-    { id: 'quadratic', label: '∪ Квадратна ф-ја',    color: 'indigo'  },
-    { id: 'absvalue',  label: '|x| Апс. вредност',   color: 'emerald' },
+    { id: 'triangle',  label: t('dataviz.geo2dLab.tabTriangle'),        color: 'indigo'  },
+    { id: 'pythagoras',label: t('dataviz.geo2dLab.tabPythagoras'), color: 'blue'    },
+    { id: 'circle',    label: t('dataviz.geo2dLab.tabCircle'),           color: 'rose'    },
+    { id: 'polygons',  label: t('dataviz.geo2dLab.tabPolygons'),      color: 'violet'  },
+    { id: 'quads',     label: t('dataviz.geo2dLab.tabQuads'),     color: 'teal'    },
+    { id: 'quadratic', label: t('dataviz.geo2dLab.tabQuadratic'),    color: 'indigo'  },
+    { id: 'absvalue',  label: t('dataviz.geo2dLab.tabAbsValue'),   color: 'emerald' },
   ];
 
   return (
     <div className="space-y-5">
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === t.id ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {t.label}
+        {TABS.map(tb => (
+          <button key={tb.id} type="button" onClick={() => setTab(tb.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === tb.id ? `border-${tb.color}-500 bg-${tb.color}-50 text-${tb.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {tb.label}
           </button>
         ))}
       </div>
