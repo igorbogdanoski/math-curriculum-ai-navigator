@@ -65,6 +65,18 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/student_identity/$(deviceId)).data.anonymousUid == request.auth.uid;
     }
 
+    // 2026-07-20 (Tier 2 closure, follow-up to audit_2026_07_18_full_app_review finding #1):
+    // student_teacher_link/{authUid} is a reverse lookup written by joinClassByCode()
+    // (firestoreService.classroom.ts), keyed by the caller's real auth uid — unlike deviceId,
+    // an auth uid IS verifiable from request.auth.uid, so this lets a rule check "is this
+    // caller actually linked to this teacher" instead of granting isAnonymousStudent() a
+    // blanket read across every teacher's data. Fails closed: no link doc (never joined a
+    // class, or pre-migration account) means denied, not allowed.
+    function studentLinkedToTeacher(teacherUid) {
+      return exists(/databases/$(database)/documents/student_teacher_link/$(request.auth.uid))
+        && get(/databases/$(database)/documents/student_teacher_link/$(request.auth.uid)).data.teacherUid == teacherUid;
+    }
+
     // Only anonymous-student writers need to prove device ownership. Teacher-authenticated
     // writes (isDocOwner()) legitimately reference a student's deviceId without the
     // teacher's own uid ever matching that device's anonymousUid, and lab/self-practice
@@ -287,28 +299,23 @@ service cloud.firestore {
     }
 
     // ── Задачи (assignments) ──
-    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): unlike quiz_results/
-    // concept_mastery, this collection carries no deviceId/studentUid field at all — client
-    // reads scope by `classStudentNames array-contains studentName` (hooks/useStudentRealtime.ts),
-    // which a Firestore rule cannot verify against a bare anonymous auth token (no claim proves
-    // "my name is in this array"). Closing this fully needs a device→teacherUid reverse-lookup
-    // (custom claims or a mirror collection) — intentionally NOT built in this pass (Tier 2,
-    // flagged as follow-up work). isAnonymousStudent() is left as-is here; it's the same
-    // pre-existing blast radius as today, not made worse or better by this pass.
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1) / 2026-07-20 (Tier 2
+    // closure): previously granted isAnonymousStudent() a blanket read/complete on every
+    // teacher's assignments, since deviceId isn't auth-verifiable. Now scoped via
+    // studentLinkedToTeacher() — see student_teacher_link above — so an anonymous student can
+    // only read/complete assignments belonging to the teacher whose class they actually joined.
     match /assignments/{doc} {
       allow read: if isAuthenticated() && (
         isDocOwner() ||
-        isAnonymousStudent() ||
+        (isAnonymousStudent() && studentLinkedToTeacher(resource.data.teacherUid)) ||
         isAdmin() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow update: if isAuthenticated() && (
         isOwner(resource.data.teacherUid) ||
-        // Student self-marking completion — narrowed to anonymous student sessions only
-        // (still not scoped to "their own" assignment specifically; deviceId isn't
-        // auth-verifiable under the current identity model, see class_memberships).
-        (isAnonymousStudent() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedBy']))
+        // Student self-marking completion — scoped to their own linked teacher's assignments only.
+        (isAnonymousStudent() && studentLinkedToTeacher(resource.data.teacherUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedBy']))
       );
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
@@ -369,26 +376,26 @@ service cloud.firestore {
     }
 
     // ── Гамификација (student_gamification) ──
-    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): fetchClassLeaderboard
-    // (hooks/useStudentProgress.ts) legitimately reads every classmate's doc under one teacherUid
-    // (for rank) — a genuine cross-student read a deviceId/studentUid-scoped rule can't allow, so
-    // isAnonymousStudent() can't simply be dropped here the way it was for quiz_results/
-    // concept_mastery without breaking the leaderboard outright. A real fix needs a
-    // device→teacherUid reverse-lookup (custom claims or a mirror collection) to let the rule
-    // verify "this uid's class" without reading the whole collection — intentionally NOT built
-    // in this pass (Tier 2, flagged as follow-up work, same as assignments/announcements below).
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1) / 2026-07-20 (Tier 2
+    // closure): fetchClassLeaderboard (hooks/useStudentProgress.ts) legitimately reads every
+    // classmate's doc under one teacherUid (for rank) — studentLinkedToTeacher() allows exactly
+    // that cross-student-same-teacher read while denying reads/writes on a DIFFERENT teacher's
+    // students, closing the blanket isAnonymousStudent() grant this used to have. The
+    // !('teacherUid' in resource.data) branch is untouched — it's an unrelated legacy-doc
+    // fallback for records predating the teacherUid field, not part of this fix.
     match /student_gamification/{doc} {
       allow read: if isAuthenticated() && (
-        isAnonymousStudent() ||
+        (isAnonymousStudent() && 'teacherUid' in resource.data && studentLinkedToTeacher(resource.data.teacherUid)) ||
         isAdmin() ||
         !('teacherUid' in resource.data) ||
         isDocOwner() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']) && isValidGamificationNumbers() && deviceOwnershipOk();
-      // Prevent changing studentName; only the anonymous student or teacher-owner may update
+      // Prevent changing studentName; only the anonymous student (own linked teacher's roster
+      // only) or teacher-owner may update.
       allow update: if isAuthenticated() && (
-        isAnonymousStudent() || isDocOwner() || isAdmin()
+        (isAnonymousStudent() && 'teacherUid' in resource.data && studentLinkedToTeacher(resource.data.teacherUid)) || isDocOwner() || isAdmin()
       ) && resource.data.studentName == request.resource.data.studentName && isValidGamificationNumbers() && deviceOwnershipOk();
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
@@ -442,6 +449,18 @@ service cloud.firestore {
         (isAuthenticated() && resource.data.teacherUid == request.auth.uid);
     }
 
+    // ── Врска ученик→наставник (student_teacher_link) — реверзен lookup за studentLinkedToTeacher() ──
+    // Doc ID = the student's own auth uid. teacherUid must match the real owning teacher of
+    // the class being joined (checked via a get() on classes/{classId}) — a student can't
+    // self-assign an arbitrary teacherUid to gain read access to a different class's data.
+    match /student_teacher_link/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isAuthenticated() && request.auth.uid == uid
+        && request.resource.data.teacherUid ==
+             get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.teacherUid;
+      allow delete: if isAdmin();
+    }
+
     // ── Зачувани прашања (saved_questions) ──
     match /saved_questions/{doc} {
       allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin() || (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId)));
@@ -466,16 +485,16 @@ service cloud.firestore {
     }
 
     // ── Огласи (announcements) ──
-    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1): client reads scope by
-    // `where('teacherUid','==', teacherUid)` (hooks/useStudentRealtime.ts) — a shared class feed
-    // a student legitimately needs to read (the teacher's broadcast, not their own document), but
-    // a Firestore rule can't verify "this uid belongs to this teacherUid" from a bare anonymous
-    // auth token. Same Tier 2 (device→teacherUid reverse-lookup) gap as assignments/
-    // student_gamification above — intentionally NOT built in this pass, flagged as follow-up.
+    // 2026-07-18 (audit_2026_07_18_full_app_review, security finding #1) / 2026-07-20 (Tier 2
+    // closure): client reads scope by `where('teacherUid','==', teacherUid)`
+    // (hooks/useStudentRealtime.ts) — a shared class feed a student legitimately needs to read
+    // (the teacher's broadcast, not their own document). studentLinkedToTeacher() now verifies
+    // "this uid belongs to this teacherUid", closing the previous blanket isAnonymousStudent()
+    // grant across every teacher's announcements.
     match /announcements/{doc} {
       allow read: if isAuthenticated() && (
         isDocOwner() ||
-        isAnonymousStudent() ||
+        (isAnonymousStudent() && studentLinkedToTeacher(resource.data.teacherUid)) ||
         isAdmin() ||
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
@@ -588,13 +607,29 @@ service cloud.firestore {
 
     // ── Интервали за повторување (spaced_rep) ──
     // Doc ID = {studentId}_{conceptId}. Written by anonymous student or teacher.
+    // studentId here is actually the raw deviceId (see firestoreService.spacedRep.ts).
+    // 2026-07-20 (Tier 2 closure, same finding class as assignments/announcements/
+    // student_gamification above): the bare isAnonymousStudent() branch granted ANY anonymous
+    // student read/write on EVERY other student's spaced-rep data, regardless of device —
+    // removed, since ownsDeviceViaIdentity() below already correctly scopes access to the
+    // caller's own device (and covers the same post-Google-link case the removed branch was
+    // trying to handle, via anonymousUid == request.auth.uid surviving the link).
+    // 2026-07-20: `allow create: if isAuthenticated();` used to have NO ownership check at all —
+    // any signed-in caller (anonymous or not) could create a record under an arbitrary
+    // studentId. Scoped the same way ownsClaimedDevice() already scopes class_memberships
+    // writes elsewhere in this file: an anonymous caller's write must match a studentId
+    // (deviceId) that's either unclaimed yet or already bound to their own auth uid.
+    // Non-anonymous callers (teachers) are unaffected — this collection is written by
+    // anonymous students in every call site that exists today (services/firestoreService.
+    // spacedRep.ts), but the header comment above allows for a teacher-driven path too.
     match /spaced_rep/{doc} {
-      // studentId here is actually the raw deviceId (see firestoreService.spacedRep.ts) —
-      // ownsDeviceViaIdentity() covers a student who linked their anonymous session to
-      // Google (same uid, but isAnonymousStudent() stops matching post-link).
-      allow read:   if isAuthenticated() && (isAnonymousStudent() || isAdmin() || isDocOwner() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (isAnonymousStudent() || isDocOwner() || isAdmin() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
+      allow read:   if isAuthenticated() && (isAdmin() || isDocOwner() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
+      allow create: if isAuthenticated() && (
+        !isAnonymousStudent() ||
+        !('studentId' in request.resource.data) ||
+        ownsClaimedDevice(request.resource.data.studentId)
+      );
+      allow update: if isAuthenticated() && (isDocOwner() || isAdmin() || (resource.data.studentId != null && ownsDeviceViaIdentity(resource.data.studentId)));
       allow delete: if isDocOwner() || isAdmin(); // owning teacher needs this for GDPR self-service deletion
     }
 

@@ -1461,4 +1461,213 @@ d('SEC-2 — Firestore rules coverage', () => {
       }));
     });
   });
+
+  // 2026-07-20 (Tier 2 closure, follow-up to audit_2026_07_18_full_app_review finding #1):
+  // isAnonymousStudent() used to grant a BLANKET read/write on assignments, announcements,
+  // student_gamification, and spaced_rep — any anonymous student session, regardless of
+  // which class/teacher they'd actually joined. student_teacher_link/{uid} (written by
+  // joinClassByCode) now lets the rules verify "this uid is actually linked to this
+  // teacherUid" and deny everyone else.
+  describe('student_teacher_link/{uid} — create must be bound to caller\'s own uid and a real class', () => {
+    it('a student can create their own link doc when teacherUid matches the class they claim to have joined', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('classes/classA').set({ teacherUid: 'teacherA', name: 'VIII-1' });
+      });
+      const ctx = testEnv.authenticatedContext('studentUid1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('student_teacher_link/studentUid1').set({
+        teacherUid: 'teacherA', classId: 'classA', linkedAt: Date.now(),
+      }));
+    });
+
+    it('cannot self-assign a teacherUid that does not match the real owner of the claimed class', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('classes/classB').set({ teacherUid: 'realTeacher', name: 'VII-2' });
+      });
+      const ctx = testEnv.authenticatedContext('studentUid2', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('student_teacher_link/studentUid2').set({
+        teacherUid: 'attackerClaimedTeacher', classId: 'classB', linkedAt: Date.now(),
+      }));
+    });
+
+    it('cannot create a link doc keyed under a different uid than the caller\'s own', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('classes/classC').set({ teacherUid: 'teacherC', name: 'VI-1' });
+      });
+      const ctx = testEnv.authenticatedContext('studentUid3', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('student_teacher_link/someone-elses-uid').set({
+        teacherUid: 'teacherC', classId: 'classC', linkedAt: Date.now(),
+      }));
+    });
+
+    it('only the linked student (or admin) can read their own link doc', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_teacher_link/studentUid4').set({ teacherUid: 'teacherD', classId: 'classD', linkedAt: Date.now() });
+      });
+      const owner = testEnv.authenticatedContext('studentUid4', { firebase: { sign_in_provider: 'anonymous' } });
+      const stranger = testEnv.authenticatedContext('studentUid5', { firebase: { sign_in_provider: 'anonymous' } });
+      const fOwner = owner.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      const fStranger = stranger.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(fOwner.doc('student_teacher_link/studentUid4').get());
+      await assertFails(fStranger.doc('student_teacher_link/studentUid4').get());
+    });
+  });
+
+  describe('assignments/{doc} — anonymous read/update now scoped via student_teacher_link (Tier 2 closure)', () => {
+    it('a student linked to the assignment\'s own teacher can read and self-mark completion', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('assignments/linkedAssignment').set({ teacherUid: 'teacherLinked', title: 'HW1', completedBy: [] });
+        await f.doc('student_teacher_link/linkedStudent').set({ teacherUid: 'teacherLinked', classId: 'classLinked', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('linkedStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('assignments/linkedAssignment').get());
+      await assertSucceeds(f.doc('assignments/linkedAssignment').update({ completedBy: ['linkedStudent'] }));
+    });
+
+    it('a student linked to a DIFFERENT teacher cannot read or update this assignment (the actual fix)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('assignments/otherTeacherAssignment').set({ teacherUid: 'teacherX', title: 'HW2', completedBy: [] });
+        await f.doc('student_teacher_link/wrongTeacherStudent').set({ teacherUid: 'teacherY', classId: 'classY', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('wrongTeacherStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('assignments/otherTeacherAssignment').get());
+      await assertFails(f.doc('assignments/otherTeacherAssignment').update({ completedBy: ['wrongTeacherStudent'] }));
+    });
+
+    it('an anonymous session with no student_teacher_link doc at all cannot read any teacher\'s assignments', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('assignments/unlinkedTargetAssignment').set({ teacherUid: 'teacherZ', title: 'HW3', completedBy: [] });
+      });
+      const ctx = testEnv.authenticatedContext('neverJoinedAnyClass', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertFails(f.doc('assignments/unlinkedTargetAssignment').get());
+    });
+  });
+
+  describe('student_gamification/{doc} — anonymous read/update now scoped via student_teacher_link (Tier 2 closure)', () => {
+    it('a linked student can read a classmate\'s doc under the same teacher (leaderboard use case)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_gamification/classmateDoc').set({ studentName: 'Classmate', teacherUid: 'teacherG', totalXP: 100 });
+        await f.doc('student_teacher_link/gamificationStudent').set({ teacherUid: 'teacherG', classId: 'classG', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('gamificationStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(f.doc('student_gamification/classmateDoc').get());
+    });
+
+    it('a student linked to a different teacher cannot read another class\'s gamification doc (the actual fix)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_gamification/otherClassDoc').set({ studentName: 'Someone', teacherUid: 'teacherH', totalXP: 50 });
+        await f.doc('student_teacher_link/wrongClassStudent').set({ teacherUid: 'teacherJ', classId: 'classJ', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('wrongClassStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertFails(f.doc('student_gamification/otherClassDoc').get());
+    });
+
+    it('legacy docs without a teacherUid field are still readable by any authenticated user (unrelated fallback, unchanged)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_gamification/legacyNoTeacherUid').set({ studentName: 'Legacy', totalXP: 10 });
+      });
+      const ctx = testEnv.authenticatedContext('anyRandomAuthedUser');
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(f.doc('student_gamification/legacyNoTeacherUid').get());
+    });
+  });
+
+  describe('announcements/{doc} — anonymous read now scoped via student_teacher_link (Tier 2 closure)', () => {
+    it('a linked student can read their own teacher\'s announcement', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('announcements/linkedAnnouncement').set({ teacherUid: 'teacherAnn', body: 'Test due Friday' });
+        await f.doc('student_teacher_link/announcementStudent').set({ teacherUid: 'teacherAnn', classId: 'classAnn', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('announcementStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(f.doc('announcements/linkedAnnouncement').get());
+    });
+
+    it('a student linked to a different teacher cannot read this announcement (the actual fix)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('announcements/otherTeacherAnnouncement').set({ teacherUid: 'teacherK', body: 'Private class note' });
+        await f.doc('student_teacher_link/wrongAnnouncementStudent').set({ teacherUid: 'teacherL', classId: 'classL', linkedAt: Date.now() });
+      });
+      const ctx = testEnv.authenticatedContext('wrongAnnouncementStudent', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertFails(f.doc('announcements/otherTeacherAnnouncement').get());
+    });
+  });
+
+  describe('spaced_rep/{doc} — create now requires device ownership; blanket anonymous read removed', () => {
+    it('an anonymous student can create their own first-ever spaced_rep record (unclaimed device)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const ctx = testEnv.authenticatedContext('freshDeviceUid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('spaced_rep/freshDevice_concept1').set({ studentId: 'freshDevice', conceptId: 'concept1', interval: 1 }));
+    });
+
+    it('cannot create a spaced_rep record claiming a studentId (deviceId) already claimed by a different uid', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('student_identity/claimedDevice').set({ deviceId: 'claimedDevice', name: 'Real Owner', anonymousUid: 'realOwnerUid' });
+      });
+      const ctx = testEnv.authenticatedContext('attackerUid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('spaced_rep/claimedDevice_concept1').set({ studentId: 'claimedDevice', conceptId: 'concept1', interval: 1 }));
+    });
+
+    it('an anonymous student cannot read a different, unowned device\'s spaced_rep record (blanket grant removed)', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('spaced_rep/someoneElsesDevice_concept1').set({ studentId: 'someoneElsesDevice', conceptId: 'concept1', interval: 1 });
+      });
+      const ctx = testEnv.authenticatedContext('unrelatedAnonUid', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = ctx.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertFails(f.doc('spaced_rep/someoneElsesDevice_concept1').get());
+    });
+  });
 });

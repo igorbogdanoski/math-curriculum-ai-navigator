@@ -16,7 +16,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => ({ seconds: 0, nanoseconds: 0 })),
 }));
 
-vi.mock('../firebaseConfig', () => ({ db: {} }));
+vi.mock('../firebaseConfig', () => ({ db: {}, auth: { currentUser: { uid: 'student-auth-uid-1' } } }));
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -84,5 +84,35 @@ describe('joinClassByCode — writes the per-student composite key', () => {
       expect.objectContaining({ studentName: 'Марко', classId: 'class-1' }),
       { merge: true },
     );
+  });
+});
+
+describe('joinClassByCode — student_teacher_link reverse-lookup write (Tier 2 security fix)', () => {
+  it('also writes student_teacher_link/{authUid} with the joined class\'s teacherUid + classId', async () => {
+    vi.mocked(getDocs).mockResolvedValue({
+      empty: false,
+      docs: [{ id: 'class-1', data: () => ({ teacherUid: 't1', name: 'VIII-1', gradeLevel: 8, studentNames: [] }) }],
+    } as any);
+
+    await joinClassByCode('ABC123', 'device-1', 'Марко');
+
+    expect(setDoc).toHaveBeenCalledWith(
+      { __id: 'student-auth-uid-1' },
+      expect.objectContaining({ teacherUid: 't1', classId: 'class-1' }),
+    );
+    expect(doc).toHaveBeenCalledWith({}, 'student_teacher_link', 'student-auth-uid-1');
+  });
+
+  it('does not throw and still returns the class when the student_teacher_link write fails', async () => {
+    vi.mocked(getDocs).mockResolvedValue({
+      empty: false,
+      docs: [{ id: 'class-1', data: () => ({ teacherUid: 't1', name: 'VIII-1', gradeLevel: 8, studentNames: [] }) }],
+    } as any);
+    vi.mocked(setDoc).mockImplementation((ref: any) =>
+      ref.__id === 'student-auth-uid-1' ? Promise.reject(new Error('permission-denied')) : Promise.resolve(undefined),
+    );
+
+    const result = await joinClassByCode('ABC123', 'device-1', 'Марко');
+    expect(result?.id).toBe('class-1');
   });
 });

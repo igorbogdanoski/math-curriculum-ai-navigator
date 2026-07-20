@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, where, setDoc, addDoc, deleteDoc, serverTimestamp, arrayUnion, type Timestamp } from "firebase/firestore";
-import { db } from '../firebaseConfig';
+import { db, auth } from '../firebaseConfig';
 import { type StudentGroup, type SchoolClass, type ClassMembership, type Announcement } from './firestoreService.types';
 import { parseFirestoreDoc, SchoolClassSchema, ClassMembershipSchema } from '../schemas/firestoreSchemas';
 import { getE2EMockClasses } from './e2eTesting';
@@ -112,6 +112,14 @@ export const fetchClassByJoinCode = async (code: string): Promise<SchoolClass | 
  * Student joins a class by code — writes class_memberships/{deviceId}__{studentSlug}.
  * Keyed per-student-on-this-device (not bare deviceId) so two different students
  * sharing one device/browser don't collide on the same membership doc.
+ *
+ * Also writes student_teacher_link/{authUid} — a reverse lookup keyed by the caller's
+ * real Firebase auth uid (unlike deviceId-keyed docs above, this one IS auth-verifiable),
+ * which firestore.rules uses to scope anonymous-student cross-reads (assignments,
+ * announcements, student_gamification leaderboard) to their own teacher's docs instead
+ * of granting a blanket isAnonymousStudent() read on every teacher's data. Best-effort:
+ * a failure here must not block the class join itself, since without it the security
+ * rules simply fail closed (deny) rather than open.
  */
 export const joinClassByCode = async (code: string, deviceId: string, studentName: string): Promise<SchoolClass | null> => {
   if (!code?.trim() || !deviceId?.trim()) return null;
@@ -126,6 +134,18 @@ export const joinClassByCode = async (code: string, deviceId: string, studentNam
     studentName: studentName || null,
     joinedAt: serverTimestamp(),
   }, { merge: true });
+  const authUid = auth.currentUser?.uid;
+  if (authUid) {
+    try {
+      await setDoc(doc(db, 'student_teacher_link', authUid), {
+        teacherUid: cls.teacherUid,
+        classId: cls.id,
+        linkedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      logger.error('joinClassByCode: student_teacher_link write failed (non-fatal):', error);
+    }
+  }
   return cls;
 };
 
