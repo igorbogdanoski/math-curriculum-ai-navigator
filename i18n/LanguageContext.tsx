@@ -10,10 +10,12 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Module-scope, not per-render — a stable reference so the effect below can safely list
+// it in its own deps in the future without triggering a needless re-run every render.
+const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLangState] = useState<Language>(getLanguagePreference());
-
-  const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
 
   useEffect(() => {
     document.documentElement.lang = language;

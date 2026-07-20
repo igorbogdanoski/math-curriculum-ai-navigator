@@ -45,6 +45,13 @@ export const ScenarioBankView: React.FC = () => {
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
   const { t } = useLanguage();
+  // `t` is a new function reference every render (LanguageContext doesn't memoize it), so
+  // callbacks below that intentionally omit it from their own deps (to avoid re-fetching data
+  // on every language switch) would otherwise capture a stale translation — a language switch
+  // right before an error fires would show the toast in the previous language. A ref sidesteps
+  // that without changing either callback's memoization/re-fetch behavior.
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; });
 
   const [tab, setTab] = useState<TabMode>('all');
   const [entries, setEntries] = useState<ScenarioBankEntry[]>([]);
@@ -99,7 +106,7 @@ export const ScenarioBankView: React.FC = () => {
         setHasMore(page.hasMore);
       }
     } catch {
-      addNotification(t('scenarioBankView.loadError'), 'error');
+      addNotification(tRef.current('scenarioBankView.loadError'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +128,7 @@ export const ScenarioBankView: React.FC = () => {
       setLastDoc(page.lastDoc);
       setHasMore(page.hasMore);
     } catch {
-      addNotification(t('scenarioBankView.loadMoreError'), 'error');
+      addNotification(tRef.current('scenarioBankView.loadMoreError'), 'error');
     } finally {
       setIsLoadingMore(false);
     }
@@ -382,17 +389,17 @@ export const ScenarioBankView: React.FC = () => {
     const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
     const hasUsableContent = parsed.title || parsed.scenario?.introductory?.text || (parsed.scenario?.main?.length ?? 0) > 0;
     if (!hasUsableContent) {
-      addNotification(t('scenarioBankView.aiNoStructure'), 'error');
+      addNotification(tRef.current('scenarioBankView.aiNoStructure'), 'error');
       return;
     }
     if (!firebaseUser?.uid) {
-      addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning');
+      addNotification(tRef.current('scenarioBankView.mustBeLoggedIn'), 'warning');
       return;
     }
     // S106-Г — save to Firestore instead of sessionStorage
     await saveUploadDraft(firebaseUser.uid, parsed, fileName);
-    const truncWarning = rawText.length > 13000 ? t('scenarioBankView.truncWarning') : '';
-    addNotification(t('scenarioBankView.structuredSuccessTemplate').replace('{fileName}', fileName).replace('{truncWarning}', truncWarning), 'success');
+    const truncWarning = rawText.length > 13000 ? tRef.current('scenarioBankView.truncWarning') : '';
+    addNotification(tRef.current('scenarioBankView.structuredSuccessTemplate').replace('{fileName}', fileName).replace('{truncWarning}', truncWarning), 'success');
     navigate('/planner/lesson/new');
   }, [user, firebaseUser, navigate, addNotification]);
 
@@ -408,7 +415,7 @@ export const ScenarioBankView: React.FC = () => {
       }
       await parseSingleAndNavigate(rawText, fileName);
     } catch {
-      addNotification(t('scenarioBankView.analysisError'), 'error');
+      addNotification(tRef.current('scenarioBankView.analysisError'), 'error');
     } finally {
       setIsParsingUpload(false);
     }
@@ -417,7 +424,7 @@ export const ScenarioBankView: React.FC = () => {
   const handleSegmentsSelected = useCallback(async (selected: ScenarioSegment[]) => {
     if (!firebaseUser?.uid || selected.length === 0) return;
     setIsParsingUpload(true);
-    const fileName = pendingSegments?.fileName ?? t('scenarioBankView.documentDefaultName');
+    const fileName = pendingSegments?.fileName ?? tRef.current('scenarioBankView.documentDefaultName');
     try {
       if (selected.length === 1) {
         await parseSingleAndNavigate(selected[0].text, fileName);
@@ -429,18 +436,18 @@ export const ScenarioBankView: React.FC = () => {
         );
         const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>>> => r.status === 'fulfilled').map(r => r.value);
         if (succeeded.length === 0) {
-          addNotification(t('scenarioBankView.aiNoScenarioStructured'), 'error');
+          addNotification(tRef.current('scenarioBankView.aiNoScenarioStructured'), 'error');
           return;
         }
         await saveUploadDraftBatch(
           firebaseUser.uid,
-          succeeded.map((p, i) => ({ parsed: p, fileName: t('scenarioBankView.segmentFileNameTemplate').replace('{fileName}', fileName).replace('{n}', String(i + 1)) }))
+          succeeded.map((p, i) => ({ parsed: p, fileName: tRef.current('scenarioBankView.segmentFileNameTemplate').replace('{fileName}', fileName).replace('{n}', String(i + 1)) }))
         );
-        addNotification(t('scenarioBankView.queueReadySuccessTemplate').replace('{n}', String(succeeded.length)), 'success');
+        addNotification(tRef.current('scenarioBankView.queueReadySuccessTemplate').replace('{n}', String(succeeded.length)), 'success');
         navigate('/planner/lesson/new');
       }
     } catch {
-      addNotification(t('scenarioBankView.structuringError'), 'error');
+      addNotification(tRef.current('scenarioBankView.structuringError'), 'error');
     } finally {
       setIsParsingUpload(false);
       setPendingSegments(null);
@@ -457,19 +464,19 @@ export const ScenarioBankView: React.FC = () => {
       );
       const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>> & { _fileName: string }> => r.status === 'fulfilled').map(r => r.value);
       if (succeeded.length === 0) {
-        addNotification(t('scenarioBankView.aiNoFileStructured'), 'error');
+        addNotification(tRef.current('scenarioBankView.aiNoFileStructured'), 'error');
         return;
       }
       await saveUploadDraftBatch(
         firebaseUser.uid,
         succeeded.map(p => ({ parsed: p, fileName: p._fileName }))
       );
-      const queueMsg = succeeded.length > 1 ? t('scenarioBankView.queueSuffixTemplate').replace('{n}', String(succeeded.length)) : '';
-      addNotification(t('scenarioBankView.batchSuccessTemplate').replace('{done}', String(succeeded.length)).replace('{total}', String(files.length)).replace('{queueMsg}', queueMsg), 'success');
+      const queueMsg = succeeded.length > 1 ? tRef.current('scenarioBankView.queueSuffixTemplate').replace('{n}', String(succeeded.length)) : '';
+      addNotification(tRef.current('scenarioBankView.batchSuccessTemplate').replace('{done}', String(succeeded.length)).replace('{total}', String(files.length)).replace('{queueMsg}', queueMsg), 'success');
       setShowBatchModal(false);
       navigate('/planner/lesson/new');
     } catch {
-      addNotification(t('scenarioBankView.batchImportError'), 'error');
+      addNotification(tRef.current('scenarioBankView.batchImportError'), 'error');
     } finally {
       setIsBatchImporting(false);
     }
