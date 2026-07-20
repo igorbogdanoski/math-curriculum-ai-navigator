@@ -15,20 +15,20 @@ export function formatDate(ts: any): string {
   } catch { return ''; }
 }
 
-export function timeAgo(ts: any): string {
+export function timeAgo(ts: any, t: (key: string) => string): string {
   if (!ts) return '';
   try {
     const d = ts.toDate ? ts.toDate() : new Date(ts);
     const diff = Date.now() - d.getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1)  return 'току што';
-    if (mins < 60) return `пред ${mins} мин`;
+    if (mins < 1)  return t('forum.timeAgo.justNow');
+    if (mins < 60) return t('forum.timeAgo.minutesAgo').replace('{n}', String(mins));
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24)  return `пред ${hrs} ч`;
+    if (hrs < 24)  return t('forum.timeAgo.hoursAgo').replace('{n}', String(hrs));
     const days = Math.floor(hrs / 24);
-    if (days < 7)  return `пред ${days} д`;
+    if (days < 7)  return t('forum.timeAgo.daysAgo').replace('{n}', String(days));
     const weeks = Math.floor(days / 7);
-    return `пред ${weeks} нед`;
+    return t('forum.timeAgo.weeksAgo').replace('{n}', String(weeks));
   } catch { return ''; }
 }
 

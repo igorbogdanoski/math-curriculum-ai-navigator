@@ -1,6 +1,7 @@
 import React from 'react';
 import { REACTIONS, type ForumThread, type ForumReply, type ReactionField } from '../../services/firestoreService.forum';
 import { reactionArr } from './forumHelpers';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ReactionBarProps {
   reactions: Pick<ForumThread | ForumReply, 'reactionsHelpful'> & {
@@ -12,7 +13,9 @@ interface ReactionBarProps {
   compact?: boolean;
 }
 
-export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onReact }) => (
+export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onReact }) => {
+  const { t } = useLanguage();
+  return (
   <div className="flex items-center gap-1 flex-wrap">
     {REACTIONS.map(({ field, emoji, label }) => {
       const arr = reactionArr(reactions as ForumThread | ForumReply, field);
@@ -22,7 +25,7 @@ export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onRe
           key={field}
           type="button"
           onClick={() => onReact(field)}
-          title={label}
+          title={t(label)}
           className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-semibold border transition-colors ${
             hasReacted
               ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
@@ -35,4 +38,5 @@ export const ReactionBar: React.FC<ReactionBarProps> = ({ reactions, myUid, onRe
       );
     })}
   </div>
-);
+  );
+};

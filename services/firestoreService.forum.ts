@@ -38,18 +38,19 @@ import { db } from '../firebaseConfig';
 
 export type ThreadCategory = 'question' | 'resource' | 'idea' | 'success' | 'discussion';
 
+// `label` fields hold i18n key strings, not display text — consumers call t(cfg.label) at render time.
 export const CATEGORY_CONFIG: Record<ThreadCategory, { label: string; emoji: string; color: string; border: string }> = {
-  question:   { label: 'Прашање',   emoji: '❓', color: 'bg-blue-100 text-blue-700',    border: 'border-blue-200' },
-  resource:   { label: 'Ресурс',    emoji: '📚', color: 'bg-emerald-100 text-emerald-700', border: 'border-emerald-200' },
-  idea:       { label: 'Идеја',     emoji: '💡', color: 'bg-amber-100 text-amber-700',   border: 'border-amber-200' },
-  success:    { label: 'Успех',     emoji: '🏆', color: 'bg-violet-100 text-violet-700', border: 'border-violet-200' },
-  discussion: { label: 'Дискусија', emoji: '💬', color: 'bg-rose-100 text-rose-700',     border: 'border-rose-200' },
+  question:   { label: 'forum.category.question',   emoji: '❓', color: 'bg-blue-100 text-blue-700',    border: 'border-blue-200' },
+  resource:   { label: 'forum.category.resource',    emoji: '📚', color: 'bg-emerald-100 text-emerald-700', border: 'border-emerald-200' },
+  idea:       { label: 'forum.category.idea',        emoji: '💡', color: 'bg-amber-100 text-amber-700',   border: 'border-amber-200' },
+  success:    { label: 'forum.category.success',     emoji: '🏆', color: 'bg-violet-100 text-violet-700', border: 'border-violet-200' },
+  discussion: { label: 'forum.category.discussion',  emoji: '💬', color: 'bg-rose-100 text-rose-700',     border: 'border-rose-200' },
 };
 
 export const REACTIONS = [
-  { field: 'reactionsHelpful' as const, emoji: '💡', label: 'Корисно' },
-  { field: 'reactionsSame'    as const, emoji: '❓', label: 'Имам исто' },
-  { field: 'reactionsGreat'   as const, emoji: '🎉', label: 'Одлично' },
+  { field: 'reactionsHelpful' as const, emoji: '💡', label: 'forum.reaction.helpful' },
+  { field: 'reactionsSame'    as const, emoji: '❓', label: 'forum.reaction.same' },
+  { field: 'reactionsGreat'   as const, emoji: '🎉', label: 'forum.reaction.great' },
 ];
 
 export type ReactionField = 'reactionsHelpful' | 'reactionsSame' | 'reactionsGreat';

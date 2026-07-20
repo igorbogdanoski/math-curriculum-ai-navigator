@@ -37,6 +37,7 @@ import { CategoryBadge } from './CategoryBadge';
 import { AuthorAvatar } from './AuthorAvatar';
 import { ReactionBar } from './ReactionBar';
 import { reactionArr, formatDate, timeAgo } from './forumHelpers';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 type FormEv = React.FormEvent<HTMLFormElement>;
 
@@ -51,6 +52,7 @@ interface ThreadDetailProps {
 }
 
 export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, isAdmin, onBack, onUpvoteThread, onReactThread }) => {
+  const { t } = useLanguage();
   const [replies, setReplies] = useState<ForumReply[]>([]);
   const [loadingReplies, setLoadingReplies] = useState(true);
   const [replyBody, setReplyBody] = useState('');
@@ -145,7 +147,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
       });
       setAiSummary(resp.text?.trim() ?? '');
     } catch {
-      setAiSummary('Резимето не успеа. Обиди се повторно.');
+      setAiSummary(t('forum.threadDetail.summaryFailed'));
     } finally {
       setLoadingSummary(false);
     }
@@ -211,7 +213,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
 
   const handleDeleteReply = async (reply: ForumReply) => {
     if (!isAdmin) return;
-    if (!window.confirm('Да се избрише овој одговор?')) return;
+    if (!window.confirm(t('forum.threadDetail.deleteReplyConfirm'))) return;
     setReplies(prev => prev.filter(r => r.id !== reply.id));
     await deleteForumReply(reply.id);
   };
@@ -234,36 +236,36 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
       <div className="flex items-center justify-between">
         <button type="button" onClick={onBack}
                 className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
-          <ChevronLeft className="w-4 h-4" /> Назад кон форумот
+          <ChevronLeft className="w-4 h-4" /> {t('forum.threadDetail.backToForum')}
         </button>
         <div className="flex items-center gap-2">
           {thread.authorUid === myUid && !editingThread && (
             <button type="button" onClick={() => { setEditingThread(true); setEditThreadTitle(thread.title); setEditThreadBody(thread.body); }}
-                    title="Уреди ја нишката"
+                    title={t('forum.threadDetail.editThreadTitle')}
                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-all">
-              <Pencil className="w-3.5 h-3.5" /> Уреди
+              <Pencil className="w-3.5 h-3.5" /> {t('forum.threadDetail.edit')}
             </button>
           )}
           {thread.authorUid !== myUid && (
             <button type="button" onClick={handleReportThread} disabled={threadReported}
-                    title={threadReported ? 'Веќе пријавено' : 'Пријави ја нишката за модерирање'}
+                    title={threadReported ? t('forum.card.alreadyReported') : t('forum.card.reportThreadTitle')}
                     className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
                       threadReported
                         ? 'bg-amber-50 border-amber-300 text-amber-700'
                         : 'bg-white border-gray-200 text-gray-500 hover:border-amber-300 hover:text-amber-600'
                     }`}>
-              <Flag className="w-3.5 h-3.5" /> {threadReported ? 'Пријавено' : 'Пријави'}
+              <Flag className="w-3.5 h-3.5" /> {threadReported ? t('forum.threadDetail.reported') : t('forum.threadDetail.report')}
             </button>
           )}
           <button type="button" onClick={handleCopyLink}
-                  title="Копирај линк за оваа нишка"
+                  title={t('forum.threadDetail.copyLinkTitle')}
                   className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
                     copied
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                       : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600'
                   }`}>
             <Link className="w-3.5 h-3.5" />
-            {copied ? 'Копирано!' : 'Копирај линк'}
+            {copied ? t('forum.threadDetail.copied') : t('forum.threadDetail.copyLink')}
           </button>
         </div>
       </div>
@@ -275,7 +277,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
           className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-xl px-4 py-2.5 text-sm text-sky-700 hover:bg-sky-100 transition-colors font-semibold"
         >
           <MessageSquare className="w-4 h-4 shrink-0" />
-          Поврзано сценарио: <span className="font-black">{thread.scenarioTitle ?? 'Отвори во Банката'}</span>
+          {t('forum.newThread.linkedScenario')}<span className="font-black">{thread.scenarioTitle ?? t('forum.threadDetail.openInBank')}</span>
           <span className="ml-auto text-sky-400 text-xs">→</span>
         </a>
       )}
@@ -285,7 +287,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
             <button
               type="button"
-              aria-label={hasUpvotedThread ? 'Отстрани глас' : 'Гласај за нишката'}
+              aria-label={hasUpvotedThread ? t('forum.card.removeVote') : t('forum.threadDetail.voteThread')}
               onClick={onUpvoteThread}
               className={`p-1.5 rounded-lg transition-colors ${hasUpvotedThread ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`}
             >
@@ -299,12 +301,12 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
               <CategoryBadge category={thread.category ?? 'question'} size="sm" />
               {thread.isPinned && (
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                  <Pin className="w-2.5 h-2.5" /> Прикачено
+                  <Pin className="w-2.5 h-2.5" /> {t('forum.card.pinned')}
                 </span>
               )}
               {thread.hasBestAnswer && (
                 <span className="flex items-center gap-0.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3" /> Решено
+                  <CheckCircle2 className="w-3 h-3" /> {t('forum.card.solved')}
                 </span>
               )}
               {thread.conceptTitle && (
@@ -322,26 +324,26 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                   value={editThreadTitle}
                   onChange={e => setEditThreadTitle(e.target.value)}
                   maxLength={120}
-                  aria-label="Наслов на нишката"
-                  placeholder="Наслов..."
+                  aria-label={t('forum.threadDetail.threadTitleAria')}
+                  placeholder={t('forum.threadDetail.titlePlaceholder')}
                   className="w-full border border-indigo-300 rounded-lg text-lg font-black p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
                 />
                 <textarea
                   rows={5}
                   value={editThreadBody}
                   onChange={e => setEditThreadBody(e.target.value)}
-                  aria-label="Содржина на нишката"
-                  placeholder="Содржина..."
+                  aria-label={t('forum.threadDetail.threadBodyAria')}
+                  placeholder={t('forum.threadDetail.bodyPlaceholder')}
                   className="w-full border border-indigo-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
                 />
                 <div className="flex gap-2">
                   <button type="button" disabled={savingThreadEdit} onClick={handleSaveThreadEdit}
                     className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
-                    {savingThreadEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Зачувај
+                    {savingThreadEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} {t('common.save')}
                   </button>
                   <button type="button" onClick={() => setEditingThread(false)}
                     className="px-3 py-1.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                    Откажи
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -356,7 +358,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
             {thread.forumImageUrl && (
               <img
                 src={thread.forumImageUrl}
-                alt="Прикачена слика"
+                alt={t('forum.threadDetail.attachedImageAlt')}
                 className="mt-3 rounded-xl border border-gray-200 max-h-64 w-auto"
               />
             )}
@@ -392,13 +394,13 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-            {replies.length} {replies.length === 1 ? 'одговор' : 'одговори'}
+            {replies.length} {replies.length === 1 ? t('forum.threadDetail.replySingular') : t('forum.threadDetail.repliesPlural')}
           </h3>
           {replies.length >= 2 && (
             <button type="button" onClick={handleAIThreadSummary} disabled={loadingSummary}
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-violet-200 text-violet-600 bg-violet-50 hover:bg-violet-100 transition disabled:opacity-50">
               {loadingSummary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              AI Резиме
+              {t('forum.threadDetail.aiSummaryBtn')}
             </button>
           )}
         </div>
@@ -407,8 +409,8 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
           <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-violet-600" />
-              <span className="text-xs font-bold text-violet-700">AI Резиме на дискусијата</span>
-              <button type="button" aria-label="Затвори резиме" onClick={() => setAiSummary(null)} className="ml-auto text-gray-400 hover:text-gray-600">
+              <span className="text-xs font-bold text-violet-700">{t('forum.threadDetail.aiSummaryHeader')}</span>
+              <button type="button" aria-label={t('forum.threadDetail.closeSummaryAria')} onClick={() => setAiSummary(null)} className="ml-auto text-gray-400 hover:text-gray-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -431,7 +433,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                     <div className="flex flex-col items-center gap-1 flex-shrink-0">
                       <button
                         type="button"
-                        aria-label={hasUpvoted ? 'Отстрани глас' : 'Гласај за одговорот'}
+                        aria-label={hasUpvoted ? t('forum.card.removeVote') : t('forum.threadDetail.voteReply')}
                         onClick={() => handleUpvoteReply(reply)}
                         className={`p-1 rounded transition-colors ${hasUpvoted ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-indigo-500'}`}
                       >
@@ -442,7 +444,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                         <>
                           <button
                             type="button"
-                            title={reply.isBestAnswer ? 'Отстрани kako најдобар одговор' : 'Означи kako најдобар одговор'}
+                            title={reply.isBestAnswer ? t('forum.threadDetail.unmarkBest') : t('forum.threadDetail.markBest')}
                             onClick={() => handleMarkBest(reply)}
                             className={`p-1 rounded transition-colors mt-1 ${reply.isBestAnswer ? 'text-emerald-600' : 'text-gray-300 hover:text-emerald-500'}`}
                           >
@@ -450,7 +452,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                           </button>
                           <button
                             type="button"
-                            title={reply.feynmanBadge ? 'Отстрани Феинман значка' : 'Означи: Поучи ги другите (Феинман)'}
+                            title={reply.feynmanBadge ? t('forum.threadDetail.unmarkFeynman') : t('forum.threadDetail.markFeynman')}
                             onClick={() => handleToggleFeynman(reply)}
                             className={`p-1 rounded transition-colors mt-1 ${reply.feynmanBadge ? 'text-yellow-600' : 'text-gray-300 hover:text-yellow-500'}`}
                           >
@@ -465,12 +467,12 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           {reply.isBestAnswer && (
                             <span className="flex items-center gap-1 text-xs font-black text-emerald-700">
-                              <Award className="w-3.5 h-3.5" /> Најдобар одговор
+                              <Award className="w-3.5 h-3.5" /> {t('forum.threadDetail.bestAnswerBadge')}
                             </span>
                           )}
                           {reply.feynmanBadge && (
                             <span className="flex items-center gap-1 text-xs font-black text-yellow-700">
-                              <Lightbulb className="w-3.5 h-3.5" /> Поучи ги другите
+                              <Lightbulb className="w-3.5 h-3.5" /> {t('forum.threadDetail.feynmanBadge')}
                             </span>
                           )}
                         </div>
@@ -486,11 +488,11 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                           <div className="flex gap-2">
                             <button type="button" disabled={savingEdit} onClick={() => handleSaveReplyEdit(reply)}
                               className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
-                              {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Зачувај
+                              {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} {t('common.save')}
                             </button>
                             <button type="button" onClick={() => setEditingReplyId(null)}
                               className="px-3 py-1.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                              Откажи
+                              {t('common.cancel')}
                             </button>
                           </div>
                         </div>
@@ -500,7 +502,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                             {reply.body.includes('$') ? <MathRenderer text={reply.body} /> : reply.body}
                           </div>
                           {reply.forumImageUrl && (
-                            <img src={reply.forumImageUrl} alt="Прикачена слика"
+                            <img src={reply.forumImageUrl} alt={t('forum.threadDetail.attachedImageAlt')}
                               className="mt-2 rounded-xl border border-gray-200 max-h-56 w-auto" />
                           )}
                         </>
@@ -515,7 +517,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                             )}
                             <AcademyBadgeRow uid={reply.authorUid} />
                           </div>
-                          <div className="text-[10px] text-gray-400">{timeAgo(reply.createdAt)}</div>
+                          <div className="text-[10px] text-gray-400">{timeAgo(reply.createdAt, t)}</div>
                         </div>
                         <div className="ml-auto flex items-center gap-2">
                           <ReactionBar
@@ -525,7 +527,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                             compact
                           />
                           {reply.authorUid === myUid && editingReplyId !== reply.id && (
-                            <button type="button" title="Уреди одговор"
+                            <button type="button" title={t('forum.threadDetail.editReplyTitle')}
                               onClick={() => { setEditingReplyId(reply.id); setEditingReplyBody(reply.body); }}
                               className="p-1 rounded text-gray-300 hover:text-indigo-500 transition">
                               <Pencil className="w-3.5 h-3.5" />
@@ -533,7 +535,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                           )}
                           {reply.authorUid !== myUid && reply.authorUid !== 'ai-expert' && (
                             <button type="button"
-                              title={(reply.reportedBy ?? []).includes(myUid) ? 'Веќе пријавено' : 'Пријави го одговорот'}
+                              title={(reply.reportedBy ?? []).includes(myUid) ? t('forum.card.alreadyReported') : t('forum.threadDetail.reportReply')}
                               disabled={(reply.reportedBy ?? []).includes(myUid)}
                               onClick={() => handleReportReply(reply)}
                               className={`p-1 rounded transition-colors ${(reply.reportedBy ?? []).includes(myUid) ? 'text-amber-500' : 'text-gray-300 hover:text-amber-500'}`}>
@@ -541,7 +543,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                             </button>
                           )}
                           {isAdmin && (
-                            <button type="button" title="Избриши одговор (admin)"
+                            <button type="button" title={t('forum.threadDetail.deleteReplyTitle')}
                               onClick={() => handleDeleteReply(reply)}
                               className="p-1 rounded text-gray-300 hover:text-red-500 transition">
                               <Trash2 className="w-3.5 h-3.5" />
@@ -551,7 +553,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
                       </div>
                       {(reply.reportedBy ?? []).length > 0 && (
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-amber-600">
-                          <Flag className="w-3 h-3" /> Пријавено од {(reply.reportedBy ?? []).length} наставник{(reply.reportedBy ?? []).length !== 1 ? 'ци' : ''}
+                          <Flag className="w-3 h-3" /> {t((reply.reportedBy ?? []).length === 1 ? 'forum.threadDetail.reportedByCountSingular' : 'forum.threadDetail.reportedByCountPlural').replace('{n}', String((reply.reportedBy ?? []).length))}
                         </div>
                       )}
                     </div>
@@ -565,22 +567,22 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide">Твој одговор</h4>
+          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide">{t('forum.threadDetail.yourReplyHeader')}</h4>
           <button type="button" onClick={handleAskAIExpert} disabled={loadingAIAnswer}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 transition disabled:opacity-50 shadow-sm">
             {loadingAIAnswer ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            AI Eксперт одговор
+            {t('forum.threadDetail.aiExpertReplyBtn')}
           </button>
         </div>
         <div className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 mb-3">
-          Tip: Употребете <code className="font-mono bg-indigo-100 px-1 rounded">$x^2 + 2x$</code> за LaTeX математика.
+          {t('forum.threadDetail.latexTipPre')}<code className="font-mono bg-indigo-100 px-1 rounded">$x^2 + 2x$</code>{t('forum.threadDetail.latexTipPost')}
         </div>
         <form onSubmit={handleSendReply} className="flex flex-col gap-3">
           <textarea
             rows={4}
             value={replyBody}
             onChange={e => { setReplyBody(e.target.value); if (showReplyPreview && !e.target.value) setShowReplyPreview(false); }}
-            placeholder="Напиши одговор... За математика: $x^2 + 3x + 2$"
+            placeholder={t('forum.threadDetail.replyPlaceholder')}
             className="w-full border border-gray-300 rounded-lg text-sm p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
           />
           {replyBody.includes('$') && (
@@ -588,7 +590,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
               <button type="button" onClick={() => setShowReplyPreview(v => !v)}
                 className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                {showReplyPreview ? 'Скрај преглед' : 'Преглед на математика'}
+                {showReplyPreview ? t('forum.newThread.hidePreview') : t('forum.newThread.showMathPreview')}
               </button>
               {showReplyPreview && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-800">
@@ -609,7 +611,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
             />
             <button type="button" onClick={() => replyImgRef.current?.click()}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-indigo-300 hover:text-indigo-600 transition">
-              <Camera className="w-3.5 h-3.5" /> Прикачи слика
+              <Camera className="w-3.5 h-3.5" /> {t('forum.threadDetail.attachImageBtn')}
             </button>
             {replyImg && (
               <div className="relative inline-block">
@@ -626,7 +628,7 @@ export const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myNam
               className="ml-auto flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
             >
               {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Одговори
+              {t('forum.threadDetail.replySubmitBtn')}
             </button>
           </div>
         </form>

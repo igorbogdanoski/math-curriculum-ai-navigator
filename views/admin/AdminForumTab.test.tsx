@@ -1,7 +1,8 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AdminForumTab } from './AdminForumTab';
+import { LanguageProvider } from '../../i18n/LanguageContext';
 
 const baseThread = {
   id: 't1', title: 'Прашање за дропки', authorName: 'Ана', replyCount: 2,
@@ -14,23 +15,29 @@ function renderTab(threads: any[], overrides: Partial<React.ComponentProps<typeo
   const handleForumApprove = vi.fn();
   const onRefresh = vi.fn();
   render(
-    <AdminForumTab
-      forumThreads={threads}
-      isLoadingForum={false}
-      forumSearch=""
-      setForumSearch={vi.fn()}
-      forumActionUid={null}
-      handleForumDelete={handleForumDelete}
-      handleForumRestore={handleForumRestore}
-      handleForumApprove={handleForumApprove}
-      onRefresh={onRefresh}
-      {...overrides}
-    />,
+    <LanguageProvider>
+      <AdminForumTab
+        forumThreads={threads}
+        isLoadingForum={false}
+        forumSearch=""
+        setForumSearch={vi.fn()}
+        forumActionUid={null}
+        handleForumDelete={handleForumDelete}
+        handleForumRestore={handleForumRestore}
+        handleForumApprove={handleForumApprove}
+        onRefresh={onRefresh}
+        {...overrides}
+      />
+    </LanguageProvider>,
   );
   return { handleForumDelete, handleForumRestore, handleForumApprove, onRefresh };
 }
 
 describe('AdminForumTab — report surfacing (Wave 8.6, audit_2026_07_18_full_app_review)', () => {
+  beforeEach(() => {
+    localStorage.setItem('preferred_language', 'mk');
+  });
+
   it('shows no report-count badge for a thread with no reports', () => {
     renderTab([baseThread]);
     expect(screen.queryByText(/\d+ пријавени/)).toBeNull();

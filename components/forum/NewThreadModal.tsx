@@ -10,6 +10,7 @@ import {
   type ThreadCategory, type ForumThread,
 } from '../../services/firestoreService.forum';
 import type { EnrichedConcept } from './forumHelpers';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 type FormEv = React.FormEvent<HTMLFormElement>;
 
@@ -32,6 +33,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
   initialImageDataUrl, initialTitle, initialBody,
   initialScenarioId, initialScenarioTitle, skipModeration,
 }) => {
+  const { t } = useLanguage();
   const [title, setTitle] = useState(initialTitle ?? '');
   const [body, setBody] = useState(initialBody ?? '');
   const [conceptId, setConceptId] = useState('');
@@ -80,8 +82,8 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-fade-in-up"
            onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-bold text-gray-800 text-lg">Ново прашање / пост</h2>
-          <button type="button" aria-label="Затвори" onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="font-bold text-gray-800 text-lg">{t('forum.newThread.title')}</h2>
+          <button type="button" aria-label={t('common.close')} onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -90,12 +92,12 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
           {initialScenarioTitle && (
             <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2 text-xs text-sky-700 font-semibold">
               <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              Поврзано сценарио: <span className="font-black">{initialScenarioTitle}</span>
+              {t('forum.newThread.linkedScenario')}<span className="font-black">{initialScenarioTitle}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">Тип на пост *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2">{t('forum.newThread.postTypeLabel')}</label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(CATEGORY_CONFIG) as ThreadCategory[]).map(cat => {
                 const cfg = CATEGORY_CONFIG[cat];
@@ -110,7 +112,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                         : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}
                   >
-                    <span>{cfg.emoji}</span> {cfg.label}
+                    <span>{cfg.emoji}</span> {t(cfg.label)}
                   </button>
                 );
               })}
@@ -118,41 +120,41 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Поврзи со поим (опционално)</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">{t('forum.newThread.linkConceptLabel')}</label>
             <select
-              title="Избери поим"
+              title={t('forum.newThread.selectConceptTitle')}
               value={conceptId}
               onChange={e => setConceptId(e.target.value)}
               className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
             >
-              <option value="">— Без поврзан поим —</option>
+              <option value="">{t('forum.newThread.noLinkedConcept')}</option>
               {concepts.map(c => (
-                <option key={c.id} value={c.id}>{c.gradeLevel}. одд. · {c.title}</option>
+                <option key={c.id} value={c.id}>{t('forum.newThread.conceptOptionTemplate').replace('{grade}', String(c.gradeLevel)).replace('{title}', c.title)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Наслов *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">{t('forum.newThread.titleLabel')}</label>
             <input
               type="text"
               required
               value={title}
               onChange={e => setTitle(e.target.value)}
               maxLength={120}
-              placeholder="Кратко и јасно опишете го прашањето..."
+              placeholder={t('forum.newThread.titlePlaceholder')}
               className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-gray-600">Содржина *</label>
+              <label className="text-xs font-semibold text-gray-600">{t('forum.newThread.bodyLabel')}</label>
               {body.includes('$') && (
                 <button type="button" onClick={() => setShowBodyPreview(v => !v)}
                   className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  {showBodyPreview ? 'Скрај преглед' : 'Преглед на математика'}
+                  {showBodyPreview ? t('forum.newThread.hidePreview') : t('forum.newThread.showMathPreview')}
                 </button>
               )}
             </div>
@@ -161,7 +163,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
               rows={5}
               value={body}
               onChange={e => setBody(e.target.value)}
-              placeholder="Детално опишете го прашањето... За математика: $x^2 + 3x + 2 = 0$"
+              placeholder={t('forum.newThread.bodyPlaceholder')}
               className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
             />
             {showBodyPreview && body.includes('$') && (
@@ -172,7 +174,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">Webb's DoK ниво (опционално)</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2">{t('forum.newThread.dokLabel')}</label>
             <div className="flex gap-1.5 flex-wrap">
               {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
                 const meta = DOK_META[lvl];
@@ -196,8 +198,8 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
 
           {imageDataUrl && (
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Прикачена слика</label>
-              <img src={imageDataUrl} alt="Алгебарски плочки" className="rounded-xl border border-gray-200 max-h-40 w-auto" />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">{t('forum.newThread.attachedImageLabel')}</label>
+              <img src={imageDataUrl} alt={t('forum.newThread.attachedImageAlt')} className="rounded-xl border border-gray-200 max-h-40 w-auto" />
             </div>
           )}
 
@@ -211,12 +213,12 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                   : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-cyan-300 hover:text-cyan-600'
               }`}
             >
-              <Box className="w-3.5 h-3.5" /> Додај 3D тело
+              <Box className="w-3.5 h-3.5" /> {t('forum.newThread.add3dShape')}
             </button>
             {show3d && (
               <div className="mt-2">
                 <select
-                  title="Избери 3D тело"
+                  title={t('forum.newThread.select3dShapeTitle')}
                   value={shape3dShape}
                   onChange={e => setShape3dShape(e.target.value)}
                   className="border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-cyan-400 focus:outline-none"
@@ -232,12 +234,12 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={onClose}
                     className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
-              Откажи
+              {t('common.cancel')}
             </button>
             <button type="submit" disabled={saving || !title.trim() || !body.trim()}
                     className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Објави
+              {t('forum.newThread.post')}
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ import { reportForumThread, type ForumThread } from '../../services/firestoreSer
 import { CategoryBadge } from './CategoryBadge';
 import { AuthorAvatar } from './AuthorAvatar';
 import { isHot, timeAgo } from './forumHelpers';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ThreadCardProps {
   thread: ForumThread;
@@ -16,6 +17,7 @@ interface ThreadCardProps {
 }
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, onUpvote, onDelete }) => {
+  const { t } = useLanguage();
   const hasUpvoted = thread.upvotedBy.includes(myUid);
   const trending = isHot(thread);
   const totalReactions = thread.reactionsHelpful.length + thread.reactionsSame.length + thread.reactionsGreat.length;
@@ -40,7 +42,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
             type="button"
             onClick={e => { e.stopPropagation(); onUpvote(); }}
             className={`p-1.5 rounded-lg transition-colors ${hasUpvoted ? 'bg-indigo-100 text-indigo-600' : 'text-gray-300 hover:text-indigo-500 hover:bg-indigo-50'}`}
-            title={hasUpvoted ? 'Отстрани глас' : 'Гласај'}
+            title={hasUpvoted ? t('forum.card.removeVote') : t('forum.card.vote')}
           >
             <ThumbsUp className="w-4 h-4" />
           </button>
@@ -53,18 +55,18 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
             {thread.isPinned && (
               <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                <Pin className="w-2.5 h-2.5" /> Прикачено
+                <Pin className="w-2.5 h-2.5" /> {t('forum.card.pinned')}
               </span>
             )}
             <CategoryBadge category={thread.category} />
             {trending && (
               <span className="flex items-center gap-0.5 text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">
-                🔥 Топло
+                {t('forum.card.hot')}
               </span>
             )}
             {thread.hasBestAnswer && (
               <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-                <CheckCircle2 className="w-2.5 h-2.5" /> Решено
+                <CheckCircle2 className="w-2.5 h-2.5" /> {t('forum.card.solved')}
               </span>
             )}
           </div>
@@ -92,9 +94,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
               </span>
             )}
             {thread.dokLevel && <DokBadge level={thread.dokLevel} size="compact" />}
-            <span className="text-[10px] text-gray-400 ml-auto">{timeAgo(thread.lastActivityAt ?? thread.createdAt)}</span>
+            <span className="text-[10px] text-gray-400 ml-auto">{timeAgo(thread.lastActivityAt ?? thread.createdAt, t)}</span>
             {totalReactions > 0 && (
-              <span className="text-[10px] text-gray-400">{totalReactions} реакции</span>
+              <span className="text-[10px] text-gray-400">{totalReactions} {t('forum.card.reactionsCountSuffix')}</span>
             )}
             {thread.authorUid === myUid && (
               <button
@@ -102,7 +104,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
                 onClick={e => { e.stopPropagation(); onDelete(); }}
                 className="text-[10px] text-red-400 hover:text-red-600 transition"
               >
-                Избриши
+                {t('forum.card.delete')}
               </button>
             )}
             {thread.authorUid !== myUid && (
@@ -110,7 +112,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, 
                 type="button"
                 onClick={handleReport}
                 disabled={alreadyReported || reporting}
-                title={alreadyReported ? 'Веќе пријавено' : 'Пријави ја нишката за модерирање'}
+                title={alreadyReported ? t('forum.card.alreadyReported') : t('forum.card.reportThreadTitle')}
                 className={`flex items-center gap-0.5 text-[10px] transition ${alreadyReported ? 'text-amber-500' : 'text-gray-300 hover:text-amber-500'}`}
               >
                 <Flag className="w-3 h-3" />

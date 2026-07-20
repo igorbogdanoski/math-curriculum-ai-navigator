@@ -36,15 +36,17 @@ import { StatsBanner } from '../components/forum/StatsBanner';
 import { NewThreadModal } from '../components/forum/NewThreadModal';
 import { ThreadCard } from '../components/forum/ThreadCard';
 import { ThreadDetail } from '../components/forum/ThreadDetail';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type SortMode = 'new' | 'hot' | 'active';
 
 // ── Category tab bar ──────────────────────────────────────────────────────────
+// `label` fields hold i18n key strings — t() is called at render time.
 
 const ALL_CATEGORIES: Array<{ id: ThreadCategory | ''; label: string; emoji: string }> = [
-  { id: '', label: 'Сите', emoji: '🌐' },
+  { id: '', label: 'forum.view.all', emoji: '🌐' },
   ...Object.entries(CATEGORY_CONFIG).map(([id, cfg]) => ({
     id: id as ThreadCategory,
     label: cfg.label,
@@ -58,6 +60,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const { firebaseUser, user } = useAuth();
   const { addNotification } = useNotification();
   const { allConcepts } = useCurriculum();
+  const { t } = useLanguage();
 
   const [threads, setThreads] = useState<ForumThread[]>([]);
   const [threadsTruncated, setThreadsTruncated] = useState(false);
@@ -132,7 +135,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     } else {
       fetchForumThread(threadIdProp)
         .then(t => { if (t) setActiveThread(t); })
-        .catch(() => addNotification('Не можев да ја вчитам нишката.', 'error'));
+        .catch(() => addNotification(t('forum.view.loadThreadError'), 'error'));
     }
   }, [threadIdProp, loading, threads, addNotification]);
 
@@ -140,7 +143,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     if (!showModerationTab) return;
     fetchPendingForumThreads()
       .then(setPendingThreads)
-      .catch(() => addNotification('Не можев да ги вчитам нишките на модерирање.', 'error'));
+      .catch(() => addNotification(t('forum.view.loadModerationError'), 'error'));
   }, [showModerationTab, addNotification]);
 
   const handleApprove = async (thread: ForumThread) => {
@@ -148,7 +151,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     try {
       await approveForumThread(thread.id);
       setPendingThreads(prev => prev.filter(t => t.id !== thread.id));
-      addNotification('Нишката е одобрена и видлива.', 'success');
+      addNotification(t('forum.view.approveSuccess'), 'success');
     } finally { setModeratingId(null); }
   };
 
@@ -157,7 +160,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     try {
       await rejectForumThread(thread.id);
       setPendingThreads(prev => prev.filter(t => t.id !== thread.id));
-      addNotification('Нишката е отфрлена.', 'info');
+      addNotification(t('forum.view.rejectSuccess'), 'info');
     } finally { setModeratingId(null); }
   };
 
@@ -217,10 +220,10 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
 
   const handleDelete = async (thread: ForumThread) => {
     if (!firebaseUser?.uid || thread.authorUid !== firebaseUser.uid) return;
-    if (!window.confirm('Да се избрише оваа нишка?')) return;
+    if (!window.confirm(t('forum.view.deleteConfirm'))) return;
     await softDeleteThread(thread.id);
     setThreads(prev => prev.filter(t => t.id !== thread.id));
-    addNotification('Нишката е избришана.', 'info');
+    addNotification(t('forum.view.deleteSuccess'), 'info');
   };
 
   const handleThreadCreated = (thread: ForumThread) => {
@@ -250,12 +253,12 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
         throw new AppError(
           'AI did not return valid JSON',
           ErrorCode.AI_PARSE_FAILED,
-          'Генериањето на предизвик не успеа. Обидете се повторно.',
+          t('forum.view.challengeParseFailed'),
           true,
         );
       }
       const parsed = JSON.parse(match[0]) as { title: string; body: string };
-      if (!myUid) throw new Error('Не сте логирани — освежете ја страната.');
+      if (!myUid) throw new Error(t('forum.view.notLoggedInError'));
       const threadId = await createForumThread({
         authorUid: myUid,
         authorName: 'DoK Предизвик 📌',
@@ -265,14 +268,14 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
         dokLevel: 3,
       });
       await pinThread(threadId, true);
-      addNotification('DoK Предизвик создаден и прикачен!', 'success');
+      addNotification(t('forum.view.dokChallengeCreated'), 'success');
     } catch (err) {
       logger.error('[DoK Challenge]', err);
-      const msg = err instanceof Error ? err.message : '';
+      const msg = err instanceof AppError ? err.userMessage : err instanceof Error ? err.message : '';
       addNotification(
         msg.includes('permission') || msg.includes('PERMISSION')
-          ? 'Нема Firestore право за пинирање. Проверете admin custom claims.'
-          : msg || 'Грешка при генерирање на предизвикот.',
+          ? t('forum.view.pinPermissionError')
+          : msg || t('forum.view.challengeGenericError'),
         'error',
       );
     } finally {
@@ -304,7 +307,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   });
 
   const myUid    = firebaseUser?.uid ?? '';
-  const myName   = user?.name ?? firebaseUser?.email ?? 'Наставник';
+  const myName   = user?.name ?? firebaseUser?.email ?? t('scenarioBank.card.defaultAuthorName');
   const isAdmin  = user?.role === 'admin' || user?.role === 'school_admin';
 
   return (
@@ -315,20 +318,20 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-black text-gray-900">Наставнички Форум</h1>
-            <p className="text-sm text-gray-500">Заедница за размена на искуства, идеи и совети</p>
+            <h1 className="text-2xl font-black text-gray-900">{t('forum.view.headerTitle')}</h1>
+            <p className="text-sm text-gray-500">{t('forum.view.headerSubtitle')}</p>
           </div>
           {isAdmin && pendingThreads.length === 0 && !showModerationTab && (
             <button type="button" onClick={() => setShowModerationTab(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-50 transition">
-              <Shield className="w-3.5 h-3.5" /> Модерација
+              <Shield className="w-3.5 h-3.5" /> {t('forum.view.moderation')}
             </button>
           )}
           {isAdmin && (pendingThreads.length > 0 || showModerationTab) && (
             <button type="button" onClick={() => setShowModerationTab(v => !v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition ${showModerationTab ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
               <Shield className="w-3.5 h-3.5" />
-              Модерација {pendingThreads.length > 0 && `(${pendingThreads.length})`}
+              {t('forum.view.moderation')} {pendingThreads.length > 0 && `(${pendingThreads.length})`}
             </button>
           )}
           {user?.role === 'admin' && (
@@ -336,13 +339,13 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
               type="button"
               onClick={handleGenerateDokChallenge}
               disabled={generatingChallenge}
-              title="Генерирај DoK Предизвик на неделата (admin)"
+              title={t('forum.view.dokChallengeTitle')}
               className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50 shadow-sm"
             >
               {generatingChallenge
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Pin className="w-3.5 h-3.5" />}
-              DoK Предизвик
+              {t('forum.view.dokChallengeBtn')}
             </button>
           )}
         </div>
@@ -363,30 +366,30 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
           {isAdmin && showModerationTab && (
             <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <h2 className="text-sm font-black text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Shield className="w-4 h-4" /> Редица за модерација
+                <Shield className="w-4 h-4" /> {t('forum.view.moderationQueueTitle')}
                 {pendingThreads.length > 0 && <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{pendingThreads.length}</span>}
               </h2>
               {pendingThreads.length === 0 ? (
-                <p className="text-sm text-amber-600">Нема нишки кои чекаат одобрување.</p>
+                <p className="text-sm text-amber-600">{t('forum.view.noModerationThreads')}</p>
               ) : (
                 <div className="space-y-2">
-                  {pendingThreads.map(t => (
-                    <div key={t.id} className="bg-white border border-amber-100 rounded-xl p-3 flex items-start gap-3">
+                  {pendingThreads.map(pt => (
+                    <div key={pt.id} className="bg-white border border-amber-100 rounded-xl p-3 flex items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 text-sm truncate">{t.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{t.body}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">{t.authorName} · {t.category}</p>
+                        <p className="font-bold text-gray-900 text-sm truncate">{pt.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pt.body}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{pt.authorName} · {pt.category}</p>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button type="button" disabled={moderatingId === t.id}
-                          onClick={() => handleApprove(t)}
+                        <button type="button" disabled={moderatingId === pt.id}
+                          onClick={() => handleApprove(pt)}
                           className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
-                          {moderatingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓ Одобри'}
+                          {moderatingId === pt.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('forum.view.approveBtn')}
                         </button>
-                        <button type="button" disabled={moderatingId === t.id}
-                          onClick={() => handleReject(t)}
+                        <button type="button" disabled={moderatingId === pt.id}
+                          onClick={() => handleReject(pt)}
                           className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-bold rounded-lg hover:bg-red-200 disabled:opacity-50 transition">
-                          ✕ Отфрли
+                          {t('forum.view.rejectBtn')}
                         </button>
                       </div>
                     </div>
@@ -410,7 +413,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                     : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
                 }`}
               >
-                <span>{cat.emoji}</span> {cat.label}
+                <span>{cat.emoji}</span> {t(cat.label)}
               </button>
             ))}
             <button type="button" onClick={() => setShowMyOnly(v => !v)}
@@ -419,7 +422,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                   ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                   : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
               }`}>
-              👤 Моите нишки
+              {t('forum.view.myThreadsOnly')}
             </button>
           </div>
 
@@ -434,7 +437,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                   : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
               }`}
             >
-              Сите
+              {t('forum.view.all')}
             </button>
             {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
               const meta = DOK_META[lvl];
@@ -462,16 +465,16 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Пребарај нишки..."
+                placeholder={t('forum.view.searchPlaceholder')}
                 className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
               />
             </div>
 
             <div className="flex rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
               {([
-                { id: 'new', icon: Sparkles, label: 'Ново' },
-                { id: 'hot', icon: TrendingUp, label: 'Топло' },
-                { id: 'active', icon: Clock, label: 'Активно' },
+                { id: 'new', icon: Sparkles, label: t('forum.view.sortNew') },
+                { id: 'hot', icon: TrendingUp, label: t('forum.view.sortHot') },
+                { id: 'active', icon: Clock, label: t('forum.view.sortActive') },
               ] as const).map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
@@ -489,14 +492,14 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
             </div>
 
             <select
-              title="Филтрирај по поим"
+              title={t('forum.newThread.selectConceptTitle')}
               value={filterConceptId}
               onChange={e => setFilterConceptId(e.target.value)}
               className="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-48 flex-shrink-0"
             >
-              <option value="">Сите поими</option>
+              <option value="">{t('forum.view.allConcepts')}</option>
               {concepts.map(c => (
-                <option key={c.id} value={c.id}>{c.gradeLevel}. одд. · {c.title}</option>
+                <option key={c.id} value={c.id}>{t('forum.newThread.conceptOptionTemplate').replace('{grade}', String(c.gradeLevel)).replace('{title}', c.title)}</option>
               ))}
             </select>
 
@@ -505,14 +508,14 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
               onClick={() => setShowNewModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition flex-shrink-0 shadow-sm"
             >
-              <Plus className="w-4 h-4" /> Нов пост
+              <Plus className="w-4 h-4" /> {t('forum.view.newPost')}
             </button>
           </div>
 
           {pinned.length > 0 && (
             <div className="mb-4 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 uppercase tracking-wide">
-                <Pin className="w-3.5 h-3.5" /> Прикачени нишки
+                <Pin className="w-3.5 h-3.5" /> {t('forum.view.pinnedThreads')}
               </div>
               {pinned.map(thread => (
                 <ThreadCard
@@ -533,10 +536,10 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
             <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
               <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-semibold">
-                {search || filterCategory ? 'Нема резултати за филтерот' : 'Форумот е сè уште празен'}
+                {search || filterCategory ? t('forum.view.noResultsFiltered') : t('forum.view.emptyForum')}
               </p>
               <p className="text-sm text-gray-400 mt-1">
-                {!search && !filterCategory && 'Биди прв! Постави прашање или сподели искуство.'}
+                {!search && !filterCategory && t('forum.view.emptyForumHint')}
               </p>
               {!search && !filterCategory && (
                 <button
@@ -544,7 +547,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                   onClick={() => setShowNewModal(true)}
                   className="mt-4 inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition"
                 >
-                  <Plus className="w-4 h-4" /> Постави прашање
+                  <Plus className="w-4 h-4" /> {t('forum.view.postQuestion')}
                 </button>
               )}
             </div>
@@ -562,7 +565,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
               ))}
               {threadsTruncated && (
                 <p className="text-center text-xs text-gray-400 py-3">
-                  Прикажани се само последните теми — постарите не се вчитани.
+                  {t('forum.view.truncatedNote')}
                 </p>
               )}
             </div>

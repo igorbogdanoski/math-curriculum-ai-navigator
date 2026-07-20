@@ -21,6 +21,7 @@ import {
   CATEGORY_CONFIG,
   type ThreadCategory,
 } from '../../services/firestoreService.forum';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   prefillTitle?: string;
@@ -28,7 +29,7 @@ interface Props {
   prefillCategory?: ThreadCategory;
   /** Extra Tailwind classes on the trigger button */
   className?: string;
-  /** Button label (default: "Сподели во Форум") */
+  /** Button label (default: translated "Share to Forum") */
   label?: string;
 }
 
@@ -37,10 +38,12 @@ export const ForumShareButton: React.FC<Props> = ({
   prefillBody = '',
   prefillCategory = 'resource',
   className = '',
-  label = 'Сподели во Форум',
+  label,
 }) => {
   const { firebaseUser, user } = useAuth();
   const { addNotification } = useNotification();
+  const { t } = useLanguage();
+  const resolvedLabel = label ?? t('forum.shareButton.defaultLabel');
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(prefillTitle);
@@ -59,7 +62,7 @@ export const ForumShareButton: React.FC<Props> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firebaseUser?.uid) {
-      addNotification('Мора да бидете логирани за да споделите.', 'warning');
+      addNotification(t('forum.shareButton.mustBeLoggedIn'), 'warning');
       return;
     }
     if (!title.trim() || !body.trim()) return;
@@ -67,7 +70,7 @@ export const ForumShareButton: React.FC<Props> = ({
     try {
       await createForumThread({
         authorUid:  firebaseUser.uid,
-        authorName: user?.name ?? firebaseUser.email ?? 'Наставник',
+        authorName: user?.name ?? firebaseUser.email ?? t('scenarioBank.card.defaultAuthorName'),
         category,
         title: title.trim(),
         body:  body.trim(),
@@ -78,11 +81,11 @@ export const ForumShareButton: React.FC<Props> = ({
         // bypassed moderation entirely. Same small teacher community either way.
         skipModeration: true,
       });
-      addNotification('Успешно споделено во Форумот! 🎉', 'success');
+      addNotification(t('forum.shareButton.shareSuccess'), 'success');
       setOpen(false);
     } catch (err) {
       logger.error('[ForumShareButton] createForumThread failed:', err);
-      addNotification('Грешка при споделување во форумот.', 'error');
+      addNotification(t('forum.shareButton.shareError'), 'error');
     } finally {
       setSaving(false);
     }
@@ -93,11 +96,11 @@ export const ForumShareButton: React.FC<Props> = ({
       <button
         type="button"
         onClick={handleOpen}
-        title="Сподели ја оваа содржина со колегите во Форумот"
+        title={t('forum.shareButton.tooltip')}
         className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors ${className}`}
       >
         <MessageSquare className="w-4 h-4" />
-        {label}
+        {resolvedLabel}
       </button>
 
       {open && (
@@ -113,11 +116,11 @@ export const ForumShareButton: React.FC<Props> = ({
             <div className="flex items-center justify-between p-5 border-b">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-indigo-600" />
-                <h2 className="font-bold text-gray-800 text-lg">Сподели во Форум</h2>
+                <h2 className="font-bold text-gray-800 text-lg">{t('forum.shareButton.defaultLabel')}</h2>
               </div>
               <button
                 type="button"
-                aria-label="Затвори"
+                aria-label={t('common.close')}
                 onClick={() => setOpen(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -128,7 +131,7 @@ export const ForumShareButton: React.FC<Props> = ({
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               {/* Category */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">Тип на пост</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">{t('forum.shareButton.postTypeLabel')}</label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(CATEGORY_CONFIG) as ThreadCategory[]).map(cat => {
                     const cfg = CATEGORY_CONFIG[cat];
@@ -143,7 +146,7 @@ export const ForumShareButton: React.FC<Props> = ({
                             : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
                         }`}
                       >
-                        <span>{cfg.emoji}</span> {cfg.label}
+                        <span>{cfg.emoji}</span> {t(cfg.label)}
                       </button>
                     );
                   })}
@@ -152,7 +155,7 @@ export const ForumShareButton: React.FC<Props> = ({
 
               {/* Title */}
               <div>
-                <label htmlFor="forum-share-title" className="block text-xs font-semibold text-gray-600 mb-1">Наслов *</label>
+                <label htmlFor="forum-share-title" className="block text-xs font-semibold text-gray-600 mb-1">{t('forum.newThread.titleLabel')}</label>
                 <input
                   id="forum-share-title"
                   type="text"
@@ -160,21 +163,21 @@ export const ForumShareButton: React.FC<Props> = ({
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   maxLength={120}
-                  placeholder="Кратко опишете ја содржината..."
+                  placeholder={t('forum.shareButton.titlePlaceholder')}
                   className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
                 />
               </div>
 
               {/* Body */}
               <div>
-                <label htmlFor="forum-share-body" className="block text-xs font-semibold text-gray-600 mb-1">Опис / порака *</label>
+                <label htmlFor="forum-share-body" className="block text-xs font-semibold text-gray-600 mb-1">{t('forum.shareButton.bodyLabel')}</label>
                 <textarea
                   id="forum-share-body"
                   required
                   rows={4}
                   value={body}
                   onChange={e => setBody(e.target.value)}
-                  placeholder="Опишете ја содржината, поставете прашање или поканете колеги да коментираат..."
+                  placeholder={t('forum.shareButton.bodyPlaceholder')}
                   className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
                 />
               </div>
@@ -185,7 +188,7 @@ export const ForumShareButton: React.FC<Props> = ({
                   onClick={() => setOpen(false)}
                   className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
                 >
-                  Откажи
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -193,7 +196,7 @@ export const ForumShareButton: React.FC<Props> = ({
                   className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Објави
+                  {t('forum.newThread.post')}
                 </button>
               </div>
             </form>
