@@ -6,10 +6,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, act } from '@testing-library/react';
 import { ProbabilityLab } from './ProbabilityLab';
 import { binomialPMF } from './probabilityMath';
+import { LanguageProvider } from '../../i18n/LanguageContext';
+
+function renderLab(props: React.ComponentProps<typeof ProbabilityLab>) {
+  return render(<LanguageProvider><ProbabilityLab {...props} /></LanguageProvider>);
+}
 
 describe('ProbabilityLab', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.setItem('preferred_language', 'mk');
   });
 
   afterEach(() => {
@@ -33,7 +39,7 @@ describe('ProbabilityLab', () => {
 
     vi.spyOn(Math, 'random').mockImplementation(() => randomValues[index++] ?? 0.1);
 
-    render(<ProbabilityLab onSendToDataViz={onSendToDataViz} onGoToChart={onGoToChart} />);
+    renderLab({ onSendToDataViz, onGoToChart });
 
     fireEvent.click(screen.getByRole('button', { name: '×10' }));
 
@@ -71,7 +77,7 @@ describe('ProbabilityLab', () => {
     vi.spyOn(Math, 'random').mockImplementation(() => (call++ % 2 === 0 ? 0.3 : 0.7));
 
     const onSendToDataViz = vi.fn();
-    render(<ProbabilityLab onSendToDataViz={onSendToDataViz} onGoToChart={vi.fn()} />);
+    renderLab({ onSendToDataViz, onGoToChart: vi.fn() });
 
     act(() => { fireEvent.click(screen.getByRole('button', { name: '×1000' })); });
 
@@ -90,7 +96,7 @@ describe('ProbabilityLab', () => {
   it('completes 1000 coin flips in under 2 seconds (latency milestone)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.3); // all Глава — constant, fastest path
 
-    render(<ProbabilityLab onSendToDataViz={vi.fn()} onGoToChart={vi.fn()} />);
+    renderLab({ onSendToDataViz: vi.fn(), onGoToChart: vi.fn() });
 
     const t0 = performance.now();
     act(() => { fireEvent.click(screen.getByRole('button', { name: '×1000' })); });

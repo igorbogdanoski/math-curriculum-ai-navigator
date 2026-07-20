@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { binomialPMF, normalPDF } from './probabilityMath';
+import { useLanguage } from '../../i18n/LanguageContext';
 // ── ConditionalProbabilityVenn ────────────────────────────────────────────────
 export const ConditionalProbabilityVenn: React.FC = () => {
+  const { t } = useLanguage();
   const [pA,  setPa]  = useState(0.40);
   const [pB,  setPb]  = useState(0.50);
   const [pAB, setPab] = useState(0.20);
@@ -38,7 +40,7 @@ export const ConditionalProbabilityVenn: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
       <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-        Условна веројатност — P(A|B) · Venn дијаграм · МОН IX одд.
+        {t('dataviz.probPanels.vennTitle')}
       </p>
 
       {/* Venn SVG */}
@@ -112,14 +114,13 @@ export const ConditionalProbabilityVenn: React.FC = () => {
       }`}>
         <span className="text-base">{indep ? '✓' : '≠'}</span>
         {indep
-          ? 'Настаните A и B се НЕЗАВИСНИ — P(A|B) ≈ P(A)'
-          : `Настаните A и B се ЗАВИСНИ — P(A|B) = ${pAgivenB.toFixed(3)} ≠ P(A) = ${pA.toFixed(3)}`
+          ? t('dataviz.probPanels.independent')
+          : t('dataviz.probPanels.dependent').replace('{pAB}', pAgivenB.toFixed(3)).replace('{pA}', pA.toFixed(3))
         }
       </div>
 
       <p className="text-[10px] text-gray-400">
-        P(A|B) = P(A∩B) / P(B) — веројатноста на A под услов дека B се случило.
-        Ако P(A|B) = P(A), тогаш A и B се независни.
+        {t('dataviz.probPanels.vennFooter')}
       </p>
     </div>
   );
@@ -133,6 +134,7 @@ const TREE_COLORS_L2 = ['#818cf8', '#34d399', '#fbbf24', '#f87171'];
 const LEAF_H = 46;
 
 export const ProbabilityTreeBuilder: React.FC = () => {
+  const { t } = useLanguage();
   const [l1, setL1] = useState<PTreeBranch[]>([
     { label: 'A', p: '0.6' },
     { label: 'B', p: '0.4' },
@@ -204,7 +206,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
       <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-        Дрво на веројатности — Општо · МОН IX–XI одд.
+        {t('dataviz.probPanels.treeTitle')}
       </p>
 
       {/* ── Input editor ────────────────────────────────────────────────── */}
@@ -212,7 +214,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
         {/* Level 1 */}
         <div>
           <p className="text-xs font-semibold text-gray-500 mb-2 flex items-center justify-between">
-            <span>Прво ниво</span>
+            <span>{t('dataviz.probPanels.level1')}</span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${l1Ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
               Σ = {l1Sum.toFixed(3)} {l1Ok ? '✓' : '≠ 1'}
             </span>
@@ -222,7 +224,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
               <div key={i} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: TREE_COLORS_L1[i % TREE_COLORS_L1.length] }} />
                 <input
-                  aria-label={`Ознака настан ${i + 1}`}
+                  aria-label={t('dataviz.probPanels.eventLabel').replace('{n}', String(i + 1))}
                   value={b.label}
                   onChange={e => updL1(i, 'label', e.target.value)}
                   maxLength={6}
@@ -239,7 +241,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
                 />
                 <span className="text-xs text-gray-400">{b.label ? `P(${b.label})` : ''}</span>
                 {l1.length > 2 && (
-                  <button type="button" title={`Отстрани настан ${b.label}`} onClick={() => delL1(i)}
+                  <button type="button" title={t('dataviz.probPanels.removeEvent').replace('{label}', b.label)} onClick={() => delL1(i)}
                     className="ml-auto text-red-400 hover:text-red-600 font-bold text-sm w-5 flex-shrink-0">✕</button>
                 )}
               </div>
@@ -247,7 +249,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
             {l1.length < 4 && (
               <button type="button" onClick={addL1}
                 className="text-xs font-bold text-indigo-600 hover:text-indigo-800 mt-1">
-                + Додај настан
+                {t('dataviz.probPanels.addEvent')}
               </button>
             )}
           </div>
@@ -255,13 +257,13 @@ export const ProbabilityTreeBuilder: React.FC = () => {
 
         {/* Level 2 — per L1 node */}
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-2">Второ ниво (условни веројатности)</p>
+          <p className="text-xs font-semibold text-gray-500 mb-2">{t('dataviz.probPanels.level2')}</p>
           <div className="space-y-2">
             {l1.map((b1, i) => (
               <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 p-2.5">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-bold" style={{ color: TREE_COLORS_L1[i % TREE_COLORS_L1.length] }}>
-                    При {b1.label || `A${i + 1}`}:
+                    {t('dataviz.probPanels.given').replace('{label}', b1.label || `A${i + 1}`)}
                   </span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${l2Oks[i] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                     Σ = {l2Sums[i].toFixed(3)} {l2Oks[i] ? '✓' : '≠ 1'}
@@ -272,7 +274,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
                     <div key={j} className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: TREE_COLORS_L2[j % TREE_COLORS_L2.length] }} />
                       <input
-                        aria-label={`Ознака гранка ${j + 1} при ${b1.label}`}
+                        aria-label={t('dataviz.probPanels.branchLabel').replace('{n}', String(j + 1)).replace('{label}', b1.label)}
                         value={b2.label}
                         onChange={e => updL2(i, j, 'label', e.target.value)}
                         maxLength={6}
@@ -288,7 +290,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
                       />
                       <span className="text-[10px] text-gray-400 hidden sm:inline">P({b2.label}|{b1.label})</span>
                       {(l2[i] || []).length > 2 && (
-                        <button type="button" title={`Отстрани гранка ${b2.label}`} onClick={() => delL2(i, j)}
+                        <button type="button" title={t('dataviz.probPanels.removeBranch').replace('{label}', b2.label)} onClick={() => delL2(i, j)}
                           className="ml-auto text-red-400 hover:text-red-600 font-bold text-xs w-4 flex-shrink-0">✕</button>
                       )}
                     </div>
@@ -296,7 +298,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
                   {(l2[i] || []).length < 4 && (
                     <button type="button" onClick={() => addL2(i)}
                       className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 mt-0.5">
-                      + Додај гранка
+                      {t('dataviz.probPanels.addBranch')}
                     </button>
                   )}
                 </div>
@@ -309,14 +311,14 @@ export const ProbabilityTreeBuilder: React.FC = () => {
       {/* ── SVG tree ────────────────────────────────────────────────────── */}
       <div className="overflow-x-auto rounded-xl border border-gray-100 bg-slate-50 p-2">
         <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ minWidth: 360, width: '100%', maxHeight: 400, display: 'block' }}>
-          <text x={rootX} y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">Корен</text>
-          <text x={l1X}   y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">Ниво 1</text>
-          <text x={l2X}   y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">Ниво 2</text>
+          <text x={rootX} y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">{t('dataviz.probPanels.root')}</text>
+          <text x={l1X}   y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">{t('dataviz.probPanels.level1Short')}</text>
+          <text x={l2X}   y={12} textAnchor="middle" fontSize={8} fill="#94a3b8" fontWeight="bold">{t('dataviz.probPanels.level2Short')}</text>
           <text x={probX + 25} y={12} textAnchor="start" fontSize={8} fill="#94a3b8" fontWeight="bold">P(∩)</text>
 
           {/* Root node */}
           <circle cx={rootX} cy={rootY} r={14} fill="#6366f1" />
-          <text x={rootX} y={rootY} textAnchor="middle" dominantBaseline="middle" fontSize={7.5} fill="white" fontWeight="bold">Старт</text>
+          <text x={rootX} y={rootY} textAnchor="middle" dominantBaseline="middle" fontSize={7.5} fill="white" fontWeight="bold">{t('dataviz.probLab.diceCoinStart')}</text>
 
           {l1.map((b1, i) => {
             const y1 = l1Ys[i];
@@ -373,9 +375,9 @@ export const ProbabilityTreeBuilder: React.FC = () => {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="text-left py-1.5 px-2 text-gray-400 font-semibold">Пат</th>
-              <th className="text-center py-1.5 px-2 text-gray-400 font-semibold">P(Н1)</th>
-              <th className="text-center py-1.5 px-2 text-gray-400 font-semibold">P(Н2 | Н1)</th>
+              <th className="text-left py-1.5 px-2 text-gray-400 font-semibold">{t('dataviz.probPanels.path')}</th>
+              <th className="text-center py-1.5 px-2 text-gray-400 font-semibold">{t('dataviz.probPanels.event1')}</th>
+              <th className="text-center py-1.5 px-2 text-gray-400 font-semibold">{t('dataviz.probPanels.event2given1')}</th>
               <th className="text-center py-1.5 px-2 text-gray-400 font-semibold">P(∩) = P1 × P2</th>
             </tr>
           </thead>
@@ -389,7 +391,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
               </tr>
             ))}
             <tr className="border-t-2 border-gray-200">
-              <td className="py-1.5 px-2 font-bold text-gray-600" colSpan={3}>Сума на сите P(∩)</td>
+              <td className="py-1.5 px-2 font-bold text-gray-600" colSpan={3}>{t('dataviz.probPanels.sumOfAll')}</td>
               <td className={`py-1.5 px-2 text-center font-black ${Math.abs(totalJoint - 1) < 0.005 ? 'text-emerald-600' : 'text-red-600'}`}>
                 {totalJoint.toFixed(4)} {Math.abs(totalJoint - 1) < 0.005 ? '✓ = 1' : '≠ 1'}
               </td>
@@ -399,8 +401,7 @@ export const ProbabilityTreeBuilder: React.FC = () => {
       </div>
 
       <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3 text-xs text-indigo-700">
-        <strong>Правило за множење:</strong> P(A∩B) = P(A) · P(B|A).
-        Збирот на сите листови мора да биде 1. Зелено ✓ = веројатностите се коректни.
+        <strong>{t('dataviz.probPanels.multiplicationRule')}</strong> {t('dataviz.probPanels.multiplicationRuleBody')}
       </div>
     </div>
   );
@@ -414,6 +415,7 @@ export interface BinomialChartProps {
   total: number;
 }
 export const BinomialDistributionChart: React.FC<BinomialChartProps> = ({ n, p, counts, total }) => {
+  const { t } = useLanguage();
   const pmf = binomialPMF(n, p);
   const mu = n * p;
   const sigma = Math.sqrt(n * p * (1 - p));
@@ -494,13 +496,13 @@ export const BinomialDistributionChart: React.FC<BinomialChartProps> = ({ n, p, 
 
       {/* Legend */}
       <rect x={padL + 4} y={padT} width={10} height={10} fill="#3b82f6" fillOpacity={0.4} />
-      <text x={padL + 18} y={padT + 9} fontSize={9} fill="#374151">Теор. PMF</text>
+      <text x={padL + 18} y={padT + 9} fontSize={9} fill="#374151">{t('dataviz.probPanels.theorPMF')}</text>
       {total > 0 && <>
         <rect x={padL + 74} y={padT} width={10} height={10} fill="#7c3aed" fillOpacity={0.7} />
-        <text x={padL + 88} y={padT + 9} fontSize={9} fill="#374151">Измерено</text>
+        <text x={padL + 88} y={padT + 9} fontSize={9} fill="#374151">{t('dataviz.probPanels.measured')}</text>
       </>}
       <line x1={padL + 144} y1={padT + 5} x2={padL + 156} y2={padT + 5} stroke="#f97316" strokeWidth={2} strokeDasharray="4 2" />
-      <text x={padL + 160} y={padT + 9} fontSize={9} fill="#374151">Нормална апрокс.</text>
+      <text x={padL + 160} y={padT + 9} fontSize={9} fill="#374151">{t('dataviz.probPanels.normalApprox')}</text>
 
       {/* Stats footer */}
       <text x={W / 2} y={H - 6} textAnchor="middle" fontSize={9} fill="#6b7280">

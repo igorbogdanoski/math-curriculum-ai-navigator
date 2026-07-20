@@ -4,15 +4,16 @@ import type { TableData } from './DataTable';
 import type { ChartConfig } from './ChartPreview';
 import {
   type ExperimentType, type SpinnerSector,
-  SPINNER_COLORS, DEFAULT_SECTORS, DIE_FACES, EXPERIMENTS, EXP_LABEL,
+  SPINNER_COLORS, DEFAULT_SECTORS, DIE_FACES, EXPERIMENTS,
   wilsonCI, combinations, permutations,
   getOutcomes, theoretical, rollOne,
-  generateProbabilitySet,
+  generateProbabilitySet, expLabel, formatOutcomeLabel,
 } from './probabilityMath';
 import { ConditionalProbabilityVenn, ProbabilityTreeBuilder, BinomialDistributionChart } from './ProbabilityLabPanels';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export interface ProbabilityLabProps {
   onSendToDataViz: (tableData: TableData, config: Partial<ChartConfig>) => void;
@@ -75,6 +76,7 @@ const SpinnerSVG: React.FC<{ sectors: SpinnerSector[]; lastResult?: string }> = 
 
 // ── TwoDiceGrid ───────────────────────────────────────────────────────────────
 const TwoDiceGrid: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
+  const { t } = useLanguage();
   const activeSum = lastResult ? parseInt(lastResult.replace('Сума ', '')) : null;
   return (
     <div className="overflow-x-auto">
@@ -110,13 +112,14 @@ const TwoDiceGrid: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
           ))}
         </tbody>
       </table>
-      <p className="text-[10px] text-gray-400 mt-2">Потемно = почеста сума · сума 7 е најверојатна (P = 6/36 ≈ 16.7%)</p>
+      <p className="text-[10px] text-gray-400 mt-2">{t('dataviz.probLab.twoDiceGridNote')}</p>
     </div>
   );
 };
 
 // ── DiceCoinTree ──────────────────────────────────────────────────────────────
 const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
+  const { t } = useLanguage();
   const ROW = 26;
   const H = 12 * ROW + 20;
   const rootX = 22, dieX = 120, coinX = 262, probX = 340;
@@ -128,11 +131,11 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
         {/* Root node */}
         <circle cx={rootX} cy={rootY} r="14" fill="#6366f1" />
         <text x={rootX} y={rootY} textAnchor="middle" dominantBaseline="middle"
-          fontSize="8" fill="white" fontWeight="bold">Старт</text>
+          fontSize="8" fill="white" fontWeight="bold">{t('dataviz.probLab.diceCoinStart')}</text>
 
         {/* Column headers */}
-        <text x={dieX}  y="9" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">Коцка</text>
-        <text x={coinX} y="9" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">Монета</text>
+        <text x={dieX}  y="9" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">{t('dataviz.probLab.diceCoinDieCol')}</text>
+        <text x={coinX} y="9" textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="bold">{t('dataviz.probLab.diceCoinCoinCol')}</text>
         <text x={probX} y="9" textAnchor="start"  fontSize="9" fill="#94a3b8" fontWeight="bold">P</text>
 
         {[1,2,3,4,5,6].map((d, di) => {
@@ -160,12 +163,12 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
               <circle cx={coinX} cy={coinG} r="11"
                 fill={activeG ? '#10b981' : '#d1fae5'} stroke="#10b981" strokeWidth="1.5" />
               <text x={coinX} y={coinG} textAnchor="middle" dominantBaseline="middle"
-                fontSize="9" fontWeight="bold" fill={activeG ? 'white' : '#065f46'}>Г</text>
+                fontSize="9" fontWeight="bold" fill={activeG ? 'white' : '#065f46'}>{t('dataviz.probLab.headsShort')}</text>
               {/* Coin P */}
               <circle cx={coinX} cy={coinP} r="11"
                 fill={activeP ? '#f59e0b' : '#fef3c7'} stroke="#f59e0b" strokeWidth="1.5" />
               <text x={coinX} y={coinP} textAnchor="middle" dominantBaseline="middle"
-                fontSize="9" fontWeight="bold" fill={activeP ? 'white' : '#78350f'}>П</text>
+                fontSize="9" fontWeight="bold" fill={activeP ? 'white' : '#78350f'}>{t('dataviz.probLab.tailsShort')}</text>
               {/* Probability */}
               <text x={probX} y={coinG} textAnchor="start" dominantBaseline="middle"
                 fontSize="9" fill={activeG ? '#6366f1' : '#94a3b8'} fontWeight={activeG ? 'bold' : 'normal'}>1/12</text>
@@ -181,6 +184,7 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
 
 // ── CombinatoricsCalculator ───────────────────────────────────────────────────
 const CombinatoricsCalculator: React.FC = () => {
+  const { t } = useLanguage();
   const [n, setN] = useState(5);
   const [k, setK] = useState(2);
   const safeK = Math.min(k, n);
@@ -193,14 +197,14 @@ const CombinatoricsCalculator: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
       <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-        Комбинаторика — C(n,k) · P(n,k) · МОН XI одд. (изборен)
+        {t('dataviz.probLab.combinatorics')}
       </p>
 
       {/* n and k sliders */}
       <div className="grid grid-cols-2 gap-4">
         {([
-          { label: 'n (вкупно елементи)', val: n, set: setN, max: 20 },
-          { label: 'k (избираме)',        val: k, set: setK, max: n  },
+          { label: t('dataviz.probLab.nTotal'), val: n, set: setN, max: 20 },
+          { label: t('dataviz.probLab.kChoose'), val: k, set: setK, max: n  },
         ] as const).map(({ label, val, set, max }) => (
           <div key={label}>
             <label className="text-xs font-semibold text-gray-600 flex justify-between mb-1">
@@ -221,33 +225,33 @@ const CombinatoricsCalculator: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3 text-center">
           <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-1">
-            Комбинации C({n},{safeK})
+            {t('dataviz.probLab.combinationsLabel').replace('{n}', String(n)).replace('{k}', String(safeK))}
           </p>
           <p className="text-xs text-indigo-400 mb-1">
             <span className="font-mono">{n}! / ({safeK}! · {n - safeK}!)</span>
           </p>
           <p className="text-2xl font-black text-indigo-700">{fmt(C)}</p>
-          <p className="text-[9px] text-indigo-400 mt-1">Редоследот НЕ е важен</p>
+          <p className="text-[9px] text-indigo-400 mt-1">{t('dataviz.probLab.orderNotImportant')}</p>
         </div>
         <div className="rounded-xl bg-violet-50 border border-violet-100 p-3 text-center">
           <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">
-            Пермутации P({n},{safeK})
+            {t('dataviz.probLab.permutationsLabel').replace('{n}', String(n)).replace('{k}', String(safeK))}
           </p>
           <p className="text-xs text-violet-400 mb-1">
             <span className="font-mono">{n}! / {n - safeK}!</span>
           </p>
           <p className="text-2xl font-black text-violet-700">{fmt(P)}</p>
-          <p className="text-[9px] text-violet-400 mt-1">Редоследот Е важен</p>
+          <p className="text-[9px] text-violet-400 mt-1">{t('dataviz.probLab.orderImportant')}</p>
         </div>
       </div>
 
       {/* Педагошка белешка */}
       <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
         <p className="text-xs text-amber-700">
-          <strong>Пример:</strong> Од {n} ученици избираме {safeK} —{' '}
-          {C === Infinity ? 'premногу за прикажување' : (
-            <>ако <em>редоследот не е важен</em> (одбор): <strong>{fmt(C)}</strong> начини;{' '}
-            ако <em>редоследот е важен</em> (порота): <strong>{fmt(P)}</strong> начини.</>
+          <strong>{t('dataviz.probLab.exampleTitle')}</strong> {t('dataviz.probLab.exampleIntro').replace('{n}', String(n)).replace('{k}', String(safeK))}{' '}
+          {C === Infinity ? t('dataviz.probLab.tooManyToShow') : (
+            <>{t('dataviz.probLab.ifWord')} <em>{t('dataviz.probLab.orderNotImportantEm')}</em> {t('dataviz.probLab.orderNotImportantSuffix')} <strong>{fmt(C)}</strong> {t('dataviz.probLab.waysCount')};{' '}
+            {t('dataviz.probLab.ifWord')} <em>{t('dataviz.probLab.orderImportantEm')}</em> {t('dataviz.probLab.orderImportantSuffix')} <strong>{fmt(P)}</strong> {t('dataviz.probLab.waysCount')}.</>
           )}
         </p>
       </div>
@@ -257,9 +261,10 @@ const CombinatoricsCalculator: React.FC = () => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz, onGoToChart }) => {
+  const { t } = useLanguage();
   const [experiment, setExperiment] = useState<ExperimentType>('coin');
   const [dieFaces, setDieFaces]     = useState(6);
-  const [sectors, setSectors]       = useState<SpinnerSector[]>(DEFAULT_SECTORS);
+  const [sectors, setSectors]       = useState<SpinnerSector[]>(() => DEFAULT_SECTORS.map(s => ({ ...s, label: t(s.label) })));
   const [binN, setBinN]             = useState(10);
   const [binP, setBinP]             = useState(0.5);
   const [counts, setCounts]         = useState<Record<string, number>>({});
@@ -323,18 +328,18 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
   const handleSend = () => {
     if (!total) return;
     const tableData: TableData = {
-      headers: ['Исход', 'Фреквенција', 'Експ. %', 'Теор. %'],
+      headers: [t('dataviz.probLab.outcome'), t('dataviz.probLab.frequencyCol'), t('dataviz.probLab.expPercent'), t('dataviz.probLab.theorPercent')],
       rows: outcomes.map(o => [
-        o,
+        formatOutcomeLabel(o, t),
         counts[o] ?? 0,
         +(((counts[o] ?? 0) / total) * 100).toFixed(1),
         +((theory[o] ?? 0) * 100).toFixed(1),
       ]),
     };
     const config: Partial<ChartConfig> = {
-      title: `Веројатност — ${EXP_LABEL[experiment]}${experiment === 'die' ? ` (d${dieFaces})` : ''}`,
-      xLabel: 'Исход',
-      yLabel: 'Фреквенција',
+      title: `${t('dataviz.probLab.probability')} — ${expLabel(experiment, t)}${experiment === 'die' ? ` (d${dieFaces})` : ''}`,
+      xLabel: t('dataviz.probLab.outcome'),
+      yLabel: t('dataviz.probLab.frequencyCol'),
       type: 'bar',
     };
     onSendToDataViz(tableData, config);
@@ -347,7 +352,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
         {(['sim', 'ex'] as const).map(v => (
           <button key={v} type="button" onClick={() => setView(v)}
             className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${view === v ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {v === 'sim' ? '🎲 Симулација' : '✏️ Вежбај'}
+            {v === 'sim' ? t('dataviz.probLab.simTab') : t('dataviz.probLab.exercisesTab')}
           </button>
         ))}
       </div>
@@ -356,7 +361,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
 
       {/* ── Experiment selector ─────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
-        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Избери експеримент</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">{t('dataviz.probLab.chooseExperiment')}</p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {EXPERIMENTS.map(exp => (
             <button key={exp.id} type="button"
@@ -369,8 +374,8 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
               <span className="text-2xl leading-none mb-1">{exp.emoji}</span>
               <span className={`text-[11px] font-bold text-center leading-tight ${
                 experiment === exp.id ? 'text-violet-700' : 'text-gray-600'
-              }`}>{exp.label}</span>
-              <span className="text-[9px] text-gray-400">{exp.desc}</span>
+              }`}>{t(exp.label)}</span>
+              <span className="text-[9px] text-gray-400">{t(exp.desc)}</span>
             </button>
           ))}
         </div>
@@ -379,7 +384,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Die config ─────────────────────────────────────────────────────── */}
       {experiment === 'die' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Број на страни</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">{t('dataviz.probLab.numSides')}</p>
           <div className="flex flex-wrap gap-2">
             {DIE_FACES.map(f => (
               <button key={f} type="button"
@@ -399,10 +404,12 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Spinner config ──────────────────────────────────────────────────── */}
       {experiment === 'spinner' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Сектори на спинер</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">{t('dataviz.probLab.spinnerSectors')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
             <div className="space-y-2">
-              {sectors.map((sec, i) => (
+              {sectors.map((sec, i) => {
+                const sectorLabel = sec.label || t('dataviz.probLab.sectorFallback').replace('{n}', String(i + 1));
+                return (
                 <div key={i} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm flex-shrink-0"
                     style={{ backgroundColor: SPINNER_COLORS[i % SPINNER_COLORS.length] }} />
@@ -413,7 +420,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                       setSectors(s); reset();
                     }}
                     className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-violet-300"
-                    placeholder="Ознака"
+                    placeholder={t('dataviz.probLab.labelPlaceholder')}
                   />
                   <input type="number" min="1" max="20"
                     value={sec.weight}
@@ -423,8 +430,8 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                       setSectors(s); reset();
                     }}
                     className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-violet-300"
-                    aria-label={`Тежина за ${sec.label || `сектор ${i + 1}`}`}
-                    title={`Тежина за ${sec.label || `сектор ${i + 1}`}`}
+                    aria-label={t('dataviz.probLab.weightFor').replace('{label}', sectorLabel)}
+                    title={t('dataviz.probLab.weightFor').replace('{label}', sectorLabel)}
                   />
                   {sectors.length > 2 && (
                     <button type="button"
@@ -432,12 +439,13 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                       className="text-red-400 hover:text-red-600 text-sm font-bold w-5">✕</button>
                   )}
                 </div>
-              ))}
+                );
+              })}
               {sectors.length < 8 && (
                 <button type="button"
                   onClick={() => setSectors(prev => [...prev, { label: `S${prev.length + 1}`, weight: 1 }])}
                   className="text-xs font-bold text-violet-600 hover:text-violet-800 mt-1">
-                  + Додај сектор
+                  {t('dataviz.probLab.addSector')}
                 </button>
               )}
             </div>
@@ -451,35 +459,35 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Binomial config ─────────────────────────────────────────────────── */}
       {experiment === 'binomial' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Параметри на биномна распределба B(n, p)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400">{t('dataviz.probLab.binomialParams')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-gray-500 mb-1 flex justify-between">
-                <span>n — број на обиди</span>
+                <span>{t('dataviz.probLab.numTrials')}</span>
                 <span className="text-violet-700 font-extrabold">{binN}</span>
               </label>
               <input type="range" min={1} max={30} step={1} value={binN}
                 onChange={e => { setBinN(parseInt(e.target.value, 10)); reset(); }}
                 className="w-full accent-violet-600"
-                aria-label="Број на обиди n"
-                title="Број на обиди n" />
+                aria-label={t('dataviz.probLab.numTrialsAria')}
+                title={t('dataviz.probLab.numTrialsAria')} />
               <div className="flex justify-between text-[9px] text-gray-400 mt-0.5"><span>1</span><span>30</span></div>
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 mb-1 flex justify-between">
-                <span>p — веројатност на успех</span>
+                <span>{t('dataviz.probLab.successProb')}</span>
                 <span className="text-violet-700 font-extrabold">{binP.toFixed(2)}</span>
               </label>
               <input type="range" min={0.01} max={0.99} step={0.01} value={binP}
                 onChange={e => { setBinP(parseFloat(e.target.value)); reset(); }}
                 className="w-full accent-violet-600"
-                aria-label="Веројатност на успех p"
-                title="Веројатност на успех p" />
+                aria-label={t('dataviz.probLab.successProbAria')}
+                title={t('dataviz.probLab.successProbAria')} />
               <div className="flex justify-between text-[9px] text-gray-400 mt-0.5"><span>0.01</span><span>0.99</span></div>
             </div>
           </div>
           <div className="bg-violet-50 rounded-xl p-3">
-            <p className="text-xs text-violet-700 font-semibold mb-1">Теоретски параметри:</p>
+            <p className="text-xs text-violet-700 font-semibold mb-1">{t('dataviz.probLab.theoreticalParams')}</p>
             <div className="flex flex-wrap gap-4 text-xs text-violet-800">
               <span>μ = np = <strong>{(binN * binP).toFixed(2)}</strong></span>
               <span>σ² = np(1−p) = <strong>{(binN * binP * (1 - binP)).toFixed(2)}</strong></span>
@@ -493,7 +501,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {experiment === 'binomial' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
-            Биномна распределба B({binN}, {binP.toFixed(2)}) + нормална апроксимација
+            {t('dataviz.probLab.binomialDistChart').replace('{n}', String(binN)).replace('{p}', binP.toFixed(2))}
           </p>
           <BinomialDistributionChart n={binN} p={binP} counts={counts} total={total} />
         </div>
@@ -502,7 +510,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Run controls ────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex flex-wrap items-center gap-2.5">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mr-1">Фрли</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mr-1">{t('dataviz.probLab.roll')}</p>
           {/* Animated single roll */}
           <button type="button" onClick={runAnimated} disabled={animating}
             className={`px-4 py-2 text-white text-sm font-bold rounded-xl active:scale-95 transition shadow-sm ${
@@ -518,11 +526,11 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
           ))}
           <button type="button" onClick={reset}
             className="px-3 py-2 bg-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-200 transition flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" /> Ресет
+            <RefreshCw className="w-3.5 h-3.5" /> {t('dataviz.statsLab.resetBtn')}
           </button>
           {total > 0 && (
             <span className="text-xs text-gray-400 ml-auto">
-              Вкупно: <strong className="text-gray-700">{total.toLocaleString()}</strong> обиди
+              {t('dataviz.statsLab.total')} <strong className="text-gray-700">{total.toLocaleString()}</strong> {t('dataviz.probLab.trials')}
             </span>
           )}
         </div>
@@ -533,17 +541,17 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
         <div className={`rounded-2xl border-2 p-5 text-center transition-colors duration-200 ${
           flash ? 'bg-violet-50 border-violet-400' : 'bg-white border-violet-200'
         }`}>
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Последен резултат</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">{t('dataviz.probLab.lastResult')}</p>
           <div className={`text-5xl font-black tracking-wide transition-all duration-200 ${
             animating ? 'text-violet-300 animate-bounce' : 'text-violet-700'
-          }`}>{animating ? '?' : lastResult}</div>
+          }`}>{animating ? '?' : (lastResult !== undefined ? formatOutcomeLabel(lastResult, t) : lastResult)}</div>
           {experiment === 'coin' && (
             <div className={`mt-3 w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl font-black border-4 transition ${
               lastResult === 'Глава'
                 ? 'bg-amber-100 border-amber-400 text-amber-700'
                 : 'bg-slate-100 border-slate-400 text-slate-700'
             }`}>
-              {lastResult === 'Глава' ? 'Г' : 'П'}
+              {lastResult === 'Глава' ? t('dataviz.probLab.headsShort') : t('dataviz.probLab.tailsShort')}
             </div>
           )}
           {experiment === 'die' && (
@@ -559,9 +567,9 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-              <BarChart2 className="w-3.5 h-3.5" /> Фреквенции
+              <BarChart2 className="w-3.5 h-3.5" /> {t('dataviz.probLab.frequencies')}
             </p>
-            <p className="text-xs text-gray-400">{total.toLocaleString()} обиди</p>
+            <p className="text-xs text-gray-400">{total.toLocaleString()} {t('dataviz.probLab.trials')}</p>
           </div>
           <div className="p-4 space-y-2.5">
             {outcomes.map(o => {
@@ -573,7 +581,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
               const thInCI = total >= 30 && thPct >= ciLo && thPct <= ciHi;
               return (
                 <div key={o} className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-gray-700 shrink-0 w-16 truncate">{o}</span>
+                  <span className="text-xs font-semibold text-gray-700 shrink-0 w-16 truncate">{formatOutcomeLabel(o, t)}</span>
                   <div className="flex-1 relative h-4 bg-gray-100 rounded-full overflow-hidden">
                     {/* 95% CI band */}
                     {total >= 30 && (
@@ -599,7 +607,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                   </span>
                   {total >= 30 && (
                     <span className={`text-[9px] font-semibold w-20 text-right shrink-0 ${thInCI ? 'text-emerald-600' : 'text-amber-600'}`}
-                      title="95% доверлив интервал (Вилсон)">
+                      title={t('dataviz.probLab.ciTitle')}>
                       [{(ciLo * 100).toFixed(0)}–{(ciHi * 100).toFixed(0)}%]{thInCI ? ' ✓' : ''}
                     </span>
                   )}
@@ -608,7 +616,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
               );
             })}
             <p className="text-[10px] text-gray-400 pt-1">
-              Зелено = блиску до теор. · Сина лента = 95% CI (по 30+ обиди) · ✓ = теор. вредност е во CI
+              {t('dataviz.probLab.legendNote')}
             </p>
           </div>
         </div>
@@ -617,16 +625,16 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Tree diagram: Dice+Coin ─────────────────────────────────────────── */}
       {experiment === 'dice-coin' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Дрво на настани — Коцка × Монета</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">{t('dataviz.probLab.diceCoinTreeTitle')}</p>
           <DiceCoinTree lastResult={lastResult} />
-          <p className="text-[10px] text-gray-400 mt-2">12 рамноверојатни исходи · P(секој) = 1/12 ≈ 8.3%</p>
+          <p className="text-[10px] text-gray-400 mt-2">{t('dataviz.probLab.diceCoinTreeNote')}</p>
         </div>
       )}
 
       {/* ── Two-dice grid ────────────────────────────────────────────────────── */}
       {experiment === 'two-dice' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">Решетка на суми — Две коцки (6×6)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">{t('dataviz.probLab.twoDiceGridTitle')}</p>
           <TwoDiceGrid lastResult={lastResult} />
         </div>
       )}
@@ -641,9 +649,9 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                   ? 'bg-violet-100 border-violet-500 text-violet-700 scale-110 shadow-lg'
                   : 'bg-gray-50 border-gray-200 text-gray-400'
               }`}>
-                {face === 'Глава' ? 'Г' : 'П'}
+                {face === 'Глава' ? t('dataviz.probLab.headsShort') : t('dataviz.probLab.tailsShort')}
               </div>
-              <p className="text-xs font-semibold text-gray-500 mt-2">{face}</p>
+              <p className="text-xs font-semibold text-gray-500 mt-2">{face === 'Глава' ? t('dataviz.probLab.heads') : t('dataviz.probLab.tails')}</p>
               <p className="text-sm font-black text-gray-700">{counts[face] ?? 0}×</p>
             </div>
           ))}
@@ -654,9 +662,9 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {total > 0 && (
         <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1">
-            <p className="text-sm font-bold text-violet-800">Прати резултатите во DataViz Studio</p>
+            <p className="text-sm font-bold text-violet-800">{t('dataviz.probLab.sendToDataViz')}</p>
             <p className="text-xs text-violet-600 mt-0.5">
-              Фреквенциската табела ќе се вчита во Градителот и ќе се нацрта бар-чарт со споредба теор. / мерена.
+              {t('dataviz.probLab.sendToDataVizDesc')}
             </p>
           </div>
           <button type="button" onClick={handleSend}
@@ -669,8 +677,8 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       {/* ── Bernoulli tip ────────────────────────────────────────────────────── */}
       <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
         <p className="text-xs text-amber-700">
-          <strong>Теорема на Берну (Закон на големи броеви):</strong> Колку поголем е бројот на обиди, толку
-          поблиску е <em>експерименталната</em> веројатност до <em>теоретската</em>. Пробај ×1000 и провери!
+          <strong>{t('dataviz.probLab.bernoulliTitle')}</strong> {t('dataviz.probLab.bernoulliPart1')}
+          <em> {t('dataviz.probLab.bernoulliExperimental')}</em> {t('dataviz.probLab.bernoulliPart2')} <em>{t('dataviz.probLab.bernoulliTheoretical')}</em> {t('dataviz.probLab.bernoulliPart3')}
         </p>
       </div>
 

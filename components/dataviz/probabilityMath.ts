@@ -7,27 +7,43 @@ export interface SpinnerSector { label: string; weight: number; }
 
 export const SPINNER_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 export const DEFAULT_SECTORS: SpinnerSector[] = [
-  { label: 'Сино',   weight: 3 },
-  { label: 'Зелено', weight: 2 },
-  { label: 'Жолто',  weight: 2 },
-  { label: 'Црвено', weight: 1 },
+  { label: 'dataviz.probLab.sectorBlue',   weight: 3 },
+  { label: 'dataviz.probLab.sectorGreen', weight: 2 },
+  { label: 'dataviz.probLab.sectorYellow',  weight: 2 },
+  { label: 'dataviz.probLab.sectorRed', weight: 1 },
 ];
 
 export const DIE_FACES = [4, 6, 8, 10, 12, 20] as const;
 
+// label/desc fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 export const EXPERIMENTS: { id: ExperimentType; label: string; emoji: string; desc: string }[] = [
-  { id: 'coin',      label: 'Монета',       emoji: '🪙',    desc: '2 исходи' },
-  { id: 'die',       label: 'Коцка',        emoji: '🎲',    desc: 'N страни' },
-  { id: 'two-dice',  label: 'Две коцки',    emoji: '🎲🎲', desc: 'Сума 2–12' },
-  { id: 'dice-coin', label: 'Коцка+Монета', emoji: '🎲🪙', desc: '12 исходи' },
-  { id: 'spinner',   label: 'Спинер',       emoji: '🎡',    desc: 'Прилагоди' },
-  { id: 'binomial',  label: 'Биномна расп.', emoji: '📉',  desc: 'B(n,p) + нормална' },
+  { id: 'coin',      label: 'dataviz.probLab.tabCoin',      emoji: '🪙',    desc: 'dataviz.probLab.descCoin' },
+  { id: 'die',       label: 'dataviz.probLab.tabDie',       emoji: '🎲',    desc: 'dataviz.probLab.descDie' },
+  { id: 'two-dice',  label: 'dataviz.probLab.tabTwoDice',   emoji: '🎲🎲', desc: 'dataviz.probLab.descTwoDice' },
+  { id: 'dice-coin', label: 'dataviz.probLab.tabDiceCoin',  emoji: '🎲🪙', desc: 'dataviz.probLab.descDiceCoin' },
+  { id: 'spinner',   label: 'dataviz.probLab.tabSpinner',   emoji: '🎡',    desc: 'dataviz.probLab.descSpinner' },
+  { id: 'binomial',  label: 'dataviz.probLab.tabBinomial',  emoji: '📉',  desc: 'dataviz.probLab.descBinomial' },
 ];
 
-export const EXP_LABEL: Record<ExperimentType, string> = Object.fromEntries(
-  EXPERIMENTS.map(e => [e.id, e.label])
-) as Record<ExperimentType, string>;
+/** Translated experiment-type label for the given translation function (used for chart titles, etc.). */
+export function expLabel(exp: ExperimentType, t: (key: string) => string): string {
+  const match = EXPERIMENTS.find(e => e.id === exp);
+  return match ? t(match.label) : exp;
+}
+
+/** Formats a canonical (internal, Macedonian-keyed) outcome string for display in the current language.
+ *  Numeric die faces, custom spinner-sector labels, and binomial 'k=N' outcomes are already language-neutral. */
+export function formatOutcomeLabel(outcome: string, t: (key: string) => string): string {
+  if (outcome === 'Глава') return t('dataviz.probLab.heads');
+  if (outcome === 'Писмо') return t('dataviz.probLab.tails');
+  const sumMatch = outcome.match(/^Сума (\d+)$/);
+  if (sumMatch) return `${t('dataviz.probLab.sum')} ${sumMatch[1]}`;
+  const dcMatch = outcome.match(/^(\d+)-(Г|П)$/);
+  if (dcMatch) return `${dcMatch[1]}-${dcMatch[2] === 'Г' ? t('dataviz.probLab.headsShort') : t('dataviz.probLab.tailsShort')}`;
+  return outcome;
+}
 
 /** Wilson score 95% CI for a proportion. Returns [lo, hi] clamped to [0,1]. */
 export function wilsonCI(count: number, total: number): [number, number] {
