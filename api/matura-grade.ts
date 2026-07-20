@@ -10,6 +10,7 @@
  * the CAS pre-check + Gemini grading server-side and persists the cache itself via the Admin SDK.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { setCorsHeaders, authenticateAndRateLimit, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
@@ -120,7 +121,7 @@ async function callGeminiForGrade(prompt: string, image?: { data: string; mimeTy
   throw lastError ?? new Error('Gemini grading call failed.');
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -283,6 +284,8 @@ ${hasImage ? `Ученикот испратил фотографија на св
     res.status(500).json({ error: err instanceof Error ? err.message : 'Grading failed.' });
   }
 }
+
+export default withErrorTracking('matura-grade', handler);
 
 export const __testables = {
   hashAnswer,

@@ -15,6 +15,7 @@
  *       `services/sentryService.ts::reportWebVitals()`.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import {
   recordWebVital,
   getWebVitalsSnapshot,
@@ -46,7 +47,7 @@ function ingest(payload: SamplePayload, fallbackDevice?: unknown): boolean {
   return recordWebVital(payload.name as WebVitalName, value, device);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
 
   if (req.method === 'OPTIONS') {
@@ -109,3 +110,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   res.status(202).json({ accepted, rejected });
 }
+
+export default withErrorTracking('web-vitals', handler);

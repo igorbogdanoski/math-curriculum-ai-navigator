@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -170,7 +171,7 @@ function handleVerify(req: VercelRequest, res: VercelResponse, secret: string) {
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const secret = process.env.SHARE_SIGNING_SECRET;
   if (!secret) {
     return res.status(500).json({ error: 'SHARE_SIGNING_SECRET is not configured' });
@@ -188,6 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   return res.status(400).json({ error: 'Unknown action' });
 }
+
+export default withErrorTracking('matura-share', handler);
 
 export const __testables = {
   toBase64Url,

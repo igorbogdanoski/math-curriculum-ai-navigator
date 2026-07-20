@@ -10,6 +10,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders } from './_lib/sharedUtils.js';
+import { withErrorTracking, addApiBreadcrumb } from './_lib/sentryNode.js';
 
 interface CspViolation {
   'document-uri'?: string;
@@ -26,7 +27,7 @@ interface CspReport {
   'csp-report'?: CspViolation;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   setCorsHeaders(res);
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST') { res.status(405).end(); return; }
@@ -70,18 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     // 2. Sentry breadcrumb — shows up in Issues dashboard
-    try {
-      const sentryPkg = '@sentry/node';
-      const Sentry = await import(/* @vite-ignore */ sentryPkg).catch(() => null);
-      if (Sentry?.addBreadcrumb) {
-        Sentry.addBreadcrumb({
-          category: 'security.csp',
-          message: `CSP violation: ${entry.directive}`,
-          data: entry,
-          level: 'warning',
-        });
-      }
-    } catch { /* Sentry not available */ }
+    addApiBreadcrumb('security.csp', `CSP violation: ${entry.directive}`, entry, 'warning');
 
     console.warn('[csp-report]', JSON.stringify(entry));
     res.status(204).end();
@@ -89,3 +79,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(400).end();
   }
 }
+
+export default withErrorTracking('csp-report', handler);

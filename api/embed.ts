@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
@@ -31,7 +32,7 @@ function extractEmbeddingText(contents: unknown): string {
   return '';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -125,3 +126,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // internals" principle already applied to validation errors in sharedUtils.ts.
   res.status(500).json({ error: 'Серверска грешка при генерирање embedding.' });
 }
+
+export default withErrorTracking('embed', handler);

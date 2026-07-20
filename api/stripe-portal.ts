@@ -14,6 +14,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import Stripe from 'stripe';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -40,7 +41,7 @@ function getFirebaseAdmin() {
   return { auth: getAuth(), db: getFirestore() };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -104,3 +105,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Failed to create billing portal session' });
   }
 }
+
+export default withErrorTracking('stripe-portal', handler);

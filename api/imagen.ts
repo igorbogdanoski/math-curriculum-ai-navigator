@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { recordTokens } from './_lib/costTracker.js';
@@ -60,7 +61,7 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<ImageG
   return null;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -148,3 +149,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // internals" principle already applied to validation errors in sharedUtils.ts.
   res.status(500).json({ error: 'Серверска грешка при генерирање слика.' });
 }
+
+export default withErrorTracking('imagen', handler);

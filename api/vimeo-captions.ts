@@ -17,6 +17,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
@@ -260,7 +261,7 @@ function mapPlayerTracks(tracks: PlayerConfigTrack[]): VimeoTextTrack[] {
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -335,5 +336,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ available: false, reason: msg, videoId });
   }
 }
+
+export default withErrorTracking('vimeo-captions', handler);
 
 export const __testables = { isRateLimited, resetRateLimitState, parseWebVTT, pickBestTrack };

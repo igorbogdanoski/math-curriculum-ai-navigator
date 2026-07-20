@@ -20,6 +20,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import Stripe from 'stripe';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -50,7 +51,7 @@ async function getRawBody(req: VercelRequest): Promise<Buffer> {
   });
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -196,3 +197,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Always acknowledge receipt to Stripe
   return res.status(200).json({ received: true });
 }
+
+export default withErrorTracking('stripe-webhook', handler);

@@ -14,6 +14,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { withErrorTracking } from './_lib/sentryNode.js';
 
 // Reimplements auth/CORS locally instead of importing api/_lib/sharedUtils.ts — deliberate,
 // not an oversight: this route's body shape (schoolName/city/...) doesn't match
@@ -68,7 +69,7 @@ function isRateLimited(identifier: string): boolean {
   return false;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -163,3 +164,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Грешка при создавање на училиштето. Обидете се повторно.' });
   }
 }
+
+export default withErrorTracking('create-school', handler);

@@ -11,6 +11,8 @@
  * module is the cheap always-on guard that catches obvious abuse spikes.
  */
 
+import { captureApiMessage } from './sentryNode.js';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Default daily token budget per user across all models. */
@@ -104,18 +106,10 @@ async function dispatchCostAlert(opts: {
   const summary = `Cost-guard: user ${userId} hit ${pct}% of daily budget on ${model} (${total}/${budget} tokens)`;
 
   // 1. Sentry — captureMessage creates a Sentry issue + email to project owners
-  try {
-    // Dynamic import via variable prevents Vite static analysis (package is server-only)
-    const sentryPkg = '@sentry/node';
-    const Sentry = await import(/* @vite-ignore */ sentryPkg).catch(() => null);
-    if (Sentry?.captureMessage) {
-      Sentry.captureMessage(summary, {
-        level: 'warning',
-        tags: { component: 'cost-guard', model },
-        extra: { userId, total, budget, pct },
-      });
-    }
-  } catch { /* Sentry not available in this runtime */ }
+  captureApiMessage(summary, 'warning', {
+    tags: { component: 'cost-guard', model },
+    extra: { userId, total, budget, pct },
+  });
 
   // 2. Slack — only if SLACK_WEBHOOK_URL is configured
   const slackUrl = process.env.SLACK_WEBHOOK_URL;

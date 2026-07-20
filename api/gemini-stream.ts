@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate, requireSufficientCredits, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
@@ -6,7 +7,7 @@ import { recordTokens } from './_lib/costTracker.js';
 import { reserveCredits, refundCredits } from './_lib/aiCredits.js';
 import { isUsableJson } from '../utils/jsonRecovery.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -184,3 +185,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.write(`data: ${JSON.stringify({ error: 'Грешка при генерирање. Обидете се повторно.' })}\n\n`);
   res.end();
 }
+
+export default withErrorTracking('gemini-stream', handler);

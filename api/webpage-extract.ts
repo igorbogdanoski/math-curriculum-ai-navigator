@@ -28,6 +28,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -286,7 +287,7 @@ async function extractPdfWithGeminiOcr(arrayBuffer: ArrayBuffer): Promise<string
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(req, res);
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'GET') { res.status(405).json({ available: false, reason: 'Method not allowed' }); return; }
@@ -433,6 +434,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ available: false, reason });
   }
 }
+
+export default withErrorTracking('webpage-extract', handler);
 
 export const __testables = {
   isRateLimited,

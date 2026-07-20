@@ -16,12 +16,13 @@ import { setCorsHeaders, getFirebaseAdmin } from './_lib/sharedUtils.js';
 import { checkSlidingWindow, extractClientIp } from './_lib/rateLimitInMemory.js';
 import { recordLatency } from './_lib/sloTracker.js';
 import { verifyExpressionEquivalence, verifyEquationSolution, type CasVerifyResult } from '../utils/cas/casEngine.js';
+import { withErrorTracking } from './_lib/sentryNode.js';
 
 const rlMap = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 30;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -99,3 +100,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     recordLatency('cas-verify', Date.now() - handlerStart);
   }
 }
+
+export default withErrorTracking('cas-verify', handler);

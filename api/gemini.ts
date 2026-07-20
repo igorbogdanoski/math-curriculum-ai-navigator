@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withErrorTracking } from './_lib/sentryNode.js';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal, requireSufficientCredits } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
@@ -15,7 +16,7 @@ export const config = {
   },
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   const handlerStart = Date.now();
   setCorsHeaders(res);
 
@@ -191,3 +192,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     retryAfterMs: isRateLimit ? 60_000 : undefined,
   });
 }
+
+export default withErrorTracking('gemini', handler);
