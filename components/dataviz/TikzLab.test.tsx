@@ -42,12 +42,17 @@ vi.mock('@uiw/react-codemirror', () => ({
   },
 }));
 
+const mockGenerateTikzDiagram = vi.fn();
+vi.mock('../../services/gemini/tikzGenerate', () => ({
+  generateTikzDiagram: (...args: unknown[]) => mockGenerateTikzDiagram(...args),
+}));
+
 // Raw, untranslated i18n keys must never leak into the rendered UI.
 const RAW_KEY_PATTERN = /\btikz\.[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)+\b/;
 
-function renderLab(lang: Language = 'mk') {
+function renderLab(lang: Language = 'mk', props: React.ComponentProps<typeof TikzLab> = {}) {
   localStorage.setItem('preferred_language', lang);
-  return render(<LanguageProvider><TikzLab /></LanguageProvider>);
+  return render(<LanguageProvider><TikzLab {...props} /></LanguageProvider>);
 }
 
 describe('TikzLab', () => {
@@ -56,6 +61,7 @@ describe('TikzLab', () => {
     localStorage.clear();
     pendingCalls = [];
     mockAddNotification.mockClear();
+    mockGenerateTikzDiagram.mockReset();
     vi.useFakeTimers();
   });
 
@@ -212,5 +218,77 @@ describe('TikzLab', () => {
     const editor = screen.getAllByRole('textbox')[1] as HTMLTextAreaElement;
     expect(editor.value.length).toBeGreaterThan(0);
     vi.useRealTimers();
+  });
+
+  it('AI panel: hidden by default, opens on toggle, generate button disabled until a prompt is typed', () => {
+    renderLab();
+    expect(screen.queryByPlaceholderText(/илустрацијата/)).toBeNull();
+
+    fireEvent.click(screen.getByText('Генерирај со АИ'));
+    const promptBox = screen.getByPlaceholderText(/илустрацијата/) as HTMLTextAreaElement;
+    expect(promptBox).toBeTruthy();
+
+    const generateBtn = screen.getByRole('button', { name: /^Генерирај$/ }) as HTMLButtonElement;
+    expect(generateBtn.disabled).toBe(true);
+
+    fireEvent.change(promptBox, { target: { value: 'прав агол' } });
+    expect(generateBtn.disabled).toBe(false);
+  });
+
+  it('AI panel: no "fill from topic" shortcut without a curriculumContext prop', () => {
+    renderLab();
+    fireEvent.click(screen.getByText('Генерирај со АИ'));
+    expect(screen.queryByText('Пополни од темава')).toBeNull();
+  });
+
+  it('AI panel: "fill from topic" pre-fills the prompt when curriculumContext is passed', () => {
+    renderLab('mk', { curriculumContext: { topicTitle: 'Питагорова теорема', standardCode: 'III-А.14' } });
+    fireEvent.click(screen.getByText('Генерирај со АИ'));
+    fireEvent.click(screen.getByText('Пополни од темава'));
+    const promptBox = screen.getByPlaceholderText(/илустрацијата/) as HTMLTextAreaElement;
+    expect(promptBox.value).toBe('Питагорова теорема');
+  });
+
+  it('AI panel: successful generation replaces the editor code and shows a success notification', async () => {
+    mockGenerateTikzDiagram.mockResolvedValue('\\begin{tikzpicture}\\draw (0,0) -- (1,1);\\end{tikzpicture}');
+    renderLab();
+    fireEvent.click(screen.getByText('Генерирај со АИ'));
+    const promptBox = screen.getByPlaceholderText(/илустрацијата/);
+    fireEvent.change(promptBox, { target: { value: 'права линија' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^Генерирај$/ }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockGenerateTikzDiagram).toHaveBeenCalledWith('права линија', undefined);
+    // With the AI panel open, textboxes are [search, aiPrompt, codeEditor] — the code editor
+    // stub is always last regardless of whether the AI panel is open.
+    const textboxes = screen.getAllByRole('textbox');
+    const editor = textboxes[textboxes.length - 1] as HTMLTextAreaElement;
+    expect(editor.value).toContain('\\draw (0,0) -- (1,1);');
+    expect(mockAddNotification).toHaveBeenCalledWith(expect.any(String), 'success');
+  });
+
+  it('AI panel: failed generation shows an error notification and leaves the editor untouched', async () => {
+    mockGenerateTikzDiagram.mockRejectedValue(new Error('blocked'));
+    renderLab();
+    fireEvent.click(screen.getByText('Генерирај со АИ'));
+    const promptBox = screen.getByPlaceholderText(/илустрацијата/);
+    fireEvent.change(promptBox, { target: { value: 'нешто несоодветно' } });
+    const textboxesBefore = screen.getAllByRole('textbox');
+    const editorBefore = (textboxesBefore[textboxesBefore.length - 1] as HTMLTextAreaElement).value;
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^Генерирај$/ }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockAddNotification).toHaveBeenCalledWith(expect.any(String), 'error');
+    const textboxesAfter = screen.getAllByRole('textbox');
+    const editorAfter = (textboxesAfter[textboxesAfter.length - 1] as HTMLTextAreaElement).value;
+    expect(editorAfter).toBe(editorBefore);
   });
 });

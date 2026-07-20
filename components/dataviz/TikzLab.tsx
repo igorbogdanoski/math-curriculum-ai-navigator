@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Download, Image as ImageIcon, PlusCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, Download, Image as ImageIcon, PlusCircle, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
 import { StreamLanguage } from '@codemirror/language';
 import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { tikzTemplates, type TikzTemplate } from '../../data/tikzTemplates';
 import { renderTikzToContainer } from '../../utils/tikzRenderJob';
+import { generateTikzDiagram, type TikzCurriculumContext } from '../../services/gemini/tikzGenerate';
 import { useDebouncedValue } from '../../hooks/useDebounce';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -25,6 +26,9 @@ export interface TikzInsertPayload {
 interface TikzLabProps {
   /** IoC — TikzLab doesn't know where it's embedded. Passing this shows an "Insert" button. */
   onInsert?: (payload: TikzInsertPayload) => void;
+  /** When provided (e.g. from lesson planning), shows a "Fill from this topic" shortcut
+   *  in the AI-generate panel and nudges the generated diagram toward this topic/standard. */
+  curriculumContext?: TikzCurriculumContext;
 }
 
 const CATEGORY_LABEL_KEYS: Record<string, string> = {
@@ -66,7 +70,7 @@ async function svgToPngDataUrl(svg: string, scale = 2): Promise<string> {
   }
 }
 
-export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
+export const TikzLab: React.FC<TikzLabProps> = ({ onInsert, curriculumContext }) => {
   const { t } = useLanguage();
   const { addNotification } = useNotification();
 
@@ -78,6 +82,9 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
   const [error, setError] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   const debouncedCode = useDebouncedValue(code, DEBOUNCE_MS);
   const stagingRef = useRef<HTMLDivElement | null>(null);
@@ -150,6 +157,26 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
       addNotification(t('tikz.exportError'), 'error');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleFillFromTopic = () => {
+    if (!curriculumContext) return;
+    setAiPrompt(curriculumContext.topicTitle);
+    setAiPanelOpen(true);
+  };
+
+  const handleGenerateAi = async () => {
+    if (!aiPrompt.trim() || isGeneratingAi) return;
+    setIsGeneratingAi(true);
+    try {
+      const generatedCode = await generateTikzDiagram(aiPrompt, curriculumContext);
+      setCode(generatedCode);
+      addNotification(t('tikz.ai.generateSuccess'), 'success');
+    } catch {
+      addNotification(t('tikz.ai.generateError'), 'error');
+    } finally {
+      setIsGeneratingAi(false);
     }
   };
 
@@ -233,7 +260,42 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
 
       {/* ── Middle: code editor (35%, dark) ── */}
       <div className="md:w-[35%] flex flex-col">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t('tikz.editorLabel')}</p>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{t('tikz.editorLabel')}</p>
+          <button
+            type="button"
+            onClick={() => setAiPanelOpen(o => !o)}
+            className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> {t('tikz.ai.toggle')}
+          </button>
+        </div>
+        {aiPanelOpen && (
+          <div className="mb-2 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl space-y-2">
+            <textarea
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              placeholder={t('tikz.ai.promptPlaceholder')}
+              rows={2}
+              className="w-full text-xs p-2 rounded-lg border border-indigo-200 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleGenerateAi}
+                disabled={!aiPrompt.trim() || isGeneratingAi}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {isGeneratingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} {t('tikz.ai.generate')}
+              </button>
+              {curriculumContext && (
+                <button type="button" onClick={handleFillFromTopic} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline">
+                  {t('tikz.ai.fillFromTopic')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex-1 min-h-[480px] rounded-xl border border-slate-700 overflow-hidden">
           <CodeMirror
             value={code}
