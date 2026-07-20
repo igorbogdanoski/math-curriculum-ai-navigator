@@ -1,6 +1,6 @@
 ﻿import { GlobalTour } from './components/GlobalTour';
 import { OnboardingGate } from './components/onboarding/OnboardingGate';
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 
 // Providers
 import { LanguageProvider } from './i18n/LanguageContext';
@@ -167,6 +167,7 @@ const EmbedQuizView = safeLazy(() => import('./views/EmbedQuizView').then(module
 const ClassroomView = safeLazy(() => import('./views/ClassroomView').then(module => ({ default: module.ClassroomView })));
 const LessonStudyView = safeLazy(() => import('./views/LessonStudyView').then(module => ({ default: module.LessonStudyView })));
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
+const LandingView = safeLazy(() => import('./views/LandingView').then(module => ({ default: module.LandingView })));
 const StudentLoginView = safeLazy(() => import('./views/StudentLoginView').then(module => ({ default: module.StudentLoginView })));
 const StudentDashboardView = safeLazy(() => import('./views/StudentDashboardView').then(module => ({ default: module.StudentDashboardView })));
 const StudentSRSView = safeLazy(() => import('./views/StudentSRSView').then(module => ({ default: module.StudentSRSView })));
@@ -304,6 +305,15 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 
   const isPublicHashRoute = (hash: string): boolean =>
     PUBLIC_HASH_ROUTE_PREFIXES.some((prefix) => hash.startsWith(prefix));
+
+  // 2026-07-20 (Wave 12.2, SEO): bare root ("" or "#" or "#/", i.e. no hash-route at all)
+  // shows a public marketing landing page instead of LoginView for logged-out visitors.
+  // Deliberately an EXACT match, not folded into PUBLIC_HASH_ROUTE_PREFIXES above — that
+  // array is checked via .startsWith(), and '' or '#/' as a *prefix* would match every
+  // single hash-route in the app (since anything.startsWith('') is always true), which
+  // would blow the auth gate open app-wide. This must stay a separate, exact check.
+  const isRootPath = (hash: string): boolean =>
+    hash === '' || hash === '#' || hash === '#/';
 
 const routes = [      { path: '/privacy', component: PrivacyPolicy },
       { path: '/terms', component: TermsOfUse },    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
@@ -577,6 +587,21 @@ const StudentShellRouter: React.FC = () => {
 const AppCore: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
 
+    // 2026-07-20 (Wave 12.2 bugfix, found while testing the new landing page): every branch
+    // below reads window.location.hash directly during render — a plain, non-reactive read.
+    // AppCore itself never re-rendered on a hashchange (only useRouter, mounted deeper inside
+    // AuthenticatedApp, ever listened for that), so a plain in-app `<a href="#/...">` click
+    // from one AppCore-level branch (e.g. the new public landing page) to another (LoginView)
+    // silently did nothing until something else happened to force a re-render. This local
+    // listener makes AppCore itself hash-reactive, fixing that for every branch below, not
+    // just the new one.
+    const [, forceRerenderOnHashChange] = useState(0);
+    useEffect(() => {
+        const onHashChange = () => forceRerenderOnHashChange((n) => n + 1);
+        window.addEventListener('hashchange', onHashChange);
+        return () => window.removeEventListener('hashchange', onHashChange);
+    }, []);
+
     useEffect(() => {
         const splash = document.getElementById('app-splash');
         if (splash) {
@@ -637,6 +662,17 @@ const AppCore: React.FC = () => {
         return (
             <Suspense fallback={<AppSkeleton />}>
                 <StudentShellRouter />
+            </Suspense>
+        );
+    }
+
+    // Bare "/" for a logged-out visitor — public marketing landing page (Wave 12.2, SEO).
+    // Its own "Најави се" CTA links to "#/login", which isn't in PUBLIC_HASH_ROUTE_PREFIXES
+    // and isn't the root path, so it falls straight through to the LoginView branch below.
+    if (!isAuthenticated && isRootPath(window.location.hash)) {
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <LandingView />
             </Suspense>
         );
     }
