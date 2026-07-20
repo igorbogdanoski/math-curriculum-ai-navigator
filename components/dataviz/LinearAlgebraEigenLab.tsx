@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { type Mat2, type Mat3, fmt, det2, det3, mul3 } from './linearAlgebraMath';
 import { MatrixInput } from './LinearAlgebraInputs';
+import { useLanguage } from '../../i18n/LanguageContext';
 // ─── S62-H2: Eigenvalue / Eigenvector Lab ────────────────────────────────────
 
 function normV2(v: [number, number]): [number, number] {
@@ -108,23 +109,25 @@ function EigenArrow({ vx, vy, color, label, dashed = false }: {
   );
 }
 
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 const E2_PRESETS: { label: string; mat: Mat2 }[] = [
-  { label: 'Скалирање 2,3',  mat: [[2,0],[0,3]] },
-  { label: 'Симетрична',      mat: [[3,1],[1,3]] },
-  { label: 'Смолкнување',     mat: [[1,1],[0,1]] },
-  { label: 'Ротација 45°',   mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
-  { label: 'Рефлексија',      mat: [[-1,0],[0,1]] },
+  { label: 'dataviz.eigenLab.presetScale23',  mat: [[2,0],[0,3]] },
+  { label: 'dataviz.eigenLab.presetSymmetric',      mat: [[3,1],[1,3]] },
+  { label: 'dataviz.linalgLab.presetShear',     mat: [[1,1],[0,1]] },
+  { label: 'dataviz.linalgLab.presetRotate45',   mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
+  { label: 'dataviz.eigenLab.presetReflection',      mat: [[-1,0],[0,1]] },
 ];
 
 const E3_PRESETS: { label: string; mat: Mat3 }[] = [
-  { label: 'Дијагонална',    mat: [[1,0,0],[0,2,0],[0,0,3]] },
-  { label: 'Симетрична',     mat: [[4,1,2],[1,3,0],[2,0,2]] },
-  { label: 'Горна триаголна', mat: [[2,1,0],[0,3,1],[0,0,4]] },
+  { label: 'dataviz.eigenLab.presetDiagonal',    mat: [[1,0,0],[0,2,0],[0,0,3]] },
+  { label: 'dataviz.eigenLab.presetSymmetric',     mat: [[4,1,2],[1,3,0],[2,0,2]] },
+  { label: 'dataviz.eigenLab.presetUpperTriangular', mat: [[2,1,0],[0,3,1],[0,0,4]] },
 ];
 
 const MORPH_PERIOD = 2800;
 
 export function EigenLab() {
+  const { t } = useLanguage();
   const [sz, setSz] = useState<2|3>(2);
   const [m2, setM2] = useState<Mat2>([[3,1],[1,3]]);
   const [m3, setM3] = useState<Mat3>([[4,1,2],[1,3,0],[2,0,2]]);
@@ -186,7 +189,7 @@ export function EigenLab() {
         {([2,3] as const).map(s => (
           <button key={s} type="button" onClick={() => setSz(s)}
             className={`px-4 py-1.5 rounded-lg text-sm font-bold border-2 transition ${sz===s?'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700':'border-gray-200 text-gray-500 hover:border-fuchsia-300'}`}>
-            {s}×{s} матрица
+            {s}×{s} {t('dataviz.eigenLab.matrixSuffix')}
           </button>
         ))}
       </div>
@@ -197,15 +200,15 @@ export function EigenLab() {
             {E2_PRESETS.map((p, i) => (
               <button key={i} type="button" onClick={() => { setM2(p.mat); setP2(i); }}
                 className={`text-xs px-2.5 py-1 rounded-lg border-2 font-semibold transition ${p2===i?'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700':'border-gray-200 text-gray-500 hover:border-fuchsia-300'}`}>
-                {p.label}
+                {t(p.label)}
               </button>
             ))}
           </div>
           <div className="flex gap-6 flex-wrap items-start">
-            <MatrixInput value={m2} onChange={m => setM2(m as Mat2)} size={2} label="Матрица A" color="fuchsia" />
+            <MatrixInput value={m2} onChange={m => setM2(m as Mat2)} size={2} label={t('dataviz.linalgLab.matrixA')} color="fuchsia" />
             <div className="space-y-2 min-w-[180px]">
               <div className="bg-fuchsia-50 border border-fuchsia-200 rounded-xl p-3 text-xs">
-                <p className="font-bold text-fuchsia-600 mb-1">Карактеристичен полином</p>
+                <p className="font-bold text-fuchsia-600 mb-1">{t('dataviz.eigenLab.characteristicPoly')}</p>
                 <p className="font-mono">λ² − {fmt(tr2)}λ + {fmt(dt2)} = 0</p>
                 <p className="text-gray-400 mt-0.5">Δ = {fmt(tr2*tr2 - 4*dt2)}</p>
               </div>
@@ -224,7 +227,7 @@ export function EigenLab() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs">
-                  <p className="font-bold text-amber-600">Комплексни λ</p>
+                  <p className="font-bold text-amber-600">{t('dataviz.eigenLab.complexEigenvalues')}</p>
                   <p className="font-mono mt-0.5">{fmt(e2.re)} ± {fmt(e2.im)}i</p>
                 </div>
               )}
@@ -239,12 +242,12 @@ export function EigenLab() {
                 onClick={() => { setPlaying(p => !p); t0Ref.current = null; }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border-2 transition ${playing ? 'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700' : 'border-gray-200 text-gray-500 hover:border-fuchsia-300'}`}
               >
-                {playing ? '⏸ Паузирај' : '▶ Анимирај трансформација'}
+                {playing ? t('dataviz.eigenLab.pauseAnim') : t('dataviz.eigenLab.animateTransform')}
               </button>
               <input
                 type="range" min={0} max={1} step={0.01}
                 value={animT}
-                aria-label="Морф параметар t (0 = единична кружница, 1 = трансформирана)"
+                aria-label={t('dataviz.eigenLab.morphParam')}
                 onChange={e => { setPlaying(false); setAnimT(parseFloat(e.target.value)); }}
                 className="flex-1 accent-fuchsia-500"
               />
@@ -293,10 +296,10 @@ export function EigenLab() {
           </div>
           <div className="flex flex-wrap gap-3 text-[11px]">
             <span className="flex items-center gap-1 text-gray-400">
-              <span className="inline-block w-5 border-b border-dashed border-gray-300"/>единична кружница (t=0)
+              <span className="inline-block w-5 border-b border-dashed border-gray-300"/>{t('dataviz.eigenLab.unitCircleT0')}
             </span>
             <span className="flex items-center gap-1 text-teal-600">
-              <span className="inline-block w-5 border-b-2 border-teal-500"/>M(t)·кружница → A·кружница (t=1)
+              <span className="inline-block w-5 border-b-2 border-teal-500"/>{t('dataviz.eigenLab.morphCircleT1')}
             </span>
             <span className="flex items-center gap-1 text-indigo-600">
               <span className="inline-block w-5 border-b-2 border-indigo-500"/>v₁ → λ₁v₁
@@ -314,15 +317,15 @@ export function EigenLab() {
             {E3_PRESETS.map((p, i) => (
               <button key={i} type="button" onClick={() => { setM3(p.mat); setP3(i); }}
                 className={`text-xs px-2.5 py-1 rounded-lg border-2 font-semibold transition ${p3===i?'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700':'border-gray-200 text-gray-500 hover:border-fuchsia-300'}`}>
-                {p.label}
+                {t(p.label)}
               </button>
             ))}
           </div>
-          <MatrixInput value={m3} onChange={m => setM3(m as Mat3)} size={3} label="Матрица A" color="fuchsia" />
+          <MatrixInput value={m3} onChange={m => setM3(m as Mat3)} size={3} label={t('dataviz.linalgLab.matrixA')} color="fuchsia" />
           {e3 && (
             <div className="space-y-2">
               <div className="bg-fuchsia-50 border border-fuchsia-200 rounded-xl p-3">
-                <p className="text-xs font-bold text-fuchsia-600 mb-2">Сопствени вредности (QR-итерација, 80 чекори)</p>
+                <p className="text-xs font-bold text-fuchsia-600 mb-2">{t('dataviz.eigenLab.eigenvaluesQR')}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {e3.lams.map((lam, i) => (
                     <div key={i} className="bg-white border border-fuchsia-200 rounded-lg p-2 text-center">
@@ -333,7 +336,7 @@ export function EigenLab() {
                 </div>
               </div>
               <div className="overflow-x-auto bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <p className="text-xs font-bold text-gray-500 mb-2">Сопствени вектори (нормализирани)</p>
+                <p className="text-xs font-bold text-gray-500 mb-2">{t('dataviz.eigenLab.eigenvectorsNormalized')}</p>
                 <table className="text-xs w-full">
                   <thead><tr>
                     <th className="text-left text-gray-400 pr-4 pb-1 font-semibold">λ</th>
@@ -352,7 +355,7 @@ export function EigenLab() {
                 </table>
               </div>
               <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-600">
-                <strong>Проверка:</strong>&nbsp;
+                <strong>{t('dataviz.eigenLab.verification')}</strong>&nbsp;
                 tr(A) = {fmt(m3[0][0]+m3[1][1]+m3[2][2])} ≈ Σλ = {fmt(e3.lams.reduce((s,l)=>s+l,0))}&nbsp;|&nbsp;
                 det(A) = {fmt(det3(m3))} ≈ ∏λ = {fmt(e3.lams.reduce((s,l)=>s*l,1))}
               </div>
@@ -362,9 +365,9 @@ export function EigenLab() {
       )}
 
       <div className="bg-fuchsia-50 border border-fuchsia-100 rounded-xl p-3 text-xs text-fuchsia-700">
-        <strong>Сопствена вредност λ, вектор v:</strong> A·v = λ·v — трансформацијата само го скалира v.
-        Тралот на кружницата е слика на единичната кружница под A.
-        Пресечните насоки со сопствените вектори се скалирани со |λ|.
+        <strong>{t('dataviz.eigenLab.eigenDefTitle')}</strong> {t('dataviz.eigenLab.eigenDefBody')}
+        {t('dataviz.eigenLab.traceCircleBody')}
+        {t('dataviz.eigenLab.intersectionDirections')}
       </div>
     </div>
   );

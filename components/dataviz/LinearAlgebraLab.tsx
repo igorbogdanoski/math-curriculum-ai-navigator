@@ -6,11 +6,13 @@ import { LabExercisePanel } from '../labs/LabExercisePanel';
 import { EigenLab } from './LinearAlgebraEigenLab';
 import { MatrixInput, MatrixDisplay } from './LinearAlgebraInputs';
 import { NxNSolverLab } from './LinearAlgebraAdvancedLab';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── Matrices sub-tab ─────────────────────────────────────────────────────────
 type MatOp = 'add' | 'mul' | 'invA' | 'transA' | 'detA';
 
 function MatricesLab() {
+  const { t } = useLanguage();
   const [size, setSize] = useState<2 | 3>(2);
   const [mA2, setMA2] = useState<Mat2>([...EMPTY2.map(r => [...r])] as Mat2);
   const [mB2, setMB2] = useState<Mat2>([[2,1],[1,3]]);
@@ -72,8 +74,8 @@ function MatricesLab() {
       </div>
 
       <div className="flex gap-6 flex-wrap items-start">
-        <MatrixInput value={aVal} onChange={aChange} size={size} label="Матрица A" color="indigo" />
-        {needsB && <MatrixInput value={bVal} onChange={bChange} size={size} label="Матрица B" color="violet" />}
+        <MatrixInput value={aVal} onChange={aChange} size={size} label={t('dataviz.linalgLab.matrixA')} color="indigo" />
+        {needsB && <MatrixInput value={bVal} onChange={bChange} size={size} label={t('dataviz.linalgLab.matrixB')} color="violet" />}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -91,23 +93,23 @@ function MatricesLab() {
 
       {op === 'detA' ? (
         <div className="rounded-xl bg-indigo-50 border border-indigo-200 p-4 text-center">
-          <p className="text-xs font-bold text-indigo-400 mb-1">Детерминанта det(A)</p>
+          <p className="text-xs font-bold text-indigo-400 mb-1">{t('dataviz.linalgLab.determinantLabel')}</p>
           <p className="text-3xl font-extrabold text-indigo-700">{fmt(detA)}</p>
-          <p className="text-xs text-indigo-500 mt-1">{Math.abs(detA) < 1e-10 ? 'Сингуларна матрица — инверз не постои' : 'Матрицата е инвертибилна'}</p>
+          <p className="text-xs text-indigo-500 mt-1">{Math.abs(detA) < 1e-10 ? t('dataviz.linalgLab.singularMatrix') : t('dataviz.linalgLab.invertibleMatrix')}</p>
         </div>
       ) : (
         <MatrixDisplay
           value={result as (number | null)[][] | null}
-          label={OPS.find(o => o.id === op)?.label ?? 'Резултат'}
+          label={OPS.find(o => o.id === op)?.label ?? t('dataviz.linalgLab.result')}
           color="emerald"
           highlight={true}
         />
       )}
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700">
-        <strong>Клучни факти:</strong> det(A·B) = det(A)·det(B) &nbsp;|&nbsp;
+        <strong>{t('dataviz.linalgLab.keyFacts')}</strong> det(A·B) = det(A)·det(B) &nbsp;|&nbsp;
         (A·B)⁻¹ = B⁻¹·A⁻¹ &nbsp;|&nbsp; (Aᵀ)ᵀ = A &nbsp;|&nbsp;
-        A·A⁻¹ = I &nbsp;|&nbsp; det(A) = 0 ⟺ сингуларна
+        A·A⁻¹ = I &nbsp;|&nbsp; det(A) = 0 ⟺ {t('dataviz.linalgLab.singularAdj')}
       </div>
     </div>
   );
@@ -140,6 +142,7 @@ function VectorArrow({ vx, vy, color, label }: { vx: number; vy: number; color: 
 }
 
 function VectorsLab() {
+  const { t } = useLanguage();
   const [ux, setUx] = useState(2);
   const [uy, setUy] = useState(1);
   const [vx, setVx] = useState(-1);
@@ -156,8 +159,8 @@ function VectorsLab() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {[
-          { label: 'Вектор u', vals: [{ label: 'ux', v: ux, set: setUx }, { label: 'uy', v: uy, set: setUy }], color: 'indigo' },
-          { label: 'Вектор v', vals: [{ label: 'vx', v: vx, set: setVx }, { label: 'vy', v: vy, set: setVy }], color: 'rose' },
+          { label: t('dataviz.linalgLab.vectorU'), vals: [{ label: 'ux', v: ux, set: setUx }, { label: 'uy', v: uy, set: setUy }], color: 'indigo' },
+          { label: t('dataviz.linalgLab.vectorV'), vals: [{ label: 'vx', v: vx, set: setVx }, { label: 'vy', v: vy, set: setVy }], color: 'rose' },
         ].map(({ label, vals, color }) => (
           <div key={label}>
             <p className={`text-xs font-bold text-${color}-600 mb-2`}>{label}</p>
@@ -198,8 +201,8 @@ function VectorsLab() {
         {[
           { label: 'u = (ux, uy)', value: `(${ux}, ${uy})`, color: 'indigo' },
           { label: 'v = (vx, vy)', value: `(${vx}, ${vy})`, color: 'rose' },
-          { label: 'u · v (скалар)', value: dot.toFixed(3), color: 'amber', highlight: true },
-          { label: 'Агол θ', value: `${angle.toFixed(1)}°`, color: 'emerald', highlight: true },
+          { label: t('dataviz.linalgLab.dotProduct'), value: dot.toFixed(3), color: 'amber', highlight: true },
+          { label: t('dataviz.linalgLab.angleTheta'), value: `${angle.toFixed(1)}°`, color: 'emerald', highlight: true },
         ].map(({ label, value, color, highlight }) => (
           <div key={label} className={`rounded-xl p-3 text-center border ${highlight ? `bg-${color}-50 border-${color}-200` : 'bg-gray-50 border-gray-200'}`}>
             <p className="text-[11px] text-gray-400 font-semibold">{label}</p>
@@ -210,19 +213,19 @@ function VectorsLab() {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
-          <p className="text-xs font-bold text-gray-400">|u| (должина)</p>
+          <p className="text-xs font-bold text-gray-400">{t('dataviz.linalgLab.lengthU')}</p>
           <p className="text-xl font-extrabold text-indigo-700">{lenU.toFixed(4)}</p>
         </div>
         <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
-          <p className="text-xs font-bold text-gray-400">|v| (должина)</p>
+          <p className="text-xs font-bold text-gray-400">{t('dataviz.linalgLab.lengthV')}</p>
           <p className="text-xl font-extrabold text-rose-700">{lenV.toFixed(4)}</p>
         </div>
       </div>
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700">
         <strong>u · v = |u|·|v|·cos(θ)</strong> &nbsp;|&nbsp;
-        Ако u·v = 0 векторите се нормални (θ = 90°). &nbsp;|&nbsp;
-        Скаларниот производ го мери проекциониот придонес.
+        {t('dataviz.linalgLab.normalVectors')} &nbsp;|&nbsp;
+        {t('dataviz.linalgLab.dotProductMeaning')}
       </div>
     </div>
   );
@@ -231,15 +234,16 @@ function VectorsLab() {
 // ─── Transformations sub-tab ──────────────────────────────────────────────────
 type TransformPreset = 'identity' | 'rotate45' | 'rotate90' | 'scale2' | 'shear' | 'reflectX' | 'reflectY' | 'custom';
 
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 const PRESETS: { id: TransformPreset; label: string; mat: Mat2 }[] = [
-  { id: 'identity', label: 'I (Тождество)', mat: [[1,0],[0,1]] },
-  { id: 'rotate45', label: 'Ротација 45°',  mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
-  { id: 'rotate90', label: 'Ротација 90°',  mat: [[0,-1],[1,0]] },
-  { id: 'scale2',   label: 'Скалирање ×2',  mat: [[2,0],[0,2]] },
-  { id: 'shear',    label: 'Смолкнување',    mat: [[1,0.5],[0,1]] },
-  { id: 'reflectX', label: 'Рефлексија X',  mat: [[1,0],[0,-1]] },
-  { id: 'reflectY', label: 'Рефлексија Y',  mat: [[-1,0],[0,1]] },
-  { id: 'custom',   label: 'Прилагодено',    mat: [[1,1],[0,1]] },
+  { id: 'identity', label: 'dataviz.linalgLab.presetIdentity', mat: [[1,0],[0,1]] },
+  { id: 'rotate45', label: 'dataviz.linalgLab.presetRotate45',  mat: [[Math.cos(Math.PI/4),-Math.sin(Math.PI/4)],[Math.sin(Math.PI/4),Math.cos(Math.PI/4)]] },
+  { id: 'rotate90', label: 'dataviz.linalgLab.presetRotate90',  mat: [[0,-1],[1,0]] },
+  { id: 'scale2',   label: 'dataviz.linalgLab.presetScale2',  mat: [[2,0],[0,2]] },
+  { id: 'shear',    label: 'dataviz.linalgLab.presetShear',    mat: [[1,0.5],[0,1]] },
+  { id: 'reflectX', label: 'dataviz.linalgLab.presetReflectX',  mat: [[1,0],[0,-1]] },
+  { id: 'reflectY', label: 'dataviz.linalgLab.presetReflectY',  mat: [[-1,0],[0,1]] },
+  { id: 'custom',   label: 'dataviz.linalgLab.presetCustom',    mat: [[1,1],[0,1]] },
 ];
 
 const TW = 380, TH = 320, tCx = TW / 2, tCy = TH / 2, tScale = 55;
@@ -250,6 +254,7 @@ function applyMat(m: Mat2, [x, y]: [number, number]): [number, number] {
 }
 
 function TransformationsLab() {
+  const { t } = useLanguage();
   const [preset, setPreset] = useState<TransformPreset>('rotate45');
   const [customMat, setCustomMat] = useState<Mat2>([[1,1],[0,1]]);
   const mat = preset === 'custom' ? customMat : PRESETS.find(p => p.id === preset)!.mat;
@@ -277,14 +282,14 @@ function TransformationsLab() {
         {PRESETS.map(p => (
           <button key={p.id} type="button" onClick={() => setPreset(p.id)}
             className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border-2 transition ${preset === p.id ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-200 text-gray-500 hover:border-teal-300'}`}>
-            {p.label}
+            {t(p.label)}
           </button>
         ))}
       </div>
 
       {preset === 'custom' && (
         <div className="flex gap-4 items-center flex-wrap">
-          <MatrixInput value={customMat} onChange={m => setCustomMat(m as Mat2)} size={2} label="Матрица на трансформација" color="teal" />
+          <MatrixInput value={customMat} onChange={m => setCustomMat(m as Mat2)} size={2} label={t('dataviz.linalgLab.transformMatrix')} color="teal" />
         </div>
       )}
 
@@ -318,9 +323,9 @@ function TransformationsLab() {
           <text x={tVec(basisJ[0], basisJ[1]).sx + 6} y={tVec(basisJ[0], basisJ[1]).sy - 4} fontSize={11} fill="#f43f5e" fontWeight="bold">e₂</text>
           <rect x={8} y={8} width={110} height={38} rx={6} fill="white" fillOpacity={0.9} stroke="#e5e7eb" />
           <line x1={14} y1={21} x2={28} y2={21} stroke="#6366f1" strokeWidth={2} strokeDasharray="4 2" />
-          <text x={32} y={24} fontSize={10} fill="#6366f1">Оригинал</text>
+          <text x={32} y={24} fontSize={10} fill="#6366f1">{t('dataviz.linalgLab.original')}</text>
           <line x1={14} y1={37} x2={28} y2={37} stroke="#10b981" strokeWidth={2.5} />
-          <text x={32} y={40} fontSize={10} fill="#10b981">Трансформиран</text>
+          <text x={32} y={40} fontSize={10} fill="#10b981">{t('dataviz.linalgLab.transformed')}</text>
         </svg>
       </div>
 
@@ -328,7 +333,7 @@ function TransformationsLab() {
         <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center">
           <p className="text-[11px] text-gray-400 font-semibold">det(M)</p>
           <p className="text-xl font-extrabold text-teal-700">{fmt(detVal)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">скалирање на плоштина</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{t('dataviz.linalgLab.areaScaling')}</p>
         </div>
         <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-center">
           <p className="text-[11px] text-gray-400 font-semibold">M·e₁</p>
@@ -341,9 +346,9 @@ function TransformationsLab() {
       </div>
 
       <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 text-xs text-teal-700">
-        <strong>Геометриска интерпретација:</strong> |det(M)| = факторот на скалирање на плоштина. &nbsp;
-        det(M) &lt; 0 → ориентацијата е преврната. &nbsp;
-        Колоните на M ги даваат трансформираните базни вектори.
+        <strong>{t('dataviz.linalgLab.geomInterpretation')}</strong> |det(M)| = {t('dataviz.linalgLab.areaScaling')}. &nbsp;
+        {t('dataviz.linalgLab.orientationFlipped')} &nbsp;
+        {t('dataviz.linalgLab.columnsGiveBasis')}
       </div>
     </div>
   );
@@ -357,6 +362,7 @@ function ssToSVG(mx: number, my: number) {
 }
 
 function SystemsLab() {
+  const { t } = useLanguage();
   const [m1, setM1] = useState(1);
   const [b1, setB1] = useState(1);
   const [m2, setM2] = useState(-1);
@@ -379,7 +385,7 @@ function SystemsLab() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs font-bold text-indigo-600 mb-2">Линија 1: y = m₁x + b₁</p>
+          <p className="text-xs font-bold text-indigo-600 mb-2">{t('dataviz.linalgLab.line1')}</p>
           {[{ label: 'm₁', v: m1, set: setM1 }, { label: 'b₁', v: b1, set: setB1 }].map(({ label, v, set }) => (
             <div key={label} className="flex items-center gap-2 mb-1.5">
               <span className="text-xs font-semibold text-gray-400 w-6">{label}</span>
@@ -391,7 +397,7 @@ function SystemsLab() {
           ))}
         </div>
         <div>
-          <p className="text-xs font-bold text-rose-600 mb-2">Линија 2: y = m₂x + b₂</p>
+          <p className="text-xs font-bold text-rose-600 mb-2">{t('dataviz.linalgLab.line2')}</p>
           {[{ label: 'm₂', v: m2, set: setM2 }, { label: 'b₂', v: b2, set: setB2 }].map(({ label, v, set }) => (
             <div key={label} className="flex items-center gap-2 mb-1.5">
               <span className="text-xs font-semibold text-gray-400 w-6">{label}</span>
@@ -406,11 +412,11 @@ function SystemsLab() {
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl p-2.5 bg-indigo-50 border border-indigo-200 text-center">
-          <p className="text-[10px] text-gray-400 font-semibold">Равенка 1</p>
+          <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.linalgLab.equation1')}</p>
           <p className="text-sm font-extrabold text-indigo-700 font-mono">y = {m1}x {b1 >= 0 ? '+ ' : '− '}{Math.abs(b1)}</p>
         </div>
         <div className="rounded-xl p-2.5 bg-rose-50 border border-rose-200 text-center">
-          <p className="text-[10px] text-gray-400 font-semibold">Равенка 2</p>
+          <p className="text-[10px] text-gray-400 font-semibold">{t('dataviz.linalgLab.equation2')}</p>
           <p className="text-sm font-extrabold text-rose-700 font-mono">y = {m2}x {b2 >= 0 ? '+ ' : '− '}{Math.abs(b2)}</p>
         </div>
       </div>
@@ -444,35 +450,35 @@ function SystemsLab() {
       <div className={`rounded-xl p-3 border-2 text-center ${coincident?'border-amber-400 bg-amber-50':parallel?'border-red-300 bg-red-50':'border-emerald-400 bg-emerald-50'}`}>
         {coincident ? (
           <>
-            <p className="text-sm font-bold text-amber-700">Совпаднати прави — Бесконечно многу решенија</p>
-            <p className="text-xs text-amber-600 mt-0.5">Двете равенки ја опишуваат истата права</p>
+            <p className="text-sm font-bold text-amber-700">{t('dataviz.linalgLab.coincidentTitle')}</p>
+            <p className="text-xs text-amber-600 mt-0.5">{t('dataviz.linalgLab.coincidentBody')}</p>
           </>
         ) : parallel ? (
           <>
-            <p className="text-sm font-bold text-red-700">Паралелни прави — Нема решение</p>
-            <p className="text-xs text-red-600 mt-0.5">Системот е противречен (inconsistent)</p>
+            <p className="text-sm font-bold text-red-700">{t('dataviz.linalgLab.parallelTitle')}</p>
+            <p className="text-xs text-red-600 mt-0.5">{t('dataviz.linalgLab.parallelBody')}</p>
           </>
         ) : (
           <>
-            <p className="text-sm font-bold text-emerald-700">Единствено решение — Пресечна точка</p>
+            <p className="text-sm font-bold text-emerald-700">{t('dataviz.linalgLab.uniqueTitle')}</p>
             <p className="text-xl font-extrabold text-emerald-800 mt-1 font-mono">x = {fmt(ix)},&nbsp; y = {fmt(iy)}</p>
           </>
         )}
       </div>
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700 space-y-1">
-        <p><strong>Метод на замена:</strong> Постави m₁x + b₁ = m₂x + b₂, реши за x, нај y.</p>
+        <p><strong>{t('dataviz.linalgLab.substitutionMethod')}</strong> {t('dataviz.linalgLab.substitutionBody')}</p>
         <p className="font-mono">x = (b₂ − b₁) / (m₁ − m₂)  [m₁ ≠ m₂]</p>
-        <p><strong>Три случаи:</strong> m₁≠m₂ → 1 решение · m₁=m₂, b₁≠b₂ → 0 · m₁=m₂, b₁=b₂ → ∞</p>
+        <p><strong>{t('dataviz.linalgLab.threeCases')}</strong> {t('dataviz.linalgLab.threeCasesBody')}</p>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl p-2.5">
-        <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+        <p className="text-[10px] font-bold text-gray-400 uppercase">{t('dataviz.linalgLab.curriculum')}</p>
         <div className="flex flex-wrap gap-1 mt-1">
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН VIII одд.</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН IX одд.</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">Гимн. I год.</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">Стручно I год.</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('dataviz.linalgLab.monGrade8')}</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('dataviz.linalgLab.monGrade9')}</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">{t('dataviz.linalgLab.gymYear1')}</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">{t('dataviz.linalgLab.vocYear1')}</span>
         </div>
       </div>
     </div>
@@ -496,25 +502,26 @@ function LinAlgExercisesTab() {
 type LinAlgTab = 'matrices' | 'vectors' | 'transforms' | 'systems' | 'nxn' | 'eigen' | 'exercises';
 
 export function LinearAlgebraLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<LinAlgTab>('matrices');
 
   const TABS: { id: LinAlgTab; label: string; color: string }[] = [
-    { id: 'matrices',   label: '⊞ Матрици',       color: 'indigo'  },
-    { id: 'vectors',    label: '→ Вектори',        color: 'rose'    },
-    { id: 'transforms', label: '⊡ Трансформации', color: 'teal'    },
-    { id: 'systems',    label: '⊕ Системи',        color: 'emerald' },
-    { id: 'nxn',        label: '⊟ n×n Решавач',   color: 'sky'     },
-    { id: 'eigen',      label: 'λ Сопствени',      color: 'fuchsia' },
-    { id: 'exercises',  label: '✏️ Вежбај',        color: 'orange'  },
+    { id: 'matrices',   label: t('dataviz.linalgLab.tabMatrices'),   color: 'indigo'  },
+    { id: 'vectors',    label: t('dataviz.linalgLab.tabVectors'),    color: 'rose'    },
+    { id: 'transforms', label: t('dataviz.linalgLab.tabTransforms'), color: 'teal'    },
+    { id: 'systems',    label: t('dataviz.linalgLab.tabSystems'),    color: 'emerald' },
+    { id: 'nxn',        label: t('dataviz.linalgLab.tabNxn'),        color: 'sky'     },
+    { id: 'eigen',      label: t('dataviz.linalgLab.tabEigen'),      color: 'fuchsia' },
+    { id: 'exercises',  label: t('dataviz.linalgLab.tabExercises'),  color: 'orange'  },
   ];
 
   return (
     <div className="space-y-5">
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === t.id ? `border-${t.color}-500 bg-${t.color}-50 text-${t.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {t.label}
+        {TABS.map(tb => (
+          <button key={tb.id} type="button" onClick={() => setTab(tb.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === tb.id ? `border-${tb.color}-500 bg-${tb.color}-50 text-${tb.color}-700` : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {tb.label}
           </button>
         ))}
       </div>
