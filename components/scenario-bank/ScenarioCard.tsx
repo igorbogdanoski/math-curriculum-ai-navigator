@@ -7,10 +7,11 @@ import { SuggestRevisionModal } from './SuggestRevisionModal';
 import { ObservationModal } from './ObservationModal';
 import { AcademyBadgeRow } from '../academy/AcademyBadgeChip';
 import { ContextualMathTools } from '../lesson-plan-editor/ContextualMathTools';
+import { useLanguage } from '../../i18n/LanguageContext';
 
-const BLOOM_LABELS: Record<string, string> = {
-  '1': 'Помнење', '2': 'Разбирање', '3': 'Примена',
-  '4': 'Анализа', '5': 'Евалуација', '6': 'Создавање',
+const BLOOM_LABEL_KEYS: Record<string, string> = {
+  '1': 'scenarioBank.card.bloomRemember', '2': 'scenarioBank.card.bloomUnderstand', '3': 'scenarioBank.card.bloomApply',
+  '4': 'scenarioBank.card.bloomAnalyze', '5': 'scenarioBank.card.bloomEvaluate', '6': 'scenarioBank.card.bloomCreate',
 };
 const BLOOM_COLORS: Record<string, string> = {
   '1': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -45,9 +46,11 @@ interface Props {
 }
 
 export const ScenarioCard: React.FC<Props> = ({
-  entry, currentUid, currentName = 'Наставник', currentSchool = '',
+  entry, currentUid, currentName, currentSchool = '',
   onRate, onFork, onUse, onSave, onEdit, onDiscuss, onPrint, onNavigate,
 }) => {
+  const { t } = useLanguage();
+  const resolvedCurrentName = currentName ?? t('scenarioBank.card.defaultAuthorName');
   const [expanded, setExpanded] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [showSuggest, setShowSuggest] = useState(false);
@@ -70,16 +73,16 @@ export const ScenarioCard: React.FC<Props> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
               <span className="text-[11px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                {entry.grade}. одд.
+                {entry.grade}. {t('scenarioBank.card.gradeSuffix')}
               </span>
               {entry.verifiedByBRO && (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.5 rounded-full">
-                  <BadgeCheck className="w-3 h-3" /> БРО
+                  <BadgeCheck className="w-3 h-3" /> {t('scenarioBank.card.broBadge')}
                 </span>
               )}
               {entry.isFeatured && (
                 <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                  ⭐ Избрано
+                  {t('scenarioBank.card.featuredBadge')}
                 </span>
               )}
               {entry.teachingModel && (
@@ -107,7 +110,7 @@ export const ScenarioCard: React.FC<Props> = ({
           <div className="flex flex-wrap gap-1">
             {entry.bloomLevels.map(lvl => (
               <span key={lvl} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${BLOOM_COLORS[lvl] ?? 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-                {BLOOM_LABELS[lvl] ?? `B${lvl}`}
+                {BLOOM_LABEL_KEYS[lvl] ? t(BLOOM_LABEL_KEYS[lvl]) : `B${lvl}`}
               </span>
             ))}
           </div>
@@ -122,7 +125,7 @@ export const ScenarioCard: React.FC<Props> = ({
           <div className="space-y-2 mt-2 border-t pt-2">
             {entry.objectives.length > 0 && (
               <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Цели</p>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">{t('scenarioBank.card.objectives')}</p>
                 <ul className="space-y-0.5">
                   {entry.objectives.map((o, i) => (
                     <li key={i} className="text-[11px] text-gray-700 flex gap-1.5">
@@ -134,7 +137,7 @@ export const ScenarioCard: React.FC<Props> = ({
             )}
             {entry.scenarioMain.length > 0 && (
               <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Главни активности</p>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">{t('scenarioBank.card.mainActivities')}</p>
                 <ol className="space-y-0.5 list-decimal list-outside ml-4">
                   {entry.scenarioMain.map((m, i) => (
                     <li key={i} className="text-[11px] text-gray-700">{m}</li>
@@ -143,7 +146,7 @@ export const ScenarioCard: React.FC<Props> = ({
               </div>
             )}
             <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Завршна активност</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">{t('scenarioBank.card.concludingActivity')}</p>
               <p className="text-[11px] text-gray-700">{entry.scenarioConcluding}</p>
             </div>
             {entry.assessmentStandards.length > 0 && (
@@ -172,7 +175,7 @@ export const ScenarioCard: React.FC<Props> = ({
           onClick={() => setExpanded(v => !v)}
           className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
         >
-          {expanded ? <><ChevronUp className="w-3.5 h-3.5" /> Склопи</> : <><ChevronDown className="w-3.5 h-3.5" /> Прошири сценарио</>}
+          {expanded ? <><ChevronUp className="w-3.5 h-3.5" /> {t('scenarioBank.card.collapse')}</> : <><ChevronDown className="w-3.5 h-3.5" /> {t('scenarioBank.card.expandScenario')}</>}
         </button>
       </div>
 
@@ -183,7 +186,7 @@ export const ScenarioCard: React.FC<Props> = ({
           <span className="truncate max-w-[60%]">
             {(entry.forkDepth > 0 || entry.originalAuthorName) && (
               <span className="text-indigo-400 mr-1">
-                ↳ {entry.originalAuthorName ? `Оригинално од: ${entry.originalAuthorName}` : 'Ремикс'}
+                ↳ {entry.originalAuthorName ? t('scenarioBank.card.originalFrom').replace('{name}', entry.originalAuthorName) : t('scenarioBank.card.remix')}
               </span>
             )}
             {entry.authorName}
@@ -208,7 +211,7 @@ export const ScenarioCard: React.FC<Props> = ({
                 onMouseEnter={() => setHoveredStar(s)}
                 onMouseLeave={() => setHoveredStar(0)}
                 className="p-0.5"
-                aria-label={`Оцени ${s} ѕвезди`}
+                aria-label={t('scenarioBank.card.rateStarsAria').replace('{n}', String(s))}
               >
                 <Star
                   className="w-3.5 h-3.5"
@@ -232,33 +235,33 @@ export const ScenarioCard: React.FC<Props> = ({
             onClick={() => { onUse(entry); }}
             className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg transition-colors"
           >
-            Користи
+            {t('scenarioBank.card.use')}
           </button>
           {onEdit && currentUid === entry.authorUid && (
             <button
               type="button"
               onClick={() => onEdit(entry)}
-              title="Уреди го своето сценарио"
-              aria-label="Уреди"
+              title={t('scenarioBank.card.editOwnTitle')}
+              aria-label={t('scenarioBank.card.edit')}
               className="flex items-center gap-1 bg-violet-50 hover:bg-violet-100 text-violet-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-violet-200 transition-colors"
             >
-              <Pencil className="w-3.5 h-3.5" /> Уреди
+              <Pencil className="w-3.5 h-3.5" /> {t('scenarioBank.card.edit')}
             </button>
           )}
           <button
             type="button"
             onClick={() => onFork(entry)}
-            title="Ремиксирај — создај своја верзија"
+            title={t('scenarioBank.card.forkTitle')}
             className="flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-emerald-200 transition-colors"
           >
-            <Shuffle className="w-3.5 h-3.5" /> Ремикс
+            <Shuffle className="w-3.5 h-3.5" /> {t('scenarioBank.card.remix')}
           </button>
           {canSuggest && (
             <button
               type="button"
               onClick={() => setShowSuggest(true)}
-              title="Предложи измена (Lesson Study)"
-              aria-label="Предложи измена"
+              title={t('scenarioBank.card.suggestRevisionTitle')}
+              aria-label={t('scenarioBank.card.suggestRevisionAria')}
               className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-amber-200 transition-colors"
             >
               <Lightbulb className="w-3.5 h-3.5" />
@@ -268,8 +271,8 @@ export const ScenarioCard: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowObserve(true)}
-              title="Ја употребив / набљудував — додај набљудување"
-              aria-label="Набљудување на час"
+              title={t('scenarioBank.card.observeTitle')}
+              aria-label={t('scenarioBank.card.observeAria')}
               className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-indigo-200 transition-colors"
             >
               <Eye className="w-3.5 h-3.5" />
@@ -278,7 +281,7 @@ export const ScenarioCard: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => onSave(entry.id, !isSaved)}
-            title={isSaved ? 'Отстрани од зачувани' : 'Зачувај'}
+            title={isSaved ? t('scenarioBank.card.unsave') : t('scenarioBank.card.save')}
             className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold transition-colors ${
               isSaved
                 ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
@@ -291,8 +294,8 @@ export const ScenarioCard: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => onDiscuss(entry)}
-              title="Отвори форум дискусија за ова сценарио"
-              aria-label="Дискутирај"
+              title={t('scenarioBank.card.discussTitle')}
+              aria-label={t('scenarioBank.card.discussAria')}
               className="flex items-center gap-1 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-sky-200 transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -302,8 +305,8 @@ export const ScenarioCard: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => onPrint(entry)}
-              title="Испечати сценарио (A4)"
-              aria-label="Испечати"
+              title={t('scenarioBank.card.printTitle')}
+              aria-label={t('scenarioBank.card.printAria')}
               className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-slate-200 transition-colors"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -316,7 +319,7 @@ export const ScenarioCard: React.FC<Props> = ({
         <SuggestRevisionModal
           scenario={entry}
           authorUid={currentUid}
-          authorName={currentName}
+          authorName={resolvedCurrentName}
           schoolName={currentSchool}
           onClose={() => setShowSuggest(false)}
           onSubmitted={() => setShowSuggest(false)}
@@ -326,7 +329,7 @@ export const ScenarioCard: React.FC<Props> = ({
         <ObservationModal
           scenario={entry}
           authorUid={currentUid}
-          authorName={currentName}
+          authorName={resolvedCurrentName}
           schoolName={currentSchool}
           observedGrade={entry.grade}
           onClose={() => setShowObserve(false)}

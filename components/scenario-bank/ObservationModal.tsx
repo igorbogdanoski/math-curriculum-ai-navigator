@@ -8,16 +8,23 @@ import {
 } from '../../services/firestoreService.scenarioObservations';
 import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 
-// ─── Bloom taxonomy (MK) ────────────────────────────────────────────────────
+// ─── Bloom taxonomy ─────────────────────────────────────────────────────────
 
 const BLOOM_LEVELS = [
-  { key: 'remember',  label: '💡 Помни',     color: 'bg-blue-50 border-blue-300 text-blue-700' },
-  { key: 'understand',label: '🔍 Разбира',   color: 'bg-cyan-50 border-cyan-300 text-cyan-700' },
-  { key: 'apply',     label: '🔧 Применува',  color: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
-  { key: 'analyze',   label: '📊 Анализира', color: 'bg-amber-50 border-amber-300 text-amber-700' },
-  { key: 'evaluate',  label: '⚖️ Вреднува',  color: 'bg-orange-50 border-orange-300 text-orange-700' },
-  { key: 'create',    label: '✨ Создава',   color: 'bg-purple-50 border-purple-300 text-purple-700' },
+  { key: 'remember',   icon: '💡', color: 'bg-blue-50 border-blue-300 text-blue-700' },
+  { key: 'understand', icon: '🔍', color: 'bg-cyan-50 border-cyan-300 text-cyan-700' },
+  { key: 'apply',      icon: '🔧', color: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
+  { key: 'analyze',    icon: '📊', color: 'bg-amber-50 border-amber-300 text-amber-700' },
+  { key: 'evaluate',   icon: '⚖️', color: 'bg-orange-50 border-orange-300 text-orange-700' },
+  { key: 'create',     icon: '✨', color: 'bg-purple-50 border-purple-300 text-purple-700' },
 ];
+
+const BLOOM_LABEL_TEXT: Record<string, Record<string, string>> = {
+  mk: { remember: 'Помни', understand: 'Разбира', apply: 'Применува', analyze: 'Анализира', evaluate: 'Вреднува', create: 'Создава' },
+  sq: { remember: 'Kujto', understand: 'Kupto', apply: 'Zbato', analyze: 'Analizo', evaluate: 'Vlerëso', create: 'Krijo' },
+  tr: { remember: 'Hatırla', understand: 'Anla', apply: 'Uygula', analyze: 'Analiz Et', evaluate: 'Değerlendir', create: 'Yarat' },
+  en: { remember: 'Remember', understand: 'Understand', apply: 'Apply', analyze: 'Analyze', evaluate: 'Evaluate', create: 'Create' },
+};
 
 // ─── i18n ───────────────────────────────────────────────────────────────────
 
@@ -41,6 +48,8 @@ const I18N = {
     aiSynthTitle: '🤖 AI синтеза на набљудувањата',
     aiSynthBtn: 'Синтетизирај набљудувања',
     aiSynthLoading: 'Генерирање...',
+    aiSynthFailed: 'Не може да се генерира синтеза. Обиди се повторно.',
+    aiSynthError: 'Грешка при генерирање на синтеза.',
   },
   sq: {
     title: 'Vëzhgim i mësimit',
@@ -61,6 +70,8 @@ const I18N = {
     aiSynthTitle: '🤖 Sintezë AI e vëzhgimeve',
     aiSynthBtn: 'Sintetizo vëzhgimet',
     aiSynthLoading: 'Duke gjeneruar...',
+    aiSynthFailed: 'Nuk mund të gjenerohet sinteza. Provo përsëri.',
+    aiSynthError: 'Gabim gjatë gjenerimit të sintezës.',
   },
   tr: {
     title: 'Ders gözlemi',
@@ -81,6 +92,8 @@ const I18N = {
     aiSynthTitle: '🤖 AI sentezi',
     aiSynthBtn: 'Gözlemleri sentezle',
     aiSynthLoading: 'Üretiliyor...',
+    aiSynthFailed: 'Sentez oluşturulamıyor. Tekrar deneyin.',
+    aiSynthError: 'Sentez oluşturulurken hata oluştu.',
   },
   en: {
     title: 'Lesson observation',
@@ -101,6 +114,8 @@ const I18N = {
     aiSynthTitle: '🤖 AI synthesis of observations',
     aiSynthBtn: 'Synthesize observations',
     aiSynthLoading: 'Generating...',
+    aiSynthFailed: 'Could not generate a synthesis. Please try again.',
+    aiSynthError: 'Error generating the synthesis.',
   },
 };
 
@@ -191,9 +206,9 @@ export const ObservationModal: React.FC<Props> = ({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
       });
 
-      setAiSynthesis(result.text || 'Не може да се генерира синтеза. Обиди се повторно.');
+      setAiSynthesis(result.text || s.aiSynthFailed);
     } catch {
-      setAiSynthesis('Грешка при генерирање на синтеза.');
+      setAiSynthesis(s.aiSynthError);
     } finally {
       setIsSynthesizing(false);
     }
@@ -252,7 +267,7 @@ export const ObservationModal: React.FC<Props> = ({
                       : 'border-gray-200 text-gray-400 bg-white hover:border-gray-300'
                   }`}
                 >
-                  {b.label}
+                  {b.icon} {BLOOM_LABEL_TEXT[lang][b.key]}
                 </button>
               ))}
             </div>
@@ -359,7 +374,7 @@ export const ObservationModal: React.FC<Props> = ({
                             const meta = BLOOM_LEVELS.find(b => b.key === bl);
                             return meta ? (
                               <span key={bl} className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${meta.color}`}>
-                                {meta.label}
+                                {meta.icon} {BLOOM_LABEL_TEXT[lang][meta.key]}
                               </span>
                             ) : null;
                           })}
