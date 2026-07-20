@@ -1,9 +1,15 @@
 import React, { useId, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
-import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy, Loader2 } from 'lucide-react';
+import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp, CreditCard, Building2, Copy, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRO_PRICE_MKD, PRO_PRICE_MONTHLY, BANK_ACCOUNT, BANK_NAME, BANK_RECIPIENT, SUPPORT_EMAIL as CONTACT_EMAIL } from '../data/pricingConstants';
+
+// 2026-07-20 (Wave 13.2): prepared-but-inactive subscription-mode path — Stripe doesn't yet
+// support recurring billing payouts in North Macedonia, so this stays off (unset/false) until
+// that changes. Mirrors the server-side STRIPE_SUBSCRIPTIONS_ENABLED flag in
+// api/stripe-checkout.ts; flipping both on is the entire activation, no code change needed.
+const SUBSCRIPTIONS_ENABLED = import.meta.env.VITE_STRIPE_SUBSCRIPTIONS_ENABLED === 'true';
 
 // ── Feature comparison ─────────────────────────────────────────────────────
 const FEATURES: Array<{ label: string; free: string | boolean; pro: string | boolean; school: string | boolean }> = [
@@ -137,6 +143,8 @@ export const PricingView: React.FC = () => {
   const [showBankDetails, setShowBankDetails] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   // Success/cancel URL params
@@ -163,6 +171,30 @@ export const PricingView: React.FC = () => {
       setCheckoutError(err instanceof Error ? err.message : 'Непозната грешка.');
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  // Same portal endpoint as BillingPrivacyPanel — Stripe's Billing Portal shows subscription
+  // management (cancel/change plan/update card) whenever the customer actually has a
+  // subscription, so this button only needs to exist once subscription-mode checkout (Wave
+  // 13.2) is enabled; the endpoint itself is already always-on (Wave 13.1).
+  const handleManageSubscription = async () => {
+    if (!firebaseUser) return;
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/stripe-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Грешка.');
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : 'Непозната грешка.');
+    } finally {
+      setPortalLoading(false);
     }
   };
 
@@ -285,8 +317,24 @@ export const PricingView: React.FC = () => {
               ))}
             </ul>
             {isPro ? (
-              <div className="w-full text-center py-2.5 bg-white/20 rounded-xl text-white font-semibold text-sm">
-                ✅ Активен план
+              <div className="space-y-2">
+                <div className="w-full text-center py-2.5 bg-white/20 rounded-xl text-white font-semibold text-sm">
+                  ✅ Активен план
+                </div>
+                {SUBSCRIPTIONS_ENABLED && (
+                  <button
+                    type="button"
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                    className="w-full py-2 border border-white/40 rounded-xl text-white/90 font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-white/10 transition-colors disabled:opacity-60"
+                  >
+                    {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                    Управувај со претплата
+                  </button>
+                )}
+                {portalError && (
+                  <p className="text-red-100 bg-red-500/20 rounded-lg py-1.5 text-xs text-center">{portalError}</p>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

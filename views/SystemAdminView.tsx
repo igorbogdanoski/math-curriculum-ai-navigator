@@ -16,8 +16,9 @@ import { AdminStatsTab } from './admin/AdminStatsTab';
 import { AdminForumTab } from './admin/AdminForumTab';
 import { AdminContentTab } from './admin/AdminContentTab';
 import { CohortDashboard } from './admin/CohortDashboard';
+import { AdminSubscribersTab } from './admin/AdminSubscribersTab';
 
-type Tab = 'schools' | 'schoolRegistry' | 'users' | 'stats' | 'forum' | 'content' | 'cohort';
+type Tab = 'schools' | 'schoolRegistry' | 'users' | 'stats' | 'forum' | 'content' | 'cohort' | 'subscribers';
 
 export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
@@ -132,7 +133,7 @@ export const SystemAdminView: React.FC = () => {
     }, [user, navigate]);
 
     useEffect(() => {
-        if ((activeTab === 'users' || activeTab === 'schoolRegistry') && users.length === 0) loadUsers();
+        if ((activeTab === 'users' || activeTab === 'schoolRegistry' || activeTab === 'subscribers') && users.length === 0) loadUsers();
         if (activeTab === 'stats' && !nationalStats) loadNationalStats();
         if (activeTab === 'forum' && forumThreads.length === 0) loadForumThreads();
         if (activeTab === 'cohort' && cohortUsers === null) loadCohort();
@@ -325,7 +326,7 @@ export const SystemAdminView: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-1 border-b border-gray-200">
-                {([['schools', t('admin.view.tabSchools')], ['schoolRegistry', t('admin.view.tabRegistry')], ['users', t('admin.view.tabUsers')], ['stats', t('admin.view.tabStats')], ['cohort', t('admin.view.tabCohort')], ['forum', t('admin.view.tabForum')], ['content', t('admin.view.tabContent')]] as [Tab, string][]).map(([id, label]) => (
+                {([['schools', t('admin.view.tabSchools')], ['schoolRegistry', t('admin.view.tabRegistry')], ['users', t('admin.view.tabUsers')], ['subscribers', t('admin.view.tabSubscribers')], ['stats', t('admin.view.tabStats')], ['cohort', t('admin.view.tabCohort')], ['forum', t('admin.view.tabForum')], ['content', t('admin.view.tabContent')]] as [Tab, string][]).map(([id, label]) => (
                     <button
                         key={id}
                         type="button"
@@ -373,6 +374,14 @@ export const SystemAdminView: React.FC = () => {
                     handleChangeRole={handleChangeRole}
                     handleUpdateSubscription={handleUpdateSubscription}
                     handleDeleteUser={handleDeleteUser}
+                    onRefresh={loadUsers}
+                />
+            )}
+
+            {activeTab === 'subscribers' && (
+                <AdminSubscribersTab
+                    users={users}
+                    isLoadingUsers={isLoadingUsers}
                     onRefresh={loadUsers}
                 />
             )}

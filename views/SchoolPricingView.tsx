@@ -4,6 +4,13 @@ import { Building2, Users, CheckCircle2, Send, Shield, Headphones, BarChart3, Cr
 import { schoolService } from '../services/firestoreService.school';
 import { SUPPORT_EMAIL } from '../data/pricingConstants';
 
+// 2026-07-20 (Wave 13.3, drifting-snuggling-wave.md): this view is intentionally a lead-gen
+// form with no Stripe checkout, not an unfinished self-serve flow. School/B2B licenses in
+// this market are sold by invoice/contract (procurement rules, multi-teacher negotiated
+// pricing, PO-based payment) — a self-serve card checkout wouldn't fit how schools actually
+// buy. `School`/`Unlimited` tiers are activated manually by an admin (SystemAdminView's
+// Users tab, `handleUpdateSubscription`) after the inquiry below is handled off-platform.
+
 const SCHOOL_FEATURES = [
   { icon: Users,      label: 'Неограничени наставници',      desc: 'Цело училиште под еден план' },
   { icon: BarChart3,  label: 'Admin аналитика',              desc: 'Статистики по наставник, одделение, предмет' },

@@ -29,6 +29,10 @@ function mockReqRes(method: string, rawBody: string, headers: Record<string, str
 const constructEvent = vi.fn();
 const firestoreUpdate = vi.fn();
 const firestoreDocs = new Map<string, Record<string, unknown>>();
+// Maps stripeCustomerId -> uid, populated by tests to simulate an existing users doc
+// (as written by the checkout.session.completed handler) that invoice/subscription
+// events look up via a `where('stripeCustomerId', '==', ...)` query.
+const usersByCustomerId = new Map<string, string>();
 
 vi.mock('firebase-admin/app', () => ({
   initializeApp: vi.fn(),
@@ -43,6 +47,25 @@ vi.mock('firebase-admin/firestore', () => ({
           firestoreUpdate(`${name}/${id}`, data);
           firestoreDocs.set(`${name}/${id}`, data);
         },
+      }),
+      where: (field: string, _op: string, value: string) => ({
+        limit: () => ({
+          get: async () => {
+            const uid = field === 'stripeCustomerId' ? usersByCustomerId.get(value) : undefined;
+            if (!uid) return { empty: true, docs: [] };
+            return {
+              empty: false,
+              docs: [{
+                ref: {
+                  update: async (data: Record<string, unknown>) => {
+                    firestoreUpdate(`${name}/${uid}`, data);
+                    firestoreDocs.set(`${name}/${uid}`, data);
+                  },
+                },
+              }],
+            };
+          },
+        }),
       }),
     }),
   }),
@@ -64,6 +87,7 @@ describe('/api/stripe-webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     firestoreDocs.clear();
+    usersByCustomerId.clear();
     process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_fake';
   });
@@ -140,11 +164,72 @@ describe('/api/stripe-webhook', () => {
   });
 
   it('ignores unrelated event types but still acknowledges', async () => {
-    constructEvent.mockReturnValue({ type: 'invoice.paid', data: { object: {} } });
+    constructEvent.mockReturnValue({ type: 'some.other.event', data: { object: {} } });
     const { req, res } = mockReqRes('POST', '{}', { 'stripe-signature': 'sig' });
     await callHandler(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(firestoreUpdate).not.toHaveBeenCalled();
+  });
+
+  describe('subscription-mode events (Wave 13.2, inert until subscriptions are enabled)', () => {
+    it('invoice.paid renews Pro for the user matched by stripeCustomerId', async () => {
+      usersByCustomerId.set('cus_1', 'u1');
+      constructEvent.mockReturnValue({
+        type: 'invoice.paid',
+        data: { object: { customer: 'cus_1', lines: { data: [{ period: { end: 1893456000 } }] } } },
+      });
+      const { req, res } = mockReqRes('POST', '{}', { 'stripe-signature': 'sig' });
+      await callHandler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(firestoreUpdate).toHaveBeenCalledWith('users/u1', expect.objectContaining({
+        isPremium: true,
+        tier: 'Pro',
+        hasUnlimitedCredits: true,
+        proExpiresAt: new Date(1893456000 * 1000).toISOString(),
+      }));
+    });
+
+    it('invoice.paid acknowledges without writing when no user matches the customer', async () => {
+      constructEvent.mockReturnValue({
+        type: 'invoice.paid',
+        data: { object: { customer: 'cus_unknown', lines: { data: [] } } },
+      });
+      const { req, res } = mockReqRes('POST', '{}', { 'stripe-signature': 'sig' });
+      await callHandler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(firestoreUpdate).not.toHaveBeenCalled();
+    });
+
+    it('customer.subscription.deleted downgrades the matched user to Free', async () => {
+      usersByCustomerId.set('cus_2', 'u2');
+      constructEvent.mockReturnValue({
+        type: 'customer.subscription.deleted',
+        data: { object: { customer: 'cus_2' } },
+      });
+      const { req, res } = mockReqRes('POST', '{}', { 'stripe-signature': 'sig' });
+      await callHandler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(firestoreUpdate).toHaveBeenCalledWith('users/u2', expect.objectContaining({
+        isPremium: false,
+        hasUnlimitedCredits: false,
+        tier: 'Free',
+      }));
+    });
+
+    it('invoice.payment_failed just acknowledges without touching Firestore', async () => {
+      constructEvent.mockReturnValue({
+        type: 'invoice.payment_failed',
+        data: { object: { id: 'in_1', customer: 'cus_3' } },
+      });
+      const { req, res } = mockReqRes('POST', '{}', { 'stripe-signature': 'sig' });
+      await callHandler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(firestoreUpdate).not.toHaveBeenCalled();
+    });
   });
 });

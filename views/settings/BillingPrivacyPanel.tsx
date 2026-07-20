@@ -20,6 +20,8 @@ export function BillingPrivacyPanel() {
 
     const [checkoutLoading, setCheckoutLoading] = useState(false);
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
+    const [portalLoading, setPortalLoading] = useState(false);
+    const [portalError, setPortalError] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -43,6 +45,31 @@ export function BillingPrivacyPanel() {
             setCheckoutError(err instanceof Error ? err.message : t('settings.billing.unknownError'));
         } finally {
             setCheckoutLoading(false);
+        }
+    };
+
+    // 2026-07-20 (Wave 13.1): Stripe's Billing Portal shows payment history / invoices for
+    // any customer that has ever paid, one-time or recurring — so this is useful right now
+    // under the current annual one-time-payment model, not just once subscriptions (Wave 13.2)
+    // are enabled. Only reachable once a stripeCustomerId exists on the user doc (set by
+    // stripe-webhook.ts on first successful checkout), which the API 404s on if missing.
+    const handleOpenPortal = async () => {
+        if (!firebaseUser) return;
+        setPortalLoading(true);
+        setPortalError(null);
+        try {
+            const token = await firebaseUser.getIdToken();
+            const res = await fetch('/api/stripe-portal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) { const msg = data.error || t('settings.billing.genericError'); throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
+            if (data.url) window.location.href = data.url;
+        } catch (err) {
+            setPortalError(err instanceof Error ? err.message : t('settings.billing.unknownError'));
+        } finally {
+            setPortalLoading(false);
         }
     };
 
@@ -127,7 +154,18 @@ export function BillingPrivacyPanel() {
                         )}
                     </div>
                     {isPro ? (
-                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">{t('settings.billing.activeBadge')}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">{t('settings.billing.activeBadge')}</span>
+                            <button
+                                type="button"
+                                onClick={handleOpenPortal}
+                                disabled={portalLoading}
+                                className="px-3 py-1.5 border border-indigo-200 text-indigo-700 text-xs font-semibold rounded-xl hover:bg-indigo-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                                {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                                {portalLoading ? t('settings.billing.preparing') : t('settings.billing.paymentHistoryButton')}
+                            </button>
+                        </div>
                     ) : (
                         <button
                             type="button"
@@ -143,6 +181,9 @@ export function BillingPrivacyPanel() {
 
                 {checkoutError && (
                     <p className="text-red-500 text-xs mb-3">{checkoutError}</p>
+                )}
+                {portalError && (
+                    <p className="text-red-500 text-xs mb-3">{portalError}</p>
                 )}
 
                 <div className="flex items-center gap-2 text-sm text-slate-500">

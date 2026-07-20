@@ -97,4 +97,47 @@ describe('/api/stripe-checkout', () => {
     await handler(req, res);
     expect(res.statusCode).toBe(200);
   });
+
+  describe('subscription mode (Wave 13.2, flagged off by default)', () => {
+    afterEach(() => {
+      delete process.env.STRIPE_SUBSCRIPTIONS_ENABLED;
+      delete process.env.STRIPE_PRO_SUBSCRIPTION_PRICE_ID;
+    });
+
+    it('still creates a one-time payment session when the flag is unset', async () => {
+      sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session/one-time' });
+      const { default: handler } = await import('./stripe-checkout');
+      const { req, res } = mockReqRes('POST', { authorization: 'Bearer goodtoken' });
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(sessionsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: 'payment', line_items: [{ price: 'price_fake', quantity: 1 }] }),
+      );
+    });
+
+    it('switches to a recurring subscription session when explicitly enabled', async () => {
+      process.env.STRIPE_SUBSCRIPTIONS_ENABLED = 'true';
+      process.env.STRIPE_PRO_SUBSCRIPTION_PRICE_ID = 'price_subscription_fake';
+      sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session/sub' });
+      const { default: handler } = await import('./stripe-checkout');
+      const { req, res } = mockReqRes('POST', { authorization: 'Bearer goodtoken' });
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(sessionsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ mode: 'subscription', line_items: [{ price: 'price_subscription_fake', quantity: 1 }] }),
+      );
+    });
+
+    it('returns 503 when enabled but STRIPE_PRO_SUBSCRIPTION_PRICE_ID is missing', async () => {
+      process.env.STRIPE_SUBSCRIPTIONS_ENABLED = 'true';
+      const { default: handler } = await import('./stripe-checkout');
+      const { req, res } = mockReqRes('POST', { authorization: 'Bearer goodtoken' });
+      await handler(req, res);
+
+      expect(res.statusCode).toBe(503);
+      expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+  });
 });

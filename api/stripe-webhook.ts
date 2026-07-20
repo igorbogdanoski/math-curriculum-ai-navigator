@@ -3,7 +3,13 @@
  * Handles Stripe webhook events.
  * Must be configured in Stripe Dashboard → Webhooks:
  *   Endpoint URL: https://ai.mismath.net/api/stripe-webhook
- *   Events: checkout.session.completed
+ *   Events: checkout.session.completed, invoice.paid, customer.subscription.deleted,
+ *           invoice.payment_failed
+ *
+ * The last three only ever fire once subscription-mode checkout (Wave 13.2,
+ * api/stripe-checkout.ts's STRIPE_SUBSCRIPTIONS_ENABLED flag) is turned on — they're
+ * harmless no-ops under the current one-time-payment model, since Stripe never emits
+ * them for a `mode: 'payment'` session.
  *
  * Required env vars (Vercel dashboard):
  *   STRIPE_SECRET_KEY        — sk_live_... or sk_test_...
@@ -106,6 +112,85 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[stripe-webhook] Firestore update failed for uid:', uid, err);
       return res.status(500).end();
     }
+  }
+
+  // ── 3. Subscription-mode events (Wave 13.2 — inert until subscriptions are enabled) ───────
+  // These look up the user by stripeCustomerId (set on the users doc by the
+  // checkout.session.completed handler above) rather than by uid, since invoice/subscription
+  // events don't carry client_reference_id or the app's uid metadata.
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+
+    if (customerId) {
+      const db = getFirebaseAdmin();
+      if (!db) {
+        console.error('[stripe-webhook] Firebase Admin not available');
+        return res.status(500).end();
+      }
+      try {
+        const snap = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
+        if (snap.empty) {
+          console.error('[stripe-webhook] invoice.paid: no user found for customer', customerId);
+        } else {
+          const periodEndSec = invoice.lines?.data?.[0]?.period?.end;
+          const proExpiresAt = periodEndSec
+            ? new Date(periodEndSec * 1000)
+            : (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d; })();
+
+          await snap.docs[0].ref.update({
+            isPremium: true,
+            tier: 'Pro',
+            hasUnlimitedCredits: true,
+            proExpiresAt: proExpiresAt.toISOString(),
+          });
+          console.info(`[stripe-webhook] Subscription invoice paid — Pro renewed for customer ${customerId} until ${proExpiresAt.toISOString()}`);
+        }
+      } catch (err) {
+        console.error('[stripe-webhook] Firestore update failed for invoice.paid, customer:', customerId, err);
+        return res.status(500).end();
+      }
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+
+    if (customerId) {
+      const db = getFirebaseAdmin();
+      if (!db) {
+        console.error('[stripe-webhook] Firebase Admin not available');
+        return res.status(500).end();
+      }
+      try {
+        const snap = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
+        if (snap.empty) {
+          console.error('[stripe-webhook] customer.subscription.deleted: no user found for customer', customerId);
+        } else {
+          await snap.docs[0].ref.update({
+            isPremium: false,
+            hasUnlimitedCredits: false,
+            tier: 'Free',
+            subscriptionCanceledAt: new Date().toISOString(),
+          });
+          console.info(`[stripe-webhook] Subscription canceled for customer ${customerId} — downgraded to Free`);
+        }
+      } catch (err) {
+        console.error('[stripe-webhook] Firestore update failed for customer.subscription.deleted, customer:', customerId, err);
+        return res.status(500).end();
+      }
+    }
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    // Deliberately not revoking access on the first failure — Stripe's own retry/dunning
+    // schedule attempts payment multiple times before customer.subscription.deleted
+    // eventually fires (which is what actually downgrades the user, above). Logged only,
+    // so a spike in failures is visible in Vercel logs without an extra alerting setup.
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+    console.error(`[stripe-webhook] Payment failed for customer ${customerId ?? 'unknown'}, invoice ${invoice.id}`);
   }
 
   // Always acknowledge receipt to Stripe
