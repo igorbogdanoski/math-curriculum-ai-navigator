@@ -3,6 +3,7 @@ import { generateStatsSet } from './statsExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ── Math Utilities ─────────────────────────────────────────────────────────────
 
@@ -56,13 +57,14 @@ function chiSquared(observed: number[], expected: number[]): number {
 
 type SubTab = 'normal' | 'regression' | 'bayes' | 'montecarlo' | 'chisq' | 'exercises';
 
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 const SUB_TABS: { id: SubTab; label: string; emoji: string }[] = [
-  { id: 'normal',      label: 'Нормална Дистрибуција', emoji: '🔔' },
-  { id: 'regression',  label: 'Регресија',             emoji: '📈' },
-  { id: 'bayes',       label: 'Баесова Теорема',       emoji: '🔀' },
-  { id: 'montecarlo',  label: 'Монте Карло',           emoji: '🎯' },
-  { id: 'chisq',       label: 'Хи-квадрат Тест',       emoji: '📊' },
-  { id: 'exercises',   label: 'Вежбај',                emoji: '✏️'  },
+  { id: 'normal',      label: 'dataviz.statsLab.tabNormal',     emoji: '🔔' },
+  { id: 'regression',  label: 'dataviz.statsLab.tabRegression', emoji: '📈' },
+  { id: 'bayes',       label: 'dataviz.statsLab.tabBayes',      emoji: '🔀' },
+  { id: 'montecarlo',  label: 'dataviz.statsLab.tabMonteCarlo', emoji: '🎯' },
+  { id: 'chisq',       label: 'dataviz.statsLab.tabChisq',      emoji: '📊' },
+  { id: 'exercises',   label: 'dataviz.statsLab.tabExercises',  emoji: '✏️'  },
 ];
 
 // ── Exercises sub-panel ───────────────────────────────────────────────────────
@@ -83,6 +85,7 @@ function StatsExercisesTab() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function NormalDistribution() {
+  const { t } = useLanguage();
   const [mu, setMu]       = useState(0);
   const [sigma, setSigma] = useState(1);
   const [lo, setLo]       = useState(-1);
@@ -165,11 +168,11 @@ function NormalDistribution() {
           <p className="text-3xl font-black text-indigo-700">{(prob * 100).toFixed(2)}%</p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-gray-400">z-вредности</p>
+          <p className="text-xs text-gray-400">{t('dataviz.statsLab.zValues')}</p>
           <p className="text-lg font-bold text-gray-700">[{zLo}, {zHi}]</p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-gray-400">Веројатност</p>
+          <p className="text-xs text-gray-400">{t('dataviz.statsLab.probability')}</p>
           <p className="text-lg font-bold text-gray-700">{prob}</p>
         </div>
       </div>
@@ -177,10 +180,10 @@ function NormalDistribution() {
       {/* Controls */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'μ (средина)', val: mu, set: setMu, min: -5, max: 5, step: 0.5 },
-          { label: 'σ (стд. отстап.)', val: sigma, set: setSigma, min: 0.3, max: 4, step: 0.1 },
-          { label: 'Долна граница a', val: lo, set: setLo, min: mu - 4 * sigma, max: hi - 0.1, step: 0.1 },
-          { label: 'Горна граница b', val: hi, set: setHi, min: lo + 0.1, max: mu + 4 * sigma, step: 0.1 },
+          { label: t('dataviz.statsLab.muMean'), val: mu, set: setMu, min: -5, max: 5, step: 0.5 },
+          { label: t('dataviz.statsLab.sigmaStdDev'), val: sigma, set: setSigma, min: 0.3, max: 4, step: 0.1 },
+          { label: t('dataviz.calcLab.lowerBound'), val: lo, set: setLo, min: mu - 4 * sigma, max: hi - 0.1, step: 0.1 },
+          { label: t('dataviz.calcLab.upperBound'), val: hi, set: setHi, min: lo + 0.1, max: mu + 4 * sigma, step: 0.1 },
         ].map(({ label, val, set, min, max, step }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-200 p-3">
             <p className="text-xs font-bold text-gray-500 mb-1">{label}</p>
@@ -194,7 +197,7 @@ function NormalDistribution() {
 
       {/* Quick σ presets */}
       <div className="flex gap-2 flex-wrap">
-        <span className="text-xs font-bold text-gray-400 self-center">Правило:</span>
+        <span className="text-xs font-bold text-gray-400 self-center">{t('dataviz.statsLab.quickRule')}</span>
         {[
           { label: '68% (1σ)', a: -1, b: 1 },
           { label: '95% (2σ)', a: -2, b: 2 },
@@ -221,6 +224,7 @@ const DEFAULT_POINTS = [
 ];
 
 function RegressionLab() {
+  const { t } = useLanguage();
   const [points, setPoints] = useState(DEFAULT_POINTS);
   const [newX, setNewX] = useState('');
   const [newY, setNewY] = useState('');
@@ -289,7 +293,7 @@ function RegressionLab() {
         ))}
         {/* Hint */}
         <text x={padL + plotW / 2} y={padT - 6} fontSize={10} fill="#94a3b8" textAnchor="middle">
-          Кликни на графикот за да додадеш точки · Кликни на точка за бришење
+          {t('dataviz.statsLab.regressionHint')}
         </text>
       </svg>
 
@@ -297,10 +301,10 @@ function RegressionLab() {
       {reg ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Наклон b', val: round4(reg.b), color: 'text-red-600' },
-            { label: 'Пресечок a', val: round4(reg.a), color: 'text-blue-600' },
-            { label: 'R² (корел.²)', val: round4(reg.r2), color: 'text-emerald-600' },
-            { label: 'r (Pearson)', val: round4(reg.r), color: 'text-violet-600' },
+            { label: t('dataviz.statsLab.slopeB'), val: round4(reg.b), color: 'text-red-600' },
+            { label: t('dataviz.statsLab.interceptA'), val: round4(reg.a), color: 'text-blue-600' },
+            { label: t('dataviz.statsLab.rSquared'), val: round4(reg.r2), color: 'text-emerald-600' },
+            { label: t('dataviz.statsLab.rPearson'), val: round4(reg.r), color: 'text-violet-600' },
           ].map(s => (
             <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
               <p className="text-xs text-gray-400 font-semibold">{s.label}</p>
@@ -310,12 +314,12 @@ function RegressionLab() {
           <div className="col-span-2 md:col-span-4 bg-gray-50 rounded-xl border border-gray-200 p-3 text-center">
             <p className="text-sm font-bold text-gray-700">ŷ = {round4(reg.a)} + {round4(reg.b)} · x</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              Корелација: {Math.abs(reg.r) > 0.9 ? '🔴 Многу силна' : Math.abs(reg.r) > 0.7 ? '🟠 Силна' : Math.abs(reg.r) > 0.5 ? '🟡 Умерена' : '⚪ Слаба'} {reg.r > 0 ? 'позитивна' : 'негативна'}
+              {t('dataviz.statsLab.correlationLabel')} {Math.abs(reg.r) > 0.9 ? t('dataviz.statsLab.veryStrong') : Math.abs(reg.r) > 0.7 ? t('dataviz.statsLab.strong') : Math.abs(reg.r) > 0.5 ? t('dataviz.statsLab.moderate') : t('dataviz.statsLab.weak')} {reg.r > 0 ? t('dataviz.statsLab.positive') : t('dataviz.statsLab.negative')}
             </p>
           </div>
         </div>
       ) : (
-        <p className="text-center text-sm text-gray-400">Додај барем 2 точки</p>
+        <p className="text-center text-sm text-gray-400">{t('dataviz.statsLab.addAtLeast2Points')}</p>
       )}
 
       {/* Manual add + reset */}
@@ -328,11 +332,11 @@ function RegressionLab() {
           const x = parseFloat(newX), y = parseFloat(newY);
           if (!isNaN(x) && !isNaN(y)) { setPoints(p => [...p, { x, y }]); setNewX(''); setNewY(''); }
         }} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
-          + Точка
+          {t('dataviz.statsLab.addPointBtn')}
         </button>
         <button type="button" onClick={() => setPoints(DEFAULT_POINTS)}
           className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition ml-auto">
-          Ресет
+          {t('dataviz.statsLab.resetBtn')}
         </button>
       </div>
     </div>
@@ -344,6 +348,7 @@ function RegressionLab() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function BayesLab() {
+  const { t } = useLanguage();
   const [pA,   setPa]   = useState(0.3);
   const [pBgA, setPBgA] = useState(0.9);
   const [pBgnA,setPBgnA]= useState(0.2);
@@ -361,7 +366,7 @@ function BayesLab() {
     <div className="space-y-5">
       {/* Visual grid of 100 icons */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">100 случаи — визуелна фреквенција</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">{t('dataviz.statsLab.bayes100Cases')}</p>
         <div className="flex flex-wrap gap-0.5">
           {Array.from({ length: N }, (_, i) => {
             const isA = i < nA;
@@ -369,21 +374,21 @@ function BayesLab() {
             const isNotAandB = i >= nA && i < nA + nNotAandB;
             const color = isAandB ? 'bg-indigo-500' : isNotAandB ? 'bg-rose-400' : isA ? 'bg-indigo-200' : 'bg-gray-200';
             return <span key={i} className={`w-4 h-4 rounded-sm ${color} transition-colors`} title={
-              isAandB ? 'A и B' : isNotAandB ? '¬A и B' : isA ? 'A и ¬B' : '¬A и ¬B'
+              isAandB ? t('dataviz.statsLab.bayesAandB') : isNotAandB ? t('dataviz.statsLab.bayesNotAandB') : isA ? t('dataviz.statsLab.bayesAandNotB') : t('dataviz.statsLab.bayesNotAandNotB')
             } />;
           })}
         </div>
         <div className="flex gap-4 mt-3 flex-wrap text-xs">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-indigo-500 inline-block" /> A и B ({nAandB})</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-rose-400 inline-block" /> ¬A и B ({nNotAandB})</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-indigo-200 inline-block" /> A и ¬B ({nA - nAandB})</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-200 inline-block" /> ¬A и ¬B ({nNotA - nNotAandB})</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-indigo-500 inline-block" /> {t('dataviz.statsLab.bayesAandB')} ({nAandB})</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-rose-400 inline-block" /> {t('dataviz.statsLab.bayesNotAandB')} ({nNotAandB})</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-indigo-200 inline-block" /> {t('dataviz.statsLab.bayesAandNotB')} ({nA - nAandB})</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-200 inline-block" /> {t('dataviz.statsLab.bayesNotAandNotB')} ({nNotA - nNotAandB})</span>
         </div>
       </div>
 
       {/* Result */}
       <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 text-center">
-        <p className="text-sm font-bold text-indigo-600 mb-1">Баесова Теорема: P(A|B)</p>
+        <p className="text-sm font-bold text-indigo-600 mb-1">{t('dataviz.statsLab.bayesTheoremTitle')}</p>
         <p className="text-xs text-gray-500 mb-3">= P(B|A)·P(A) / P(B) = {round4(pBgA)}·{round4(pA)} / {round4(pB)}</p>
         <p className="text-5xl font-black text-indigo-700">{(pAgB * 100).toFixed(1)}%</p>
         <p className="text-xs text-gray-400 mt-2">P(B) = {round4(pB)}</p>
@@ -392,9 +397,9 @@ function BayesLab() {
       {/* Sliders */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'P(A) — Приоритет', val: pA, set: setPa },
-          { label: 'P(B|A) — Веројатност да се случи B ако A', val: pBgA, set: setPBgA },
-          { label: 'P(B|¬A) — Лажно позитивни', val: pBgnA, set: setPBgnA },
+          { label: t('dataviz.statsLab.bayesPriorA'), val: pA, set: setPa },
+          { label: t('dataviz.statsLab.bayesLikelihoodBgA'), val: pBgA, set: setPBgA },
+          { label: t('dataviz.statsLab.bayesFalsePositive'), val: pBgnA, set: setPBgnA },
         ].map(({ label, val, set }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-200 p-3">
             <p className="text-xs font-bold text-gray-500 mb-1">{label}</p>
@@ -415,6 +420,7 @@ function BayesLab() {
 interface MCPoint { x: number; y: number; inside: boolean; }
 
 function MonteCarlo() {
+  const { t } = useLanguage();
   const [points, setPoints]   = useState<MCPoint[]>([]);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -468,39 +474,39 @@ function MonteCarlo() {
         {/* Stats */}
         <div className="space-y-3 min-w-[180px]">
           <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-center">
-            <p className="text-xs font-bold text-indigo-500 mb-1">Проценка на π</p>
+            <p className="text-xs font-bold text-indigo-500 mb-1">{t('dataviz.statsLab.piEstimate')}</p>
             <p className="text-4xl font-black text-indigo-700">{piEst || '–'}</p>
-            <p className="text-xs text-gray-400 mt-1">Точно: 3.14159…</p>
-            <p className="text-xs text-gray-400">Грешка: {piEst ? Math.abs(piEst - Math.PI).toFixed(4) : '–'}</p>
+            <p className="text-xs text-gray-400 mt-1">{t('dataviz.statsLab.exactPi')}</p>
+            <p className="text-xs text-gray-400">{t('dataviz.statsLab.mcError')} {piEst ? Math.abs(piEst - Math.PI).toFixed(4) : '–'}</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-3">
             <div className="flex justify-between text-sm">
-              <span className="text-indigo-600 font-semibold">● Внатре:</span><span className="font-bold">{inside}</span>
+              <span className="text-indigo-600 font-semibold">● {t('dataviz.statsLab.inside')}</span><span className="font-bold">{inside}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-red-400 font-semibold">● Надвор:</span><span className="font-bold">{points.length - inside}</span>
+              <span className="text-red-400 font-semibold">● {t('dataviz.statsLab.outside')}</span><span className="font-bold">{points.length - inside}</span>
             </div>
             <div className="flex justify-between text-sm mt-1 border-t border-gray-100 pt-1">
-              <span className="font-semibold text-gray-600">Вкупно:</span><span className="font-bold">{points.length}</span>
+              <span className="font-semibold text-gray-600">{t('dataviz.statsLab.total')}</span><span className="font-bold">{points.length}</span>
             </div>
           </div>
           <div className="flex flex-col gap-2">
             <button type="button" onClick={() => setRunning(r => !r)}
               className={`w-full py-2 rounded-xl font-bold text-sm transition ${running ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-              {running ? '⏸ Пауза' : '▶ Старт'}
+              {running ? t('dataviz.statsLab.pause') : t('dataviz.statsLab.start')}
             </button>
             <button type="button" onClick={() => { addPoints(100); }}
               className="w-full py-2 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
-              +100 точки
+              {t('dataviz.statsLab.add100Points')}
             </button>
             <button type="button" onClick={() => { setPoints([]); setRunning(false); }}
               className="w-full py-2 rounded-xl font-bold text-sm bg-gray-100 text-gray-500 hover:bg-gray-200 transition">
-              Ресет
+              {t('dataviz.statsLab.resetBtn')}
             </button>
           </div>
         </div>
       </div>
-      <p className="text-center text-xs text-gray-400">π ≈ 4 × (точки во кружница) / (вкупно точки)</p>
+      <p className="text-center text-xs text-gray-400">{t('dataviz.statsLab.piFormula')}</p>
     </div>
   );
 }
@@ -510,6 +516,7 @@ function MonteCarlo() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function ChiSquaredLab() {
+  const { t } = useLanguage();
   const [rows, setRows] = useState([
     { category: 'A', observed: 30, expected: 25 },
     { category: 'B', observed: 20, expected: 25 },
@@ -560,9 +567,9 @@ function ChiSquaredLab() {
           })}
           <line x1={pad} y1={H - pad} x2={pad + plotW} y2={H - pad} stroke="#cbd5e1" strokeWidth={1.5} />
           <rect x={pad + plotW - 120} y={10} width={10} height={10} fill="#6366f1" rx={2} />
-          <text x={pad + plotW - 106} y={19} fontSize={10} fill="#475569">Забележано</text>
+          <text x={pad + plotW - 106} y={19} fontSize={10} fill="#475569">{t('dataviz.statsLab.observed')}</text>
           <rect x={pad + plotW - 120} y={26} width={10} height={10} fill="#f59e0b" rx={2} />
-          <text x={pad + plotW - 106} y={35} fontSize={10} fill="#475569">Очекувано</text>
+          <text x={pad + plotW - 106} y={35} fontSize={10} fill="#475569">{t('dataviz.statsLab.expected')}</text>
         </svg>
       </div>
 
@@ -571,9 +578,9 @@ function ChiSquaredLab() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-bold text-gray-500">Категорија</th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-indigo-600">Забележано (O)</th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-amber-600">Очекувано (E)</th>
+              <th className="px-3 py-2 text-left text-xs font-bold text-gray-500">{t('dataviz.statsLab.category')}</th>
+              <th className="px-3 py-2 text-center text-xs font-bold text-indigo-600">{t('dataviz.statsLab.observedO')}</th>
+              <th className="px-3 py-2 text-center text-xs font-bold text-amber-600">{t('dataviz.statsLab.expectedE')}</th>
               <th className="px-3 py-2 text-center text-xs font-bold text-gray-500">(O−E)²/E</th>
               <th className="px-2 py-2" />
             </tr>
@@ -609,7 +616,7 @@ function ChiSquaredLab() {
         <div className="p-2 flex justify-between items-center">
           <button type="button" onClick={addRow}
             className="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
-            + Категорија
+            {t('dataviz.statsLab.addCategory')}
           </button>
           <span className="text-xs text-gray-400">n = {total}</span>
         </div>
@@ -619,20 +626,20 @@ function ChiSquaredLab() {
       <div className={`rounded-xl border p-4 text-center ${reject ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'}`}>
         <div className="flex justify-center gap-8 flex-wrap">
           <div>
-            <p className="text-xs font-bold text-gray-500">χ² статистика</p>
+            <p className="text-xs font-bold text-gray-500">{t('dataviz.statsLab.chiSqStat')}</p>
             <p className="text-3xl font-black text-gray-800">{round4(chi2)}</p>
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-500">Критична вредност (α=0.05)</p>
+            <p className="text-xs font-bold text-gray-500">{t('dataviz.statsLab.criticalValue')}</p>
             <p className="text-3xl font-black text-gray-800">{critical}</p>
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-500">df (степени слободи)</p>
+            <p className="text-xs font-bold text-gray-500">{t('dataviz.statsLab.dfLabel')}</p>
             <p className="text-3xl font-black text-gray-800">{df}</p>
           </div>
         </div>
         <p className={`mt-3 font-bold text-lg ${reject ? 'text-rose-700' : 'text-emerald-700'}`}>
-          {reject ? '❌ Ја отфрламе H₀ — постои значајна разлика' : '✅ Не ја отфрламе H₀ — разликите се случајни'}
+          {reject ? t('dataviz.statsLab.rejectH0') : t('dataviz.statsLab.failToRejectH0')}
         </p>
       </div>
     </div>
@@ -644,18 +651,19 @@ function ChiSquaredLab() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const SecondaryStatsLab: React.FC = () => {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<SubTab>('normal');
 
   return (
     <div className="space-y-5">
       {/* Sub-tab bar */}
       <div className="flex flex-wrap gap-2">
-        {SUB_TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
+        {SUB_TABS.map(st => (
+          <button key={st.id} type="button" onClick={() => setTab(st.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold border transition ${
-              tab === t.id ? 'bg-violet-600 text-white border-violet-600 shadow' : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-700'
+              tab === st.id ? 'bg-violet-600 text-white border-violet-600 shadow' : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-700'
             }`}>
-            <span>{t.emoji}</span> {t.label}
+            <span>{st.emoji}</span> {t(st.label)}
           </button>
         ))}
       </div>
