@@ -266,6 +266,7 @@ export default defineConfig(({ mode }) => {
               'assets/vendor-xlsx-*.js',       // xlsx — Excel export only
               'assets/vendor-docx-*.js',       // docx — Word export only
               'assets/vendor-konva-*.js',      // konva/react-konva — DrawingCanvas only
+              'assets/vendor-codemirror-*.js', // CodeMirror — TikzLab editor only
             ],
             // Show offline page when navigation request fails
             navigateFallback: '/offline.html',
@@ -278,7 +279,7 @@ export default defineConfig(({ mode }) => {
                 // Large on-demand chunks (matura data, mammoth, mathlive, pdf)
                 // are excluded from precache. Cache them at runtime on first use
                 // so subsequent offline visits still work.
-                urlPattern: /\/assets\/(data-matura|data-curriculum|data-secondary-curriculum|vendor-mammoth|vendor-pdf|vendor-mathlive|vendor-capture|vendor-pptx|vendor-xlsx|vendor-docx|vendor-konva)-[^/]+\.js$/,
+                urlPattern: /\/assets\/(data-matura|data-curriculum|data-secondary-curriculum|vendor-mammoth|vendor-pdf|vendor-mathlive|vendor-capture|vendor-pptx|vendor-xlsx|vendor-docx|vendor-konva|vendor-codemirror)-[^/]+\.js$/,
                 handler: 'NetworkFirst',
                 options: {
                   cacheName: 'large-chunks-cache',
@@ -438,6 +439,12 @@ export default defineConfig(({ mode }) => {
               if (id.includes('katex')) return 'vendor-katex';
               if (id.includes('marked') || id.includes('remark') || id.includes('rehype') || id.includes('unified') || id.includes('mdast') || id.includes('micromark')) return 'vendor-markdown';
               if (id.includes('date-fns') || id.includes('dayjs')) return 'vendor-dates';
+              // Wave 18: CodeMirror (TikzLab's editor) must NOT land in the generic 'vendor'
+              // chunk below — that chunk is also reached from eager, non-lazy imports elsewhere,
+              // so anything placed there loads on first page paint regardless of this rule's
+              // own laziness. A dedicated chunk is only ever requested by TikzLab's own lazy
+              // dynamic import (see TikzLabLazy in DataVizStudioView.tsx).
+              if (id.includes('@uiw/react-codemirror') || id.includes('@codemirror/') || id.includes('/codemirror/') || id.includes('@lezer/') || id.includes('style-mod') || id.includes('w3c-keyname') || id.includes('crelt')) return 'vendor-codemirror';
               // framer-motion: not in dependencies — rule removed
               // NOTE: do not split React core / react-dom — proven TDZ runtime errors with cyclic vendor imports.
               return 'vendor';

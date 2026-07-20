@@ -24,6 +24,24 @@ vi.mock('../../utils/tikzRenderJob', () => ({
   ),
 }));
 
+// CodeMirror (Wave 18) renders a contenteditable div driven by real browser layout APIs
+// (getClientRects, ResizeObserver, ...) that jsdom doesn't implement — real keystroke
+// simulation is flaky/unsupported there. TikzLab's own logic under test (debounce, job-ID
+// race protection) only depends on receiving `value`/`onChange`, not on CodeMirror's actual
+// rendering, so a plain-textarea stub keeps the rest of this file's fireEvent-based tests
+// unchanged while still verifying TikzLab wires the editor up correctly (see the props-capture
+// test below). Real syntax highlighting / editing behavior is covered by browser verification.
+let lastCodeMirrorProps: { value: string; extensions: unknown[]; theme: string } | null = null;
+vi.mock('@uiw/react-codemirror', () => ({
+  default: (props: { value: string; onChange?: (v: string) => void; extensions: unknown[]; theme: string }) => {
+    lastCodeMirrorProps = { value: props.value, extensions: props.extensions, theme: props.theme };
+    return React.createElement('textarea', {
+      value: props.value,
+      onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => props.onChange?.(e.target.value),
+    });
+  },
+}));
+
 // Raw, untranslated i18n keys must never leak into the rendered UI.
 const RAW_KEY_PATTERN = /\btikz\.[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)+\b/;
 
@@ -149,6 +167,14 @@ describe('TikzLab', () => {
     expect(document.body.innerHTML).toContain('data-job="good"');
     expect(document.body.textContent).not.toMatch(RAW_KEY_PATTERN);
     vi.useRealTimers();
+  });
+
+  it('wires the CodeMirror editor with a dark theme and a language extension', () => {
+    renderLab();
+    expect(lastCodeMirrorProps).not.toBeNull();
+    expect(lastCodeMirrorProps?.theme).toBe('dark');
+    expect(lastCodeMirrorProps?.extensions.length).toBeGreaterThan(0);
+    expect(lastCodeMirrorProps?.value.length).toBeGreaterThan(0);
   });
 
   it('grade filter narrows the sidebar to only primary or only secondary templates', () => {

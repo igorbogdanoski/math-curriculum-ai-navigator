@@ -1,10 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Download, Image as ImageIcon, PlusCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import CodeMirror from '@uiw/react-codemirror';
+import { StreamLanguage } from '@codemirror/language';
+import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { tikzTemplates, type TikzTemplate } from '../../data/tikzTemplates';
 import { renderTikzToContainer } from '../../utils/tikzRenderJob';
 import { useDebouncedValue } from '../../hooks/useDebounce';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useNotification } from '../../contexts/NotificationContext';
+
+// Wave 18: CodeMirror is only ever imported from this file, which is itself lazy-loaded
+// (see TikzLabLazy in DataVizStudioView.tsx) — see vite.config.ts's manualChunks 'vendor-codemirror'
+// bucket, which keeps it out of the eagerly-loaded generic 'vendor' chunk.
+const tikzLanguage = StreamLanguage.define(stex);
 
 const DEBOUNCE_MS = 750;
 
@@ -226,12 +234,17 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
       {/* ── Middle: code editor (35%, dark) ── */}
       <div className="md:w-[35%] flex flex-col">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t('tikz.editorLabel')}</p>
-        <textarea
-          spellCheck={false}
-          value={code}
-          onChange={e => setCode(e.target.value)}
-          className="flex-1 min-h-[480px] w-full bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed p-4 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-        />
+        <div className="flex-1 min-h-[480px] rounded-xl border border-slate-700 overflow-hidden">
+          <CodeMirror
+            value={code}
+            onChange={value => setCode(value)}
+            theme="dark"
+            height="480px"
+            extensions={[tikzLanguage]}
+            basicSetup={{ lineNumbers: true, bracketMatching: true, closeBrackets: true, highlightActiveLine: false }}
+            className="text-xs [&_.cm-editor]:h-full"
+          />
+        </div>
       </div>
 
       {/* ── Right: preview + export (40%) ── */}
