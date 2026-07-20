@@ -21,7 +21,17 @@ interface TikzLabProps {
 
 const CATEGORY_LABEL_KEYS: Record<string, string> = {
   geometry: 'tikz.category.geometry',
+  trigonometry: 'tikz.category.trigonometry',
+  'analytic-geometry': 'tikz.category.analytic-geometry',
+  stereometry: 'tikz.category.stereometry',
 };
+
+type GradeFilter = 'all' | 'primary' | 'secondary';
+const GRADE_FILTER_OPTIONS: { value: GradeFilter; labelKey: string }[] = [
+  { value: 'all', labelKey: 'tikz.gradeFilter.all' },
+  { value: 'primary', labelKey: 'tikz.gradeFilter.primary' },
+  { value: 'secondary', labelKey: 'tikz.gradeFilter.secondary' },
+];
 
 /** SVG (with pt-based width/height) -> upscaled PNG data URL, for export/insert/print quality. */
 async function svgToPngDataUrl(svg: string, scale = 2): Promise<string> {
@@ -53,6 +63,7 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
   const { addNotification } = useNotification();
 
   const [search, setSearch] = useState('');
+  const [gradeFilter, setGradeFilter] = useState<GradeFilter>('all');
   const [activeTemplateId, setActiveTemplateId] = useState<string>(tikzTemplates[0]?.id ?? '');
   const [code, setCode] = useState<string>(tikzTemplates[0]?.code ?? '');
   const [svg, setSvg] = useState<string | null>(null);
@@ -69,16 +80,17 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
 
   const groupedTemplates = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const byGrade = gradeFilter === 'all' ? tikzTemplates : tikzTemplates.filter(tpl => tpl.gradeLevel.includes(gradeFilter));
     const filtered = q
-      ? tikzTemplates.filter(tpl =>
+      ? byGrade.filter(tpl =>
           t(tpl.titleKey).toLowerCase().includes(q) || t(tpl.descKey).toLowerCase().includes(q),
         )
-      : tikzTemplates;
+      : byGrade;
     return filtered.reduce<Record<string, TikzTemplate[]>>((acc, tpl) => {
       (acc[tpl.category] ??= []).push(tpl);
       return acc;
     }, {});
-  }, [search, t]);
+  }, [search, gradeFilter, t]);
 
   useEffect(() => {
     if (!stagingRef.current) return;
@@ -165,6 +177,20 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert }) => {
             placeholder={t('tikz.searchTemplates')}
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
+        </div>
+        <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg" role="group" aria-label={t('tikz.gradeFilter.label')}>
+          {GRADE_FILTER_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setGradeFilter(opt.value)}
+              className={`flex-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${
+                gradeFilter === opt.value ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t(opt.labelKey)}
+            </button>
+          ))}
         </div>
         <div className="space-y-4 overflow-y-auto max-h-[500px] pr-1">
           {Object.entries(groupedTemplates).map(([category, templates]) => (

@@ -151,6 +151,27 @@ describe('TikzLab', () => {
     vi.useRealTimers();
   });
 
+  it('grade filter narrows the sidebar to only primary or only secondary templates', () => {
+    renderLab();
+    const secondaryOnlyLabel = 'Тригонометрија во правоаголен триаголник'; // right-triangle-trig, secondary-only
+    const primaryOnlyLabel = 'Слични триаголници'; // similar-triangles, primary-only
+
+    expect(screen.getByText(secondaryOnlyLabel)).toBeTruthy();
+    expect(screen.getByText(primaryOnlyLabel)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Основно' }));
+    expect(screen.queryByText(secondaryOnlyLabel)).toBeNull();
+    expect(screen.getByText(primaryOnlyLabel)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Средно' }));
+    expect(screen.getByText(secondaryOnlyLabel)).toBeTruthy();
+    expect(screen.queryByText(primaryOnlyLabel)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сите' }));
+    expect(screen.getByText(secondaryOnlyLabel)).toBeTruthy();
+    expect(screen.getByText(primaryOnlyLabel)).toBeTruthy();
+  });
+
   it('clicking a template switches the editor content and triggers a new render', async () => {
     renderLab();
     const templateButtons = screen.getAllByRole('button').filter(b => b.textContent && !b.textContent.includes('SVG') && !b.textContent.includes('PNG'));

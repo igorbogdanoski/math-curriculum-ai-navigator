@@ -117,6 +117,9 @@ export const tikzTemplates: TikzTemplate[] = [
       // (changing it affects TikzLab's grade filtering, out of scope for a tagging-only change).
       primaryStandardCodes: ['III-А.12'],
       primaryTopicIds: ['g8-off-2'],
+      // Reused for gymnasium's "2Д форми — агли и особини" (central/inscribed angle,
+      // Thales) rather than duplicating a near-identical template — Wave 17.
+      secondaryConceptIds: ['gym10-c4-3'],
     },
     code: `\\usetikzlibrary{calc}
 \\begin{tikzpicture}[scale=1.3]
@@ -308,6 +311,9 @@ export const tikzTemplates: TikzTemplate[] = [
     curriculumTags: {
       primaryStandardCodes: ['III-А.16'],
       primaryTopicIds: ['g9-off-2'],
+      // Reused for gymnasium's "Сличност на триаголници" (Wave 17) — same concept,
+      // no need for a near-duplicate template.
+      secondaryConceptIds: ['gym10-c4-4'],
     },
     code: `\\usetikzlibrary{calc}
 \\begin{tikzpicture}[scale=0.7]
@@ -332,6 +338,211 @@ export const tikzTemplates: TikzTemplate[] = [
   \\node[below] at ($(A2)!0.5!(B2)$) {$k\\cdot a$};
 
   \\node[font=\\Large] at (5,1) {$\\sim$};
+\\end{tikzpicture}`,
+  },
+  // --- Wave 17 (2026-07-20, drifting-snuggling-wave.md): secondary/gymnasium templates ---
+  {
+    id: 'right-triangle-trig',
+    titleKey: 'tikz.template.rightTriangleTrig.title',
+    descKey: 'tikz.template.rightTriangleTrig.desc',
+    category: 'trigonometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym10-c4-2', 'voc3-11-c1-1', 'voc4-11-c2-1'],
+    },
+    code: `\\usetikzlibrary{angles,quotes}
+\\begin{tikzpicture}[scale=1.3,>=stealth]
+  \\coordinate (A) at (0,0);
+  \\coordinate (B) at (4,0);
+  \\coordinate (C) at (0,3);
+  \\draw[very thick] (A) -- (B) -- (C) -- cycle;
+  \\draw (0,0.4) -- (0.4,0.4) -- (0.4,0);
+  \\node[below left] at (A) {$A$};
+  \\node[below right] at (B) {$B$};
+  \\node[above left] at (C) {$C$};
+  \\node[below] at (2,0) {$b$};
+  \\node[left] at (0,1.5) {$a$};
+  \\node[above right] at (2,1.5) {$c$};
+  \\pic [draw, angle radius=8mm, "$\\theta$"] {angle=C--B--A};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'unit-circle',
+    titleKey: 'tikz.template.unitCircle.title',
+    descKey: 'tikz.template.unitCircle.desc',
+    category: 'trigonometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym12-c2-1'],
+    },
+    code: `\\usetikzlibrary{angles,quotes}
+\\begin{tikzpicture}[scale=1.8,>=stealth]
+  \\draw[->] (-1.4,0) -- (1.4,0) node[right] {$x$};
+  \\draw[->] (0,-1.4) -- (0,1.4) node[above] {$y$};
+  \\draw[very thick] (0,0) circle (1);
+  \\coordinate (O) at (0,0);
+  \\coordinate (X1) at (1,0);
+  \\coordinate (P) at (35:1);
+  \\draw[very thick,blue] (O) -- (P) node[midway,above right] {$1$};
+  \\draw[dashed] (P) -- (P |- O) node[midway,right] {$\\sin\\theta$};
+  \\draw[dashed] (O) -- (P -| O) node[midway,below] {$\\cos\\theta$};
+  \\pic [draw, angle radius=6mm, "$\\theta$"] {angle=X1--O--P};
+  \\fill (P) circle (1pt);
+  \\node[above right] at (P) {$P$};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'thales-theorem',
+    titleKey: 'tikz.template.thalesTheorem.title',
+    descKey: 'tikz.template.thalesTheorem.desc',
+    category: 'geometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym10-c4-3'],
+    },
+    code: `\\usetikzlibrary{angles,quotes}
+\\begin{tikzpicture}[scale=1.3]
+  \\coordinate (O) at (0,0);
+  \\draw[very thick] (O) circle (2);
+  \\coordinate (A) at (-2,0);
+  \\coordinate (B) at (2,0);
+  \\draw[very thick] (A) -- (B);
+  \\node[below] at (A) {$A$};
+  \\node[below] at (B) {$B$};
+  \\fill (O) circle (1pt);
+  \\node[below] at (O) {$O$};
+  \\coordinate (C) at (110:2);
+  \\draw[very thick,blue] (A) -- (C) -- (B) -- cycle;
+  \\node[above] at (C) {$C$};
+  \\pic [draw, angle radius=6mm, "$90^\\circ$"] {angle=A--C--B};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'analytic-line-two-points',
+    titleKey: 'tikz.template.analyticLineTwoPoints.title',
+    descKey: 'tikz.template.analyticLineTwoPoints.desc',
+    category: 'analytic-geometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym12-c4-1', 'gym12-c4-2', 'voc4-12-c4-2'],
+    },
+    code: `\\usetikzlibrary{calc}
+\\begin{tikzpicture}[scale=0.9,>=stealth]
+  \\draw[->] (-1,0) -- (6,0) node[right] {$x$};
+  \\draw[->] (0,-1) -- (0,5) node[above] {$y$};
+  \\coordinate (A) at (1,1);
+  \\coordinate (B) at (4,4);
+  \\fill (A) circle (1.5pt);
+  \\fill (B) circle (1.5pt);
+  \\node[left] at (A) {$A(x_1,y_1)$};
+  \\node[above right] at (B) {$B(x_2,y_2)$};
+  \\draw[very thick,blue] ($(A)!-0.3!(B)$) -- ($(B)!-0.3!(A)$);
+  \\draw[dashed] (A) -- (B |- A) node[midway,below] {$\\Delta x$};
+  \\draw[dashed] (B |- A) -- (B) node[midway,right] {$\\Delta y$};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'ellipse-standard-form',
+    titleKey: 'tikz.template.ellipseStandardForm.title',
+    descKey: 'tikz.template.ellipseStandardForm.desc',
+    category: 'analytic-geometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym12-c4-3'],
+    },
+    code: `\\begin{tikzpicture}[scale=1.0]
+  \\draw[->] (-3.5,0) -- (3.5,0) node[right] {$x$};
+  \\draw[->] (0,-2.2) -- (0,2.2) node[above] {$y$};
+  \\draw[very thick,blue] (0,0) ellipse (3 and 1.8);
+  \\fill (0,0) circle (1pt);
+  \\node[below left] at (0,0) {$O$};
+  \\node[below] at (3,0) {$a$};
+  \\node[left] at (0,1.8) {$b$};
+  \\fill (2.4,0) circle (1.2pt);
+  \\fill (-2.4,0) circle (1.2pt);
+  \\node[below] at (2.4,-0.15) {$F_1$};
+  \\node[below] at (-2.4,-0.15) {$F_2$};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'vector-addition',
+    titleKey: 'tikz.template.vectorAddition.title',
+    descKey: 'tikz.template.vectorAddition.desc',
+    category: 'geometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym10-c4-1', 'gym-eag11-c2-1'],
+    },
+    code: `\\usetikzlibrary{calc}
+\\begin{tikzpicture}[scale=1.0,>=stealth]
+  \\coordinate (O) at (0,0);
+  \\coordinate (U) at (3,1);
+  \\coordinate (V) at (1,2.5);
+  \\draw[->,very thick,blue] (O) -- (U) node[midway,below right] {$\\vec{u}$};
+  \\draw[->,very thick,red] (O) -- (V) node[midway,above left] {$\\vec{v}$};
+  \\draw[dashed] (U) -- ($(U)+(V)$);
+  \\draw[dashed] (V) -- ($(U)+(V)$);
+  \\draw[->,very thick] (O) -- ($(U)+(V)$) node[midway,above right] {$\\vec{u}+\\vec{v}$};
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'pyramid-cross-section',
+    titleKey: 'tikz.template.pyramidCrossSection.title',
+    descKey: 'tikz.template.pyramidCrossSection.desc',
+    category: 'stereometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym11n-c5-3', 'gym11n-c6-2'],
+    },
+    code: `\\usetikzlibrary{calc}
+\\begin{tikzpicture}[scale=1.0]
+  \\coordinate (A) at (-2,0);
+  \\coordinate (B) at (0,-0.8);
+  \\coordinate (C) at (2,0);
+  \\coordinate (D) at (0,0.8);
+  \\coordinate (V) at (0,4);
+  \\draw[dashed] (A) -- (D) -- (C);
+  \\draw[very thick] (A) -- (B) -- (C);
+  \\draw[very thick] (A) -- (V);
+  \\draw[very thick] (B) -- (V);
+  \\draw[very thick] (C) -- (V);
+  \\draw[very thick,dashed] (D) -- (V);
+  \\node[left] at (A) {$A$};
+  \\node[below] at (B) {$B$};
+  \\node[right] at (C) {$C$};
+  \\node[above] at (D) {$D$};
+  \\node[above] at (V) {$V$};
+  \\coordinate (A2) at ($(A)!0.5!(V)$);
+  \\coordinate (B2) at ($(B)!0.5!(V)$);
+  \\coordinate (C2) at ($(C)!0.5!(V)$);
+  \\coordinate (D2) at ($(D)!0.5!(V)$);
+  \\fill[blue!15] (A2) -- (B2) -- (C2) -- (D2) -- cycle;
+  \\draw[thick,blue,dashed] (A2) -- (D2) -- (C2);
+  \\draw[thick,blue] (A2) -- (B2) -- (C2);
+\\end{tikzpicture}`,
+  },
+  {
+    id: 'cone-parts',
+    titleKey: 'tikz.template.coneParts.title',
+    descKey: 'tikz.template.coneParts.desc',
+    category: 'stereometry',
+    gradeLevel: ['secondary'],
+    curriculumTags: {
+      secondaryConceptIds: ['gym11n-c6-3', 'voc3-11-c4-2'],
+    },
+    code: `\\usetikzlibrary{calc}
+\\begin{tikzpicture}[scale=1.0]
+  \\coordinate (V) at (0,4);
+  \\coordinate (O) at (0,0);
+  \\coordinate (Rpt) at (2,0);
+  \\draw[very thick] (O) ellipse (2 and 0.6);
+  \\draw[very thick] (V) -- (-2,0);
+  \\draw[very thick] (V) -- (2,0);
+  \\draw[dashed] (V) -- (O) node[midway,right] {$h$};
+  \\fill (O) circle (1pt);
+  \\draw[dashed] (O) -- (Rpt) node[midway,above] {$r$};
+  \\node[above right] at ($(V)!0.5!(Rpt)$) {$l$};
+  \\node[above] at (V) {$V$};
 \\end{tikzpicture}`,
   },
 ];
