@@ -30,12 +30,35 @@ interface Props {
 }
 
 const MODELS: TeachingModel[] = ['5E', 'PBL', 'ZPD', 'Cooperative', 'Traditional'];
-const MODEL_DESC: Record<TeachingModel, string> = {
-  '5E': 'Engage → Explore → Explain → Elaborate → Evaluate',
-  'PBL': 'Project-Based Learning — реален проблем',
-  'ZPD': 'Зона на блискиот развој — скеле',
-  'Cooperative': 'Тимска работа — структурирани групи',
-  'Traditional': 'Директна настава — изложба + вежбање',
+const MODEL_DESC: Record<string, Record<TeachingModel, string>> = {
+  mk: {
+    '5E': 'Engage → Explore → Explain → Elaborate → Evaluate',
+    'PBL': 'Project-Based Learning — реален проблем',
+    'ZPD': 'Зона на блискиот развој — скеле',
+    'Cooperative': 'Тимска работа — структурирани групи',
+    'Traditional': 'Директна настава — изложба + вежбање',
+  },
+  sq: {
+    '5E': 'Engage → Explore → Explain → Elaborate → Evaluate',
+    'PBL': 'Project-Based Learning — problem real',
+    'ZPD': 'Zona e zhvillimit proksimal — skela',
+    'Cooperative': 'Punë ekipore — grupe të strukturuara',
+    'Traditional': 'Mësim direkt — ekspozim + ushtrime',
+  },
+  tr: {
+    '5E': 'Engage → Explore → Explain → Elaborate → Evaluate',
+    'PBL': 'Proje Tabanlı Öğrenme — gerçek problem',
+    'ZPD': 'Yakınsal Gelişim Alanı — iskele',
+    'Cooperative': 'Takım çalışması — yapılandırılmış gruplar',
+    'Traditional': 'Doğrudan öğretim — anlatım + alıştırma',
+  },
+  en: {
+    '5E': 'Engage → Explore → Explain → Elaborate → Evaluate',
+    'PBL': 'Project-Based Learning — real-world problem',
+    'ZPD': 'Zone of Proximal Development — scaffolding',
+    'Cooperative': 'Teamwork — structured groups',
+    'Traditional': 'Direct instruction — exposition + practice',
+  },
 };
 
 const I18N: Record<string, Record<string, string>> = {
@@ -53,6 +76,9 @@ const I18N: Record<string, Record<string, string>> = {
     publish: 'Сподели во Банката',
     cancel: 'Откажи',
     lessonStudyHint: '💡 Добрите белешки го прават Lesson Study жив — следната генерација наставници ќе учат од тебе.',
+    editTitle: 'Уреди метаподатоци',
+    editSubtitle: 'Промени го наставниот модел, DoK нивото или белешките на веќе споделено сценарио.',
+    saveChanges: 'Зачувај промени',
   },
   sq: {
     title: 'Shpërndaj në Bankën e Skenarëve',
@@ -68,6 +94,9 @@ const I18N: Record<string, Record<string, string>> = {
     publish: 'Shpërndaj në Bankë',
     cancel: 'Anulo',
     lessonStudyHint: '💡 Shënime të mira e bëjnë Lesson Study të gjallë — gjenerata tjetër do të mësojë nga ti.',
+    editTitle: 'Redakto metadatat',
+    editSubtitle: 'Ndrysho modelin mësimor, nivelin DoK ose shënimet e një skenari tashmë të publikuar.',
+    saveChanges: 'Ruaj ndryshimet',
   },
   tr: {
     title: "Senaryo Bankasına Paylaş",
@@ -83,6 +112,9 @@ const I18N: Record<string, Record<string, string>> = {
     publish: "Bankaya Paylaş",
     cancel: 'İptal',
     lessonStudyHint: '💡 İyi notlar Lesson Study\'yi yaşatır — gelecek nesil öğretmenler senden öğrenir.',
+    editTitle: 'Meta Verileri Düzenle',
+    editSubtitle: 'Zaten paylaşılmış bir senaryonun öğretim modelini, DoK düzeyini veya notlarını değiştirin.',
+    saveChanges: 'Değişiklikleri Kaydet',
   },
   en: {
     title: 'Share to Scenario Bank',
@@ -98,6 +130,9 @@ const I18N: Record<string, Record<string, string>> = {
     publish: 'Share to Bank',
     cancel: 'Cancel',
     lessonStudyHint: '💡 Good notes keep Lesson Study alive — the next generation of teachers learns from you.',
+    editTitle: 'Edit metadata',
+    editSubtitle: "Change the teaching model, DoK level, or notes on an already-published scenario.",
+    saveChanges: 'Save changes',
   },
 };
 
@@ -125,8 +160,8 @@ export const PublishScenarioDialog: React.FC<Props> = ({
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b">
           <div>
-            <h2 className="text-lg font-black text-gray-900">{isEdit ? 'Уреди метаподатоци' : s.title}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{isEdit ? 'Промени го наставниот модел, DoK нивото или белешките на веќе споделено сценарио.' : s.subtitle}</p>
+            <h2 className="text-lg font-black text-gray-900">{isEdit ? s.editTitle : s.title}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">{isEdit ? s.editSubtitle : s.subtitle}</p>
             {item.title && (
               <p className="mt-1 text-sm font-bold text-indigo-700 truncate">「{item.title}」</p>
             )}
@@ -185,7 +220,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
                   key={m}
                   type="button"
                   onClick={() => setTeachingModel(teachingModel === m ? null : m)}
-                  title={MODEL_DESC[m]}
+                  title={MODEL_DESC[lang][m]}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
                     teachingModel === m
                       ? 'bg-indigo-600 text-white border-indigo-600'
@@ -197,7 +232,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
               ))}
             </div>
             {teachingModel && (
-              <p className="text-[11px] text-gray-500 italic">{MODEL_DESC[teachingModel]}</p>
+              <p className="text-[11px] text-gray-500 italic">{MODEL_DESC[lang][teachingModel]}</p>
             )}
           </div>
           )}
@@ -264,7 +299,7 @@ export const PublishScenarioDialog: React.FC<Props> = ({
             ) : (
               <Star className="w-4 h-4" />
             )}
-            {isEdit ? 'Зачувај промени' : s.publish}
+            {isEdit ? s.saveChanges : s.publish}
           </button>
         </div>
       </div>

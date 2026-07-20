@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, SlidersHorizontal, Sparkles, Loader2, FileText, Gamepad2, Layers } from 'lucide-react';
 import { Card } from '../common/Card';
 import type { TeachingModel, EntryType } from '../../services/firestoreService.scenarioBank';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export type SortBy = 'date' | 'rating' | 'forks' | 'usage';
 
@@ -47,6 +48,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
   sortBy, onSortByChange,
   onClearFilters,
 }) => {
+  const { t } = useLanguage();
   const hasAnyFilter = Boolean(gradeFilter || dokFilter || modelFilter || typeFilter || conceptFilter);
 
   return (
@@ -57,7 +59,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Барај по наслов, тема, автор..."
+            placeholder={t('scenarioBank.filter.searchPlaceholder')}
             value={search}
             onChange={e => onSearchChange(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -65,17 +67,17 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
         </div>
         {isSemanticActive && (
           <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-violet-50 border border-violet-200 text-violet-700 rounded-full">
-            <Sparkles className="w-3 h-3" /> Семантичко
+            <Sparkles className="w-3 h-3" /> {t('scenarioBank.filter.semantic')}
           </span>
         )}
         {isSearching && (
           <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 text-gray-500 rounded-full">
-            <Loader2 className="w-3 h-3 animate-spin" /> Пребарувам низ сите сценарија...
+            <Loader2 className="w-3 h-3 animate-spin" /> {t('scenarioBank.filter.searchingAll')}
           </span>
         )}
         {searchTruncated && !isSearching && (
-          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-full" title="Прикажани се првите 500 совпаѓања. Прецизирај го пребарувањето (со филтри) за поточни резултати.">
-            Прикажани се првите 500 резултати
+          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-full" title={t('scenarioBank.filter.truncatedTitle')}>
+            {t('scenarioBank.filter.truncatedBadge')}
           </span>
         )}
         <button
@@ -88,7 +90,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          Филтри
+          {t('scenarioBank.filter.filters')}
           {hasAnyFilter && (
             <span className="w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
               {[gradeFilter, dokFilter, modelFilter, typeFilter, conceptFilter].filter(Boolean).length}
@@ -98,14 +100,14 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
         <select
           value={sortBy}
           onChange={e => onSortByChange(e.target.value as SortBy)}
-          aria-label="Сортирај сценарија"
-          title="Сортирај"
+          aria-label={t('scenarioBank.filter.sortAria')}
+          title={t('scenarioBank.filter.sortTitle')}
           className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
         >
-          <option value="date">Најнови</option>
-          <option value="rating">Највисока оценка</option>
-          <option value="forks">Најмногу ремикси</option>
-          <option value="usage">Најмногу употребено</option>
+          <option value="date">{t('scenarioBank.filter.sortNewest')}</option>
+          <option value="rating">{t('scenarioBank.filter.sortTopRated')}</option>
+          <option value="forks">{t('scenarioBank.filter.sortMostForks')}</option>
+          <option value="usage">{t('scenarioBank.filter.sortMostUsed')}</option>
         </select>
       </div>
 
@@ -115,7 +117,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
           <div className="flex flex-wrap gap-4 p-4">
             {/* Grade */}
             <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Одделение</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">{t('scenarioBank.filter.gradeLabel')}</p>
               <div className="flex flex-wrap gap-1">
                 {GRADES.map(g => (
                   <button
@@ -157,7 +159,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
 
             {/* Teaching model */}
             <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Наставен модел</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">{t('scenarioBank.filter.teachingModelLabel')}</p>
               <div className="flex flex-wrap gap-1">
                 {MODELS.map(m => (
                   <button
@@ -178,15 +180,15 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
 
             {/* Entry type */}
             <div className="space-y-1">
-              <p className="text-xs font-bold text-gray-500 uppercase">Тип</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">{t('scenarioBank.filter.typeLabel')}</p>
               <div className="flex flex-wrap gap-1">
                 {([
-                  { key: null, label: 'Сите', icon: null },
-                  { key: 'lesson_plan' as EntryType, label: 'Час', icon: <FileText className="w-3 h-3" /> },
+                  { key: null, label: t('scenarioBank.filter.typeAll'), icon: null },
+                  { key: 'lesson_plan' as EntryType, label: t('scenarioBank.filter.typeLesson'), icon: <FileText className="w-3 h-3" /> },
                   { key: 'kahoot' as EntryType, label: 'Kahoot', icon: <Gamepad2 className="w-3 h-3" /> },
-                  { key: 'extracted_material' as EntryType, label: 'Извлечени', icon: <Search className="w-3 h-3" /> },
-                  { key: 'generated_material' as EntryType, label: 'AI Генерирани', icon: <Sparkles className="w-3 h-3" /> },
-                  { key: 'thematic_plan' as EntryType, label: 'Тематски', icon: <Layers className="w-3 h-3" /> },
+                  { key: 'extracted_material' as EntryType, label: t('scenarioBank.filter.typeExtracted'), icon: <Search className="w-3 h-3" /> },
+                  { key: 'generated_material' as EntryType, label: t('scenarioBank.filter.typeAiGenerated'), icon: <Sparkles className="w-3 h-3" /> },
+                  { key: 'thematic_plan' as EntryType, label: t('scenarioBank.filter.typeThematic'), icon: <Layers className="w-3 h-3" /> },
                 ] as const).map(opt => (
                   <button
                     key={String(opt.key)}
@@ -207,14 +209,14 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
             {/* Concept */}
             {conceptOptions.length > 0 && (
               <div className="space-y-1">
-                <p className="text-xs font-bold text-gray-500 uppercase">Концепт</p>
+                <p className="text-xs font-bold text-gray-500 uppercase">{t('scenarioBank.filter.conceptLabel')}</p>
                 <select
                   value={conceptFilter ?? ''}
                   onChange={e => onConceptFilterChange(e.target.value || null)}
-                  aria-label="Филтрирај по концепт"
+                  aria-label={t('scenarioBank.filter.filterByConceptAria')}
                   className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 max-w-[220px]"
                 >
-                  <option value="">Сите концепти</option>
+                  <option value="">{t('scenarioBank.filter.allConcepts')}</option>
                   {conceptOptions.map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
@@ -230,7 +232,7 @@ export const ScenarioFilterBar: React.FC<ScenarioFilterBarProps> = ({
                   onClick={onClearFilters}
                   className="text-xs text-red-500 hover:text-red-700 font-semibold underline"
                 >
-                  Исчисти филтри
+                  {t('scenarioBank.filter.clearFilters')}
                 </button>
               </div>
             )}

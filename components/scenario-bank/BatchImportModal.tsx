@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Upload, X, Loader2, Sparkles, CheckSquare, Square, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { parseUploadedFile } from '../../services/documentParser';
 import { CloudImportMenu } from '../common/CloudImportMenu';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ParseResult {
   name: string;
@@ -19,6 +20,7 @@ interface Props {
 const MAX_CONCURRENT = 5;
 
 export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, isImporting }) => {
+  const { t } = useLanguage();
   const [results, setResults] = useState<ParseResult[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [isParsing, setIsParsing] = useState(false);
@@ -38,14 +40,14 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
       const settled = await Promise.allSettled(
         batch.map(async (f) => {
           const doc = await parseUploadedFile(f);
-          return { name: f.name, text: doc.text, error: doc.text.trim() ? undefined : 'Нема текст' };
+          return { name: f.name, text: doc.text, error: doc.text.trim() ? undefined : t('scenarioBank.batch.noText') };
         }),
       );
       settled.forEach((r, idx) => {
         if (r.status === 'fulfilled') {
           parsed.push(r.value);
         } else {
-          parsed.push({ name: batch[idx].name, text: '', error: 'Грешка при читање' });
+          parsed.push({ name: batch[idx].name, text: '', error: t('scenarioBank.batch.readError') });
         }
       });
     }
@@ -68,8 +70,8 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
   }, [handleFiles]);
 
   const handleCloudError = useCallback((message: string) => {
-    setResults(prev => [...prev, { name: 'Облак увоз', text: '', error: message }]);
-  }, []);
+    setResults(prev => [...prev, { name: t('scenarioBank.batch.cloudImport'), text: '', error: message }]);
+  }, [t]);
 
   const toggle = (idx: number) => {
     setSelected(prev => {
@@ -99,13 +101,13 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
           <div>
             <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
               <Upload className="w-5 h-5 text-indigo-500" />
-              Групен увоз на сценарија
+              {t('scenarioBank.batch.title')}
             </h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Избери повеќе PDF / DOCX / TXT датотеки одеднаш — секоја станува одделно сценарио.
+              {t('scenarioBank.batch.subtitle')}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Затвори" className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="p-1.5 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -123,18 +125,18 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
               accept=".pdf,.docx,.txt,image/png,image/jpeg,image/webp"
               onChange={e => handleFiles(e.target.files)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              aria-label="Избери датотеки"
+              aria-label={t('scenarioBank.batch.selectFiles')}
             />
             {isParsing ? (
               <div className="flex items-center justify-center gap-2 text-indigo-600">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Се читаат датотеките…
+                {t('scenarioBank.batch.readingFiles')}
               </div>
             ) : (
               <>
                 <Upload className="w-7 h-7 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-500">Повлечи повеќе датотеки тука или кликни за избор</p>
-                <p className="text-xs text-gray-400 mt-1">PDF, DOCX, TXT, PNG, JPG — до 20 MB по датотека</p>
+                <p className="text-sm text-gray-500">{t('scenarioBank.batch.dragMultipleOrClick')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('scenarioBank.batch.fileTypesHintPerFile')}</p>
               </>
             )}
           </div>
@@ -148,12 +150,12 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-gray-700">
-                  Пронајдени {results.length} датотеки
+                  {t('scenarioBank.batch.foundNFiles').replace('{n}', String(results.length))}
                 </p>
                 <button type="button" onClick={toggleAll} className="flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:underline">
                   {selected.size === results.filter(r => !r.error).length
-                    ? <><CheckSquare className="w-3.5 h-3.5" /> Откажи ги сите</>
-                    : <><Square className="w-3.5 h-3.5" /> Избери ги сите</>}
+                    ? <><CheckSquare className="w-3.5 h-3.5" /> {t('scenarioBank.sel.deselectAll')}</>
+                    : <><Square className="w-3.5 h-3.5" /> {t('scenarioBank.sel.selectAll')}</>}
                 </button>
               </div>
               {results.map((r, i) => (
@@ -184,7 +186,7 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
                       </p>
                       {r.error
                         ? <p className="text-xs text-red-500">{r.error}</p>
-                        : <p className="text-xs text-gray-400">{Math.round(r.text.length / 100) / 10} K знаци</p>}
+                        : <p className="text-xs text-gray-400">{t('scenarioBank.sel.kChars').replace('{n}', String(Math.round(r.text.length / 100) / 10))}</p>}
                     </div>
                     {!r.error && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                   </div>
@@ -201,7 +203,7 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50"
           >
-            Откажи
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -210,8 +212,8 @@ export const BatchImportModal: React.FC<Props> = ({ onClose, onImportSelected, i
             className="flex-2 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors"
           >
             {isImporting
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Се анализираат…</>
-              : <><Sparkles className="w-4 h-4" /> Анализирај избраните ({selected.size}) со AI</>}
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('scenarioBank.batch.analyzing')}</>
+              : <><Sparkles className="w-4 h-4" /> {t('scenarioBank.batch.analyzeSelectedWithAI').replace('{n}', String(selected.size))}</>}
           </button>
         </div>
       </div>
