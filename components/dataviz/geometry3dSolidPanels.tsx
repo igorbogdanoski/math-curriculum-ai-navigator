@@ -5,20 +5,23 @@ import {
   makePrismVerts, makePrismFaces, makePyramidVerts, makePyramidFaces,
 } from './geometry3dMath';
 import { CurriculumBadges } from './geometry3dPanels';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── RoundSolidsPanel (Сфера · Конус · Цилиндар) ──────────────────────────────
 type RoundKind = 'sphere' | 'cone' | 'cylinder';
 
+// label fields hold i18n keys (not literal text) — see DuggaQuestionEditor's Q_TYPES/TEST_TYPES convention
 const ROUND_CONFIG: Record<RoundKind, { label: string; color: string; hex: string }> = {
-  sphere:   { label: '⚪ Сфера',     color: 'sky',     hex: '#0ea5e9' },
-  cone:     { label: '🔺 Конус',     color: 'amber',   hex: '#f59e0b' },
-  cylinder: { label: '🥫 Цилиндар',  color: 'emerald', hex: '#10b981' },
+  sphere:   { label: 'dataviz.geo3dSolid.roundSphere',     color: 'sky',     hex: '#0ea5e9' },
+  cone:     { label: 'dataviz.geo3dSolid.roundCone',     color: 'amber',   hex: '#f59e0b' },
+  cylinder: { label: 'dataviz.geo3dSolid.roundCylinder',  color: 'emerald', hex: '#10b981' },
 };
 
+// values hold i18n keys (not literal text)
 const ROUND_FACTS: Record<RoundKind, string> = {
-  sphere: 'Земјата е приближно сфера со полупречник ≈ 6371 km. Топки, глобуси и меурчиња од сапуница се природно сферични — сферата има најмала површина за дадениот волумен.',
-  cone: 'Сообраќајните конуси, сладоледните рожчиња и вулканите имаат конусна форма. Египетските пирамиди го делат истиот принцип на стеснување кон врв.',
-  cylinder: 'Конзервите за храна и пијалоци се цилиндрична форма — најефикасен однос волумен/материјал меѓу сите обични садови. Столбовите во архитектурата исто се цилиндри.',
+  sphere: 'dataviz.geo3dSolid.factSphere',
+  cone: 'dataviz.geo3dSolid.factCone',
+  cylinder: 'dataviz.geo3dSolid.factCylinder',
 };
 
 const ROUND_CURRICULUM: Record<RoundKind, CurriculumRef> = {
@@ -28,6 +31,7 @@ const ROUND_CURRICULUM: Record<RoundKind, CurriculumRef> = {
 };
 
 export function RoundSolidsPanel() {
+  const { t } = useLanguage();
   const [kind, setKind] = useState<RoundKind>('sphere');
   const [r, setR] = useState(3);
   const [h, setH] = useState(4);
@@ -62,8 +66,7 @@ export function RoundSolidsPanel() {
     <div className="space-y-4">
       <div className="bg-sky-50 border border-sky-100 rounded-xl p-3">
         <p className="text-xs text-sky-800">
-          <span className="font-bold">МОН програма:</span> Заоблени тела (сфера, конус, цилиндар) — IX одд. ·
-          Стереометрија — Гимн. I год.
+          <span className="font-bold">{t('dataviz.geo3dLab.monProgramTitle')}</span> {t('dataviz.geo3dSolid.monProgramRound')}
         </p>
       </div>
 
@@ -75,14 +78,14 @@ export function RoundSolidsPanel() {
                 ? `border-${cfg.color}-500 bg-${cfg.color}-50 text-${cfg.color}-700`
                 : 'border-gray-200 text-gray-500 hover:border-gray-300'
             }`}>
-            {ROUND_CONFIG[k].label}
+            {t(ROUND_CONFIG[k].label)}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <p className="text-xs font-bold text-gray-500 mb-1 text-center">Страничен профил</p>
+          <p className="text-xs font-bold text-gray-500 mb-1 text-center">{t('dataviz.geo3dSolid.sideProfile')}</p>
           <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
             <svg viewBox={`0 0 ${W} ${W}`} className="w-full" style={{ maxHeight: 220 }}>
               {kind === 'sphere' && (
@@ -116,30 +119,30 @@ export function RoundSolidsPanel() {
 
         <div className="space-y-3">
           <label className="flex flex-col text-xs font-semibold text-gray-600">
-            Полупречник r = {r.toFixed(1)} ед.
+            {t('dataviz.geo3dSolid.radiusR').replace('{r}', r.toFixed(1))}
             <input type="range" min={1} max={6} step={0.1} value={r}
               onChange={e => setR(+e.target.value)} className={`mt-1 accent-${cfg.color}-600`} />
           </label>
           {kind !== 'sphere' && (
             <label className="flex flex-col text-xs font-semibold text-gray-600">
-              Висина h = {h.toFixed(1)} ед.
+              {t('dataviz.geo3dSolid.heightHUnit').replace('{h}', h.toFixed(1))}
               <input type="range" min={1} max={8} step={0.1} value={h}
                 onChange={e => setH(+e.target.value)} className={`mt-1 accent-${cfg.color}-600`} />
             </label>
           )}
           {kind === 'cone' && (
-            <p className="text-xs text-gray-500">Изводница l = √(r²+h²) = <strong className="text-gray-700">{l.toFixed(3)}</strong> ед.</p>
+            <p className="text-xs text-gray-500">{t('dataviz.geo3dSolid.slantHeightL')} <strong className="text-gray-700">{l.toFixed(3)}</strong> {t('dataviz.geo3dPanels.unit')}.</p>
           )}
 
           <div className="grid grid-cols-2 gap-2">
             <div className={`rounded-xl border-2 p-3 text-center bg-${cfg.color}-50 border-${cfg.color}-200`}>
               <p className={`text-xl font-black text-${cfg.color}-700`}>{volume.toFixed(3)}</p>
-              <p className="text-xs font-bold text-gray-600">Волумен</p>
+              <p className="text-xs font-bold text-gray-600">{t('dataviz.geo3dLab.volume')}</p>
               <p className={`text-[11px] font-semibold mt-1 text-${cfg.color}-700`}>{volFormula}</p>
             </div>
             <div className={`rounded-xl border-2 p-3 text-center bg-${cfg.color}-50 border-${cfg.color}-200`}>
               <p className={`text-xl font-black text-${cfg.color}-700`}>{surface.toFixed(3)}</p>
-              <p className="text-xs font-bold text-gray-600">Површина</p>
+              <p className="text-xs font-bold text-gray-600">{t('dataviz.geo3dLab.surfaceArea')}</p>
               <p className={`text-[11px] font-semibold mt-1 text-${cfg.color}-700`}>{surfFormula}</p>
             </div>
           </div>
@@ -147,11 +150,11 @@ export function RoundSolidsPanel() {
       </div>
 
       <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
-        <p className="text-xs text-amber-800"><span className="font-bold">Знаеш ли?</span> {ROUND_FACTS[kind]}</p>
+        <p className="text-xs text-amber-800"><span className="font-bold">{t('dataviz.geo3dLab.didYouKnow')}</span> {t(ROUND_FACTS[kind])}</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-3">
-        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Наставна програма</p>
+        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{t('dataviz.linalgLab.curriculum')}</p>
         <CurriculumBadges cur={ROUND_CURRICULUM[kind]} />
       </div>
     </div>
@@ -160,6 +163,7 @@ export function RoundSolidsPanel() {
 
 // ─── PrismPyramidCalculator ───────────────────────────────────────────────────
 export function PrismPyramidCalculator() {
+  const { t } = useLanguage();
   const [kind, setKind] = useState<'prism' | 'pyramid'>('prism');
   const [n, setN] = useState(4);
   const [h, setH] = useState(2.0);
@@ -257,25 +261,25 @@ export function PrismPyramidCalculator() {
                   ? (k === 'prism' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white')
                   : 'bg-white text-gray-500 hover:bg-gray-50'
               }`}>
-              {k === 'prism' ? '⬡ Призма' : '△ Пирамида'}
+              {k === 'prism' ? t('dataviz.geo3dSolid.tabPrism') : t('dataviz.geo3dSolid.tabPyramid')}
             </button>
           ))}
         </div>
 
         <label className="flex flex-col text-xs font-semibold text-gray-600 min-w-[130px]">
-          Страни n = {n}
+          {t('dataviz.geo3dSolid.sidesN').replace('{n}', String(n))}
           <input type="range" min={3} max={12} step={1} value={n}
             onChange={e => setN(+e.target.value)} className="mt-1 accent-emerald-600" />
         </label>
 
         <label className="flex flex-col text-xs font-semibold text-gray-600 min-w-[130px]">
-          Висина h = {h.toFixed(1)} ед.
+          {t('dataviz.geo3dSolid.heightHUnit').replace('{h}', h.toFixed(1))}
           <input type="range" min={0.5} max={5.0} step={0.1} value={h}
             onChange={e => setH(+e.target.value)} className="mt-1 accent-emerald-600" />
         </label>
 
         <label className="flex flex-col text-xs font-semibold text-gray-600 min-w-[130px]">
-          Полупречник R = {R.toFixed(1)} ед.
+          {t('dataviz.geo3dSolid.radiusRUpper').replace('{r}', R.toFixed(1))}
           <input type="range" min={0.5} max={3.0} step={0.1} value={R}
             onChange={e => setR(+e.target.value)} className="mt-1 accent-emerald-600" />
         </label>
@@ -299,18 +303,18 @@ export function PrismPyramidCalculator() {
                   x2={projVerts[b].x.toFixed(1)} y2={projVerts[b].y.toFixed(1)}
                   stroke={`rgb(${rgb})`} strokeWidth={1.2} opacity={0.4} />
               ))}
-              <text x={190} y={372} textAnchor="middle" fontSize={10} fill="#9ca3af">↕↔ влечи за ротација</text>
+              <text x={190} y={372} textAnchor="middle" fontSize={10} fill="#9ca3af">{t('dataviz.geo3dLab.dragToRotate')}</text>
             </svg>
           </div>
           <div className="flex gap-2">
             <button type="button"
               onClick={() => { setAngX(0.45); setAngY(-0.4); }}
               className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
-              Ресетирај поглед
+              {t('dataviz.geo3dSolid.resetView2')}
             </button>
             <button type="button" onClick={() => setAutoSpin(s => !s)}
               className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${autoSpin ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-              {autoSpin ? '⏸ Пауза' : '▶ Ротирај'}
+              {autoSpin ? t('dataviz.geo3dLab.pauseSpin') : t('dataviz.geo3dLab.rotateBtn')}
             </button>
           </div>
         </div>
@@ -319,18 +323,18 @@ export function PrismPyramidCalculator() {
           <div className={`rounded-xl border-2 p-4 ${catBg} ${catBdr}`}>
             <p className={`text-lg font-black ${catTxt}`}>
               {kind === 'prism'
-                ? `Правилна ${n}-страна призма`
-                : `Правилна ${n}-страна пирамида`}
+                ? t('dataviz.geo3dSolid.regularNPrism').replace('{n}', String(n))
+                : t('dataviz.geo3dSolid.regularNPyramid').replace('{n}', String(n))}
             </p>
             <p className="text-xs text-gray-600 mt-1">
               {kind === 'prism'
-                ? `Два правилни ${n}-аголни основи · ${n} правоаголни бочни лица`
-                : `Правилна ${n}-аголна основа · ${n} триаголни бочни лица · 1 врв`}
+                ? t('dataviz.geo3dSolid.prismDesc').replace('{n}', String(n)).replace('{n}', String(n))
+                : t('dataviz.geo3dSolid.pyramidDesc').replace('{n}', String(n)).replace('{n}', String(n))}
             </p>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {([['Темиња (V)', V_n], ['Рабови (E)', E_n], ['Лица (F)', F_n]] as [string, number][]).map(([label, val]) => (
+            {([[t('dataviz.geo3dPanels.printVertices'), V_n], [t('dataviz.geo3dPanels.printEdges'), E_n], [t('dataviz.geo3dPanels.printFaces'), F_n]] as [string, number][]).map(([label, val]) => (
               <div key={label} className="rounded-xl bg-gray-50 border border-gray-200 p-2.5 text-center">
                 <p className="text-xl font-black text-gray-800">{val}</p>
                 <p className="text-[10px] font-bold text-gray-500 leading-tight">{label}</p>
@@ -345,24 +349,24 @@ export function PrismPyramidCalculator() {
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Мерки</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">{t('dataviz.geo3dSolid.measurements')}</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500">Страна s:</span>
-                <span className="font-bold text-gray-800">{s.toFixed(3)} ед.</span>
+                <span className="text-gray-500">{t('dataviz.geo3dSolid.sideS')}</span>
+                <span className="font-bold text-gray-800">{s.toFixed(3)} {t('dataviz.geo3dPanels.unit')}.</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500">Апотема:</span>
-                <span className="font-bold text-gray-800">{apothem.toFixed(3)} ед.</span>
+                <span className="text-gray-500">{t('dataviz.geo3dSolid.apothemLabel')}</span>
+                <span className="font-bold text-gray-800">{apothem.toFixed(3)} {t('dataviz.geo3dPanels.unit')}.</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-gray-500">Основа B:</span>
-                <span className="font-bold text-gray-800">{B.toFixed(3)} ед²</span>
+                <span className="text-gray-500">{t('dataviz.geo3dSolid.baseB')}</span>
+                <span className="font-bold text-gray-800">{B.toFixed(3)} {t('dataviz.geo3dPanels.unitSq')}</span>
               </div>
               {kind === 'pyramid' && (
                 <div className="flex justify-between gap-2">
-                  <span className="text-gray-500">Изводница l:</span>
-                  <span className="font-bold text-gray-800">{slantH.toFixed(3)} ед.</span>
+                  <span className="text-gray-500">{t('dataviz.geo3dSolid.slantL')}</span>
+                  <span className="font-bold text-gray-800">{slantH.toFixed(3)} {t('dataviz.geo3dPanels.unit')}.</span>
                 </div>
               )}
             </div>
@@ -371,14 +375,14 @@ export function PrismPyramidCalculator() {
           <div className="grid grid-cols-2 gap-3">
             <div className={`rounded-xl border-2 p-4 text-center ${catBg} ${catBdr}`}>
               <p className={`text-2xl font-black ${catTxt}`}>{vol.toFixed(3)}</p>
-              <p className="text-xs font-bold text-gray-600">Волумен</p>
+              <p className="text-xs font-bold text-gray-600">{t('dataviz.geo3dLab.volume')}</p>
               <p className={`text-[11px] font-semibold mt-1 ${catTxt}`}>
                 {kind === 'prism' ? 'V = B · h' : 'V = B · h / 3'}
               </p>
             </div>
             <div className={`rounded-xl border-2 p-4 text-center ${catBg} ${catBdr}`}>
               <p className={`text-2xl font-black ${catTxt}`}>{sa.toFixed(3)}</p>
-              <p className="text-xs font-bold text-gray-600">Површина</p>
+              <p className="text-xs font-bold text-gray-600">{t('dataviz.geo3dLab.surfaceArea')}</p>
               <p className={`text-[11px] font-semibold mt-1 ${catTxt}`}>
                 {kind === 'prism' ? 'S = n·s·h + 2B' : 'S = n·s·l/2 + B'}
               </p>
@@ -386,12 +390,12 @@ export function PrismPyramidCalculator() {
           </div>
 
           <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{t('dataviz.linalgLab.curriculum')}</p>
             <div className="flex flex-wrap gap-1">
-              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН VII одд.</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН VIII одд.</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">Гимн. I год.</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">Стручно I–III год.</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('dataviz.geo3dPanels.curricMon').replace('{p}', 'VII')}</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">{t('dataviz.geo3dPanels.curricMon').replace('{p}', 'VIII')}</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">{t('dataviz.linalgLab.gymYear1')}</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">{t('dataviz.geo3dSolid.vocYear1to3')}</span>
             </div>
           </div>
         </div>

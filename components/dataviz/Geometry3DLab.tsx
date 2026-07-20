@@ -6,11 +6,13 @@ import { generateGeo3DSet } from './geometry3dExerciseMath';
 import { useLabSession } from '../../hooks/useLabSession';
 import { useLabDifficulty } from '../../hooks/useLabDifficulty';
 import { LabExercisePanel } from '../labs/LabExercisePanel';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // ─── PolyhedraExplorer ────────────────────────────────────────────────────────
 type Category = 'all' | 'platonic' | 'archimedean' | 'prism' | 'antiprism' | 'pyramid';
 
 function PolyhedraExplorer() {
+  const { t } = useLanguage();
   const [cat, setCat]   = useState<Category>('all');
   const [selId, setSelId] = useState('cube');
   const [angleX, setAngleX] = useState(0.5);
@@ -67,12 +69,12 @@ function PolyhedraExplorer() {
   const euler = solid.V - solid.E + solid.F;
 
   const CATS: { id: Category; label: string }[] = [
-    { id: 'all',         label: 'Сите' },
-    { id: 'platonic',    label: 'Платонски' },
-    { id: 'archimedean', label: 'Архимедски' },
-    { id: 'prism',       label: 'Призми' },
-    { id: 'antiprism',   label: 'Антипризми' },
-    { id: 'pyramid',     label: 'Пирамиди' },
+    { id: 'all',         label: t('dataviz.geo3dLab.catAll') },
+    { id: 'platonic',    label: t('dataviz.geo3dLab.catPlatonic') },
+    { id: 'archimedean', label: t('dataviz.geo3dLab.catArchimedean') },
+    { id: 'prism',       label: t('dataviz.geo3dLab.catPrism') },
+    { id: 'antiprism',   label: t('dataviz.geo3dLab.catAntiprism') },
+    { id: 'pyramid',     label: t('dataviz.geo3dLab.catPyramid') },
   ];
 
   return (
@@ -115,21 +117,21 @@ function PolyhedraExplorer() {
                 <line key={i} x1={projVerts[a].x} y1={projVerts[a].y} x2={projVerts[b].x} y2={projVerts[b].y}
                   stroke={`rgb(${catCfg.rgb})`} strokeWidth={1.5} />
               ))}
-              <text x={160} y={298} textAnchor="middle" fontSize={10} fill="#9ca3af">↕↔ влечи за ротација</text>
+              <text x={160} y={298} textAnchor="middle" fontSize={10} fill="#9ca3af">{t('dataviz.geo3dLab.dragToRotate')}</text>
             </svg>
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => { setAngleX(0.5); setAngleY(-0.4); }}
               className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-              Ресетирај
+              {t('dataviz.geo3dLab.resetView')}
             </button>
             <button type="button" onClick={() => setAutoSpin(s => !s)}
               className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${autoSpin ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-              {autoSpin ? '⏸ Пауза' : '▶ Ротирај'}
+              {autoSpin ? t('dataviz.geo3dLab.pauseSpin') : t('dataviz.geo3dLab.rotateBtn')}
             </button>
             <button type="button" onClick={() => setShowWire(w => !w)}
               className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${showWire ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-              {showWire ? 'Жичен модел ✓' : 'Жичен модел'}
+              {showWire ? t('dataviz.geo3dLab.wireframeOn') : t('dataviz.geo3dLab.wireframeOff')}
             </button>
           </div>
         </div>
@@ -142,7 +144,7 @@ function PolyhedraExplorer() {
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            {([['Темиња V', solid.V, 'text-indigo-700'], ['Рабови E', solid.E, 'text-emerald-700'], ['Лица F', solid.F, 'text-amber-700']] as [string, number, string][]).map(([label, val, color]) => (
+            {([[t('dataviz.geo3dLab.vertices'), solid.V, 'text-indigo-700'], [t('dataviz.geo3dLab.edges'), solid.E, 'text-emerald-700'], [t('dataviz.geo3dLab.faces'), solid.F, 'text-amber-700']] as [string, number, string][]).map(([label, val, color]) => (
               <div key={label} className="bg-white rounded-xl border border-gray-200 p-3 text-center">
                 <p className="text-[10px] text-gray-400 font-semibold uppercase">{label}</p>
                 <p className={`text-2xl font-extrabold ${color}`}>{val}</p>
@@ -153,20 +155,20 @@ function PolyhedraExplorer() {
           {dualSolid && (
             <div className="bg-white rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold uppercase">Дуален на</p>
+                <p className="text-[10px] text-gray-400 font-semibold uppercase">{t('dataviz.geo3dLab.dualOf')}</p>
                 <p className="text-sm font-bold text-gray-700">
-                  {dualSolid.id === solid.id ? `${dualSolid.name} (само-дуален)` : dualSolid.name}
+                  {dualSolid.id === solid.id ? `${dualSolid.name} ${t('dataviz.geo3dLab.selfDual')}` : dualSolid.name}
                 </p>
               </div>
               <button type="button" onClick={() => setSelId(dualSolid.id)}
                 className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold hover:bg-indigo-100 transition whitespace-nowrap">
-                Прикажи дуал →
+                {t('dataviz.geo3dLab.showDual')}
               </button>
             </div>
           )}
 
           <div className={`rounded-xl border p-3 text-center ${euler === 2 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <p className="text-xs font-semibold text-gray-500">Ојлерова формула</p>
+            <p className="text-xs font-semibold text-gray-500">{t('dataviz.geo3dLab.eulerFormula')}</p>
             <p className={`text-base font-extrabold ${euler === 2 ? 'text-green-700' : 'text-red-600'}`}>
               V − E + F = {solid.V} − {solid.E} + {solid.F} = <span className="text-xl">{euler}</span>
               {euler === 2 ? ' ✓' : ' ✗'}
@@ -175,21 +177,21 @@ function PolyhedraExplorer() {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <p className="text-[10px] text-gray-400 font-semibold uppercase">Волумен</p>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase">{t('dataviz.geo3dLab.volume')}</p>
               <p className="text-sm font-bold text-gray-700 mt-0.5 font-mono">{solid.volumeFormula}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-3">
-              <p className="text-[10px] text-gray-400 font-semibold uppercase">Плоштина</p>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase">{t('dataviz.geo3dLab.surfaceArea')}</p>
               <p className="text-sm font-bold text-gray-700 mt-0.5 font-mono">{solid.surfaceFormula}</p>
             </div>
           </div>
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
-            <p className="text-xs text-amber-800"><span className="font-bold">Знаеш ли?</span> {solid.funFact}</p>
+            <p className="text-xs text-amber-800"><span className="font-bold">{t('dataviz.geo3dLab.didYouKnow')}</span> {solid.funFact}</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl p-3">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Наставна програма</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{t('dataviz.linalgLab.curriculum')}</p>
             <CurriculumBadges cur={solid.curriculum} />
           </div>
         </div>
@@ -200,6 +202,7 @@ function PolyhedraExplorer() {
 
 // ─── PlansElevations ──────────────────────────────────────────────────────────
 function PlansElevations() {
+  const { t } = useLanguage();
   const [selId, setSelId] = useState('cube');
   const [angleY, setAngleY] = useState(0);
   const solid = SOLIDS.find(s => s.id === selId) ?? SOLIDS[0];
@@ -256,8 +259,7 @@ function PlansElevations() {
     <div className="space-y-4">
       <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
         <p className="text-xs text-purple-800">
-          <span className="font-bold">МОН програма:</span> Планови и елевации — VII–IX одд. ·
-          Нацртна геометрија — Гимназија XI изборен · Стручни насоки (градежништво, машинство)
+          <span className="font-bold">{t('dataviz.geo3dLab.monProgramTitle')}</span> {t('dataviz.geo3dLab.monProgramBody')}
         </p>
       </div>
 
@@ -274,26 +276,24 @@ function PlansElevations() {
       </div>
 
       <div className="flex items-center gap-3">
-        <label className="text-xs font-semibold text-gray-500 w-28">Ротација Y-оска</label>
+        <label className="text-xs font-semibold text-gray-500 w-28">{t('dataviz.geo3dLab.rotationYAxis')}</label>
         <input type="range" min={-Math.PI} max={Math.PI} step={0.05} value={angleY}
           onChange={e => setAngleY(parseFloat(e.target.value))}
-          className="flex-1 accent-indigo-600" aria-label="ротација" />
+          className="flex-1 accent-indigo-600" aria-label={t('dataviz.geo3dLab.rotationAria')} />
         <span className="text-xs font-bold text-indigo-700 w-14 text-right">{(angleY * 180 / Math.PI).toFixed(0)}°</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <ProjectionPanel title="Поглед одпред (Front)" note="проекција XY · гледаме од +Z"
+        <ProjectionPanel title={t('dataviz.geo3dLab.viewFront')} note={t('dataviz.geo3dLab.noteXY')}
           proj={v => ({ x: v[0], y: v[1] })} />
-        <ProjectionPanel title="Поглед одстрана (Side)" note="проекција ZY · гледаме од +X"
+        <ProjectionPanel title={t('dataviz.geo3dLab.viewSide')} note={t('dataviz.geo3dLab.noteZY')}
           proj={v => ({ x: v[2], y: v[1] })} />
-        <ProjectionPanel title="Поглед одозгора (Top / Plan)" note="проекција XZ · гледаме од +Y"
+        <ProjectionPanel title={t('dataviz.geo3dLab.viewTop')} note={t('dataviz.geo3dLab.noteXZ')}
           proj={v => ({ x: v[0], y: -v[2] })} />
       </div>
 
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-800">
-        <strong>Принцип:</strong> Секој поглед го испушта едниот координатен правец.
-        Front гледа кон XY, Side кон ZY, Top кон XZ (план).
-        Во нацртната геометрија ова е основа на ортогоналното проектирање.
+        <strong>{t('dataviz.geo3dLab.principleTitle')}</strong> {t('dataviz.geo3dLab.principleBody')}
       </div>
     </div>
   );
@@ -316,25 +316,26 @@ function Geo3DExercisesTab() {
 type GeoTab = 'explorer' | 'plans' | 'nets' | 'cross' | 'prispyram' | 'rounded' | 'exercises';
 
 export function Geometry3DLab() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<GeoTab>('explorer');
 
   const TABS: { id: GeoTab; label: string }[] = [
-    { id: 'explorer',  label: '🧊 Истражувач на полиедри' },
-    { id: 'plans',     label: '📐 Планови и проекции' },
-    { id: 'nets',      label: '📄 Мрежи (Nets)' },
-    { id: 'cross',     label: '✂️ Пресечни рамнини' },
-    { id: 'prispyram', label: '⬡ Призма / Пирамида' },
-    { id: 'rounded',   label: '⚫ Заоблени тела' },
-    { id: 'exercises', label: '✏️ Вежбај' },
+    { id: 'explorer',  label: t('dataviz.geo3dLab.tabExplorer') },
+    { id: 'plans',     label: t('dataviz.geo3dLab.tabPlans') },
+    { id: 'nets',      label: t('dataviz.geo3dLab.tabNets') },
+    { id: 'cross',     label: t('dataviz.geo3dLab.tabCross') },
+    { id: 'prispyram', label: t('dataviz.geo3dLab.tabPrisPyram') },
+    { id: 'rounded',   label: t('dataviz.geo3dLab.tabRounded') },
+    { id: 'exercises', label: t('dataviz.geo3dLab.tabExercises') },
   ];
 
   return (
     <div className="space-y-5">
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === t.id ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
-            {t.label}
+        {TABS.map(tb => (
+          <button key={tb.id} type="button" onClick={() => setTab(tb.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition ${tab === tb.id ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+            {tb.label}
           </button>
         ))}
       </div>
