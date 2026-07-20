@@ -13,7 +13,9 @@
  * polling that container for the result — see the job-isolation comment there for why.
  */
 
-const TIKZJAX_VERSION = '1.2.0';
+// Exported so scripts/spike-test-tikz-templates.ts stays pinned to the same CDN version
+// as the real app, rather than risking a second hardcoded copy silently drifting out of sync.
+export const TIKZJAX_VERSION = '1.2.0';
 const CDN_BASE = `https://cdn.jsdelivr.net/npm/@rod2ik/tikzjax@${TIKZJAX_VERSION}/dist`;
 
 declare global {
