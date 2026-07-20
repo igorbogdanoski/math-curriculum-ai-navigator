@@ -56,6 +56,8 @@ function renderLab(lang: Language = 'mk', props: React.ComponentProps<typeof Tik
 }
 
 describe('TikzLab', () => {
+  const originalHash = window.location.hash;
+
   beforeEach(() => {
     cleanup();
     localStorage.clear();
@@ -67,6 +69,21 @@ describe('TikzLab', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    window.location.hash = originalHash;
+  });
+
+  it('deep-link: ?template=<id> in the hash pre-selects that template on mount', () => {
+    window.location.hash = '#/data-viz?tab=tikz&template=rhombus-diagonals';
+    renderLab();
+    const editor = screen.getAllByRole('textbox').at(-1) as HTMLTextAreaElement;
+    expect(editor.value).toContain('(0,-2)'); // rhombus-diagonals' first coordinate — not shared by the default template
+  });
+
+  it('deep-link: an unknown ?template=<id> is silently ignored (default template stays selected)', () => {
+    window.location.hash = '#/data-viz?tab=tikz&template=does-not-exist';
+    renderLab();
+    const editor = screen.getAllByRole('textbox').at(-1) as HTMLTextAreaElement;
+    expect(editor.value).toContain('intersections'); // parallel-transversal, the default first template
   });
 
   (['mk', 'en'] as Language[]).forEach(lang => {

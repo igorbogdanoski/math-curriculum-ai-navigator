@@ -59,6 +59,9 @@ export interface LessonPlan {
   // Math tool exports (GeoGebra / Desmos screenshots embedded in the plan)
   mathEmbeds?: Array<{ tool: 'geogebra' | 'desmos'; dataUrl: string; createdAt: string }>;
 
+  // TikZ diagrams inserted from the lesson-plan editor's Math Tools panel (Wave 20)
+  tikzEmbeds?: Array<{ svg: string; pngDataUrl: string; tikzCode: string; createdAt: string }>;
+
   // Upload attribution — set when a scenario is imported from an uploaded document
   originalAuthor?: string;
   originalSchool?: string;

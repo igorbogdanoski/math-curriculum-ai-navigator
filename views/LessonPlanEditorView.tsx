@@ -730,6 +730,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                   }));
                   addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} ${t('lessonPlan.imageAddedSuffix')}`, 'success');
                 }}
+                tikzCurriculumContext={plan.theme || plan.title ? { topicTitle: plan.theme || plan.title || '' } : undefined}
+                onTikzInsert={({ svg, pngDataUrl, tikzCode }) => {
+                  setPlan(prev => ({
+                    ...prev,
+                    tikzEmbeds: [
+                      ...(prev.tikzEmbeds ?? []),
+                      { svg, pngDataUrl, tikzCode, createdAt: new Date().toISOString() },
+                    ],
+                  }));
+                  addNotification(`TikZ ${t('lessonPlan.imageAddedSuffix')}`, 'success');
+                }}
               />
             </div>
           </div>

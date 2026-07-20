@@ -193,6 +193,27 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                 </div>
             </div>
 
+            {/* TikZ diagrams inserted from the Math Tools panel */}
+            {Array.isArray(plan.tikzEmbeds) && plan.tikzEmbeds.length > 0 && (
+                <div className="mt-6">
+                    <SectionHeader title="TikZ Дијаграми" />
+                    <div className="flex flex-wrap gap-4 mt-2">
+                        {plan.tikzEmbeds.map((embed, i) => (
+                            <div key={i} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                                <div className="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-50 border-b">
+                                    TikZ
+                                </div>
+                                <img
+                                    src={embed.pngDataUrl}
+                                    alt={`TikZ diagram ${i + 1}`}
+                                    className="max-w-xs max-h-48 object-contain"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Math tool embeds (GeoGebra / Desmos exports) */}
             {Array.isArray(plan.mathEmbeds) && plan.mathEmbeds.length > 0 && (
                 <div className="mt-6">

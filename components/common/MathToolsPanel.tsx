@@ -1,18 +1,29 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { PenTool, Box, LineChart, Maximize2, Minimize2, X, Save, WifiOff, RefreshCw, Grid3x3 } from 'lucide-react';
+import { PenTool, Box, LineChart, Maximize2, Minimize2, X, Save, WifiOff, RefreshCw, Grid3x3, Spline } from 'lucide-react';
 import { DigitalScratchpad } from './DigitalScratchpad';
+import type { TikzInsertPayload } from '../dataviz/TikzLab';
+import type { TikzCurriculumContext } from '../../services/gemini/tikzGenerate';
 
 const AlgebraTilesCanvas = React.lazy(() =>
   import('../math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
 );
+const TikzLabLazy = React.lazy(() =>
+  import('../dataviz/TikzLab').then(m => ({ default: m.TikzLab }))
+);
 
-export type MathToolTab = 'scratchpad' | 'geogebra' | 'desmos' | 'algebra-tiles';
+export type MathToolTab = 'scratchpad' | 'geogebra' | 'desmos' | 'algebra-tiles' | 'tikz';
 
 interface Props {
   onClose?: () => void;
   className?: string;
   /** Called when teacher clicks "Зачувај" — receives PNG data-URI and tool name */
   onExportImage?: (dataUrl: string, tool: 'geogebra' | 'desmos') => void;
+  /** Called when teacher clicks "Вметни во материјал" on the TikZ tab. Separate from
+   *  onExportImage since its payload shape (svg/pngDataUrl/tikzCode) doesn't fit the
+   *  geogebra/desmos dataUrl-only contract. */
+  onTikzInsert?: (payload: TikzInsertPayload) => void;
+  /** Passed through to the TikZ tab's "Fill from this topic" AI-generate shortcut. */
+  tikzCurriculumContext?: TikzCurriculumContext;
   /** Open directly on a specific tab — e.g. when routed from ContextualMathTools */
   defaultTab?: MathToolTab;
   /** Pre-populate algebra tiles with a preset expression, e.g. "x²+3x+2" */
@@ -287,7 +298,7 @@ const AlgebraTilesPanel: React.FC<{ expression?: string }> = ({ expression }) =>
 );
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
-export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExportImage, defaultTab, algebraExpression }) => {
+export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExportImage, onTikzInsert, tikzCurriculumContext, defaultTab, algebraExpression }) => {
   const [activeTool, setActiveTool] = useState<MathToolTab>(defaultTab ?? 'scratchpad');
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -354,6 +365,14 @@ export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExp
           >
             <Grid3x3 size={16} /> <span className="hidden sm:inline">Алг. Плочки</span>
           </button>
+          <button type="button"
+            onClick={() => setActiveTool('tikz')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              activeTool === 'tikz' ? 'bg-slate-100 text-slate-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Spline size={16} /> <span className="hidden sm:inline">TikZ</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -400,6 +419,13 @@ export const MathToolsPanel: React.FC<Props> = ({ onClose, className = '', onExp
         )}
         {activeTool === 'algebra-tiles' && (
           <AlgebraTilesPanel expression={algebraExpression} />
+        )}
+        {activeTool === 'tikz' && (
+          <div className="flex-1 overflow-y-auto p-3">
+            <React.Suspense fallback={<LoadingSkeleton label="Вчитувам TikZ Лабораторија…" color="bg-slate-300" />}>
+              <TikzLabLazy onInsert={onTikzInsert} curriculumContext={tikzCurriculumContext} />
+            </React.Suspense>
+          </div>
         )}
       </div>
     </div>

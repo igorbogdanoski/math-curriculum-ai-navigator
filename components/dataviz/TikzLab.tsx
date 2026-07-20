@@ -107,6 +107,24 @@ export const TikzLab: React.FC<TikzLabProps> = ({ onInsert, curriculumContext })
     }, {});
   }, [search, gradeFilter, t]);
 
+  // Deep-link: /data-viz?tab=tikz&template=<id> pre-selects a specific template on mount
+  // (e.g. from a future "open this diagram" link elsewhere in the app). Runs once — a
+  // no-op query param (wrong host route, no match, or TikzLab embedded outside the hash
+  // route entirely, e.g. inside MathToolsPanel) just leaves the default first template.
+  useEffect(() => {
+    const hash = window.location.hash;
+    const queryStart = hash.indexOf('?');
+    if (queryStart === -1) return;
+    const requestedId = new URLSearchParams(hash.slice(queryStart + 1)).get('template');
+    if (!requestedId) return;
+    const requested = tikzTemplates.find(tpl => tpl.id === requestedId);
+    if (requested) {
+      setActiveTemplateId(requested.id);
+      setCode(requested.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!stagingRef.current) return;
     const jobId = ++activeJobIdRef.current;

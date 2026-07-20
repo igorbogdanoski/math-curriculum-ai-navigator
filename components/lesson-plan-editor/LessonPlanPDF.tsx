@@ -545,6 +545,21 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ data }) => {
           </View>
         )}
 
+        {/* TikZ Diagram Embeds */}
+        {Array.isArray(plan.tikzEmbeds) && plan.tikzEmbeds.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>TIKZ ДИЈАГРАМИ</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {plan.tikzEmbeds.map((embed, i) => (
+                <View key={i} style={{ alignItems: 'center', marginRight: 8, marginBottom: 8 }}>
+                  <Image src={embed.pngDataUrl} style={{ width: 180, height: 120 }} />
+                  <Text style={{ fontSize: 8, color: '#6B7280', marginTop: 2 }}>TikZ</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Math Tool Embeds (GeoGebra / Desmos) */}
         {Array.isArray(plan.mathEmbeds) && plan.mathEmbeds.length > 0 && (
           <View style={styles.section}>

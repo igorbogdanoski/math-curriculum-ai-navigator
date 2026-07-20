@@ -443,8 +443,14 @@ export default defineConfig(({ mode }) => {
               // chunk below — that chunk is also reached from eager, non-lazy imports elsewhere,
               // so anything placed there loads on first page paint regardless of this rule's
               // own laziness. A dedicated chunk is only ever requested by TikzLab's own lazy
-              // dynamic import (see TikzLabLazy in DataVizStudioView.tsx).
-              if (id.includes('@uiw/react-codemirror') || id.includes('@codemirror/') || id.includes('/codemirror/') || id.includes('@lezer/') || id.includes('style-mod') || id.includes('w3c-keyname') || id.includes('crelt')) return 'vendor-codemirror';
+              // dynamic import (see TikzLabLazy in DataVizStudioView.tsx and MathToolsPanel.tsx).
+              // Wave 20: broadened from a narrow '@uiw/react-codemirror' match to a plain
+              // 'codemirror' substring — the narrower match missed
+              // '@uiw/codemirror-extensions-basic-setup' (an internal dep of @uiw/react-codemirror),
+              // which fell into the generic 'vendor' bucket and created a real
+              // vendor-codemirror -> vendor -> vendor-codemirror circular chunk (Rollup build
+              // warning), not just a cosmetic one.
+              if (id.includes('codemirror') || id.includes('@lezer/') || id.includes('style-mod') || id.includes('w3c-keyname') || id.includes('crelt')) return 'vendor-codemirror';
               // framer-motion: not in dependencies — rule removed
               // NOTE: do not split React core / react-dom — proven TDZ runtime errors with cyclic vendor imports.
               return 'vendor';
