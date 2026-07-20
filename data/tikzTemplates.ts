@@ -21,23 +21,28 @@ export const tikzTemplates: TikzTemplate[] = [
     descKey: 'tikz.template.parallelTransversal.desc',
     category: 'geometry',
     gradeLevel: ['primary', 'secondary'],
-    code: `\\begin{tikzpicture}[scale=1.1]
-  % Two parallel lines cut by a transversal
-  \\draw[very thick] (-2.5,1.5) -- (2.5,1.5) node[right] {$a$};
-  \\draw[very thick] (-2.5,-0.5) -- (2.5,-0.5) node[right] {$b$};
-  \\draw[very thick,blue] (-1.5,-1.3) -- (1.5,2.3) node[above] {$t$};
+    code: `\\usetikzlibrary{angles,quotes,calc,intersections}
+\\begin{tikzpicture}[>=stealth,scale=1.2]
+  % Two parallel lines a, b cut by a transversal t — points A, B are computed by TikZ
+  % itself (name intersections), not hardcoded, so changing the transversal's angle or
+  % the lines' positions keeps everything (angle marks included) correctly aligned.
+  \\draw[<->,thick,name path=lineA] (-3.5,1) -- (3.5,1) node[right] {$a$};
+  \\draw[<->,thick,name path=lineB] (-3.5,-1) -- (3.5,-1) node[right] {$b$};
+  \\draw[<->,thick,name path=lineT] (-2.5,2.5) -- (2.5,-2.5) node[below right] {$t$};
 
-  % Parallel tick marks
-  \\draw (-0.15,1.65) -- (0.15,1.35);
-  \\draw (-0.15,-0.35) -- (0.15,-0.65);
+  \\path [name intersections={of=lineA and lineT, by=A}];
+  \\path [name intersections={of=lineB and lineT, by=B}];
 
-  % Intersection points
-  \\fill (-0.375,1.5) circle (1.5pt);
-  \\fill (0.375,-0.5) circle (1.5pt);
+  \\coordinate (Aright) at ($(A) + (2,0)$);
+  \\coordinate (Ttop)   at ($(A) + (-1.2,1.8)$);
+  \\coordinate (Bright) at ($(B) + (2,0)$);
+  \\coordinate (Tbot)   at ($(B) + (1.2,-1.8)$);
 
-  % Corresponding angles marked at the top intersection
-  \\draw[red] (-0.375,1.5) ++(20:0.5) arc (20:160:0.5);
-  \\node[red] at (-0.375,2.05) {$\\alpha$};
+  % Corresponding angles at A and B are equal (parallel postulate) — same alpha label
+  \\pic [draw, fill=blue!15, angle radius=7mm, "$\\alpha$" opacity=1] {angle = Aright--A--Ttop};
+  \\pic [draw, fill=blue!15, angle radius=7mm, "$\\alpha$" opacity=1] {angle = Bright--B--Tbot};
+
+  \\node[above left, font=\\bfseries] at (-3.3,2.2) {$a \\parallel b$};
 \\end{tikzpicture}`,
   },
   {
