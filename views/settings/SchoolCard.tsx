@@ -5,10 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { firestoreService } from '../../services/firestoreService';
 import { School, LogOut, CheckCircle2, Loader2 } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export function SchoolCard() {
     const { user, firebaseUser, updateLocalProfile } = useAuth();
     const { addNotification } = useNotification();
+    const { t } = useLanguage();
 
     const [joinCodeInput, setJoinCodeInput] = useState('');
     const [joinLoading, setJoinLoading] = useState(false);
@@ -35,22 +37,22 @@ export function SchoolCard() {
     const handleJoinSchool = async () => {
         if (!firebaseUser || joinCodeInput.trim().length < 4) return;
         if (user?.schoolId) {
-            addNotification('Веќе сте член на училиште. Прво напуштете го тековното пред да се приклучите кон ново.', 'error');
+            addNotification(t('settings.school.alreadyMember'), 'error');
             return;
         }
         setJoinLoading(true);
         try {
             const school = await firestoreService.joinSchoolByCode(joinCodeInput.trim(), firebaseUser.uid);
             if (!school) {
-                addNotification('Кодот не е пронајден. Проверете го и обидете се повторно.', 'error');
+                addNotification(t('settings.school.codeNotFound'), 'error');
             } else {
                 setJoinedSchoolName(school.name);
                 setJoinCodeInput('');
                 updateLocalProfile({ schoolId: school.id, schoolName: school.name });
-                addNotification(`Успешно се приклучивте кон ${school.name}! 🎉`, 'success');
+                addNotification(t('settings.school.joinSuccess').replace('{name}', school.name), 'success');
             }
         } catch {
-            addNotification('Грешка при приклучување. Обидете се повторно.', 'error');
+            addNotification(t('settings.school.joinError'), 'error');
         } finally {
             setJoinLoading(false);
         }
@@ -59,7 +61,7 @@ export function SchoolCard() {
     const handleLeaveSchool = () => {
         if (!firebaseUser || !user?.schoolId) return;
         setConfirmDialog({
-            message: 'Дали сте сигурни дека сакате да го напуштите училиштето?',
+            message: t('settings.school.leaveConfirm'),
             variant: 'warning',
             onConfirm: async () => {
                 setConfirmDialog(null);
@@ -68,9 +70,9 @@ export function SchoolCard() {
                     await firestoreService.leaveSchool(user.schoolId!, firebaseUser.uid);
                     setJoinedSchoolName(null);
                     updateLocalProfile({ schoolId: undefined, schoolName: undefined });
-                    addNotification('Успешно го напуштивте училиштето.', 'success');
+                    addNotification(t('settings.school.leaveSuccess'), 'success');
                 } catch {
-                    addNotification('Грешка при напуштање. Обидете се повторно.', 'error');
+                    addNotification(t('settings.school.leaveError'), 'error');
                 } finally {
                     setLeaveLoading(false);
                 }
@@ -85,12 +87,12 @@ export function SchoolCard() {
             <Card className="max-w-2xl border-blue-200 bg-blue-50/20">
                 <h2 className="text-2xl font-semibold text-blue-800 mb-1 flex items-center gap-2">
                     <School className="w-6 h-6" />
-                    Приклучи се кон училиште
+                    {t('settings.school.title')}
                 </h2>
                 <p className="text-sm text-blue-600 mb-4">
                     {user.role === 'admin'
-                        ? 'Системски администратор: директно изберете училиште без код.'
-                        : 'Добијте код од директорот/администраторот на вашето училиште и внесете го подолу.'}
+                        ? t('settings.school.subtitleAdmin')
+                        : t('settings.school.subtitleTeacher')}
                 </p>
 
                 {joinedSchoolName && user.schoolId ? (
@@ -106,18 +108,18 @@ export function SchoolCard() {
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
                             {leaveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
-                            Напушти
+                            {t('settings.school.leave')}
                         </button>
                     </div>
                 ) : user.role === 'admin' ? (
                     <div className="flex gap-2">
                         <select
-                            aria-label="Изберете училиште"
+                            aria-label={t('settings.school.selectSchoolAria')}
                             value={adminSchoolSel}
                             onChange={e => setAdminSchoolSel(e.target.value)}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                         >
-                            <option value="">— Изберете училиште —</option>
+                            <option value="">{t('settings.school.selectSchoolOption')}</option>
                             {adminSchools.map(s => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
@@ -134,9 +136,9 @@ export function SchoolCard() {
                                     await firestoreService.adminAssignSchool(firebaseUser.uid, school.id, school.name);
                                     setJoinedSchoolName(school.name);
                                     updateLocalProfile({ schoolId: school.id, schoolName: school.name });
-                                    addNotification(`Поврзани со ${school.name}! 🎉`, 'success');
+                                    addNotification(t('settings.school.connectSuccess').replace('{name}', school.name), 'success');
                                 } catch {
-                                    addNotification('Грешка при поврзување.', 'error');
+                                    addNotification(t('settings.school.connectError'), 'error');
                                 } finally {
                                     setJoinLoading(false);
                                 }
@@ -144,7 +146,7 @@ export function SchoolCard() {
                             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            Постави
+                            {t('settings.school.set')}
                         </button>
                     </div>
                 ) : (
@@ -154,7 +156,7 @@ export function SchoolCard() {
                             value={joinCodeInput}
                             onChange={e => setJoinCodeInput(e.target.value.trim().toUpperCase())}
                             maxLength={8}
-                            placeholder="пр. AB1234"
+                            placeholder={t('settings.school.codePlaceholder')}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
                         <button
@@ -164,7 +166,7 @@ export function SchoolCard() {
                             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            Приклучи се
+                            {t('settings.school.join')}
                         </button>
                     </div>
                 )}

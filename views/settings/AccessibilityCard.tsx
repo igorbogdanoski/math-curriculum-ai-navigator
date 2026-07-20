@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export function AccessibilityCard() {
+    const { t } = useLanguage();
     const [dyslexicFont, setDyslexicFont] = useState(() =>
         localStorage.getItem('accessibility_dyslexic') === 'true'
     );
@@ -37,41 +39,41 @@ export function AccessibilityCard() {
     return (
         <Card className="max-w-2xl border-teal-200 bg-teal-50/20">
             <h2 className="text-2xl font-semibold text-teal-800 mb-1 flex items-center gap-2">
-                👁️ Пристапност
+                {t('settings.accessibility.title')}
             </h2>
-            <p className="text-sm text-teal-600 mb-4">Поставки за читање и визуелни помошници.</p>
+            <p className="text-sm text-teal-600 mb-4">{t('settings.accessibility.subtitle')}</p>
             <div className="space-y-3">
                 <div className="flex items-center justify-between bg-white border border-teal-100 rounded-xl px-4 py-3">
                     <div>
-                        <p className="text-sm font-semibold text-gray-800">OpenDyslexic фонт</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Глобална замена на фонтот — олеснува читање за ученици со дислексија.</p>
+                        <p className="text-sm font-semibold text-gray-800">{t('settings.accessibility.dyslexicFontLabel')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('settings.accessibility.dyslexicFontDesc')}</p>
                     </div>
                     <button
                         type="button"
                         onClick={toggleDyslexicFont}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${dyslexicFont ? 'bg-teal-500' : 'bg-gray-200'}`}
-                        aria-label={dyslexicFont ? 'Исклучи OpenDyslexic фонт' : 'Вклучи OpenDyslexic фонт'}
+                        aria-label={dyslexicFont ? t('settings.accessibility.dyslexicFontOffAria') : t('settings.accessibility.dyslexicFontOnAria')}
                     >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${dyslexicFont ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                 </div>
                 <div className="flex items-center justify-between bg-white border border-teal-100 rounded-xl px-4 py-3">
                     <div>
-                        <p className="text-sm font-semibold text-gray-800">Зголемен контраст</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Зголемен контраст и заситеност за подобра читливост.</p>
+                        <p className="text-sm font-semibold text-gray-800">{t('settings.accessibility.highContrastLabel')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('settings.accessibility.highContrastDesc')}</p>
                     </div>
                     <button
                         type="button"
                         onClick={toggleHighContrast}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${highContrast ? 'bg-teal-500' : 'bg-gray-200'}`}
-                        aria-label={highContrast ? 'Исклучи зголемен контраст' : 'Вклучи зголемен контраст'}
+                        aria-label={highContrast ? t('settings.accessibility.highContrastOffAria') : t('settings.accessibility.highContrastOnAria')}
                     >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${highContrast ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                 </div>
             </div>
             <p className="text-xs text-gray-400 mt-3">
-                Поставките се зачувуваат локално и се применуваат веднаш низ целата апликација.
+                {t('settings.accessibility.footerNote')}
             </p>
         </Card>
     );
