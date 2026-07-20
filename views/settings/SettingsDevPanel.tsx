@@ -19,10 +19,12 @@ import { DEFAULT_MODEL } from '../../services/gemini/core';
 import type { ShadowCompareReport } from '../../services/geminiService';
 import { ICONS } from '../../constants';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export function SettingsDevPanel() {
     const { user, firebaseUser } = useAuth();
     const { addNotification } = useNotification();
+    const { t } = useLanguage();
 
     // Feature flag state — all localStorage/service-based
     const [autoAiEnabled, setAutoAiEnabled] = useState(() =>
@@ -116,7 +118,7 @@ export function SettingsDevPanel() {
     const handleClearShadowLog = () => {
         clearShadowLog();
         setShadowReport(null);
-        addNotification('Shadow log е исчистен.', 'success');
+        addNotification(t('settings.dev.shadowLogCleared'), 'success');
     };
 
     const toggleMentor = async () => {
@@ -125,10 +127,10 @@ export function SettingsDevPanel() {
         setIsMentorEnabled(next);
         try {
             await firestoreService.toggleMentorStatus(firebaseUser.uid, next);
-            addNotification(next ? '🏆 Сте регистрирани како Ментор! Вашите материјали ќе добијат ментор беџ.' : 'Менторскиот статус е исклучен.', 'success');
+            addNotification(next ? t('settings.dev.mentorOnSuccess') : t('settings.dev.mentorOffSuccess'), 'success');
         } catch {
             setIsMentorEnabled(!next);
-            addNotification('Грешка при промена на менторски статус.', 'error');
+            addNotification(t('settings.dev.mentorToggleError'), 'error');
         }
     };
 
@@ -138,10 +140,10 @@ export function SettingsDevPanel() {
         setIsSavingGlobalFlag(key);
         try {
             await setGlobalDefault(key, next);
-            addNotification('Глобалната поставка е зачувана за сите наставници.', 'success');
+            addNotification(t('settings.dev.globalFlagSaveSuccess'), 'success');
         } catch {
             setGlobalFlags(prev => ({ ...prev, [key]: !next }));
-            addNotification('Грешка при зачувување на глобалната поставка.', 'error');
+            addNotification(t('settings.dev.globalFlagSaveError'), 'error');
         } finally {
             setIsSavingGlobalFlag(null);
         }
@@ -151,7 +153,7 @@ export function SettingsDevPanel() {
         clearDailyQuotaFlag();
         setQuotaStatus({ exhausted: false, resetTime: '', resetDate: '', source: '' });
         setApiTestResult(null);
-        addNotification('AI квота флагот е очистен. Следниот повик ќе го провери статусот.', 'success');
+        addNotification(t('settings.dev.quotaFlagCleared'), 'success');
     };
 
     const handleTestApi = async () => {
@@ -159,7 +161,7 @@ export function SettingsDevPanel() {
         setApiTestResult(null);
         try {
             if (!firebaseUser) {
-                setApiTestResult('❌ Не сте логирани. Најавете се прво.');
+                setApiTestResult(t('settings.dev.testApiNotLoggedIn'));
                 return;
             }
             const token = await firebaseUser.getIdToken();
@@ -174,14 +176,14 @@ export function SettingsDevPanel() {
             });
             const data = await resp.json().catch(() => ({}));
             if (resp.ok) {
-                setApiTestResult(`✅ API работи! Одговор: "${(data.text || '').slice(0, 60)}"`);
+                setApiTestResult(t('settings.dev.testApiSuccess').replace('{text}', (data.text || '').slice(0, 60)));
             } else {
                 const qType = data.quotaType ? ` [quotaType: ${data.quotaType}]` : '';
                 const errMsg = (data.error || JSON.stringify(data)).slice(0, 200);
                 setApiTestResult(`❌ HTTP ${resp.status}${qType}: ${errMsg}`);
             }
         } catch (e) {
-            setApiTestResult(`❌ Мрежна грешка: ${e instanceof Error ? e.message : String(e)}`);
+            setApiTestResult(t('settings.dev.testApiNetworkError').replace('{message}', e instanceof Error ? e.message : String(e)));
         } finally {
             setIsTesting(false);
         }
@@ -189,11 +191,11 @@ export function SettingsDevPanel() {
 
     const handleEnableNotifications = async () => {
         if (typeof Notification === 'undefined') {
-            addNotification('Вашиот пребарувач не поддржува нотификации.', 'error');
+            addNotification(t('settings.dev.notifUnsupported'), 'error');
             return;
         }
         if (!firebaseUser?.uid) {
-            addNotification('Најавете се за да се зачува уредот за push нотификации.', 'error');
+            addNotification(t('settings.dev.notifNeedsLogin'), 'error');
             return;
         }
         try {
@@ -201,13 +203,13 @@ export function SettingsDevPanel() {
             const permission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
             setNotifPermission(permission);
             if (permission !== 'granted') {
-                addNotification('Нотификациите се одбиени. Може да ги овозможите преку поставките на пребарувачот.', 'warning');
+                addNotification(t('settings.dev.notifDenied'), 'warning');
                 return;
             }
             if (token) {
-                addNotification('Нотификациите се овозможени и уредот е регистриран за push пораки.', 'success');
+                addNotification(t('settings.dev.notifEnabledRegistered'), 'success');
             } else {
-                addNotification('Дозволата е овозможена, но FCM токенот не е регистриран. Проверете ја Web Push конфигурацијата.', 'warning');
+                addNotification(t('settings.dev.notifGrantedNoToken'), 'warning');
             }
             try {
                 const stored = localStorage.getItem('ai_daily_quota_exhausted');
@@ -216,13 +218,13 @@ export function SettingsDevPanel() {
             } catch { /* ignore */ }
         } catch {
             setNotifPermission(typeof Notification !== 'undefined' ? Notification.permission : 'default');
-            addNotification('Грешка при регистрација на push нотификации. Обидете се повторно.', 'error');
+            addNotification(t('settings.dev.notifRegisterError'), 'error');
         }
     };
 
     const handleMigrateCurriculum = () => {
         setConfirmDialog({
-            message: "Дали сте сигурни дека сакате да ја пополните Firestore базата со локалната наставна програма? Ова ќе ги пребрише постоечките податоци во 'curriculum/v1'.",
+            message: t('settings.dev.migrationConfirm'),
             variant: 'warning',
             onConfirm: async () => {
                 setConfirmDialog(null);
@@ -230,9 +232,9 @@ export function SettingsDevPanel() {
                 try {
                     const { fullCurriculumData } = await import('../../data/curriculum');
                     await firestoreService.saveFullCurriculum(fullCurriculumData);
-                    addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
+                    addNotification(t('settings.dev.migrationSuccess'), 'success');
                 } catch (error) {
-                    addNotification('Грешка при миграција на податоците.', 'error');
+                    addNotification(t('settings.dev.migrationError'), 'error');
                     logger.error('Migration failed:', error);
                 } finally {
                     setIsMigrating(false);
@@ -260,8 +262,8 @@ export function SettingsDevPanel() {
                 <button
                     type="button"
                     onClick={onToggle}
-                    title={on ? `Исклучи ${label}` : `Вклучи ${label}`}
-                    aria-label={on ? `Исклучи ${label}` : `Вклучи ${label}`}
+                    title={on ? t('settings.dev.toggleOffAria').replace('{label}', label) : t('settings.dev.toggleOnAria').replace('{label}', label)}
+                    aria-label={on ? t('settings.dev.toggleOffAria').replace('{label}', label) : t('settings.dev.toggleOnAria').replace('{label}', label)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${on ? bgOn : 'bg-gray-300'}`}
                 >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -274,14 +276,14 @@ export function SettingsDevPanel() {
         <>
             {/* Feature flags card */}
             <Card className="max-w-2xl">
-                <h2 className="text-xl font-semibold text-gray-700 mb-2">⚙️ Разработувачки поставки</h2>
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">{t('settings.dev.title')}</h2>
                 <div className="space-y-0">
-                    <ToggleRow label="Авто AI предлози" sub="Препораки за часови и проактивни сугестии се генерираат во позадина" on={autoAiEnabled} onToggle={toggleAutoAi} />
-                    <ToggleRow label="🇲🇰 Македонски контекст во AI" sub="AI генераторот ќе користи денари, македонски имиња, градови и примери од секојдневниот живот" on={mkContextEnabled} onToggle={toggleMkContext} />
-                    <ToggleRow label="⚡ Intent Router (E3)" sub="Рутира едноставни AI задачи (аналогии, наслови, мисконцепции) на побрз/поефтин Gemini Lite модел." on={intentRouterEnabled} onToggle={toggleIntentRouter} color="violet" />
-                    <ToggleRow label="🩹 Recovery Worksheet (E2)" sub="Analytics ќе отвори preview + teacher confirm flow за worksheet со одобрување пред доделување." on={recoveryWorksheetEnabled} onToggle={toggleRecoveryWorksheet} color="emerald" />
-                    <ToggleRow label="🧭 Feedback Taxonomy Rollout (E5-C3)" sub="Structured reject/revision reasons + analytics breakdown. OFF = legacy reject path без taxonomy analytics." on={feedbackTaxonomyEnabled} onToggle={toggleFeedbackTaxonomy} color="indigo" />
-                    <ToggleRow label="🔬 Vertex AI Shadow Mode (E4)" sub="Секој AI повик испраќа паралелен shadow повик до Vertex AI proxy. Резултатот не се користи — само метрики (latency/status) се логираат." on={vertexShadowEnabled} onToggle={toggleVertexShadow} color="blue" />
+                    <ToggleRow label={t('settings.dev.autoAiLabel')} sub={t('settings.dev.autoAiSub')} on={autoAiEnabled} onToggle={toggleAutoAi} />
+                    <ToggleRow label={t('settings.dev.mkContextLabel')} sub={t('settings.dev.mkContextSub')} on={mkContextEnabled} onToggle={toggleMkContext} />
+                    <ToggleRow label={t('settings.dev.intentRouterLabel')} sub={t('settings.dev.intentRouterSub')} on={intentRouterEnabled} onToggle={toggleIntentRouter} color="violet" />
+                    <ToggleRow label={t('settings.dev.recoveryWorksheetLabel')} sub={t('settings.dev.recoveryWorksheetSub')} on={recoveryWorksheetEnabled} onToggle={toggleRecoveryWorksheet} color="emerald" />
+                    <ToggleRow label={t('settings.dev.feedbackTaxonomyLabel')} sub={t('settings.dev.feedbackTaxonomySub')} on={feedbackTaxonomyEnabled} onToggle={toggleFeedbackTaxonomy} color="indigo" />
+                    <ToggleRow label={t('settings.dev.vertexShadowLabel')} sub={t('settings.dev.vertexShadowSub')} on={vertexShadowEnabled} onToggle={toggleVertexShadow} color="blue" />
                 </div>
 
                 {vertexShadowEnabled && (
@@ -289,32 +291,32 @@ export function SettingsDevPanel() {
                         <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">E4 Compare Report</p>
                         <div className="flex gap-2">
                             <button type="button" onClick={loadShadowReport} className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
-                                Прикажи извештај
+                                {t('settings.dev.showReport')}
                             </button>
                             <button type="button" onClick={handleClearShadowLog} className="text-xs px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors">
-                                Исчисти лог
+                                {t('settings.dev.clearLog')}
                             </button>
                         </div>
                         {shadowReport && (
                             <div className="mt-2 overflow-x-auto rounded border border-blue-100 bg-blue-50 text-xs">
                                 {shadowReport.sampleSize === 0 ? (
-                                    <p className="p-3 text-gray-500">Нема логови. Вклучи shadow mode и изврши неколку AI повици.</p>
+                                    <p className="p-3 text-gray-500">{t('settings.dev.noLogsYet')}</p>
                                 ) : (
                                     <table className="w-full text-left">
                                         <thead>
                                             <tr className="border-b border-blue-200">
-                                                <th className="px-3 py-2 font-semibold text-blue-800">Метрика</th>
+                                                <th className="px-3 py-2 font-semibold text-blue-800">{t('settings.dev.metricCol')}</th>
                                                 <th className="px-3 py-2 font-semibold text-blue-800">Gemini (prod)</th>
                                                 <th className="px-3 py-2 font-semibold text-blue-800">Vertex (shadow)</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-blue-100">
-                                            <tr><td className="px-3 py-2 text-gray-600">Примероци</td><td className="px-3 py-2">{shadowReport.sampleSize}</td><td className="px-3 py-2">{shadowReport.sampleSize}</td></tr>
-                                            <tr><td className="px-3 py-2 text-gray-600">Просечна латентност</td><td className="px-3 py-2">{shadowReport.geminiAvgLatencyMs} ms</td><td className="px-3 py-2">{shadowReport.vertexAvgLatencyMs !== null ? `${shadowReport.vertexAvgLatencyMs} ms` : '—'}</td></tr>
-                                            <tr><td className="px-3 py-2 text-gray-600">Успешност</td><td className="px-3 py-2">100%</td><td className="px-3 py-2">{(shadowReport.vertexSuccessRate * 100).toFixed(0)}%</td></tr>
-                                            <tr><td className="px-3 py-2 text-gray-600">Грешки</td><td className="px-3 py-2">—</td><td className="px-3 py-2">{(shadowReport.vertexErrorRate * 100).toFixed(0)}%</td></tr>
+                                            <tr><td className="px-3 py-2 text-gray-600">{t('settings.dev.sampleSizeRow')}</td><td className="px-3 py-2">{shadowReport.sampleSize}</td><td className="px-3 py-2">{shadowReport.sampleSize}</td></tr>
+                                            <tr><td className="px-3 py-2 text-gray-600">{t('settings.dev.avgLatencyRow')}</td><td className="px-3 py-2">{shadowReport.geminiAvgLatencyMs} ms</td><td className="px-3 py-2">{shadowReport.vertexAvgLatencyMs !== null ? `${shadowReport.vertexAvgLatencyMs} ms` : '—'}</td></tr>
+                                            <tr><td className="px-3 py-2 text-gray-600">{t('settings.dev.successRateRow')}</td><td className="px-3 py-2">100%</td><td className="px-3 py-2">{(shadowReport.vertexSuccessRate * 100).toFixed(0)}%</td></tr>
+                                            <tr><td className="px-3 py-2 text-gray-600">{t('settings.dev.errorsRow')}</td><td className="px-3 py-2">—</td><td className="px-3 py-2">{(shadowReport.vertexErrorRate * 100).toFixed(0)}%</td></tr>
                                             <tr><td className="px-3 py-2 text-gray-600">Not configured</td><td className="px-3 py-2">—</td><td className="px-3 py-2">{(shadowReport.vertexNotConfiguredRate * 100).toFixed(0)}%</td></tr>
-                                            <tr><td className="px-3 py-2 text-gray-600">Релативна цена</td><td className="px-3 py-2">1.00×</td><td className="px-3 py-2">{shadowReport.vertexRelativeCost !== null ? `~${shadowReport.vertexRelativeCost.toFixed(2)}×` : '—'}</td></tr>
+                                            <tr><td className="px-3 py-2 text-gray-600">{t('settings.dev.relativeCostRow')}</td><td className="px-3 py-2">1.00×</td><td className="px-3 py-2">{shadowReport.vertexRelativeCost !== null ? `~${shadowReport.vertexRelativeCost.toFixed(2)}×` : '—'}</td></tr>
                                         </tbody>
                                     </table>
                                 )}
@@ -323,7 +325,7 @@ export function SettingsDevPanel() {
                     </div>
                 )}
 
-                <ToggleRow label="🏆 Ментор статус" sub="Вашите материјали во Националната библиотека ќе добијат ментор беџ. Колегите можат да учат од вашето искуство." on={isMentorEnabled} onToggle={toggleMentor} color="amber" />
+                <ToggleRow label={t('settings.dev.mentorLabel')} sub={t('settings.dev.mentorSub')} on={isMentorEnabled} onToggle={toggleMentor} color="amber" />
             </Card>
 
             {/* Admin migration */}
@@ -331,17 +333,16 @@ export function SettingsDevPanel() {
                 <Card className="max-w-2xl border-orange-200 bg-orange-50/30">
                     <h2 className="text-2xl font-semibold text-orange-800 mb-4 flex items-center gap-2">
                         <ICONS.settings className="w-6 h-6" />
-                        Администрација на податоци
+                        {t('settings.dev.adminDataTitle')}
                     </h2>
                     <p className="text-sm text-orange-700 mb-6">
-                        Оваа алатка овозможува синхронизација на локалната наставна програма со облакот (Firestore).
-                        Користете ја за иницијално поставување или кога сакате да ги обновите податоците во базата.
+                        {t('settings.dev.adminDataDesc')}
                     </p>
                     <div className="bg-white p-4 rounded-xl border border-orange-200 shadow-sm">
                         <div className="flex items-center justify-between gap-4">
                             <div>
-                                <h3 className="font-bold text-gray-900">Миграција на наставна програма</h3>
-                                <p className="text-xs text-gray-500 mt-1">Верзија: v2 (Сите одделенија 1-9)</p>
+                                <h3 className="font-bold text-gray-900">{t('settings.dev.curriculumMigrationTitle')}</h3>
+                                <p className="text-xs text-gray-500 mt-1">{t('settings.dev.curriculumVersion')}</p>
                             </div>
                             <button
                                 onClick={handleMigrateCurriculum}
@@ -349,9 +350,9 @@ export function SettingsDevPanel() {
                                 className="bg-orange-600 text-white px-6 py-2.5 rounded-xl shadow-lg hover:bg-orange-700 transition-all flex items-center gap-2 disabled:bg-gray-400 font-bold"
                             >
                                 {isMigrating ? (
-                                    <><ICONS.spinner className="w-5 h-5 animate-spin" />Синхронизирам...</>
+                                    <><ICONS.spinner className="w-5 h-5 animate-spin" />{t('settings.dev.syncing')}</>
                                 ) : (
-                                    <><ICONS.zap className="w-5 h-5" />Синхронизирај со Firestore</>
+                                    <><ICONS.zap className="w-5 h-5" />{t('settings.dev.syncWithFirestore')}</>
                                 )}
                             </button>
                         </div>
@@ -362,19 +363,18 @@ export function SettingsDevPanel() {
             {/* Global (admin-controlled) feature-flag defaults */}
             {user?.role === 'admin' && (
                 <Card className="max-w-2xl border-purple-200 bg-purple-50/30">
-                    <h2 className="text-xl font-semibold text-purple-800 mb-2">🌐 Глобални поставки (само админ)</h2>
+                    <h2 className="text-xl font-semibold text-purple-800 mb-2">{t('settings.dev.globalSettingsTitle')}</h2>
                     <p className="text-sm text-purple-700 mb-2">
-                        Овие поставки важат за сите наставници кои немаат лично поставено сопствен прекинувач погоре.
-                        Личниот прекинувач секогаш има предност пред глобалната вредност.
+                        {t('settings.dev.globalSettingsDesc')}
                     </p>
                     <div className="space-y-0">
-                        <ToggleRow label="🇲🇰 Македонски контекст во AI (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.mk_local_context_enabled} onToggle={() => toggleGlobalFlag('mk_local_context_enabled')} color="indigo" />
-                        <ToggleRow label="🩹 Recovery Worksheet (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.recovery_worksheet_enabled} onToggle={() => toggleGlobalFlag('recovery_worksheet_enabled')} color="emerald" />
-                        <ToggleRow label="⚡ Intent Router (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.intent_router_enabled} onToggle={() => toggleGlobalFlag('intent_router_enabled')} color="violet" />
-                        <ToggleRow label="🔬 Vertex AI Shadow Mode (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.vertex_ai_shadow_enabled} onToggle={() => toggleGlobalFlag('vertex_ai_shadow_enabled')} color="blue" />
-                        <ToggleRow label="🧭 Feedback Taxonomy Rollout (глобално)" sub="Стандардна вредност за сите наставници" on={globalFlags.feedback_taxonomy_rollout_enabled} onToggle={() => toggleGlobalFlag('feedback_taxonomy_rollout_enabled')} color="indigo" />
+                        <ToggleRow label={t('settings.dev.mkContextGlobalLabel')} sub={t('settings.dev.globalDefaultSub')} on={globalFlags.mk_local_context_enabled} onToggle={() => toggleGlobalFlag('mk_local_context_enabled')} color="indigo" />
+                        <ToggleRow label={t('settings.dev.recoveryWorksheetGlobalLabel')} sub={t('settings.dev.globalDefaultSub')} on={globalFlags.recovery_worksheet_enabled} onToggle={() => toggleGlobalFlag('recovery_worksheet_enabled')} color="emerald" />
+                        <ToggleRow label={t('settings.dev.intentRouterGlobalLabel')} sub={t('settings.dev.globalDefaultSub')} on={globalFlags.intent_router_enabled} onToggle={() => toggleGlobalFlag('intent_router_enabled')} color="violet" />
+                        <ToggleRow label={t('settings.dev.vertexShadowGlobalLabel')} sub={t('settings.dev.globalDefaultSub')} on={globalFlags.vertex_ai_shadow_enabled} onToggle={() => toggleGlobalFlag('vertex_ai_shadow_enabled')} color="blue" />
+                        <ToggleRow label={t('settings.dev.feedbackTaxonomyGlobalLabel')} sub={t('settings.dev.globalDefaultSub')} on={globalFlags.feedback_taxonomy_rollout_enabled} onToggle={() => toggleGlobalFlag('feedback_taxonomy_rollout_enabled')} color="indigo" />
                     </div>
-                    {isSavingGlobalFlag && <p className="text-xs text-purple-600 mt-2">Зачувувам...</p>}
+                    {isSavingGlobalFlag && <p className="text-xs text-purple-600 mt-2">{t('settings.dev.savingEllipsis')}</p>}
                 </Card>
             )}
 
@@ -382,40 +382,40 @@ export function SettingsDevPanel() {
             <Card className={`max-w-2xl ${quotaStatus.exhausted ? 'border-red-200 bg-red-50/30' : 'border-green-200 bg-green-50/30'}`}>
                 <h2 className={`text-2xl font-semibold mb-4 flex items-center gap-2 ${quotaStatus.exhausted ? 'text-red-800' : 'text-green-800'}`}>
                     <ICONS.zap className="w-6 h-6" />
-                    AI Статус на квота
+                    {t('settings.dev.quotaStatusTitle')}
                 </h2>
                 <div className="bg-white rounded-xl border p-4 space-y-3 shadow-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-700">Статус на Gemini API</span>
+                        <span className="text-sm font-semibold text-gray-700">{t('settings.dev.geminiApiStatus')}</span>
                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${quotaStatus.exhausted ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            {quotaStatus.exhausted ? '⛔ Исцрпена' : '✅ Активна'}
+                            {quotaStatus.exhausted ? t('settings.dev.quotaExhausted') : t('settings.dev.quotaActive')}
                         </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Gemini reset (секој ден)</span>
-                        <span className="font-semibold text-gray-700">09:00 МК (полноќ Pacific)</span>
+                        <span className="text-gray-500">{t('settings.dev.geminiResetDaily')}</span>
+                        <span className="font-semibold text-gray-700">{t('settings.dev.resetTimeNote')}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-100">
-                        <span className="text-gray-500">Нотификација при обновување</span>
+                        <span className="text-gray-500">{t('settings.dev.notifOnRefresh')}</span>
                         {notifPermission === 'granted' ? (
-                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700">✅ Овозможени</span>
+                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700">{t('settings.dev.notifEnabledBadge')}</span>
                         ) : notifPermission === 'denied' ? (
-                            <span className="text-xs font-semibold text-red-500">Одбиени (одбл. пребарувач)</span>
+                            <span className="text-xs font-semibold text-red-500">{t('settings.dev.notifDeniedBadge')}</span>
                         ) : (
                             <button type="button" onClick={handleEnableNotifications} className="text-xs font-bold px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
-                                Овозможи нотификации
+                                {t('settings.dev.enableNotifications')}
                             </button>
                         )}
                     </div>
                     {quotaStatus.exhausted && (
                         <>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500">Обновување на</span>
-                                <span className="font-bold text-red-600">{quotaStatus.resetDate} во {quotaStatus.resetTime} МК</span>
+                                <span className="text-gray-500">{t('settings.dev.resetsOn')}</span>
+                                <span className="font-bold text-red-600">{t('settings.dev.resetAtTemplate').replace('{date}', quotaStatus.resetDate).replace('{time}', quotaStatus.resetTime)}</span>
                             </div>
                             {quotaStatus.source && (
                                 <div className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-400">Флагот зачуван во</span>
+                                    <span className="text-gray-400">{t('settings.dev.flagStoredIn')}</span>
                                     <span className="font-mono text-gray-500">{quotaStatus.source}</span>
                                 </div>
                             )}
@@ -423,14 +423,14 @@ export function SettingsDevPanel() {
                     )}
                     <div className="pt-2 border-t border-gray-100 space-y-2">
                         <p className="text-xs text-gray-400">
-                            „Очисти флаг" го брише записот за исцрпена квота. „Тестирај API" го проверува статусот директно.
+                            {t('settings.dev.quotaButtonsHint')}
                         </p>
                         <div className="flex gap-2 flex-wrap">
                             <button type="button" onClick={handleClearQuotaFlag} className="text-xs font-bold px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition">
-                                🔄 Очисти флаг
+                                {t('settings.dev.clearFlag')}
                             </button>
                             <button type="button" onClick={handleTestApi} disabled={isTesting} className="text-xs font-bold px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-50">
-                                {isTesting ? '⏳ Тестирам...' : '🔌 Тестирај API конекција'}
+                                {isTesting ? t('settings.dev.testing') : t('settings.dev.testApiConnection')}
                             </button>
                         </div>
                         {apiTestResult && (
@@ -441,7 +441,7 @@ export function SettingsDevPanel() {
                     </div>
                 </div>
                 <p className="text-xs text-gray-400 mt-3">
-                    Gemini free tier: ~50 барања/ден. При исцрпување, AI функциите се блокирани до 09:00 МК.
+                    {t('settings.dev.quotaFooterNote')}
                 </p>
             </Card>
 

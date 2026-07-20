@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDevPanel } from './SettingsDevPanel';
+import { LanguageProvider } from '../../i18n/LanguageContext';
 
 let mockUser: { role: string; isMentor?: boolean } = { role: 'teacher' };
 
@@ -63,17 +64,18 @@ vi.mock('../../services/gemini/core', () => ({ DEFAULT_MODEL: 'gemini-2.5-flash'
 describe('SettingsDevPanel — global admin card visibility', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('preferred_language', 'mk');
   });
 
   it('hides the global (admin-only) settings card for a regular teacher', () => {
     mockUser = { role: 'teacher' };
-    render(<SettingsDevPanel />);
+    render(<LanguageProvider><SettingsDevPanel /></LanguageProvider>);
     expect(screen.queryByText(/Глобални поставки \(само админ\)/)).toBeNull();
   });
 
   it('shows the global settings card for an admin', () => {
     mockUser = { role: 'admin' };
-    render(<SettingsDevPanel />);
+    render(<LanguageProvider><SettingsDevPanel /></LanguageProvider>);
     expect(screen.getByText(/Глобални поставки \(само админ\)/)).toBeTruthy();
   });
 });
