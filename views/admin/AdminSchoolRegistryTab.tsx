@@ -4,6 +4,7 @@ import { Building2, Search, Mail, CheckCircle2 } from 'lucide-react';
 import { SCHOOL_REGISTRY, type SchoolRegistryEntry } from '../../data/schoolRegistry';
 import { firestoreService } from '../../services/firestoreService';
 import { logger } from '../../utils/logger';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface AdminSchoolRegistryTabProps {
     users: Array<{ schoolRegistryId?: string }>;
@@ -11,28 +12,28 @@ interface AdminSchoolRegistryTabProps {
     adminUid: string;
 }
 
-const TYPE_LABELS: Record<SchoolRegistryEntry['type'], string> = {
-    primary: 'Основно',
-    secondary: 'Средно',
-    vet: 'РЦСОО',
-};
-
-function buildOutreachMailto(entry: SchoolRegistryEntry): string {
-    const subject = encodeURIComponent(`Покана за соработка — Math Navigator AI`);
+function buildOutreachMailto(entry: SchoolRegistryEntry, t: ReturnType<typeof useLanguage>['t']): string {
+    const subject = encodeURIComponent(t('admin.registry.outreachSubject'));
     const body = encodeURIComponent(
-        `Почитувани,\n\n` +
-        `Ве контактираме во име на Math Navigator AI — платформа за наставници по математика.\n\n` +
-        `Училиште: ${entry.name}\n` +
-        `Општина: ${entry.municipality}\n` +
-        (entry.address ? `Адреса: ${entry.address}\n` : '') +
-        (entry.website ? `Веб-страница: ${entry.website}\n` : '') +
-        `\nБи сакале да ги поканиме наставниците по математика од вашето училиште да се регистрираат на платформата.\n\n` +
-        `Со почит,\nMath Navigator AI тим`
+        `${t('admin.registry.outreachGreeting')}\n\n` +
+        `${t('admin.registry.outreachIntro')}\n\n` +
+        `${t('admin.registry.outreachSchoolLabel')}: ${entry.name}\n` +
+        `${t('admin.registry.outreachMunicipalityLabel')}: ${entry.municipality}\n` +
+        (entry.address ? `${t('admin.registry.outreachAddressLabel')}: ${entry.address}\n` : '') +
+        (entry.website ? `${t('admin.registry.outreachWebsiteLabel')}: ${entry.website}\n` : '') +
+        `\n${t('admin.registry.outreachInvite')}\n\n` +
+        t('admin.registry.outreachClosing')
     );
     return `mailto:?subject=${subject}&body=${body}`;
 }
 
 export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: AdminSchoolRegistryTabProps) {
+    const { t } = useLanguage();
+    const TYPE_LABELS: Record<SchoolRegistryEntry['type'], string> = {
+        primary: t('admin.registry.typePrimary'),
+        secondary: t('admin.registry.typeSecondary'),
+        vet: t('admin.registry.typeVet'),
+    };
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<'all' | SchoolRegistryEntry['type']>('all');
     const [showOnlyMissing, setShowOnlyMissing] = useState(false);
@@ -88,10 +89,10 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-gray-500" />
-                    Регистар на училишта ({SCHOOL_REGISTRY.length})
+                    {t('admin.registry.title').replace('{n}', String(SCHOOL_REGISTRY.length))}
                 </h2>
                 <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                    {notYetOnPlatformCount} сè уште немаат наставник на платформата
+                    {t('admin.registry.notYetOnPlatform').replace('{n}', String(notYetOnPlatformCount))}
                 </span>
             </div>
 
@@ -102,7 +103,7 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                         type="text"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Пребарај по име или општина..."
+                        placeholder={t('admin.registry.searchPlaceholder')}
                         className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-red-400 outline-none"
                     />
                 </div>
@@ -110,16 +111,16 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                     value={typeFilter}
                     onChange={e => setTypeFilter(e.target.value as typeof typeFilter)}
                     className="px-3 py-2 border rounded-lg text-sm"
-                    aria-label="Филтрирај по тип"
+                    aria-label={t('admin.registry.filterByTypeAria')}
                 >
-                    <option value="all">Сите типови</option>
-                    <option value="primary">Основно</option>
-                    <option value="secondary">Средно</option>
-                    <option value="vet">РЦСОО</option>
+                    <option value="all">{t('admin.registry.allTypes')}</option>
+                    <option value="primary">{t('admin.registry.typePrimary')}</option>
+                    <option value="secondary">{t('admin.registry.typeSecondary')}</option>
+                    <option value="vet">{t('admin.registry.typeVet')}</option>
                 </select>
                 <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
                     <input type="checkbox" checked={showOnlyMissing} onChange={e => setShowOnlyMissing(e.target.checked)} />
-                    Само без наставник
+                    {t('admin.registry.onlyWithoutTeacher')}
                 </label>
             </div>
 
@@ -128,18 +129,18 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                     {[1, 2, 3, 4].map(i => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)}
                 </div>
             ) : filtered.length === 0 ? (
-                <p className="text-center py-8 text-gray-400 text-sm">Нема резултати.</p>
+                <p className="text-center py-8 text-gray-400 text-sm">{t('admin.registry.noResults')}</p>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-xs text-gray-400 border-b">
-                                <th className="pb-2 pr-3">Училиште</th>
-                                <th className="pb-2 pr-3">Општина</th>
-                                <th className="pb-2 pr-3">Тип</th>
-                                <th className="pb-2 pr-3">Наставници</th>
-                                <th className="pb-2 pr-3">Контакт</th>
-                                <th className="pb-2">Акција</th>
+                                <th className="pb-2 pr-3">{t('admin.registry.colSchool')}</th>
+                                <th className="pb-2 pr-3">{t('admin.registry.colMunicipality')}</th>
+                                <th className="pb-2 pr-3">{t('admin.registry.colType')}</th>
+                                <th className="pb-2 pr-3">{t('admin.registry.colTeachers')}</th>
+                                <th className="pb-2 pr-3">{t('admin.registry.colContact')}</th>
+                                <th className="pb-2">{t('admin.registry.colAction')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -157,7 +158,7 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                                         <td className="py-2 pr-3">
                                             {contacted ? (
                                                 <span className="flex items-center gap-1 text-green-600 text-xs font-semibold">
-                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Контактирано
+                                                    <CheckCircle2 className="w-3.5 h-3.5" /> {t('admin.registry.contacted')}
                                                 </span>
                                             ) : (
                                                 <span className="text-gray-400 text-xs">—</span>
@@ -165,8 +166,8 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                                         </td>
                                         <td className="py-2 flex items-center gap-2">
                                             <a
-                                                href={buildOutreachMailto(entry)}
-                                                title="Испрати покана за соработка"
+                                                href={buildOutreachMailto(entry, t)}
+                                                title={t('admin.registry.sendInviteTitle')}
                                                 className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500"
                                             >
                                                 <Mail className="w-4 h-4" />
@@ -178,7 +179,7 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                                                     disabled={markingId === entry.id}
                                                     className="text-xs font-semibold text-gray-500 hover:text-gray-700 disabled:opacity-50"
                                                 >
-                                                    Означи контактирано
+                                                    {t('admin.registry.markContacted')}
                                                 </button>
                                             )}
                                         </td>
@@ -188,7 +189,7 @@ export function AdminSchoolRegistryTab({ users, isLoadingUsers, adminUid }: Admi
                         </tbody>
                     </table>
                     {filtered.length > 200 && (
-                        <p className="text-xs text-gray-400 mt-3 text-center">Прикажани се првите 200 од {filtered.length} резултати — стеснете ја пребарувањето.</p>
+                        <p className="text-xs text-gray-400 mt-3 text-center">{t('admin.registry.truncatedNote').replace('{n}', String(filtered.length))}</p>
                     )}
                 </div>
             )}

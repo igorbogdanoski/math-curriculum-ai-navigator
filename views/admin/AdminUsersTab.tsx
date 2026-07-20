@@ -2,14 +2,7 @@ import React from 'react';
 import { Card } from '../../components/common/Card';
 import { Users } from 'lucide-react';
 import { UserAdminRow } from './UserAdminRow';
-
-const TRACK_LABELS: Record<string, string> = {
-    vocational4: 'Стручно 4г',
-    vocational3: 'Стручно 3г',
-    vocational2: 'Стручно 2г',
-    gymnasium:   'Гимназија',
-    gymnasium_elective: 'Гимн. изб.',
-};
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface AdminUsersTabProps {
     users: any[];
@@ -31,14 +24,22 @@ export function AdminUsersTab({
     updatingUid, currentUid, schools,
     handleChangeRole, handleUpdateSubscription, handleDeleteUser, onRefresh,
 }: AdminUsersTabProps) {
+    const { t } = useLanguage();
+    const TRACK_LABELS: Record<string, string> = {
+        vocational4: t('admin.track.vocational4'),
+        vocational3: t('admin.track.vocational3'),
+        vocational2: t('admin.track.vocational2'),
+        gymnasium:   t('admin.track.gymnasium'),
+        gymnasium_elective: t('admin.track.gymnasiumElective'),
+    };
     return (
         <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                     <Users className="w-5 h-5 text-gray-500" />
-                    Регистрирани корисници ({users.length})
+                    {t('admin.users.registeredUsers').replace('{n}', String(users.length))}
                 </h2>
-                <button type="button" onClick={onRefresh} className="text-xs text-gray-500 hover:text-gray-700 underline">Освежи</button>
+                <button type="button" onClick={onRefresh} className="text-xs text-gray-500 hover:text-gray-700 underline">{t('admin.users.refresh')}</button>
             </div>
 
             {users.length > 0 && (
@@ -53,7 +54,7 @@ export function AdminUsersTab({
                         </span>
                     ))}
                     <span className="px-2.5 py-1 rounded-full font-bold bg-blue-50 text-blue-700">
-                        🪙 Вкупно кредити: {users.filter(u => !u.hasUnlimitedCredits).reduce((s: number, u: any) => s + (u.aiCreditsBalance || 0), 0)}
+                        {t('admin.users.totalCredits').replace('{n}', String(users.filter(u => !u.hasUnlimitedCredits).reduce((s: number, u: any) => s + (u.aiCreditsBalance || 0), 0)))}
                     </span>
                 </div>
             )}
@@ -65,15 +66,15 @@ export function AdminUsersTab({
                 secondary.forEach(u => { trackCounts[u.secondaryTrack] = (trackCounts[u.secondaryTrack] ?? 0) + 1; });
                 return (
                     <div className="flex flex-wrap gap-2 mb-4 text-xs border-t border-gray-100 pt-3">
-                        <span className="text-gray-400 text-[10px] uppercase tracking-wide self-center mr-1">Програма:</span>
-                        <span className="px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600">📘 Основно: {primary}</span>
+                        <span className="text-gray-400 text-[10px] uppercase tracking-wide self-center mr-1">{t('admin.users.programLabel')}</span>
+                        <span className="px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600">{t('admin.users.primaryCount').replace('{n}', String(primary))}</span>
                         {Object.entries(trackCounts).map(([track, count]) => (
                             <span key={track} className="px-2.5 py-1 rounded-full font-bold bg-teal-50 text-teal-700 border border-teal-100">
                                 🎓 {TRACK_LABELS[track] ?? track}: {count}
                             </span>
                         ))}
                         {secondary.length > 0 && (
-                            <span className="px-2.5 py-1 rounded-full font-bold bg-indigo-50 text-indigo-700">Средно вкупно: {secondary.length}</span>
+                            <span className="px-2.5 py-1 rounded-full font-bold bg-indigo-50 text-indigo-700">{t('admin.users.secondaryTotal').replace('{n}', String(secondary.length))}</span>
                         )}
                     </div>
                 );
@@ -81,7 +82,7 @@ export function AdminUsersTab({
 
             <input
                 type="search"
-                placeholder="Пребарај по ime или email..."
+                placeholder={t('admin.users.searchPlaceholder')}
                 value={userSearch}
                 onChange={e => setUserSearch(e.target.value)}
                 className="w-full mb-4 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 outline-none"
@@ -94,7 +95,7 @@ export function AdminUsersTab({
                     {[1,2,3,4].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
                 </div>
             ) : users.length === 0 ? (
-                <p className="text-center py-8 text-gray-400 text-sm">Нема корисници.</p>
+                <p className="text-center py-8 text-gray-400 text-sm">{t('admin.users.noUsers')}</p>
             ) : (
                 <div className="divide-y divide-gray-100">
                     {users

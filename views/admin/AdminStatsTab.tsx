@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../components/common/Card';
 import { Building, Users, Globe, BarChart2, TrendingDown } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface AdminStatsTabProps {
     nationalStats: any;
@@ -10,6 +11,7 @@ interface AdminStatsTabProps {
 }
 
 export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, onRefresh }: AdminStatsTabProps) {
+    const { t } = useLanguage();
     return (
         <div className="space-y-6">
             {isLoadingStats ? (
@@ -20,10 +22,10 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                 <>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                            { label: 'Училишта',   value: nationalStats.totalSchools,  icon: <Building className="w-5 h-5 text-indigo-500" />, bg: 'bg-indigo-50' },
-                            { label: 'Наставници', value: nationalStats.totalTeachers, icon: <Users className="w-5 h-5 text-blue-500" />, bg: 'bg-blue-50' },
-                            { label: 'Квизови (2000)', value: nationalStats.totalQuizzes, icon: <Globe className="w-5 h-5 text-teal-500" />, bg: 'bg-teal-50' },
-                            { label: 'Нац. просек', value: `${nationalStats.nationalAvg}%`, icon: <BarChart2 className="w-5 h-5 text-green-500" />, bg: 'bg-green-50' },
+                            { label: t('admin.stats.schools'),   value: nationalStats.totalSchools,  icon: <Building className="w-5 h-5 text-indigo-500" />, bg: 'bg-indigo-50' },
+                            { label: t('admin.stats.teachers'), value: nationalStats.totalTeachers, icon: <Users className="w-5 h-5 text-blue-500" />, bg: 'bg-blue-50' },
+                            { label: t('admin.stats.quizzes2000'), value: nationalStats.totalQuizzes, icon: <Globe className="w-5 h-5 text-teal-500" />, bg: 'bg-teal-50' },
+                            { label: t('admin.stats.nationalAvg'), value: `${nationalStats.nationalAvg}%`, icon: <BarChart2 className="w-5 h-5 text-green-500" />, bg: 'bg-green-50' },
                         ].map(card => (
                             <Card key={card.label} className={`p-5 ${card.bg}`}>
                                 <div className="flex items-center gap-3">
@@ -40,7 +42,7 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                     {nationalStats.gradeStats.length > 0 && (
                         <Card className="p-6">
                             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <BarChart2 className="w-4 h-4" /> Национален просек по одделение
+                                <BarChart2 className="w-4 h-4" /> {t('admin.stats.nationalAvgByGrade')}
                             </h2>
                             <div className="space-y-3">
                                 {nationalStats.gradeStats.map((g: any) => (
@@ -55,7 +57,7 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                                         <span className={`w-12 text-right font-bold ${g.avgPct >= 70 ? 'text-green-600' : g.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
                                             {g.avgPct}%
                                         </span>
-                                        <span className="text-xs text-gray-400 w-20 text-right">{g.attempts} обиди</span>
+                                        <span className="text-xs text-gray-400 w-20 text-right">{t('admin.stats.attempts').replace('{n}', String(g.attempts))}</span>
                                     </div>
                                 ))}
                             </div>
@@ -65,7 +67,7 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                     {nationalStats.weakConcepts.length > 0 && (
                         <Card className="p-6">
                             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <TrendingDown className="w-4 h-4 text-red-400" /> Топ 10 концепти со слаба совладаност (национален пресек)
+                                <TrendingDown className="w-4 h-4 text-red-400" /> {t('admin.stats.weakConceptsTitle')}
                             </h2>
                             <div className="divide-y divide-gray-100">
                                 {nationalStats.weakConcepts.map((c: any, i: number) => (
@@ -76,7 +78,7 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                                             <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.max(c.avgPct, 2)}%` }} />
                                         </div>
                                         <span className="w-10 text-right font-bold text-red-500">{c.avgPct}%</span>
-                                        <span className="text-xs text-gray-400 w-16 text-right">{c.attempts} обиди</span>
+                                        <span className="text-xs text-gray-400 w-16 text-right">{t('admin.stats.attempts').replace('{n}', String(c.attempts))}</span>
                                     </div>
                                 ))}
                             </div>
@@ -84,12 +86,12 @@ export function AdminStatsTab({ nationalStats, isLoadingStats, conceptNameMap, o
                     )}
 
                     {nationalStats.gradeStats.length === 0 && nationalStats.weakConcepts.length === 0 && (
-                        <Card className="p-8 text-center text-gray-400 text-sm">Нема доволно податоци за национална статистика.</Card>
+                        <Card className="p-8 text-center text-gray-400 text-sm">{t('admin.stats.notEnoughData')}</Card>
                     )}
                 </>
             ) : null}
             <div className="flex justify-end">
-                <button type="button" onClick={onRefresh} className="text-xs text-gray-500 hover:text-gray-700 underline">Освежи</button>
+                <button type="button" onClick={onRefresh} className="text-xs text-gray-500 hover:text-gray-700 underline">{t('admin.users.refresh')}</button>
             </div>
         </div>
     );

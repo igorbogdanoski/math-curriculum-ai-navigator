@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-
-const ROLE_LABELS: Record<string, string> = {
-    teacher:      '🎓 Наставник',
-    school_admin: '🏫 Директор',
-    admin:        '🛡️ Систем Админ',
-};
-
-const TRACK_LABELS: Record<string, string> = {
-    vocational4: 'Стручно 4г',
-    vocational3: 'Стручно 3г',
-    vocational2: 'Стручно 2г',
-    gymnasium:   'Гимназија',
-    gymnasium_elective: 'Гимн. изб.',
-};
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const ROLE_COLORS: Record<string, string> = {
     teacher:      'bg-blue-50 text-blue-700 border-blue-200',
@@ -38,6 +25,19 @@ interface UserAdminRowProps {
 }
 
 export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, updatingUid, handleChangeRole, handleUpdateSubscription, handleDeleteUser }) => {
+    const { t } = useLanguage();
+    const ROLE_LABELS: Record<string, string> = {
+        teacher:      t('admin.role.teacher'),
+        school_admin: t('admin.role.schoolAdmin'),
+        admin:        t('admin.role.admin'),
+    };
+    const TRACK_LABELS: Record<string, string> = {
+        vocational4: t('admin.track.vocational4'),
+        vocational3: t('admin.track.vocational3'),
+        vocational2: t('admin.track.vocational2'),
+        gymnasium:   t('admin.track.gymnasium'),
+        gymnasium_elective: t('admin.track.gymnasiumElective'),
+    };
     const role = u.role ?? 'teacher';
     const [isEditing, setIsEditing] = useState(false);
     const [editCredits, setEditCredits] = useState(u.aiCreditsBalance || 0);
@@ -62,18 +62,18 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
-                        {u.name ?? 'Непознат'}
-                        {isMe && <span className="text-[10px] text-amber-600 font-bold">(ти)</span>}
+                        {u.name ?? t('admin.userRow.unknown')}
+                        {isMe && <span className="text-[10px] text-amber-600 font-bold">{t('admin.userRow.you')}</span>}
                         {u.isPremium && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold">PRO</span>}
                         {u.hasUnlimitedCredits && <span className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.5 rounded font-bold">∞</span>}
                         {u.proExpiresAt && new Date(u.proExpiresAt) < new Date() && (
-                            <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded font-bold">ИСТЕЧЕНО</span>
+                            <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded font-bold">{t('admin.userRow.expired')}</span>
                         )}
                     </p>
                     <p className="text-[11px] text-gray-400 truncate font-mono">{u.email || u.uid}</p>
                     {u.proExpiresAt && (
                         <p className={`text-[11px] truncate ${new Date(u.proExpiresAt) < new Date() ? 'text-red-400 font-semibold' : 'text-gray-400'}`}>
-                            Pro истекува: {new Date(u.proExpiresAt).toLocaleDateString('mk-MK')}
+                            {t('admin.userRow.proExpires').replace('{date}', new Date(u.proExpiresAt).toLocaleDateString('mk-MK'))}
                         </p>
                     )}
                     {u.schoolId && (
@@ -84,7 +84,7 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                     <div className="flex items-center gap-1 text-xs border rounded-md px-2 py-1">
                         <span>🪙 {u.hasUnlimitedCredits ? '∞' : (u.aiCreditsBalance || 0)}</span>
                         {!isMe && (
-                            <button type="button" onClick={() => setIsEditing(!isEditing)} className="text-blue-500 hover:text-blue-700 ml-1" title="Уреди претплата">✏️</button>
+                            <button type="button" onClick={() => setIsEditing(!isEditing)} className="text-blue-500 hover:text-blue-700 ml-1" title={t('admin.userRow.editSubscriptionTitle')}>✏️</button>
                         )}
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tierColor}`}>
@@ -94,31 +94,31 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                         {ROLE_LABELS[role] ?? role}
                     </span>
                     {u.secondaryTrack && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200" title={`Средно: ${u.secondaryTrack}`}>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200" title={t('admin.userRow.secondaryTitle').replace('{track}', u.secondaryTrack)}>
                             🎓 {TRACK_LABELS[u.secondaryTrack] ?? u.secondaryTrack}
                         </span>
                     )}
                     {!isMe && (
                         <select
-                            aria-label={`Улога за ${u.name ?? u.uid}`}
+                            aria-label={t('admin.userRow.roleAria').replace('{name}', u.name ?? u.uid)}
                             disabled={updatingUid === u.uid}
                             value={role}
                             onChange={e => handleChangeRole(u.uid, e.target.value as 'teacher' | 'school_admin' | 'admin', u.schoolId)}
                             className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-red-400 outline-none cursor-pointer disabled:opacity-50"
                         >
-                            <option value="teacher">Наставник</option>
-                            <option value="school_admin">Директор</option>
-                            <option value="admin">Систем Админ</option>
+                            <option value="teacher">{t('admin.role.teacherPlain')}</option>
+                            <option value="school_admin">{t('admin.role.schoolAdminPlain')}</option>
+                            <option value="admin">{t('admin.role.adminPlain')}</option>
                         </select>
                     )}
                     {updatingUid === u.uid && (
-                        <span className="text-xs text-gray-400 animate-pulse">Зачувувам...</span>
+                        <span className="text-xs text-gray-400 animate-pulse">{t('admin.userRow.saving')}</span>
                     )}
                     {!isMe && !u.name && (
                         <button
                             type="button"
                             onClick={() => handleDeleteUser(u.uid)}
-                            title="Избриши непознат корисник"
+                            title={t('admin.userRow.deleteUnknownTitle')}
                             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                             <Trash2 className="w-4 h-4" />
@@ -129,10 +129,10 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
 
             {isEditing && !isMe && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-1 ml-12 space-y-3 text-sm">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Уреди претплата — {u.name ?? u.uid}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('admin.userRow.editSubscriptionHeader').replace('{name}', u.name ?? u.uid)}</p>
                     <div className="flex items-center gap-3 flex-wrap">
                         <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                            🪙 Кредити:
+                            {t('admin.userRow.creditsLabel')}
                             <input
                                 type="number"
                                 min={0}
@@ -154,13 +154,13 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                                     +{amt}
                                 </button>
                             ))}
-                            <button type="button" onClick={() => setEditCredits(0)} disabled={editUnlimited} className="px-2 py-1 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 hover:bg-red-100 disabled:opacity-30 transition">Reset</button>
+                            <button type="button" onClick={() => setEditCredits(0)} disabled={editUnlimited} className="px-2 py-1 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 hover:bg-red-100 disabled:opacity-30 transition">{t('admin.userRow.resetBtn')}</button>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4 flex-wrap">
                         <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                            Ниво:
+                            {t('admin.userRow.levelLabel')}
                             <select
                                 value={editTier}
                                 onChange={e => {
@@ -178,7 +178,7 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                         </label>
                         <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
                             <input type="checkbox" checked={editPremium} onChange={e => setEditPremium(e.target.checked)} className="rounded" />
-                            Premium
+                            {t('admin.userRow.premium')}
                         </label>
                         <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
                             <input
@@ -187,7 +187,7 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                                 onChange={e => { setEditUnlimited(e.target.checked); if (e.target.checked) setEditPremium(true); }}
                                 className="rounded"
                             />
-                            Неограничени (∞)
+                            {t('admin.userRow.unlimited')}
                         </label>
                     </div>
 
@@ -198,10 +198,10 @@ export const UserAdminRow: React.FC<UserAdminRowProps> = ({ u, isMe, schools, up
                             disabled={updatingUid === u.uid}
                             className="bg-brand-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-primary/90 disabled:opacity-40 transition"
                         >
-                            {updatingUid === u.uid ? 'Зачувувам...' : '✓ Зачувај'}
+                            {updatingUid === u.uid ? t('admin.userRow.saving') : t('admin.userRow.save')}
                         </button>
                         <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 transition">
-                            Откажи
+                            {t('common.cancel')}
                         </button>
                         <div className="ml-auto flex gap-1.5">
                             <button type="button" onClick={() => { setEditTier('Free'); setEditPremium(false); setEditUnlimited(false); setEditCredits(50); }} className="text-xs text-gray-400 hover:text-gray-600 underline">Free+50</button>

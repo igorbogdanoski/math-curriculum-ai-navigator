@@ -9,6 +9,7 @@ import {
     type UserActivityRecord,
     type CohortRetentionPoint,
 } from '../../utils/cohortMetrics';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface CohortDashboardProps {
     users: UserActivityRecord[] | null;
@@ -19,6 +20,7 @@ interface CohortDashboardProps {
 }
 
 export const CohortDashboard: React.FC<CohortDashboardProps> = ({ users, burnUsers, isLoading, now, onRefresh }) => {
+    const { t } = useLanguage();
     const counts = useMemo(() => users ? computeActivityCounts(users, now) : null, [users, now]);
     const stickiness = useMemo(() => counts ? computeStickinessRatio(counts) : null, [counts]);
     const cohorts = useMemo<CohortRetentionPoint[]>(
@@ -39,7 +41,7 @@ export const CohortDashboard: React.FC<CohortDashboardProps> = ({ users, burnUse
         { label: 'DAU (24h)',       value: counts.dau,             color: 'bg-emerald-50 text-emerald-700' },
         { label: 'WAU (7d)',        value: counts.wau,             color: 'bg-blue-50 text-blue-700' },
         { label: 'MAU (30d)',       value: counts.mau,             color: 'bg-indigo-50 text-indigo-700' },
-        { label: 'Регистрирани',    value: counts.totalRegistered, color: 'bg-slate-50 text-slate-700' },
+        { label: t('admin.cohort.registered'),    value: counts.totalRegistered, color: 'bg-slate-50 text-slate-700' },
     ];
 
     return (
@@ -56,42 +58,42 @@ export const CohortDashboard: React.FC<CohortDashboardProps> = ({ users, burnUse
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-5">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Activity className="w-4 h-4" /> Stickiness (DAU / MAU)
+                        <Activity className="w-4 h-4" /> {t('admin.cohort.stickinessTitle')}
                     </p>
                     <p className="text-3xl font-bold text-gray-900">
                         {stickiness == null ? '—' : `${(stickiness * 100).toFixed(1)}%`}
                     </p>
-                    <p className="text-[11px] text-gray-400 mt-1">Цел: ≥ 20 % за здраво продуктно ангажирање.</p>
+                    <p className="text-[11px] text-gray-400 mt-1">{t('admin.cohort.stickinessGoal')}</p>
                 </Card>
                 <Card className="p-5">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4" /> Credit-burn ratio (≤ 0 кредити)
+                        <TrendingDown className="w-4 h-4" /> {t('admin.cohort.creditBurnTitle')}
                     </p>
                     <p className="text-3xl font-bold text-gray-900">{`${(burnRatio * 100).toFixed(1)}%`}</p>
-                    <p className="text-[11px] text-gray-400 mt-1">Цел кон крај на S41: ≥ 8 % (Baseline ≈ 2 %).</p>
+                    <p className="text-[11px] text-gray-400 mt-1">{t('admin.cohort.creditBurnGoal')}</p>
                 </Card>
             </div>
 
             <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                        <BarChart2 className="w-4 h-4" /> Неделни кохорти на регистрација (последни 8 недели)
+                        <BarChart2 className="w-4 h-4" /> {t('admin.cohort.weeklyCohortsTitle')}
                     </h2>
                     <button type="button" onClick={onRefresh} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 underline">
-                        <RefreshCw className="w-3.5 h-3.5" /> Освежи
+                        <RefreshCw className="w-3.5 h-3.5" /> {t('admin.users.refresh')}
                     </button>
                 </div>
                 {cohorts.length === 0 ? (
                     <p className="text-center py-8 text-gray-400 text-sm">
-                        Нема корисници регистрирани во последните 8 недели (или недостасуваат `createdAt` полиња).
+                        {t('admin.cohort.noRegistrations')}
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                             <thead className="text-gray-400 uppercase tracking-widest">
                                 <tr>
-                                    <th className="text-left py-2 pr-3">Кохорта (нед. почеток)</th>
-                                    <th className="text-right py-2 pr-3">Големина</th>
+                                    <th className="text-left py-2 pr-3">{t('admin.cohort.colCohort')}</th>
+                                    <th className="text-right py-2 pr-3">{t('admin.cohort.colSize')}</th>
                                     {[0, 1, 3, 7, 14, 30].map(d => (
                                         <th key={d} className="text-right py-2 pr-3">D+{d}</th>
                                     ))}
@@ -124,7 +126,7 @@ export const CohortDashboard: React.FC<CohortDashboardProps> = ({ users, burnUse
                     </div>
                 )}
                 <p className="text-[10px] text-gray-400 mt-3">
-                    D+N = % на корисници кои имале активност N дена по регистрација (по `lastSeenAt` / `lastLoginAt`).
+                    {t('admin.cohort.footerNote')}
                 </p>
             </Card>
         </div>

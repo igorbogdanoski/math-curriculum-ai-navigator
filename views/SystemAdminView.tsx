@@ -7,6 +7,7 @@ import { firestoreService } from '../services/firestoreService';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread, approveForumThread } from '../services/firestoreService.forum';
 import { type UserActivityRecord } from '../utils/cohortMetrics';
+import { useLanguage } from '../i18n/LanguageContext';
 
 import { AdminSchoolsTab } from './admin/AdminSchoolsTab';
 import { AdminSchoolRegistryTab } from './admin/AdminSchoolRegistryTab';
@@ -22,6 +23,7 @@ export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
     const { allConcepts } = useCurriculum();
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<Tab>('schools');
 
     const conceptNameMap = useMemo(() => {
@@ -80,7 +82,7 @@ export const SystemAdminView: React.FC = () => {
     const handleIndexGrade = useCallback(async (grade: number) => {
         const gradeLabel = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
         setRagIndexStatus(prev => ({ ...prev, [grade]: 'running' }));
-        setRagIndexLog([`Започнувам индексирање на официјалната програма за ${gradeLabel} одделение...`]);
+        setRagIndexLog([t('admin.view.ragIndexStarting').replace('{label}', gradeLabel)]);
         try {
             const [{ callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
                 import('../services/gemini/core'),
@@ -101,7 +103,7 @@ export const SystemAdminView: React.FC = () => {
                 subtopics = m.getOfficialSubtopicDocs(8);
             }
 
-            setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
+            setRagIndexLog(prev => [...prev, t('admin.view.ragIndexFound').replace('{n}', String(subtopics.length))]);
 
             const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
             let done = 0;
@@ -116,10 +118,10 @@ export const SystemAdminView: React.FC = () => {
                 done += 1;
                 setRagIndexLog(prev => [...prev, `[${done}/${subtopics.length}] ${sub.subtopicTitle}`]);
             }
-            setRagIndexLog(prev => [...prev, `✅ Завршено! ${done} подтеми индексирани во concept_embeddings.`]);
+            setRagIndexLog(prev => [...prev, t('admin.view.ragIndexDone').replace('{n}', String(done))]);
             setRagIndexStatus(prev => ({ ...prev, [grade]: 'done' }));
         } catch (err) {
-            setRagIndexLog(prev => [...prev, `❌ Грешка: ${err instanceof Error ? err.message : String(err)}`]);
+            setRagIndexLog(prev => [...prev, t('admin.view.ragIndexError').replace('{message}', err instanceof Error ? err.message : String(err))]);
             setRagIndexStatus(prev => ({ ...prev, [grade]: 'error' }));
         }
     }, []);
@@ -154,7 +156,7 @@ export const SystemAdminView: React.FC = () => {
             const data = await firestoreService.fetchSchools();
             setSchools(data || []);
         } catch {
-            setSchoolError('Грешка при вчитување на училиштата.');
+            setSchoolError(t('admin.view.loadSchoolsError'));
         } finally {
             setIsLoadingSchools(false);
         }
@@ -169,7 +171,7 @@ export const SystemAdminView: React.FC = () => {
             data.sort((a, b) => (order[a.role ?? 'teacher'] ?? 2) - (order[b.role ?? 'teacher'] ?? 2) || (a.name ?? '').localeCompare(b.name ?? ''));
             setUsers(data);
         } catch {
-            setUserError('Грешка при вчитување на корисниците.');
+            setUserError(t('admin.view.loadUsersError'));
         } finally {
             setIsLoadingUsers(false);
         }
@@ -234,29 +236,29 @@ export const SystemAdminView: React.FC = () => {
         e.preventDefault();
         setSchoolError('');
         setSchoolSuccess('');
-        if (!newSchoolName.trim() || !newSchoolCity.trim()) { setSchoolError('Внесете и ime и град.'); return; }
+        if (!newSchoolName.trim() || !newSchoolCity.trim()) { setSchoolError(t('admin.view.nameAndCityRequired')); return; }
         setIsSubmitting(true);
         try {
             await firestoreService.createSchool(newSchoolName.trim(), newSchoolCity.trim(), firebaseUser?.uid);
-            setSchoolSuccess(`Училиштето „${newSchoolName}" е регистрирано!`);
+            setSchoolSuccess(t('admin.view.schoolRegistered').replace('{name}', newSchoolName));
             setNewSchoolName('');
             setNewSchoolCity('');
             await loadSchools();
         } catch {
-            setSchoolError('Грешка при создавање. Проверете ги дозволите.');
+            setSchoolError(t('admin.view.createSchoolError'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDeleteUser = async (uid: string) => {
-        if (!window.confirm('Избриши го овој корисник од базата? Оваа акција не може да се врати.')) return;
+        if (!window.confirm(t('admin.view.deleteUserConfirm'))) return;
         setUpdatingUid(uid);
         try {
             await firestoreService.deleteUserProfile(uid);
             setUsers(prev => prev.filter(u => u.uid !== uid));
         } catch {
-            setUserError('Грешка при бришење на корисникот.');
+            setUserError(t('admin.view.deleteUserError'));
         } finally {
             setUpdatingUid(null);
         }
@@ -268,7 +270,7 @@ export const SystemAdminView: React.FC = () => {
             await firestoreService.updateUserRole(uid, newRole, schoolId);
             setUsers(prev => prev.map(u => u.uid === uid ? { ...u, role: newRole, ...(schoolId !== undefined ? { schoolId } : {}) } : u));
         } catch {
-            setUserError('Грешка при ажурирање на улогата.');
+            setUserError(t('admin.view.updateRoleError'));
         } finally {
             setUpdatingUid(null);
         }
@@ -280,7 +282,7 @@ export const SystemAdminView: React.FC = () => {
             await firestoreService.updateUserSubscription(uid, { aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier });
             setUsers(prev => prev.map(u => u.uid === uid ? { ...u, aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier } : u));
         } catch {
-            setUserError('Грешка при ажурирање претплата.');
+            setUserError(t('admin.view.updateSubscriptionError'));
         } finally {
             setUpdatingUid(null);
         }
@@ -302,15 +304,15 @@ export const SystemAdminView: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <ShieldAlert className="w-8 h-8 text-red-500" />
-                        Системски Администратор
+                        {t('admin.view.title')}
                     </h1>
-                    <p className="text-gray-500 mt-1 text-sm">Управување со училишта и кориснички улоги.</p>
+                    <p className="text-gray-500 mt-1 text-sm">{t('admin.view.subtitle')}</p>
                 </div>
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
                 <div>
-                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Твојот Firebase UID</p>
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">{t('admin.view.yourFirebaseUid')}</p>
                     <p className="text-xs font-mono text-amber-900 break-all mt-0.5">{firebaseUser?.uid ?? '—'}</p>
                 </div>
                 <button
@@ -318,12 +320,12 @@ export const SystemAdminView: React.FC = () => {
                     onClick={handleCopyUid}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded-lg text-xs font-semibold transition-colors shrink-0"
                 >
-                    {copiedUid ? <><Check className="w-3.5 h-3.5" /> Копирано</> : <><Copy className="w-3.5 h-3.5" /> Копирај</>}
+                    {copiedUid ? <><Check className="w-3.5 h-3.5" /> {t('admin.view.copied')}</> : <><Copy className="w-3.5 h-3.5" /> {t('admin.view.copy')}</>}
                 </button>
             </div>
 
             <div className="flex flex-wrap gap-1 border-b border-gray-200">
-                {([['schools', '🏫 Училишта'], ['schoolRegistry', '🗂️ Регистар'], ['users', '👥 Корисници'], ['stats', '📊 Статистики'], ['cohort', '📈 Cohort'], ['forum', '💬 Форум'], ['content', '📚 Содржина']] as [Tab, string][]).map(([id, label]) => (
+                {([['schools', t('admin.view.tabSchools')], ['schoolRegistry', t('admin.view.tabRegistry')], ['users', t('admin.view.tabUsers')], ['stats', t('admin.view.tabStats')], ['cohort', t('admin.view.tabCohort')], ['forum', t('admin.view.tabForum')], ['content', t('admin.view.tabContent')]] as [Tab, string][]).map(([id, label]) => (
                     <button
                         key={id}
                         type="button"
