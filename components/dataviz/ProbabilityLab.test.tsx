@@ -104,4 +104,27 @@ describe('ProbabilityLab', () => {
 
     expect(elapsed).toBeLessThan(2000);
   });
+
+  // ── i18n smoke test ─────────────────────────────────────────────────────────
+  // Raw, untranslated i18n keys (e.g. "dataviz.probLab.tabCoin") must never leak into the
+  // rendered UI — that's the exact regression class this test exists to catch. Covers
+  // ProbabilityLab itself plus ProbabilityLabPanels (Venn + tree builder render unconditionally
+  // in the 'sim' view) and the binomial distribution chart (via the 'binomial' experiment button).
+  const RAW_KEY_PATTERN = /\bdataviz\.[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)+\b/;
+
+  (['mk', 'en'] as const).forEach(lang => {
+    it(`renders every experiment type without leaking raw i18n keys (${lang})`, () => {
+      localStorage.setItem('preferred_language', lang);
+      renderLab({ onSendToDataViz: vi.fn(), onGoToChart: vi.fn() });
+
+      // Experiment selector buttons come from the EXPERIMENTS constant (coin/die/two-dice/dice-coin/spinner/binomial).
+      const EXPERIMENT_COUNT = 6;
+      // Skip the first 2 buttons (Simulation/Practice view toggle) to reach the experiment grid.
+      const allButtons = () => screen.getAllByRole('button');
+      for (let i = 0; i < EXPERIMENT_COUNT; i++) {
+        fireEvent.click(allButtons()[2 + i]);
+        expect(document.body.textContent).not.toMatch(RAW_KEY_PATTERN);
+      }
+    });
+  });
 });
