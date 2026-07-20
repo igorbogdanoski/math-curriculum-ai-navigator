@@ -114,6 +114,7 @@ export const DOMAIN_TOOLS: Record<MathDomain, DomainTool[]> = {
     { label: 'Геометрија 3D лаб', route: '/data-viz?tab=solid', icon: '🔷', minGrade: 6 },
     { label: 'Конични пресеци', route: '/data-viz?tab=conic', icon: '⊙', minGrade: 10 },
     { label: 'Тригонометрија лаб', route: '/data-viz?tab=trig', icon: '📐', minGrade: 9 },
+    { label: 'TikZ дијаграми', route: '/data-viz?tab=tikz', icon: '✏️' },
     { label: 'GeoGebra', route: '/math-tools?tab=geogebra', icon: '📐' },
   ],
   statistics: [

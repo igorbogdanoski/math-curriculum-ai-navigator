@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
-  FlaskConical, FunctionSquare, Layers, Box, Shapes, LayoutGrid, PieChart
+  FlaskConical, FunctionSquare, Layers, Box, Shapes, LayoutGrid, PieChart, PenTool
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -47,6 +47,9 @@ const PlaceValueLabLazy = lazy(() =>
 );
 const FractionsLabLazy = lazy(() =>
   import('../components/dataviz/FractionsLab').then(m => ({ default: m.FractionsLab }))
+);
+const TikzLabLazy = lazy(() =>
+  import('../components/dataviz/TikzLab').then(m => ({ default: m.TikzLab }))
 );
 
 const LabLoading: React.FC = () => {
@@ -94,7 +97,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'dataviz.chartType.pictogram.label',    emoji: '🌟', desc: 'dataviz.chartType.pictogram.desc',    minCols: 1 },
 ];
 
-export type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions';
+export type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions' | 'tikz';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -142,7 +145,7 @@ export const DataVizStudioView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>(() => {
     const hash = window.location.hash;
     const tabParam = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '').get('tab');
-    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig', 'numtheory', 'placevalue', 'fractions'];
+    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra', 'trig', 'numtheory', 'placevalue', 'fractions', 'tikz'];
     return (validTabs.includes(tabParam as StudioTab) ? tabParam : 'chart') as StudioTab;
   });
 
@@ -245,6 +248,7 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'numtheory'  as StudioTab, label: t('dataviz.tab.numtheory'),   icon: Sigma,         color: 'emerald' },
     { id: 'placevalue' as StudioTab, label: t('dataviz.tab.placevalue'),  icon: Layers,        color: 'green'   },
     { id: 'fractions'  as StudioTab, label: t('dataviz.tab.fractions'),   icon: PieChart,      color: 'blue'    },
+    { id: 'tikz'       as StudioTab, label: t('dataviz.tab.tikz'),        icon: PenTool,       color: 'slate'   },
   ];
 
   return (
@@ -763,6 +767,18 @@ export const DataVizStudioView: React.FC = () => {
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <FractionsLabLazy />
+              </Suspense>
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: TIKZ LAB (LaTeX/TikZ diagrams, WASM, lazy-loaded from CDN) ═══ */}
+        {activeTab === 'tikz' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <LabCurriculumInfo labId="tikz" />
+            <SilentErrorBoundary>
+              <Suspense fallback={<LabLoading />}>
+                <TikzLabLazy />
               </Suspense>
             </SilentErrorBoundary>
           </div>

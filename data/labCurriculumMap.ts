@@ -15,7 +15,7 @@ import { detectMathDomain, getToolsForDomain, type GradeContext } from '../utils
 
 export type LabId = Extract<
   StudioTab,
-  'prob' | 'stats' | 'calc' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions'
+  'prob' | 'stats' | 'calc' | 'solid' | 'geo2d' | 'conic' | 'algebra' | 'trig' | 'numtheory' | 'placevalue' | 'fractions' | 'tikz'
 >;
 
 export interface LabCurriculumEntry {
@@ -59,6 +59,10 @@ export const LAB_STANDARDS: Record<LabId, LabCurriculumEntry> = {
   },
   conic: {
     secondaryTopics: ['Конусни пресеци'],
+  },
+  tikz: {
+    primaryStandards: ['III-А.12', 'III-А.14', 'III-А.19'],
+    secondaryTopics: ['Геометриски докази и конструкции'],
   },
 };
 
