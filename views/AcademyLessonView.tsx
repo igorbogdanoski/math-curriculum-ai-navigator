@@ -34,6 +34,9 @@ const LinearAlgebraLab = React.lazy(() =>
 const ConicSectionsLab = React.lazy(() =>
   import('../components/dataviz/ConicSectionsLab').then(m => ({ default: m.ConicSectionsLab }))
 );
+const TikzLab = React.lazy(() =>
+  import('../components/dataviz/TikzLab').then(m => ({ default: m.TikzLab }))
+);
 
 /** DoK classification exercise — teacher picks DoK level for each item */
 const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
@@ -215,7 +218,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
        case 'tone': return 'Тон на сценариото';
        case 'focus': return 'Фокус на активноста';
        case 'dok': return "Webb's Depth of Knowledge";
-       case 'visual': return 'Визуелна Математика — Манипулативи';
+       case 'visual': return 'Визуелна Математика';
        default: return 'Лекција';
      }
   };
@@ -334,6 +337,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                       'log-exp-lab':          'Интерактивна демо: Лог / Exp лаб',
                       'linear-algebra-lab':   'Интерактивна демо: Линеарна алгебра',
                       'conic-sections-lab':   'Интерактивна демо: Конусни пресеци',
+                      'tikz-lab':             'Интерактивна демо: TikZ дијаграми',
                     }[lesson.interactiveDemo]}
                   </h2>
                 </div>
@@ -348,6 +352,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                   {lesson.interactiveDemo === 'log-exp-lab' && <LogExpLab />}
                   {lesson.interactiveDemo === 'linear-algebra-lab' && <LinearAlgebraLab />}
                   {lesson.interactiveDemo === 'conic-sections-lab' && <ConicSectionsLab />}
+                  {lesson.interactiveDemo === 'tikz-lab' && <TikzLab />}
                 </React.Suspense>
               </div>
             )}
