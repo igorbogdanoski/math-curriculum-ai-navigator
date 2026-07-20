@@ -23,6 +23,7 @@ import type { DocumentSnapshot } from 'firebase/firestore';
 import type { ScenarioSearchResult } from '../services/ragService';
 import type { LessonPlan } from '../types';
 import { SCENARIO_BANK_CONCEPT_PREFILL_KEY } from '../components/concept/ConceptScenariosPreview';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type TabMode = 'all' | 'mine' | 'saved' | 'bro' | 'admin';
 
@@ -43,6 +44,7 @@ export const ScenarioBankView: React.FC = () => {
   const { user, firebaseUser } = useAuth();
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
+  const { t } = useLanguage();
 
   const [tab, setTab] = useState<TabMode>('all');
   const [entries, setEntries] = useState<ScenarioBankEntry[]>([]);
@@ -97,7 +99,7 @@ export const ScenarioBankView: React.FC = () => {
         setHasMore(page.hasMore);
       }
     } catch {
-      addNotification('Грешка при вчитување на сценаријата.', 'error');
+      addNotification(t('scenarioBankView.loadError'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +121,7 @@ export const ScenarioBankView: React.FC = () => {
       setLastDoc(page.lastDoc);
       setHasMore(page.hasMore);
     } catch {
-      addNotification('Грешка при вчитување.', 'error');
+      addNotification(t('scenarioBankView.loadMoreError'), 'error');
     } finally {
       setIsLoadingMore(false);
     }
@@ -235,7 +237,7 @@ export const ScenarioBankView: React.FC = () => {
   }, [filtered, sortBy]);
 
   const handleRate = async (entryId: string, stars: number) => {
-    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (!firebaseUser?.uid) { addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning'); return; }
     await rateScenario(entryId, firebaseUser.uid, stars);
     setEntries(prev => prev.map(e => e.id !== entryId ? e : {
       ...e, ratingsByUid: { ...e.ratingsByUid, [firebaseUser.uid!]: stars },
@@ -254,17 +256,19 @@ export const ScenarioBankView: React.FC = () => {
     // populate introductory text with a reference to the material so the editor is not blank.
     if (!entry.scenarioIntro && !entry.scenarioMain?.length) {
       const typeLabel: Record<string, string> = {
-        kahoot: 'Kahoot квиз',
-        extracted_material: 'извлечен материјал',
-        generated_material: 'AI-генериран материјал',
+        kahoot: t('scenarioBankView.typeLabelKahoot'),
+        extracted_material: t('scenarioBankView.typeLabelExtracted'),
+        generated_material: t('scenarioBankView.typeLabelGenerated'),
       };
-      const label = typeLabel[entry.entryType ?? ''] ?? 'материјал';
+      const label = typeLabel[entry.entryType ?? ''] ?? t('scenarioBankView.typeLabelDefault');
       return {
         ...base,
         scenario: {
-          introductory: { text: `Воведна активност со ${label}: ${entry.title}`, duration: '' },
-          main: [{ text: entry.topicTitle ? `Главна активност: ${entry.topicTitle} — работа со ${label}.` : `Главна активност — работа со ${label}.`, bloomsLevel: 'Applying' as const }],
-          concluding: { text: 'Завршна дискусија и резиме.', duration: '' },
+          introductory: { text: t('scenarioBankView.introActivityTemplate').replace('{label}', label).replace('{title}', entry.title), duration: '' },
+          main: [{ text: entry.topicTitle
+            ? t('scenarioBankView.mainActivityWithTopicTemplate').replace('{topic}', entry.topicTitle).replace('{label}', label)
+            : t('scenarioBankView.mainActivityTemplate').replace('{label}', label), bloomsLevel: 'Applying' as const }],
+          concluding: { text: t('scenarioBankView.concludingActivityDefault'), duration: '' },
         },
       };
     }
@@ -279,13 +283,13 @@ export const ScenarioBankView: React.FC = () => {
   };
 
   const handleEdit = async (entry: ScenarioBankEntry) => {
-    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (!firebaseUser?.uid) { addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning'); return; }
     if (entry.entryType === 'thematic_plan') {
       // Thematic plans are multi-lesson units, not a single LessonPlan — the lesson
       // draft/editor path below doesn't fit them. No dedicated "open a bank thematic
       // plan in the generator" flow exists yet, so surface it honestly instead of
       // showing garbled content in the wrong editor.
-      addNotification('Тематскиот план е сочуван во Банката. Отвори „Тематски План" за да создадеш свој од истата тема.', 'info');
+      addNotification(t('scenarioBankView.thematicPlanInBank'), 'info');
       return;
     }
     try {
@@ -294,34 +298,34 @@ export const ScenarioBankView: React.FC = () => {
       await saveUploadDraft(firebaseUser.uid, draft, entry.title);
       navigate('/planner/lesson/new');
     } catch {
-      addNotification('Грешка при вчитување на сценариото. Обидете се повторно.', 'error');
+      addNotification(t('scenarioBankView.loadScenarioError'), 'error');
     }
   };
 
   const handleFork = async (entry: ScenarioBankEntry) => {
-    if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (!firebaseUser?.uid || !user) { addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning'); return; }
     try {
-      await forkScenario(entry, firebaseUser.uid, user.name ?? 'Наставник', user.schoolName);
+      await forkScenario(entry, firebaseUser.uid, user.name ?? t('scenarioBank.card.defaultAuthorName'), user.schoolName);
       setEntries(prev => prev.map(e =>
         (e.id === (entry.originalId ?? entry.id)) ? { ...e, forkCount: e.forkCount + 1 } : e
       ));
       if (entry.entryType === 'thematic_plan') {
-        addNotification('✅ Тематскиот план е форкан во твоите материјали (Мои).', 'success');
+        addNotification(t('scenarioBankView.forkThematicSuccess'), 'success');
         return;
       }
       const draft = entry.fullPlan ?? entryToDraft(entry);
-      await saveUploadDraft(firebaseUser.uid, draft, `Ремикс: ${entry.title}`);
-      addNotification('✅ Ремиксот е подготвен — отвора во Уредувач.', 'success');
+      await saveUploadDraft(firebaseUser.uid, draft, t('scenarioBankView.remixDraftTitle').replace('{title}', entry.title));
+      addNotification(t('scenarioBankView.remixReadySuccess'), 'success');
       navigate('/planner/lesson/new');
     } catch {
-      addNotification('Грешка при ремиксирање.', 'error');
+      addNotification(t('scenarioBankView.forkError'), 'error');
     }
   };
 
   const handleUse = async (entry: ScenarioBankEntry) => {
-    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (!firebaseUser?.uid) { addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning'); return; }
     if (entry.entryType === 'thematic_plan') {
-      addNotification('Тематскиот план е сочуван во Банката. Отвори „Тематски План" за да создадеш свој од истата тема.', 'info');
+      addNotification(t('scenarioBankView.thematicPlanInBank'), 'info');
       return;
     }
     try {
@@ -331,14 +335,14 @@ export const ScenarioBankView: React.FC = () => {
       await saveUploadDraft(firebaseUser.uid, draft, entry.title);
       navigate('/planner/lesson/new');
     } catch {
-      addNotification('Грешка при вчитување на сценариото. Обидете се повторно.', 'error');
+      addNotification(t('scenarioBankView.loadScenarioError'), 'error');
     }
   };
 
   const handleMakePublic = async (entryId: string, makePublic: boolean) => {
     await setScenarioPublic(entryId, makePublic);
     setEntries(prev => prev.map(e => e.id !== entryId ? e : { ...e, isPublic: makePublic }));
-    addNotification(makePublic ? '✅ Сценариото е јавно!' : '🔒 Сценариото е приватно.', 'success');
+    addNotification(makePublic ? t('scenarioBankView.makePublicSuccess') : t('scenarioBankView.makePrivateSuccess'), 'success');
   };
 
   const handleDiscuss = (entry: ScenarioBankEntry) => {
@@ -346,8 +350,8 @@ export const ScenarioBankView: React.FC = () => {
       sessionStorage.setItem('forum_new_thread_prefill', JSON.stringify({
         scenarioId: entry.id,
         scenarioTitle: entry.title,
-        title: `📚 ${entry.title} — дискусија`,
-        body: `Дискусија за сценариото „${entry.title}" (${entry.grade}. одделение, ${entry.topicTitle}).`,
+        title: t('scenarioBankView.discussTitleTemplate').replace('{title}', entry.title),
+        body: t('scenarioBankView.discussBodyTemplate').replace('{title}', entry.title).replace('{grade}', String(entry.grade)).replace('{topic}', entry.topicTitle),
         category: 'discussion',
       }));
     } catch { /* quota */ }
@@ -378,17 +382,17 @@ export const ScenarioBankView: React.FC = () => {
     const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
     const hasUsableContent = parsed.title || parsed.scenario?.introductory?.text || (parsed.scenario?.main?.length ?? 0) > 0;
     if (!hasUsableContent) {
-      addNotification('AI не успеа да препознае структура. Провери дали датотеката содржи текст и обиди се повторно.', 'error');
+      addNotification(t('scenarioBankView.aiNoStructure'), 'error');
       return;
     }
     if (!firebaseUser?.uid) {
-      addNotification('Мора да сте најавени.', 'warning');
+      addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning');
       return;
     }
     // S106-Г — save to Firestore instead of sessionStorage
     await saveUploadDraft(firebaseUser.uid, parsed, fileName);
-    const truncWarning = rawText.length > 13000 ? ' (анализиран само прв дел)' : '';
-    addNotification(`✅ „${fileName}" е структурирано${truncWarning} — прегледај и уреди.`, 'success');
+    const truncWarning = rawText.length > 13000 ? t('scenarioBankView.truncWarning') : '';
+    addNotification(t('scenarioBankView.structuredSuccessTemplate').replace('{fileName}', fileName).replace('{truncWarning}', truncWarning), 'success');
     navigate('/planner/lesson/new');
   }, [user, firebaseUser, navigate, addNotification]);
 
@@ -404,7 +408,7 @@ export const ScenarioBankView: React.FC = () => {
       }
       await parseSingleAndNavigate(rawText, fileName);
     } catch {
-      addNotification('Грешка при анализа на документот. Пробајте повторно.', 'error');
+      addNotification(t('scenarioBankView.analysisError'), 'error');
     } finally {
       setIsParsingUpload(false);
     }
@@ -413,7 +417,7 @@ export const ScenarioBankView: React.FC = () => {
   const handleSegmentsSelected = useCallback(async (selected: ScenarioSegment[]) => {
     if (!firebaseUser?.uid || selected.length === 0) return;
     setIsParsingUpload(true);
-    const fileName = pendingSegments?.fileName ?? 'документ';
+    const fileName = pendingSegments?.fileName ?? t('scenarioBankView.documentDefaultName');
     try {
       if (selected.length === 1) {
         await parseSingleAndNavigate(selected[0].text, fileName);
@@ -425,18 +429,18 @@ export const ScenarioBankView: React.FC = () => {
         );
         const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>>> => r.status === 'fulfilled').map(r => r.value);
         if (succeeded.length === 0) {
-          addNotification('AI не успеа да структурира ниту едно сценарио.', 'error');
+          addNotification(t('scenarioBankView.aiNoScenarioStructured'), 'error');
           return;
         }
         await saveUploadDraftBatch(
           firebaseUser.uid,
-          succeeded.map((p, i) => ({ parsed: p, fileName: `${fileName} — Сценарио ${i + 1}` }))
+          succeeded.map((p, i) => ({ parsed: p, fileName: t('scenarioBankView.segmentFileNameTemplate').replace('{fileName}', fileName).replace('{n}', String(i + 1)) }))
         );
-        addNotification(`✅ ${succeeded.length} сценарија во редица — секое ќе се отвори по ред.`, 'success');
+        addNotification(t('scenarioBankView.queueReadySuccessTemplate').replace('{n}', String(succeeded.length)), 'success');
         navigate('/planner/lesson/new');
       }
     } catch {
-      addNotification('Грешка при структурирање на сценаријата.', 'error');
+      addNotification(t('scenarioBankView.structuringError'), 'error');
     } finally {
       setIsParsingUpload(false);
       setPendingSegments(null);
@@ -453,26 +457,26 @@ export const ScenarioBankView: React.FC = () => {
       );
       const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>> & { _fileName: string }> => r.status === 'fulfilled').map(r => r.value);
       if (succeeded.length === 0) {
-        addNotification('AI не успеа да структурира ниту еден фајл.', 'error');
+        addNotification(t('scenarioBankView.aiNoFileStructured'), 'error');
         return;
       }
       await saveUploadDraftBatch(
         firebaseUser.uid,
         succeeded.map(p => ({ parsed: p, fileName: p._fileName }))
       );
-      const queueMsg = succeeded.length > 1 ? ` — сите ${succeeded.length} во редица` : '';
-      addNotification(`✅ ${succeeded.length}/${files.length} датотеки анализирани${queueMsg}. Прва е отворена.`, 'success');
+      const queueMsg = succeeded.length > 1 ? t('scenarioBankView.queueSuffixTemplate').replace('{n}', String(succeeded.length)) : '';
+      addNotification(t('scenarioBankView.batchSuccessTemplate').replace('{done}', String(succeeded.length)).replace('{total}', String(files.length)).replace('{queueMsg}', queueMsg), 'success');
       setShowBatchModal(false);
       navigate('/planner/lesson/new');
     } catch {
-      addNotification('Грешка при групен увоз.', 'error');
+      addNotification(t('scenarioBankView.batchImportError'), 'error');
     } finally {
       setIsBatchImporting(false);
     }
   }, [firebaseUser, user, navigate, addNotification]);
 
   const handleSave = async (entryId: string, saved: boolean) => {
-    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    if (!firebaseUser?.uid) { addNotification(t('scenarioBankView.mustBeLoggedIn'), 'warning'); return; }
     await toggleSaveScenario(entryId, firebaseUser.uid, saved);
     setEntries(prev => prev.map(e => {
       if (e.id !== entryId) return e;
@@ -485,11 +489,11 @@ export const ScenarioBankView: React.FC = () => {
   const isAdmin = user?.role === 'admin';
 
   const TABS: { key: TabMode; label: string; icon: React.ReactNode }[] = [
-    { key: 'all',   label: 'Сите сценарија',   icon: <Search className="w-3.5 h-3.5" /> },
-    { key: 'bro',   label: 'БРО Верификувани', icon: <BadgeCheck className="w-3.5 h-3.5" /> },
-    { key: 'saved', label: 'Зачувани',          icon: <BookMarked className="w-3.5 h-3.5" /> },
-    { key: 'mine',  label: 'Мои сценарија',     icon: <Shuffle className="w-3.5 h-3.5" /> },
-    ...(isAdmin ? [{ key: 'admin' as TabMode, label: 'Администратор', icon: <ShieldCheck className="w-3.5 h-3.5" /> }] : []),
+    { key: 'all',   label: t('scenarioBankView.tabAll'),   icon: <Search className="w-3.5 h-3.5" /> },
+    { key: 'bro',   label: t('scenarioBankView.tabBro'), icon: <BadgeCheck className="w-3.5 h-3.5" /> },
+    { key: 'saved', label: t('scenarioBankView.tabSaved'),          icon: <BookMarked className="w-3.5 h-3.5" /> },
+    { key: 'mine',  label: t('scenarioBankView.tabMine'),     icon: <Shuffle className="w-3.5 h-3.5" /> },
+    ...(isAdmin ? [{ key: 'admin' as TabMode, label: t('scenarioBankView.tabAdmin'), icon: <ShieldCheck className="w-3.5 h-3.5" /> }] : []),
   ];
 
   return (
@@ -498,10 +502,10 @@ export const ScenarioBankView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            📚 Банка на Сценарија
+            {t('scenarioBankView.pageTitle')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Japanese Lesson Study Hub — наоѓај, оценувај и ремиксирај часови
+            {t('scenarioBankView.pageSubtitle')}
           </p>
         </div>
         {user && (
@@ -509,27 +513,27 @@ export const ScenarioBankView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowBatchModal(true)}
-              title="Групен увоз — избери повеќе датотеки одеднаш"
+              title={t('scenarioBankView.batchImportBtnTitle')}
               className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
             >
-              <FileText className="w-4 h-4" /> Групен увоз
+              <FileText className="w-4 h-4" /> {t('scenarioBankView.batchImportBtn')}
             </button>
             <button
               type="button"
               onClick={() => setShowUploadModal(true)}
               disabled={isParsingUpload}
-              title="Прикачи свое старо сценарио (PDF/DOCX/TXT) — AI ќе го структурира"
+              title={t('scenarioBankView.uploadBtnTitle')}
               className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2 rounded-xl shadow-sm transition-colors disabled:opacity-50"
             >
               {isParsingUpload ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {isParsingUpload ? 'Се анализира...' : 'Прикачи старо сценарио'}
+              {isParsingUpload ? t('scenarioBankView.analyzing') : t('scenarioBankView.uploadBtn')}
             </button>
             <button
               type="button"
               onClick={() => navigate('/planner')}
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-colors"
             >
-              <Plus className="w-4 h-4" /> Додај сценарио
+              <Plus className="w-4 h-4" /> {t('scenarioBankView.addScenario')}
             </button>
           </div>
         )}
@@ -580,8 +584,8 @@ export const ScenarioBankView: React.FC = () => {
       {/* Results count */}
       {!isLoading && (
         <p className="text-xs text-gray-400">
-          {sorted.length === 0 ? 'Нема резултати' : `${sorted.length} сценарија`}
-          {search && ` за „${search}"`}
+          {sorted.length === 0 ? t('scenarioBankView.noResults') : t('scenarioBankView.resultsCountTemplate').replace('{n}', String(sorted.length))}
+          {search && t('scenarioBankView.resultsForQueryTemplate').replace('{query}', search)}
         </p>
       )}
 
@@ -596,9 +600,9 @@ export const ScenarioBankView: React.FC = () => {
         <div className="text-center py-16 space-y-3">
           <p className="text-4xl">📭</p>
           <p className="text-gray-500 font-semibold">
-            {tab === 'mine' ? 'Немате уште сценарија. Создадете и споделете!' :
-             tab === 'saved' ? 'Немате зачувани сценарија.' :
-             'Нема сценарија за овие филтри.'}
+            {tab === 'mine' ? t('scenarioBankView.emptyMine') :
+             tab === 'saved' ? t('scenarioBankView.emptySaved') :
+             t('scenarioBankView.emptyDefault')}
           </p>
           {(tab === 'all' || tab === 'mine') && (
             <button
@@ -606,7 +610,7 @@ export const ScenarioBankView: React.FC = () => {
               onClick={() => navigate('/planner')}
               className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors"
             >
-              <Plus className="w-4 h-4" /> Создади сценарио
+              <Plus className="w-4 h-4" /> {t('scenarioBankView.createScenario')}
             </button>
           )}
         </div>
@@ -617,7 +621,7 @@ export const ScenarioBankView: React.FC = () => {
               key={entry.id}
               entry={entry}
               currentUid={firebaseUser?.uid}
-              currentName={user?.name ?? 'Наставник'}
+              currentName={user?.name ?? t('scenarioBank.card.defaultAuthorName')}
               currentSchool={user?.schoolName ?? ''}
               onRate={handleRate}
               onFork={handleFork}
@@ -644,7 +648,7 @@ export const ScenarioBankView: React.FC = () => {
             className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
           >
             {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Вчитај уште →
+            {t('scenarioBankView.loadMore')}
           </button>
         </div>
       )}
@@ -656,8 +660,8 @@ export const ScenarioBankView: React.FC = () => {
         return (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-gray-500 uppercase tracking-wide">🔒 Приватни нацрти ({privateDrafts.length})</span>
-              <span className="text-xs text-gray-400">— само ти ги гледаш</span>
+              <span className="text-xs font-black text-gray-500 uppercase tracking-wide">{t('scenarioBankView.privateDraftsTemplate').replace('{n}', String(privateDrafts.length))}</span>
+              <span className="text-xs text-gray-400">{t('scenarioBankView.onlyYouSeeThis')}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {privateDrafts.map(entry => (
@@ -665,7 +669,7 @@ export const ScenarioBankView: React.FC = () => {
                   <ScenarioCard
                     entry={entry}
                     currentUid={firebaseUser?.uid}
-                    currentName={user?.name ?? 'Наставник'}
+                    currentName={user?.name ?? t('scenarioBank.card.defaultAuthorName')}
                     currentSchool={user?.schoolName ?? ''}
                     onRate={handleRate}
                     onFork={handleFork}
@@ -682,7 +686,7 @@ export const ScenarioBankView: React.FC = () => {
                       onClick={() => handleMakePublic(entry.id, true)}
                       className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold py-2 rounded-lg transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Направи јавно во Банката
+                      <Plus className="w-3.5 h-3.5" /> {t('scenarioBankView.makePublicInBank')}
                     </button>
                   </div>
                 </div>
@@ -698,7 +702,7 @@ export const ScenarioBankView: React.FC = () => {
       {/* Footer hint */}
       {tab !== 'admin' && sorted.length > 0 && (
         <p className="text-center text-xs text-gray-400 pb-4">
-          🎓 Секое сценарио може да се ремиксира — создај своја верзија и автоматски влегува во Банката
+          {t('scenarioBankView.footerHint')}
         </p>
       )}
 
