@@ -20,6 +20,8 @@ export interface GradeEntry {
   sourceQuizId?: string;
   /** Set only when imported from a Digital Exam session. */
   sourceExamSessionId?: string;
+  /** Set only when imported from a Dugga test submission. */
+  sourceDuggaTestId?: string;
   conceptId?: string;
 }
 

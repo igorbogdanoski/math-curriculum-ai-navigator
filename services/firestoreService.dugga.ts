@@ -477,6 +477,22 @@ export const fetchStudentDuggaSubmissions = async (studentUid: string): Promise<
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaSubmission));
 };
 
+/**
+ * All of a teacher's graded Dugga submissions, most recent first — feeds
+ * ImportFromResultsModal (gradebook unification) the same way
+ * firestoreService.fetchQuizResults feeds the quiz-results import path.
+ */
+export const fetchTeacherDuggaSubmissions = async (teacherUid: string, max = 500): Promise<DuggaSubmission[]> => {
+  const q = query(
+    collection(db, 'dugga_submissions'),
+    where('teacherUid', '==', teacherUid),
+    orderBy('submittedAt', 'desc'),
+    limit(max),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaSubmission));
+};
+
 export const fetchStudentDuggaSubmissionsByName = async (studentName: string): Promise<DuggaSubmission[]> => {
   const snap = await getDocs(query(
     collection(db, 'dugga_submissions'),

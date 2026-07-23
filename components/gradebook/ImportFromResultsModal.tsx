@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { X, Loader2, Download, ChevronRight, Trash2, Users } from 'lucide-react';
 import type { GradeEntry } from '../../types';
 import { firestoreService } from '../../services/firestoreService';
-import { groupQuizResultsForImport, mapQuizResultsToGradeEntries, type QuizResultGroup } from '../../utils/gradeBookImport';
+import { examService } from '../../services/firestoreService.exam';
+import { fetchTeacherDuggaSubmissions } from '../../services/firestoreService.dugga';
+import {
+  groupQuizResultsForImport, mapQuizResultsToGradeEntries, type QuizResultGroup,
+  groupDuggaSubmissionsForImport, mapDuggaSubmissionsToGradeEntries, type DuggaSubmissionGroup,
+  groupExamResponsesForImport, mapExamResponsesToGradeEntries, type ExamResponseGroup,
+} from '../../utils/gradeBookImport';
 
 interface Props {
   teacherUid: string;
@@ -10,32 +16,75 @@ interface Props {
   onClose: () => void;
 }
 
+type Source = 'quiz' | 'dugga' | 'exam';
+type AnyGroup = QuizResultGroup | DuggaSubmissionGroup | ExamResponseGroup;
+
+const SOURCE_LABELS: Record<Source, string> = {
+  quiz: 'Квиз',
+  dugga: 'Dugga',
+  exam: 'Дигитален испит',
+};
+
+function groupTitle(group: AnyGroup): string {
+  if ('quizTitle' in group) return group.quizTitle;
+  if ('testTitle' in group) return group.testTitle;
+  return group.sessionTitle;
+}
+
+function groupCount(group: AnyGroup): number {
+  if ('results' in group) return group.results.length;
+  if ('submissions' in group) return group.submissions.length;
+  return group.responses.length;
+}
+
+function mapGroupToEntries(source: Source, group: AnyGroup): GradeEntry[] {
+  if (source === 'quiz') return mapQuizResultsToGradeEntries(group as QuizResultGroup);
+  if (source === 'dugga') return mapDuggaSubmissionsToGradeEntries(group as DuggaSubmissionGroup);
+  return mapExamResponsesToGradeEntries(group as ExamResponseGroup);
+}
+
 /**
- * Lets a teacher import a batch of gradebook rows straight from a quiz's real results
- * (quiz_results), instead of retyping scores by hand. Groups results by quiz+concept,
- * previews the mapped rows (with real quizId/conceptId carried through as
- * sourceQuizId/conceptId — see utils/gradeBookImport.ts), and lets the teacher drop any
- * row before confirming — nothing is saved until "Внеси" is pressed.
+ * Lets a teacher import a batch of gradebook rows straight from real results — quiz_results,
+ * Dugga submissions, or graded Digital Exam responses — instead of retyping scores by hand.
+ * Groups results by test, previews the mapped rows (with the real quizId/testId/sessionId
+ * carried through as sourceQuizId/sourceDuggaTestId/sourceExamSessionId — see
+ * utils/gradeBookImport.ts), and lets the teacher drop any row before confirming — nothing is
+ * saved until "Внеси" is pressed.
  */
 export const ImportFromResultsModal: React.FC<Props> = ({ teacherUid, onImport, onClose }) => {
+  const [source, setSource] = useState<Source>('quiz');
   const [loading, setLoading] = useState(true);
-  const [groups, setGroups] = useState<QuizResultGroup[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<QuizResultGroup | null>(null);
+  const [groups, setGroups] = useState<AnyGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<AnyGroup | null>(null);
   const [previewEntries, setPreviewEntries] = useState<GradeEntry[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    firestoreService.fetchQuizResults(500, teacherUid).then(results => {
-      if (cancelled) return;
-      setGroups(groupQuizResultsForImport(results));
-      setLoading(false);
-    }).catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [teacherUid]);
+    setLoading(true);
+    setSelectedGroup(null);
+    setPreviewEntries([]);
 
-  const handleSelectGroup = (group: QuizResultGroup) => {
+    const load = async (): Promise<AnyGroup[]> => {
+      if (source === 'quiz') {
+        const results = await firestoreService.fetchQuizResults(500, teacherUid);
+        return groupQuizResultsForImport(results);
+      }
+      if (source === 'dugga') {
+        const submissions = await fetchTeacherDuggaSubmissions(teacherUid);
+        return groupDuggaSubmissionsForImport(submissions);
+      }
+      const sessionsWithResponses = await examService.fetchTeacherGradedExamResponses(teacherUid);
+      return groupExamResponsesForImport(sessionsWithResponses);
+    };
+
+    load().then(g => { if (!cancelled) { setGroups(g); setLoading(false); } })
+      .catch(() => { if (!cancelled) { setGroups([]); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [source, teacherUid]);
+
+  const handleSelectGroup = (group: AnyGroup) => {
     setSelectedGroup(group);
-    setPreviewEntries(mapQuizResultsToGradeEntries(group));
+    setPreviewEntries(mapGroupToEntries(source, group));
   };
 
   const handleConfirm = () => {
@@ -57,6 +106,21 @@ export const ImportFromResultsModal: React.FC<Props> = ({ teacherUid, onImport, 
           </button>
         </div>
 
+        <div className="flex gap-1.5 px-5 pt-4">
+          {(Object.keys(SOURCE_LABELS) as Source[]).map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSource(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                source === s ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {SOURCE_LABELS[s]}
+            </button>
+          ))}
+        </div>
+
         <div className="p-5">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-gray-400">
@@ -71,7 +135,7 @@ export const ImportFromResultsModal: React.FC<Props> = ({ teacherUid, onImport, 
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Избери квиз за увоз</p>
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Избери {SOURCE_LABELS[source].toLowerCase()} за увоз</p>
                 {groups.map(g => (
                   <button
                     key={g.key}
@@ -80,8 +144,8 @@ export const ImportFromResultsModal: React.FC<Props> = ({ teacherUid, onImport, 
                     className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-left"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-gray-800 truncate">{g.quizTitle}</p>
-                      <p className="text-xs text-gray-400">{g.results.length} резултат{g.results.length !== 1 ? 'и' : ''}</p>
+                      <p className="font-bold text-gray-800 truncate">{groupTitle(g)}</p>
+                      <p className="text-xs text-gray-400">{groupCount(g)} резултат{groupCount(g) !== 1 ? 'и' : ''}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
                   </button>
@@ -94,7 +158,7 @@ export const ImportFromResultsModal: React.FC<Props> = ({ teacherUid, onImport, 
                 ← Назад кон листа
               </button>
               <p className="text-sm text-gray-600">
-                <span className="font-bold text-gray-800">{selectedGroup.quizTitle}</span> — {previewEntries.length} ученик{previewEntries.length !== 1 ? 'и' : ''}
+                <span className="font-bold text-gray-800">{groupTitle(selectedGroup)}</span> — {previewEntries.length} ученик{previewEntries.length !== 1 ? 'и' : ''}
               </p>
               <div className="border border-gray-100 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">

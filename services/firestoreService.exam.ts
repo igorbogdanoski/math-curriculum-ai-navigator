@@ -227,4 +227,23 @@ export const examService = {
       return [];
     }
   },
+
+  /**
+   * All graded responses (score/maxScore present) across a teacher's exam sessions,
+   * paired with the session they belong to — feeds ImportFromResultsModal (gradebook
+   * unification) the same way fetchQuizResults feeds the quiz-results import path.
+   * There's no top-level `exam_responses` collection to query directly (responses live
+   * in a `responses` subcollection per session — see RESPONSES above), so this fetches
+   * the teacher's sessions first, then each session's responses; bounded by
+   * listExamSessions' own limit(50).
+   */
+  async fetchTeacherGradedExamResponses(teacherUid: string): Promise<{ session: ExamSession; responses: ExamResponse[] }[]> {
+    const sessions = await this.listExamSessions(teacherUid);
+    const results = await Promise.all(sessions.map(async session => {
+      const responses = (await this.getExamResponses(session.id))
+        .filter(r => r.status === 'submitted' && r.score != null && r.maxScore != null);
+      return { session, responses };
+    }));
+    return results.filter(r => r.responses.length > 0);
+  },
 };
