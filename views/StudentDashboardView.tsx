@@ -149,13 +149,20 @@ export const StudentDashboardView: React.FC = () => {
 
   const parentShareUrl = useMemo(() => {
     if (!studentName.trim()) return '';
+    // The Parent Portal REQUIRES a teacher scope (?teacher=) and rejects teacher-less links.
+    // The old /#/portfolio?name= link resolved to the VIEWER's own (empty) device data on a
+    // parent's phone, so it always showed "Нема квиз резултати". Use the teacher-scoped route.
+    const teacherUid = data?.teacherUid;
+    if (!teacherUid) return '';
+    const name = encodeURIComponent(studentName.trim());
+    const teacher = encodeURIComponent(teacherUid);
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      return `${origin}/#/portfolio?name=${encodeURIComponent(studentName.trim())}`;
+      return `${origin}/#/parent?name=${name}&teacher=${teacher}`;
     } catch {
-      return `#/portfolio?name=${encodeURIComponent(studentName.trim())}`;
+      return `#/parent?name=${name}&teacher=${teacher}`;
     }
-  }, [studentName]);
+  }, [studentName, data?.teacherUid]);
 
   const handleCopyParentLink = async () => {
     if (!parentShareUrl) return;
@@ -450,24 +457,30 @@ export const StudentDashboardView: React.FC = () => {
         <p className="text-xs text-gray-600 mb-3">
           Линкот овозможува read-only преглед на твојот неделен напредок (без најава).
         </p>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            readOnly
-            value={parentShareUrl}
-            onClick={(e) => (e.target as HTMLInputElement).select()}
-            className="flex-1 min-w-0 px-3 py-2 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-600 truncate"
-          />
-          <button
-            type="button"
-            onClick={handleCopyParentLink}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all flex-shrink-0"
-          >
-            {parentLinkCopied
-              ? <><CheckCircle2 className="w-3.5 h-3.5" /> Копирано!</>
-              : <><Copy className="w-3.5 h-3.5" /> Копирај</>}
-          </button>
-        </div>
+        {parentShareUrl ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={parentShareUrl}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              className="flex-1 min-w-0 px-3 py-2 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-600 truncate"
+            />
+            <button
+              type="button"
+              onClick={handleCopyParentLink}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all flex-shrink-0"
+            >
+              {parentLinkCopied
+                ? <><CheckCircle2 className="w-3.5 h-3.5" /> Копирано!</>
+                : <><Copy className="w-3.5 h-3.5" /> Копирај</>}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Сподели со родител е достапно само кога си поврзан со наставник (преку код на паралелка или линк од наставник).
+          </p>
+        )}
       </section>
     </div>
   );

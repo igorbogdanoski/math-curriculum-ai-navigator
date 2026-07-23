@@ -71,10 +71,10 @@ export const WrittenTestReviewView: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-black text-gray-900">AI Прегледувач на писмени работи</h1>
-          <p className="text-gray-500 mt-1">Gemini 2.5 Pro Vision ги чита рачно напишаните одговори и ги оценува по прашање.</p>
+          <p className="text-gray-500 mt-1">Gemini 3 Pro Vision ги чита рачно напишаните одговори и ги оценува по прашање.</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <div className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 text-xs font-bold px-3 py-1 rounded-full">
-              <Sparkles className="w-3 h-3" /> Gemini 2.5 Pro Vision
+              <Sparkles className="w-3 h-3" /> Gemini 3 Pro Vision
             </div>
             <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
               <Users className="w-3 h-3" /> До 30 ученика одеднаш

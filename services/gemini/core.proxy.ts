@@ -254,7 +254,7 @@ export async function callGeminiEmbed(params: { model?: string; contents: unknow
       const response = await fetch('/api/embed?responseShape=embeddings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ model: params.model || 'text-embedding-004', contents: normalizeContents(params.contents)[0]?.parts || [] }),
+        body: JSON.stringify({ model: params.model || EMBEDDING_MODEL, contents: normalizeContents(params.contents)[0]?.parts || [] }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

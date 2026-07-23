@@ -29,13 +29,10 @@ export const ALLOWED_MODELS = new Set([
   'gemma-3-1b-it', 'gemma-3-4b-it', 'gemma-3-12b-it', 'gemma-3-27b-it',
   'gemma-3n-e4b-it', 'gemma-3n-e2b-it',
   'gemma-4-26b-a4b-it', 'gemma-4-31b-it',
-  // Gemini 1.5 (legacy)
-  'gemini-1.5-pro-002',
-  'gemini-1.5-flash-002',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
-  'gemini-pro',
-  'gemini-flash',
+  // NOTE: Retired Gemini 1.5/1.0 models (gemini-1.5-pro/flash[-002], gemini-pro, gemini-flash)
+  // were removed from this whitelist on 2026-07-23. The /api/gemini proxy already maps any
+  // 'pro'/'flash' request to a current model, and no active client requests the retired IDs
+  // (one-off scripts call the Gemini API directly, not through this proxy whitelist).
   // Embedding models
   'text-embedding-004',
   'gemini-embedding-001',

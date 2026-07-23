@@ -110,6 +110,9 @@ lh-*.json
 ~$*.docx
 /scripts/take-screenshots.mjs
 
+# Webinar attendance reports (contain participant PII — never commit)
+*Attendance report*.csv
+
 # Local dev scratch artifacts
 /keys-check.txt
 /list-env.ps1
