@@ -859,7 +859,15 @@ service cloud.firestore {
     // Само авторот или admin може да уредува/брише; заедничките акции (оценка,
     // зачувување, forkCount, usageCount) се дозволени за сите автентицирани наставници.
     match /scenario_bank/{docId} {
-      allow read:   if isAuthenticated();
+      // Privacy (2026-07-23 audit): private drafts (isPublic != true) must NOT be readable by
+      // every authenticated teacher — the isPublic==true filter was client-side only and could
+      // be bypassed with a direct Firestore query. Author and admin keep full read access; the
+      // public feed is unaffected because it already queries where('isPublic','==',true).
+      allow read:   if isAuthenticated() && (
+        resource.data.isPublic == true ||
+        resource.data.authorUid == request.auth.uid ||
+        isAdmin()
+      );
       allow create: if isAuthenticated() && !isAnonymousStudent()
                     && request.resource.data.authorUid == request.auth.uid;
       // Community actions (rating, saving, fork/usage counters) are open to any authenticated

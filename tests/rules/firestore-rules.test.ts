@@ -344,6 +344,54 @@ d('SEC-2 — Firestore rules coverage', () => {
     });
   });
 
+  describe('scenario_bank/{docId} — read scoped to isPublic drafts (2026-07-23 privacy fix)', () => {
+    it('a private (isPublic!=true) draft is readable only by its author or an admin, not any authenticated teacher', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('scenario_bank/private1').set({ authorUid: 'author1', isPublic: false });
+        await f.doc('users/admin1').set({ role: 'admin' });
+      });
+
+      const author = testEnv.authenticatedContext('author1');
+      await assertSucceeds(
+        (author.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } })
+          .doc('scenario_bank/private1').get(),
+      );
+
+      const admin = testEnv.authenticatedContext('admin1');
+      await assertSucceeds(
+        (admin.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } })
+          .doc('scenario_bank/private1').get(),
+      );
+
+      const otherTeacher = testEnv.authenticatedContext('teacher3');
+      await assertFails(
+        (otherTeacher.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } })
+          .doc('scenario_bank/private1').get(),
+      );
+    });
+
+    it('a public (isPublic==true) scenario is readable by any authenticated teacher', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as {
+          doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> };
+        };
+        await f.doc('scenario_bank/public1').set({ authorUid: 'author1', isPublic: true });
+      });
+      const otherTeacher = testEnv.authenticatedContext('teacher4');
+      await assertSucceeds(
+        (otherTeacher.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } })
+          .doc('scenario_bank/public1').get(),
+      );
+    });
+  });
+
   describe('matura_community_solutions/{solutionId} — upvote toggle scoped per-uid', () => {
     it('upvotes must move in lockstep with the caller\'s own uid in upvoterUids', async () => {
       if (!testEnv) return;
