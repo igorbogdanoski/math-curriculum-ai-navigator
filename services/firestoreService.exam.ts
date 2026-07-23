@@ -99,38 +99,50 @@ export const examService = {
   async joinExamSession(
     sessionId: string,
     studentName: string,
-    deviceId: string,
+    studentUid: string,
   ): Promise<ExamVariantKey> {
-    // Use a transaction so concurrent joins don't collide on the same variant slot.
-    // The counter doc lives at exam_sessions/{id}/__meta__/joinCounter.
-    const responsesRef = collection(db, SESSIONS, sessionId, RESPONSES);
-    const counterRef = doc(db, SESSIONS, sessionId, '__meta__', 'joinCounter');
+    // The response doc ID is the student's own Firebase Auth uid (anonymous or Google) —
+    // deterministic, not addDoc's random ID — so firestore.rules can scope reads/writes
+    // to `responseId == request.auth.uid` and every later write (saveExamAnswer,
+    // submitExamFinal, ...) can address the doc directly by uid. Previously this used
+    // addDoc (random ID) plus a stored `id` field the client re-derived the "doc id" from
+    // client-side; that field never matched the real doc, so every post-join write here
+    // silently targeted a document that was never created.
+    // Also runs inside the same transaction as the join-order counter, so a page-refresh
+    // rejoin reuses the existing response (and its already-assigned variant) instead of
+    // resetting progress or orphaning a duplicate under what used to be a fresh random ID.
+    // NOTE: collection IDs matching /^__.*__$/ are reserved by Firestore (INVALID_ARGUMENT
+    // on any read/write) — '__meta__' silently made every join attempt throw, regardless
+    // of security rules. 'examMeta' is a normal collection name.
+    const counterRef = doc(db, SESSIONS, sessionId, 'examMeta', 'joinCounter');
+    const responseRef = doc(db, SESSIONS, sessionId, RESPONSES, studentUid);
 
-    const variantKey = await runTransaction(db, async (tx) => {
+    return runTransaction(db, async (tx) => {
+      const existing = await tx.get(responseRef);
+      if (existing.exists()) {
+        return (existing.data() as ExamResponse).variantKey;
+      }
       const counterSnap = await tx.get(counterRef);
       const count: number = counterSnap.exists() ? (counterSnap.data()['n'] as number) : 0;
       const vk = assignVariant(count);
       tx.set(counterRef, { n: count + 1 }, { merge: true });
+      tx.set(responseRef, {
+        studentUid,
+        sessionId,
+        studentName,
+        variantKey: vk,
+        answers: {},
+        photoUrls: {},
+        status: 'joined',
+        submittedAt: null,
+        timeRemainingOnSubmit: null,
+        score: null,
+        maxScore: null,
+        aiFeedback: null,
+        gradedAt: null,
+      });
       return vk;
     });
-
-    await addDoc(responsesRef, {
-      id: deviceId,
-      sessionId,
-      studentName,
-      variantKey,
-      answers: {},
-      photoUrls: {},
-      status: 'joined',
-      submittedAt: null,
-      timeRemainingOnSubmit: null,
-      score: null,
-      maxScore: null,
-      aiFeedback: null,
-      gradedAt: null,
-    });
-
-    return variantKey;
   },
 
   async saveExamAnswer(

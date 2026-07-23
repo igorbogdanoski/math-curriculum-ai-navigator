@@ -424,6 +424,60 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.hostUid) || isAdmin();
     }
 
+    // ── Дигитален испит (exam_sessions) — 2026-07-23 ────────────────────────────
+    // Previously had NO rules block at all (confirmed via git history — never existed),
+    // so every read/write fell through to the deny-all catch-all at the bottom of this
+    // file: the entire Digital Exam feature (create/join/answer/submit/grade) was
+    // completely non-functional in production. `/exam/play` is a public route with no
+    // login wall (see PUBLIC_HASH_ROUTE_PREFIXES in App.tsx); joining now signs the
+    // student in anonymously first (see ExamPlayerView.handleJoin), so every write below
+    // can be scoped to a real request.auth.uid.
+    // NOTE (accepted trade-off, not fixed here): the session doc's `variants` field
+    // contains all 4 variants' full questions AND correct answers — any authenticated
+    // reader of the doc (not just the student's own assigned variant) can see them via
+    // devtools. Same class of issue as Gamma's pollCorrectIndex before it was moved to
+    // host_private/state, but fixing this one needs a bigger per-variant-serving
+    // redesign; flagged, not attempted in this pass.
+    match /exam_sessions/{sessionId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && !isAnonymousStudent()
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
+
+      // Join-order counter (assigns variant A/B/V/G round-robin) — written inside the
+      // same transaction as the response doc create; not otherwise read by clients.
+      // NOTE: named 'examMeta', not '__meta__' — Firestore reserves any collection id
+      // matching /^__.*__$/ and throws INVALID_ARGUMENT on it regardless of rules (found
+      // 2026-07-23 — every join attempt was failing on this before it even reached rules).
+      match /examMeta/{metaDoc} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /responses/{responseId} {
+        // Doc ID IS the joining student's own uid (see examService.joinExamSession) —
+        // `resource` doesn't exist yet on create, so the id itself is the ownership check.
+        allow create: if isAuthenticated() && responseId == request.auth.uid
+                      && request.resource.data.studentUid == request.auth.uid;
+        allow read: if isAuthenticated() && (
+          responseId == request.auth.uid ||
+          get(/databases/$(database)/documents/exam_sessions/$(sessionId)).data.createdBy == request.auth.uid
+        );
+        // Student (own doc only): solving-phase fields — never the grading fields.
+        // Teacher (session owner): grading fields only, via saveGradingResult.
+        allow update: if isAuthenticated() && (
+          (responseId == request.auth.uid &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['answers', 'photoUrls', 'status', 'submittedAt', 'timeRemainingOnSubmit']
+           )) ||
+          (get(/databases/$(database)/documents/exam_sessions/$(sessionId)).data.createdBy == request.auth.uid &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'maxScore', 'aiFeedback', 'gradedAt']))
+        );
+        allow delete: if isAuthenticated()
+                      && get(/databases/$(database)/documents/exam_sessions/$(sessionId)).data.createdBy == request.auth.uid;
+      }
+    }
+
     // ── Класови (classes) ──
     match /classes/{doc} {
       allow read: if isAuthenticated() && (

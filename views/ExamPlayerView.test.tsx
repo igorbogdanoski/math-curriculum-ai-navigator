@@ -5,7 +5,6 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 
 const getExamSessionByCode = vi.fn();
 const joinExamSession = vi.fn();
-const getExamResponses = vi.fn();
 const saveExamAnswer = vi.fn();
 const submitExamFinal = vi.fn();
 const subscribeExamSession = vi.fn((..._args: unknown[]) => () => { /* unsubscribe no-op */ });
@@ -14,11 +13,22 @@ vi.mock('../services/firestoreService.exam', () => ({
   examService: {
     getExamSessionByCode: (...args: unknown[]) => getExamSessionByCode(...args),
     joinExamSession: (...args: unknown[]) => joinExamSession(...args),
-    getExamResponses: (...args: unknown[]) => getExamResponses(...args),
     saveExamAnswer: (...args: unknown[]) => saveExamAnswer(...args),
     submitExamFinal: (...args: unknown[]) => submitExamFinal(...args),
     subscribeExamSession: (...args: unknown[]) => subscribeExamSession(...args),
   },
+}));
+
+// The exam player is a public route — handleJoin signs the student in anonymously first
+// (see firestore.rules exam_sessions/responses, 2026-07-23) so the response doc can be
+// scoped to a real request.auth.uid. Pre-authenticated here, matching the GammaStudentView
+// test precedent, so join flows exercise the real (post-auth) code path.
+vi.mock('../firebaseConfig', () => ({
+  auth: { currentUser: { uid: 'student-1' } },
+}));
+
+vi.mock('firebase/auth', () => ({
+  signInAnonymously: vi.fn(),
 }));
 
 vi.mock('../components/exam/ExamTimer', () => ({
@@ -38,7 +48,6 @@ function renderView() {
 async function joinAndReachSolving() {
   getExamSessionByCode.mockResolvedValue({ id: 'sess1', status: 'active', title: 'Тест', variants: { A: [] } });
   joinExamSession.mockResolvedValue('A');
-  getExamResponses.mockResolvedValue([{ id: 'dev1', studentName: 'Марко' }]);
 
   renderView();
   fireEvent.change(screen.getByPlaceholderText('Код (6 цифри)'), { target: { value: 'AB12CD' } });
@@ -73,8 +82,9 @@ describe('ExamPlayerView', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Предај/i })[0]);
 
     await waitFor(() => expect(screen.getByText(/Испитот е предаден/i)).toBeTruthy());
+    // 2nd arg is the response doc id, which is the (mocked) signed-in student's uid;
     // 4th arg is the solution-photos map (empty here — no photos captured in this test).
-    expect(submitExamFinal).toHaveBeenCalledWith('sess1', 'dev1', expect.any(Number), {});
+    expect(submitExamFinal).toHaveBeenCalledWith('sess1', 'student-1', expect.any(Number), {});
   });
 
   it('shows a notification and stays in solving phase (does not lose the exam) when submit fails', async () => {

@@ -251,8 +251,10 @@ export interface ExamSession {
 }
 
 export interface ExamResponse {
-  id: string; // studentId / deviceId
+  id: string; // Firestore doc ID, deterministic — equals studentUid (see examService.joinExamSession)
   sessionId: string;
+  /** The joining student's Firebase Auth uid (anonymous or Google) — doc ID is set to this. */
+  studentUid?: string;
   studentName: string;
   variantKey: ExamVariantKey;
   answers: Record<string, string>; // q0, q1, ...

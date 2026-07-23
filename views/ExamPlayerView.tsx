@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 import { examService } from '../services/firestoreService.exam';
 import type { ExamSession, ExamVariantKey } from '../services/firestoreService.types';
 import { ExamTimer } from '../components/exam/ExamTimer';
@@ -86,18 +88,26 @@ export const ExamPlayerView: React.FC = () => {
     setJoining(true);
     setJoinError('');
     try {
+      // The exam player is a public route (no login required) — sign in anonymously so
+      // firestore.rules can scope the response doc to this student's own uid, same
+      // pattern as StudentLiveView's Live Class join.
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { /* non-fatal, checked below */ }
+      }
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        setJoinError('Грешка при автентикација. Обиди се повторно.');
+        return;
+      }
       const found = await examService.getExamSessionByCode(joinCode.trim().toUpperCase());
       if (!found) {
         setJoinError('Невалиден код или испитот не е отворен.');
         return;
       }
-      const vk = await examService.joinExamSession(found.id, studentName.trim(), deviceId);
-      // Find the response doc id — list and find matching deviceId
-      const responses = await examService.getExamResponses(found.id);
-      const myResponse = responses.find(r => r.id === deviceId || r.studentName === studentName.trim());
+      const vk = await examService.joinExamSession(found.id, studentName.trim(), uid);
       setSession(found);
       setVariantKey(vk);
-      setResponseDocId(myResponse?.id ?? deviceId);
+      setResponseDocId(uid);
       setPhase(found.status === 'active' ? 'solving' : 'waiting');
     } catch {
       setJoinError('Грешка при приклучување. Проверете ја интернет врската и обидете се повторно.');

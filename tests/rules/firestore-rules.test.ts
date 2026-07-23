@@ -1735,4 +1735,163 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertFails(f.doc('spaced_rep/someoneElsesDevice_concept1').get());
     });
   });
+
+  describe('exam_sessions/{sessionId} — 2026-07-23: previously had NO rules block at all', () => {
+    it('a real (non-anonymous) teacher can create their own exam session; an anonymous student cannot', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const fTeacher = teacher.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fTeacher.doc('exam_sessions/s1').set({ createdBy: 'teacher1', title: 'Испит', status: 'draft' }));
+
+      const anon = testEnv.authenticatedContext('anon1', { firebase: { sign_in_provider: 'anonymous' } });
+      const fAnon = anon.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(fAnon.doc('exam_sessions/s2').set({ createdBy: 'anon1', title: 'Fake', status: 'draft' }));
+    });
+
+    it('cannot create a session claiming a createdBy that is not the caller', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const f = teacher.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('exam_sessions/s3').set({ createdBy: 'someoneElse', title: 'X', status: 'draft' }));
+    });
+
+    it('any authenticated user can read a session by id (join-by-code lookup), but only the owning teacher can update it', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s4').set({ createdBy: 'teacher1', title: 'Испит', status: 'waiting' });
+      });
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const fStudent = student.firestore() as unknown as { doc(p: string): { get(): Promise<unknown>; update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fStudent.doc('exam_sessions/s4').get());
+      await assertFails(fStudent.doc('exam_sessions/s4').update({ status: 'active' }));
+
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const fTeacher = teacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(fTeacher.doc('exam_sessions/s4').update({ status: 'active' }));
+    });
+
+    it('a different teacher cannot update or delete someone else\'s session', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s5').set({ createdBy: 'teacher1', title: 'Испит', status: 'waiting' });
+      });
+      const otherTeacher = testEnv.authenticatedContext('teacher2');
+      const f = otherTeacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown>; delete(): Promise<unknown> } };
+      await assertFails(f.doc('exam_sessions/s5').update({ status: 'ended' }));
+      await assertFails(f.doc('exam_sessions/s5').delete());
+    });
+
+    it('examMeta/joinCounter is writable by any authenticated caller (join-order counter, low sensitivity)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s6').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+      });
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('exam_sessions/s6/examMeta/joinCounter').set({ n: 1 }, { merge: true } as never));
+    });
+  });
+
+  describe('exam_sessions/{sessionId}/responses/{responseId} — doc id IS the student\'s own uid', () => {
+    it('a student can create their own response doc (id == their uid), but not one keyed under someone else\'s uid', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s7').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+      });
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('exam_sessions/s7/responses/student1').set({
+        studentUid: 'student1', sessionId: 's7', studentName: 'Марко', variantKey: 'A',
+        answers: {}, photoUrls: {}, status: 'joined',
+      }));
+      await assertFails(f.doc('exam_sessions/s7/responses/otherStudent').set({
+        studentUid: 'student1', sessionId: 's7', studentName: 'Марко', variantKey: 'A',
+        answers: {}, photoUrls: {}, status: 'joined',
+      }));
+    });
+
+    it('a student can update only their own solving-phase fields, and cannot touch grading fields', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s8').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+        await f.doc('exam_sessions/s8/responses/student1').set({
+          studentUid: 'student1', sessionId: 's8', studentName: 'Марко', variantKey: 'A',
+          answers: {}, photoUrls: {}, status: 'joined',
+        });
+      });
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = student.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('exam_sessions/s8/responses/student1').update({ 'answers.q0': 'x = 5', status: 'solving' }));
+      await assertFails(f.doc('exam_sessions/s8/responses/student1').update({ score: 100, maxScore: 100 }));
+    });
+
+    it('a student cannot update another student\'s response', async () => {
+      if (!testEnv) return;
+      const { assertFails } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s9').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+        await f.doc('exam_sessions/s9/responses/victim').set({
+          studentUid: 'victim', sessionId: 's9', studentName: 'Виктим', variantKey: 'A',
+          answers: {}, photoUrls: {}, status: 'joined',
+        });
+      });
+      const attacker = testEnv.authenticatedContext('attacker', { firebase: { sign_in_provider: 'anonymous' } });
+      const f = attacker.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertFails(f.doc('exam_sessions/s9/responses/victim').update({ 'answers.q0': 'hacked' }));
+    });
+
+    it('the owning teacher can set grading fields on any response in their session, but a random other teacher cannot read or grade it', async () => {
+      if (!testEnv) return;
+      const { assertFails, assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s10').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+        await f.doc('exam_sessions/s10/responses/student1').set({
+          studentUid: 'student1', sessionId: 's10', studentName: 'Марко', variantKey: 'A',
+          answers: {}, photoUrls: {}, status: 'submitted',
+        });
+      });
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const fTeacher = teacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> } };
+      await assertSucceeds(fTeacher.doc('exam_sessions/s10/responses/student1').update({ score: 8, maxScore: 10, aiFeedback: [] }));
+
+      const otherTeacher = testEnv.authenticatedContext('teacher2');
+      const fOther = otherTeacher.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown>; get(): Promise<unknown> } };
+      await assertFails(fOther.doc('exam_sessions/s10/responses/student1').get());
+      await assertFails(fOther.doc('exam_sessions/s10/responses/student1').update({ score: 0, maxScore: 10, aiFeedback: [] }));
+    });
+
+    it('a student can read their own response, and the owning teacher can list all responses in their session', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('exam_sessions/s11').set({ createdBy: 'teacher1', title: 'Испит', status: 'active' });
+        await f.doc('exam_sessions/s11/responses/student1').set({
+          studentUid: 'student1', sessionId: 's11', studentName: 'Марко', variantKey: 'A',
+          answers: {}, photoUrls: {}, status: 'submitted',
+        });
+      });
+      const student = testEnv.authenticatedContext('student1', { firebase: { sign_in_provider: 'anonymous' } });
+      const fStudent = student.firestore() as unknown as { doc(p: string): { get(): Promise<unknown> } };
+      await assertSucceeds(fStudent.doc('exam_sessions/s11/responses/student1').get());
+
+      const teacher = testEnv.authenticatedContext('teacher1');
+      const teacherDb = teacher.firestore() as unknown as Firestore;
+      await assertSucceeds(getDocs(collection(teacherDb, 'exam_sessions/s11/responses')));
+    });
+  });
 });
