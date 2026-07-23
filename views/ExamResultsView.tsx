@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { useReactToPrint } from 'react-to-print';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -86,7 +87,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
           answer: q.answer,
           points: q.points,
         }));
-        aiFeedback = await (geminiService as any).gradeExamResponses(gradingInput, response.answers ?? {});
+        aiFeedback = await geminiService.gradeExamResponses(gradingInput, response.answers ?? {});
       }
       // Merge MC + AI feedback in original question order.
       const byId = new Map<string, FB>([...mcFeedback, ...aiFeedback].map(f => [f.questionId, f]));
@@ -95,7 +96,7 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
       const maxScore = questions.reduce((s, q) => s + q.points, 0);
       await examService.saveGradingResult(session.id, response.id, { score, maxScore, aiFeedback: feedback });
       setResponses(prev => prev.map(r =>
-        r.id === response.id ? { ...r, score, maxScore, aiFeedback: feedback, gradedAt: new Date() as any } : r,
+        r.id === response.id ? { ...r, score, maxScore, aiFeedback: feedback, gradedAt: Timestamp.now() } : r,
       ));
       addNotification(`${response.studentName} ${t('examResults.gradedLabel')}: ${score}/${maxScore} (${pct(score, maxScore)}%)`, 'success');
     } catch {

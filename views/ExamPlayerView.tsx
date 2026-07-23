@@ -94,7 +94,7 @@ export const ExamPlayerView: React.FC = () => {
       const vk = await examService.joinExamSession(found.id, studentName.trim(), deviceId);
       // Find the response doc id — list and find matching deviceId
       const responses = await examService.getExamResponses(found.id);
-      const myResponse = responses.find(r => (r as any).id === deviceId || r.studentName === studentName.trim());
+      const myResponse = responses.find(r => r.id === deviceId || r.studentName === studentName.trim());
       setSession(found);
       setVariantKey(vk);
       setResponseDocId(myResponse?.id ?? deviceId);
