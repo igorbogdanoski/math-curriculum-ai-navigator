@@ -98,6 +98,17 @@ jobs:
             echo "Skip prompts:check (scripts/hash-prompts.mjs not present in this branch)."
           fi
 
+      - name: Gemini model drift check
+        run: |
+          if [ -z "${GEMINI_API_KEY}" ]; then
+            echo "Skip ai:verify-models (no GEMINI_API_KEY secret configured)."
+            exit 0
+          fi
+          npm run -s ai:verify-models
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        continue-on-error: true
+
   reliability-baseline:
     name: Reliability Baseline (last 20 runs)
     runs-on: ubuntu-latest
