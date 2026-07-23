@@ -664,12 +664,16 @@ service cloud.firestore {
     // any teacher whose reply bumps replyCount/participantUids, not just the original author.
     // isPinned/moderationStatus are deliberately admin-only — NOT included in the author's
     // own editable-fields set below, closing a prior gap where an author could self-pin or
-    // self-approve their own thread by writing those fields directly.
+    // self-approve their own thread by writing those fields directly. "Admin" here means
+    // global admin OR school_admin (2026-07-23: forum_threads has no schoolId to scope
+    // isSchoolAdmin() against — the forum is cross-school by design — and TeacherForumView's
+    // moderation queue is already shown to both roles, so school_admin's approve/pin actions
+    // were always rejected by the rules before this fix).
     match /forum_threads/{threadId} {
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
       allow update: if isAuthenticated() && (
-        isAdmin() ||
+        isAdmin() || isRole('school_admin') ||
         (resource.data.authorUid == request.auth.uid &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'body', 'editedAt', 'deleted', 'hasBestAnswer'])) ||
         isSelfArrayToggle('upvotedBy') ||
@@ -679,7 +683,7 @@ service cloud.firestore {
         isForumReplyBump() ||
         isForumThreadReport()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isRole('school_admin');
     }
 
     // ── Одговори на нишките (forum_replies) ──
@@ -687,6 +691,7 @@ service cloud.firestore {
     // isBestAnswer/feynmanBadge are set by the PARENT THREAD's author on someone ELSE's
     // reply (markBestAnswer/toggleFeynmanBadge) — not a self-action, so they get their own
     // isForumThreadAuthorOf() branch rather than the reply-author-only edit branch.
+    // Same school_admin note as forum_threads above.
     match /forum_replies/{replyId} {
       allow read:   if isAuthenticated();
       // 'ai-expert' is a sentinel UID for AI-generated replies posted by authenticated teachers
@@ -695,7 +700,7 @@ service cloud.firestore {
         request.resource.data.authorUid == 'ai-expert'
       );
       allow update: if isAuthenticated() && (
-        isAdmin() ||
+        isAdmin() || isRole('school_admin') ||
         ((resource.data.authorUid == request.auth.uid || resource.data.authorUid == 'ai-expert') &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'editedAt'])) ||
         isSelfArrayToggle('upvotedBy') ||
@@ -706,7 +711,7 @@ service cloud.firestore {
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feynmanBadge']) && isForumThreadAuthorOf(resource.data.threadId)) ||
         isForumReplyReport()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isRole('school_admin');
     }
 
     // ── Матура испити (matura_exams) ──

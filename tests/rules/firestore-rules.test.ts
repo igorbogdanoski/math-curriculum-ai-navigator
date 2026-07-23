@@ -780,6 +780,23 @@ d('SEC-2 — Firestore rules coverage', () => {
       await assertSucceeds(f.doc('forum_threads/t2').update({ moderationStatus: 'approved' }));
     });
 
+    it('a school_admin can also pin/approve (2026-07-23: forum has no schoolId to scope isSchoolAdmin against)', async () => {
+      if (!testEnv) return;
+      const { assertSucceeds } = await import('@firebase/rules-unit-testing');
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        const f = ctx.firestore() as unknown as { doc(p: string): { set(d: Record<string, unknown>): Promise<unknown> } };
+        await f.doc('users/schoolAdmin1').set({ role: 'school_admin', schoolId: 'school1' });
+        await f.doc('forum_threads/t2b').set({
+          authorUid: 'author1', title: 'Т', body: 'Б', isPinned: false, moderationStatus: 'pending',
+          upvotedBy: [], reactionsHelpful: [], reactionsSame: [], reactionsGreat: [], replyCount: 0, participantUids: ['author1'],
+        });
+      });
+      const schoolAdmin = testEnv.authenticatedContext('schoolAdmin1');
+      const f = schoolAdmin.firestore() as unknown as { doc(p: string): { update(d: Record<string, unknown>): Promise<unknown> } };
+      await assertSucceeds(f.doc('forum_threads/t2b').update({ isPinned: true }));
+      await assertSucceeds(f.doc('forum_threads/t2b').update({ moderationStatus: 'approved' }));
+    });
+
     it('the author can still edit title/body and soft-delete their own thread', async () => {
       if (!testEnv) return;
       const { assertSucceeds } = await import('@firebase/rules-unit-testing');
