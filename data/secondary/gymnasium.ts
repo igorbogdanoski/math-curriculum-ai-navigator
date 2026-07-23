@@ -49,6 +49,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c1-1',
+          priorKnowledgeIds: ['g9-concept-1-1'],
           title: 'Множества и операции со множества',
           description: 'Поим за множество, елемент, припаѓа/не припаѓа, претставување (табеларно, графички, описно), подмножество, вистинско подмножество, кардинален број, еквивалентни и еднакви множества, конечни и бесконечни множества, празно множество, унија, пресек, разлика, дисјунктни множества, комутативно и асоцијативно својство, подреден пар, Декартов производ.',
           assessmentStandards: [
@@ -64,6 +65,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c1-2',
+          priorKnowledgeIds: ['g9-concept-1-2', 'g9-concept-1-3'],
           title: 'Множество на реални броеви',
           description: 'Множество на реални броеви (ℝ), реални броеви, интервал (отворен, полуотворен, затворен), пресек и унија на интервали.',
           assessmentStandards: [
@@ -82,6 +84,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c1-3',
+          priorKnowledgeIds: ['g9-concept-1-5'],
           title: 'Размер, пропорција и процент',
           description: 'Просто и сложено тројно правило, основна вредност, процентна вредност, процентна сметка, делбена сметка, сметка на смеси, проста и сложена каматна стапка.',
           assessmentStandards: [
@@ -124,6 +127,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c2-1',
+          priorKnowledgeIds: ['g9-concept-1-4'],
           title: 'Степени и корени',
           description: 'Степени и корени: степен со природен степенов показател, квадратен корен, кубен корен; степен со цел и рационален показател; својства на операции со степени; научен запис A·10ⁿ.',
           assessmentStandards: [
@@ -141,6 +145,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c2-2',
+          priorKnowledgeIds: ['g9-concept-3-1'],
           title: 'Цели рационални изрази',
           description: 'Моном, бином, тричлен, полином; операции со полиноми; формули за скратено множење; разложување на множители; НЗС и НЗД на полиноми.',
           assessmentStandards: [
@@ -158,6 +163,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c2-3',
+          priorKnowledgeIds: ['gym10-c2-2'],
           title: 'Дробно рационални изрази',
           description: 'Алгебарска дропка — дефиниција, домен на дефинираност; проширување и кратење; собирање, одземање, множење и делење на алгебарски дропки; упростување.',
           assessmentStandards: [
@@ -187,6 +193,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c3-1',
+          priorKnowledgeIds: ['g9-concept-3-2'],
           title: 'Декартов правоаголен координатен систем',
           description: 'Координатен систем: координати на точки, растојание меѓу две точки, средишна точка на отсечка, периметар и плоштина на триаголник зададен со координати.',
           assessmentStandards: [
@@ -201,6 +208,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c3-2',
+          priorKnowledgeIds: ['gym10-c3-1', 'g9-concept-3-2'],
           title: 'Функција — линеарна и степенска',
           description: 'Услов за паралелност и нормалност на прави; тек на линеарна функција (дефиниона област, множество вредности, коефициент на правец, пресек со оски, монотоност); графици на f(x)=axⁿ (n=−2,−1,0,1,2,3) и f(x)=aˣ (a позитивен цел број).',
           assessmentStandards: [
@@ -217,6 +225,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c3-3',
+          priorKnowledgeIds: ['g9-concept-3-2'],
           title: 'Линеарни равенки',
           description: 'Составување и решавање линеарна равенка со една непозната; дискусија на решенија со параметар; примена.',
           assessmentStandards: [
@@ -231,6 +240,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c3-4',
+          priorKnowledgeIds: ['gym10-c3-3'],
           title: 'Систем од две линеарни равенки со две непознати',
           description: 'Системи равенки: линеарна равенка со две непознати = права; методи на решавање: замена, спротивни коефициенти, графички; примена.',
           assessmentStandards: [
@@ -246,6 +256,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c3-5',
+          priorKnowledgeIds: ['g9-concept-3-3', 'gym10-c3-3'],
           title: 'Линеарна неравенка со една непозната',
           description: 'Линеарни неравенки: препознавање, составување, решавање; запишување на решението со интервал и на бројна права; примена.',
           assessmentStandards: [
@@ -273,6 +284,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c4-1',
+          priorKnowledgeIds: ['g9-concept-2-2'],
           title: 'Вектори',
           description: 'Вектор, правец, насока, интензитет; колинеарни и еднакви вектори; спротивен вектор; единечен вектор; собирање, одземање, множење вектор со број; изразување вектор преку дадени вектори.',
           assessmentStandards: [
@@ -288,6 +300,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c4-2',
+          priorKnowledgeIds: ['g9-concept-2-1', 'g9-concept-2-3'],
           title: 'Тригонометрија во правоаголен триаголник',
           description: 'Синус, косинус, тангенс и котангенс на остар агол во правоаголен триаголник; вредности за 30°, 45°, 60°; Питагорова теорема; плоштина P=½ab·sinγ.',
           assessmentStandards: [
@@ -308,6 +321,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c4-3',
+          priorKnowledgeIds: ['g9-concept-2-1'],
           title: '2Д форми — агли и особини',
           description: 'Правилен многуаголник; тетивен и тангентен четириаголник; кружен лак; централен и периферен агол; Талесова теорема; препокривање на површина.',
           assessmentStandards: [
@@ -319,6 +333,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c4-4',
+          priorKnowledgeIds: ['g9-concept-2-3'],
           title: 'Сличност на триаголници',
           description: 'Коефициент на сличност; слични и складни триаголници; однос меѓу плоштини и должини; модели со образовен софтвер.',
           assessmentStandards: [
@@ -344,6 +359,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c5-1',
+          priorKnowledgeIds: ['g9-concept-4-1'],
           title: 'Периметар и плоштина на 2Д форми',
           description: 'Кружен отсечок, кружен исечок, кружен прстен; плоштина и периметар на квадрат, правоаголник, триаголник, паралелограм, ромб, трапез, круг и сложени форми; впишана и опишана кружница; Питагорова, Евклидова и Талесова теорема.',
           assessmentStandards: [
@@ -362,6 +378,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c5-2',
+          priorKnowledgeIds: ['g9-concept-4-2'],
           title: 'Плоштина и волумен на 3Д форми',
           description: 'Права призма и прав цилиндар: плоштина и волумен; сложени 3Д форми.',
           assessmentStandards: [
@@ -389,6 +406,7 @@ export const gymnasiumGrade10: Grade = {
       concepts: [
         {
           id: 'gym10-c6-1',
+          priorKnowledgeIds: ['g9-concept-5-2'],
           title: 'Веројатност',
           description: 'Релативна фреквенција, експериментална веројатност, класична веројатност; веројатност на спротивен настан (1−p).',
           assessmentStandards: [
@@ -404,6 +422,7 @@ export const gymnasiumGrade10: Grade = {
         },
         {
           id: 'gym10-c6-2',
+          priorKnowledgeIds: ['g9-concept-5-1'],
           title: 'Прибирање, обработка, претставување и толкување на податоци',
           description: 'Собирање и класификација на податоци; табели; столбести, линиски, пита дијаграми, пиктограми, дијаграми на фреквенција, дијаграми со точки, хистограми со еднакви и нееднакви интервали; аритметичка средина, медијана, мод, ранг.',
           assessmentStandards: [
@@ -449,6 +468,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c1-1',
+          priorKnowledgeIds: ['gym10-c2-1'],
           title: 'Степени',
           description: 'Степен со степенов показател цел број.',
           assessmentStandards: [
@@ -459,6 +479,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c1-2',
+          priorKnowledgeIds: ['gym10-c2-1'],
           title: 'Корен',
           description: 'n-ти корен, коренов показател, поткоренов израз, коренов знак, проширување на корен, скратување на корен.',
           assessmentStandards: [
@@ -472,6 +493,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c1-3',
+          priorKnowledgeIds: ['gym11n-c1-2', 'gym10-c1-2'],
           title: 'Комплексен број',
           description: 'Имагинарна единица, чист имагинарен број, комплексен број, реален дел, имагинарен дел, конјугиран комплексен број, спротивен комплексен број, еднакви комплексни броеви.',
           assessmentStandards: [
@@ -486,6 +508,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c1-4',
+          priorKnowledgeIds: ['gym11n-c1-2'],
           title: 'Операции со корени',
           description: 'Нормален вид на корен, слични корени.',
           assessmentStandards: [
@@ -500,6 +523,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c1-5',
+          priorKnowledgeIds: ['gym11n-c1-3'],
           title: 'Операции со комплексни броеви',
           description: 'Собирање, одземање, множење, делење и степенување комплексни броеви.',
           assessmentStandards: [
@@ -511,6 +535,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c1-6',
+          priorKnowledgeIds: ['gym11n-c1-4', 'gym10-c2-3'],
           title: 'Ирационални изрази',
           description: 'Ирационални изрази, рационализирање на именител на дропка.',
           assessmentStandards: [
@@ -547,6 +572,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c2-1',
+          priorKnowledgeIds: ['gym10-c3-3', 'gym10-c2-2'],
           title: 'Квадратна равенка и видови квадратни равенки',
           description: 'Квадратна равенка, општ вид на квадратна равенка, нормален вид на квадратна равенка, неполна квадратна равенка, полна квадратна равенка.',
           assessmentStandards: [
@@ -558,6 +584,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c2-2',
+          priorKnowledgeIds: ['gym11n-c2-1'],
           title: 'Решавање на квадратна равенка',
           description: 'Решение/корен на квадратна равенка, формула x₁,₂=(−b±√(b²−4ac))/2a, дискриминанта, природа на решенија на квадратна равенка, параметарски квадратни равенки.',
           assessmentStandards: [
@@ -572,6 +599,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c2-3',
+          priorKnowledgeIds: ['gym11n-c2-2'],
           title: 'Виетови формули',
           description: 'Виетови формули, квадратен трином.',
           assessmentStandards: [
@@ -584,6 +612,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c2-4',
+          priorKnowledgeIds: ['gym11n-c2-2'],
           title: 'Равенки што се сведуваат на квадратни',
           description: 'Дробно рационална равенка (дефиниционо множество, решение на дробно рационалната равенка); биквадратна равенка (воведување смена на променлива, решение на биквадратна равенка).',
           assessmentStandards: [
@@ -598,6 +627,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c2-5',
+          priorKnowledgeIds: ['gym11n-c2-2', 'gym10-c3-4'],
           title: 'Систем од една линеарна равенка со две променливи и една квадратна равенка со две променливи',
           description: 'Систем од линеарна и квадратна равенка со две непознати.',
           assessmentStandards: [
@@ -630,6 +660,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c3-1',
+          priorKnowledgeIds: ['gym11n-c2-2', 'gym10-c3-2'],
           title: 'Квадратна функција',
           description: 'Квадратна функција, парабола, каноничен вид, нули на квадратната функција, теме на квадратна функција (−b/2a, (4ac−b²)/4a), завртена нагоре/надолу, дефинициона област, множество вредности, оска на симетрија, екстремни вредности, интервали на растење и опаѓање, знак на квадратна функција.',
           assessmentStandards: [
@@ -649,6 +680,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c3-2',
+          priorKnowledgeIds: ['gym11n-c3-1', 'gym10-c3-5'],
           title: 'Квадратни неравенки',
           description: 'Квадратна неравенка со една непозната, општ вид на квадратна неравенка, множество решенија на квадратна неравенка.',
           assessmentStandards: [
@@ -661,6 +693,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c3-3',
+          priorKnowledgeIds: ['gym11n-c3-2'],
           title: 'Систем од квадратни неравенки со една непозната',
           description: 'Систем од две квадратни неравенки со една непозната, општ вид на систем од две квадратни неравенки со една непозната.',
           assessmentStandards: [
@@ -696,6 +729,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c4-1',
+          priorKnowledgeIds: ['gym10-c6-1'],
           title: 'Пермутација, варијација и комбинација',
           description: 'Пермутација, варијација, комбинација, пермутација без повторување, пермутација со повторување, варијација без повторување, варијација со повторување, комбинација без повторување, комбинација со повторување.',
           assessmentStandards: [
@@ -706,6 +740,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c4-2',
+          priorKnowledgeIds: ['gym11n-c4-1'],
           title: 'Веројатност',
           description: 'Множество на елементарни настани, операции со настани, сума на настани, производ на настани, настани кои се исклучуваат, независни настани.',
           assessmentStandards: [
@@ -739,6 +774,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c5-1',
+          priorKnowledgeIds: ['gym10-c4-2'],
           title: 'Тригонометрија',
           description: 'Радијан, Теорема за комплементни агли, тригонометриски идентитети.',
           assessmentStandards: [
@@ -754,6 +790,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c5-2',
+          priorKnowledgeIds: ['gym10-c4-1', 'gym10-c5-2'],
           title: 'Права и рамнина',
           description: 'Теорема, аксиома, Аксиоми за просторна геометрија.',
           assessmentStandards: [
@@ -765,6 +802,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c5-3',
+          priorKnowledgeIds: ['gym11n-c5-2'],
           title: 'Пресеци на 3Д форма со рамнина',
           description: 'Паралелен пресек, нормален пресек, дијагонален пресек, оскин пресек.',
           assessmentStandards: [
@@ -795,6 +833,7 @@ export const gymnasiumGrade11: Grade = {
       concepts: [
         {
           id: 'gym11n-c6-1',
+          priorKnowledgeIds: ['gym10-c5-1'],
           title: 'Периметар и плоштина на 2Д форми',
           description: 'Периметар и плоштина на 2Д форми и сложени форми составени од нив; периметар и плоштина на круг и делови од круг.',
           assessmentStandards: [
@@ -805,6 +844,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c6-2',
+          priorKnowledgeIds: ['gym10-c5-2', 'gym11n-c5-2'],
           title: 'Пирамида и потсечена пирамида',
           description: 'Пирамида, потсечена пирамида, апотема, висина на пирамида.',
           assessmentStandards: [
@@ -816,6 +856,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c6-3',
+          priorKnowledgeIds: ['gym10-c5-2'],
           title: 'Конус и потсечен конус',
           description: 'Конус, потсечен конус, генератриса, висина на конус.',
           assessmentStandards: [
@@ -827,6 +868,7 @@ export const gymnasiumGrade11: Grade = {
         },
         {
           id: 'gym11n-c6-4',
+          priorKnowledgeIds: ['gym10-c5-2'],
           title: 'Топка и сфера',
           description: 'Сфера, калота, топка, топкини исечоци, полутопка, топкин отсечок, топкин појас, топкин исечок, топкин слој.',
           assessmentStandards: [
@@ -872,6 +914,7 @@ export const gymnasiumGrade12: Grade = {
       concepts: [
         {
           id: 'gym12-c1-1',
+          priorKnowledgeIds: ['gym11n-c1-1', 'gym10-c3-2'],
           title: 'Експоненцијална функција и тек на графикот',
           description: 'Тек и график на експоненцијална функција.',
           assessmentStandards: [
@@ -886,6 +929,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c1-2',
+          priorKnowledgeIds: ['gym12-c1-1'],
           title: 'Експоненцијална равенка',
           description: 'Дефинирање и решавање експоненцијални равенки.',
           assessmentStandards: [
@@ -899,6 +943,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c1-3',
+          priorKnowledgeIds: ['gym12-c1-1'],
           title: 'Поим за логаритам и правила за логаритмирање',
           description: 'Дефиниција за логаритам, правила и врски меѓу логаритми.',
           assessmentStandards: [
@@ -915,6 +960,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c1-4',
+          priorKnowledgeIds: ['gym12-c1-3'],
           title: 'Логаритамска функција и логаритамска равенка',
           description: 'Тек и график на логаритамска функција, решавање равенки.',
           assessmentStandards: [
@@ -949,6 +995,7 @@ export const gymnasiumGrade12: Grade = {
       concepts: [
         {
           id: 'gym12-c2-1',
+          priorKnowledgeIds: ['gym11n-c5-1'],
           title: 'Тригонометриски функции од произволен агол',
           description: 'Проширување на поимот агол, мерење на агол и лак, вредност на функциите.',
           assessmentStandards: [
@@ -968,6 +1015,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c2-2',
+          priorKnowledgeIds: ['gym12-c2-1'],
           title: 'Тек и график на основните тригонометриски функции',
           description: 'Периодичност, парност, интервали и графици.',
           assessmentStandards: [
@@ -982,6 +1030,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c2-3',
+          priorKnowledgeIds: ['gym12-c2-1'],
           title: 'Трансформирање на тригонометриски изрази',
           description: 'Адициони теореми и трансформирање на збир и разлика.',
           assessmentStandards: [
@@ -996,6 +1045,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c2-4',
+          priorKnowledgeIds: ['gym12-c2-2', 'gym12-c2-3'],
           title: 'График на сложени тригонометриски функции и равенки',
           description: 'Функции од видот y=a·sin b(x+c)+d и тригонометриски равенки.',
           assessmentStandards: [
@@ -1010,6 +1060,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c2-5',
+          priorKnowledgeIds: ['gym12-c2-1'],
           title: 'Решавање на произволен триаголник',
           description: 'Синусна и косинусна теорема.',
           assessmentStandards: [
@@ -1039,6 +1090,7 @@ export const gymnasiumGrade12: Grade = {
       concepts: [
         {
           id: 'gym12-c3-1',
+          priorKnowledgeIds: ['gym11n-c4-1'],
           title: 'Комбинаторика',
           description: 'Математичка индукција, пермутации, варијации, комбинации и биномна формула.',
           assessmentStandards: [
@@ -1057,6 +1109,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c3-2',
+          priorKnowledgeIds: ['gym12-c3-1', 'gym11n-c4-2'],
           title: 'Веројатност',
           description: 'Експеримент, настан, класична веројатност.',
           assessmentStandards: [
@@ -1089,6 +1142,7 @@ export const gymnasiumGrade12: Grade = {
       concepts: [
         {
           id: 'gym12-c4-1',
+          priorKnowledgeIds: ['gym10-c3-1'],
           title: 'Точка во рамнина',
           description: 'Координатен систем, вектори, растојание меѓу две точки и делење на отсечка.',
           assessmentStandards: [
@@ -1105,6 +1159,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c4-2',
+          priorKnowledgeIds: ['gym12-c4-1', 'gym10-c3-2'],
           title: 'Права во рамнина',
           description: 'Видови равенки на права, заемна положба и растојание од точка до права.',
           assessmentStandards: [
@@ -1123,6 +1178,7 @@ export const gymnasiumGrade12: Grade = {
         },
         {
           id: 'gym12-c4-3',
+          priorKnowledgeIds: ['gym12-c4-2', 'gym11n-c3-1'],
           title: 'Криви од втор ред',
           description: 'Кружница, елипса, хипербола, парабола и нивната заемна положба со права.',
           assessmentStandards: [
@@ -1165,6 +1221,7 @@ export const gymnasiumGrade13: Grade = {
       concepts: [
         {
           id: 'gym13-c1-1',
+          priorKnowledgeIds: ['g9-concept-3-4', 'gym10-c1-2'],
           title: 'Низа од реални броеви',
           description: 'Поим; Општ член.',
           assessmentStandards: [
@@ -1181,6 +1238,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c1-2',
+          priorKnowledgeIds: ['gym13-c1-1'],
           title: 'Аритметичка прогресија',
           description: 'Поим; Општ член; Некои својства на членовите; Збир на првите n членови.',
           assessmentStandards: [
@@ -1196,6 +1254,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c1-3',
+          priorKnowledgeIds: ['gym13-c1-1', 'gym12-c1-1'],
           title: 'Геометриска прогресија',
           description: 'Поим; Општ член; Некои својства на членовите; Збир на првите n членови.',
           assessmentStandards: [
@@ -1211,6 +1270,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c1-4',
+          priorKnowledgeIds: ['gym13-c1-2', 'gym13-c1-3'],
           title: 'Гранична вредност на низа',
           description: 'Монотона и ограничена низа; Околина на точка и точка на натрупување; Дефиниција на граница на низа; Својства на границата; Збир на членовите на бескрајна геометриска прогресија при |q|<1.',
           assessmentStandards: [
@@ -1246,6 +1306,7 @@ export const gymnasiumGrade13: Grade = {
       concepts: [
         {
           id: 'gym13-c2-1',
+          priorKnowledgeIds: ['gym12-c1-4', 'gym12-c2-2'],
           title: 'Реална функција и својства',
           description: 'Начини на задавање на функција; Парност и непарност; Монотоност; Ограниченост; Екстремни вредности; Периодичност.',
           assessmentStandards: [
@@ -1262,6 +1323,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c2-2',
+          priorKnowledgeIds: ['gym13-c2-1'],
           title: 'Сложена и инверзна функција, графици на елементарни функции',
           description: 'Сложена функција; Инверзна функција; Одредување дефинициона област; Графици на елементарни функции.',
           assessmentStandards: [
@@ -1278,6 +1340,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c2-3',
+          priorKnowledgeIds: ['gym13-c2-1', 'gym13-c1-4'],
           title: 'Гранична вредност на функција',
           description: 'Дефиниција; Операции со гранични вредности; Карактеристични граници; Непрекинатост; Асимптоти на крива.',
           assessmentStandards: [
@@ -1308,6 +1371,7 @@ export const gymnasiumGrade13: Grade = {
       concepts: [
         {
           id: 'gym13-c3-1',
+          priorKnowledgeIds: ['gym13-c2-3'],
           title: 'Извод на функција',
           description: 'Нараснување на функција; Дефиниција на извод; Изводи на елементарни функции; Извод од збир, производ и количник; Извод на сложена функција; Извод од повисок ред; Диференцијал на функција.',
           assessmentStandards: [
@@ -1325,6 +1389,7 @@ export const gymnasiumGrade13: Grade = {
         },
         {
           id: 'gym13-c3-2',
+          priorKnowledgeIds: ['gym13-c3-1'],
           title: 'Примена на изводите',
           description: 'Геометриско и физичко толкување; Одредување максимум и минимум; Испитување на текот и график на функција; Решавање практични задачи.',
           assessmentStandards: [
@@ -1358,6 +1423,7 @@ export const gymnasiumGrade13: Grade = {
       concepts: [
         {
           id: 'gym13-c4-1',
+          priorKnowledgeIds: ['gym12-c3-2'],
           title: 'Случајни настани и веројатност',
           description: 'Елементарни настани; Дефиниција на веројатност; Условна веројатност; Независност на настани; Случајни променливи од дискретен тип; Бројни карактеристики.',
           assessmentStandards: [
@@ -1392,6 +1458,7 @@ export const gymnasiumGrade13: Grade = {
       concepts: [
         {
           id: 'gym13-c5-1',
+          priorKnowledgeIds: ['gym13-c4-1', 'gym10-c6-2'],
           title: 'Проверка на статистички хипотези',
           description: 'Хипотези, грешки и тестови; Тестови за просечна вредност и дисперзија; Табели на контингенција.',
           assessmentStandards: [

@@ -48,6 +48,7 @@ export const elementaryAlgebraGrade11: Grade = {
       concepts: [
         {
           id: 'gym-ea11-c1-1',
+          priorKnowledgeIds: ['gym10-c1-2', 'g9-concept-1-3'],
           title: 'Деливост и прости броеви',
           description: 'Деливост на природните броеви. Прости броеви и сложени броеви.',
           assessmentStandards: [
@@ -68,6 +69,7 @@ export const elementaryAlgebraGrade11: Grade = {
         },
         {
           id: 'gym-ea11-c1-2',
+          priorKnowledgeIds: ['gym-ea11-c1-1'],
           title: 'Диофантови равенки и конгруенции',
           description: 'Диофантови равенки. Конгруенции во множеството на целите броеви.',
           assessmentStandards: [
@@ -104,6 +106,7 @@ export const elementaryAlgebraGrade11: Grade = {
       concepts: [
         {
           id: 'gym-ea11-c2-1',
+          priorKnowledgeIds: ['gym10-c1-1'],
           title: 'Множества и пресликувања',
           description: 'Операции со множества, докажување својства и видови пресликувања.',
           assessmentStandards: [
@@ -119,6 +122,7 @@ export const elementaryAlgebraGrade11: Grade = {
         },
         {
           id: 'gym-ea11-c2-2',
+          priorKnowledgeIds: ['gym-ea11-c2-1'],
           title: 'Принципи на пребројување и Принцип на Дирихле',
           description: 'Основни принципи на пребројување. Принцип на Дирихле.',
           assessmentStandards: [
@@ -152,6 +156,7 @@ export const elementaryAlgebraGrade11: Grade = {
       concepts: [
         {
           id: 'gym-ea11-c3-1',
+          priorKnowledgeIds: ['gym10-c1-1'],
           title: 'Математички поими, тврдења и теореми',
           description: 'Формирање поими, тврдења (општо, делумно, одречно), теорема и видови теореми.',
           assessmentStandards: [
@@ -169,6 +174,7 @@ export const elementaryAlgebraGrade11: Grade = {
         },
         {
           id: 'gym-ea11-c3-2',
+          priorKnowledgeIds: ['gym-ea11-c3-1'],
           title: 'Методи на докажување',
           description: 'Правила за изведување заклучоци. Директни и индиректни методи на докажување.',
           assessmentStandards: [
@@ -200,6 +206,7 @@ export const elementaryAlgebraGrade11: Grade = {
       concepts: [
         {
           id: 'gym-ea11-c4-1',
+          priorKnowledgeIds: ['gym-ea11-c2-1'],
           title: 'Бинарни релации и операции. Група',
           description: 'Бинарни релации, бинарни операции, групоид, полугрупа и група.',
           assessmentStandards: [
@@ -216,6 +223,7 @@ export const elementaryAlgebraGrade11: Grade = {
         },
         {
           id: 'gym-ea11-c4-2',
+          priorKnowledgeIds: ['gym-ea11-c4-1'],
           title: 'Прстен и поле',
           description: 'Алгебарските структури прстен и поле.',
           assessmentStandards: [
@@ -244,6 +252,7 @@ export const elementaryAlgebraGrade11: Grade = {
       concepts: [
         {
           id: 'gym-ea11-c5-1',
+          priorKnowledgeIds: ['gym10-c3-3', 'gym10-c3-5'],
           title: 'Равенки и неравенки со апсолутна вредност',
           description: 'Линеарни равенки и неравенки под знак на апсолутна вредност.',
           assessmentStandards: [
@@ -259,6 +268,7 @@ export const elementaryAlgebraGrade11: Grade = {
         },
         {
           id: 'gym-ea11-c5-2',
+          priorKnowledgeIds: ['gym-ea11-c5-1'],
           title: 'Системи равенки со апсолутна вредност и со смена',
           description: 'Системи линеарни равенки под знак на апсолутна вредност. Системи линеарни равенки со смена на променливи.',
           assessmentStandards: [
@@ -297,6 +307,7 @@ export const elementaryAlgebraGeometryGrade11: Grade = {
       concepts: [
         {
           id: 'gym-eag11-c1-1',
+          priorKnowledgeIds: ['gym10-c5-2'],
           title: 'Ортогонално проектирање и пресеци на тела',
           description: 'Ортогонално проектирање на две заемно нормални рамнини; Претставување на рамнина; Пресеци на тело со рамнина; Коса проекција на геометриско тело.',
           assessmentStandards: [
@@ -330,6 +341,7 @@ export const elementaryAlgebraGeometryGrade11: Grade = {
       concepts: [
         {
           id: 'gym-eag11-c2-1',
+          priorKnowledgeIds: ['gym10-c4-1'],
           title: 'Операции со координати на вектор и скаларен производ',
           description: 'Делење отсечка во даден однос; Линеарна зависност на два вектори; Координати на вектор во рамнина; Проекција на вектор врз оска; Скаларен производ; Комплексни броеви и вектори.',
           assessmentStandards: [
@@ -366,6 +378,7 @@ export const elementaryAlgebraGeometryGrade11: Grade = {
       concepts: [
         {
           id: 'gym-eag11-c3-1',
+          priorKnowledgeIds: ['gym10-c4-3', 'g9-concept-2-2'],
           title: 'Геометриски пресликувања',
           description: 'Пресликувања; Транслација; Централна симетрија; Осна симетрија; Ротација; Хомотетија.',
           assessmentStandards: [
@@ -400,6 +413,7 @@ export const elementaryAlgebraGeometryGrade11: Grade = {
       concepts: [
         {
           id: 'gym-eag11-c4-1',
+          priorKnowledgeIds: ['gym11n-c2-2', 'gym10-c3-4'],
           title: 'Решавање на нелинеарни системи и равенки',
           description: 'Поим за систем — геометриско толкување; Решавање на квадратни системи; Системи со вовед на нови променливи; Равенки од квадратен вид; Симетрични равенки.',
           assessmentStandards: [
@@ -442,6 +456,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c1-1',
+          priorKnowledgeIds: ['gym11n-c1-4'],
           title: 'Операции со корени и ирационални равенки',
           description: 'Проширување и скратување на корени; коренување на производ и количник; Нормален вид на корен; Операции со корени; Рационализирање на именател во дропка; Идентитети; Упростување ирационални изрази; Ирационални равенки.',
           assessmentStandards: [
@@ -473,6 +488,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c2-1',
+          priorKnowledgeIds: ['gym-ea11-c1-2'],
           title: 'Конгруенции, остатоци и деливост',
           description: 'Конгруенции во цели броеви; Систем на остатоци; Критериуми за деливост.',
           assessmentStandards: [
@@ -504,6 +520,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c3-1',
+          priorKnowledgeIds: ['gym10-c3-5', 'gym-ea11-c3-2'],
           title: 'Видови неравенства, средини и нивно докажување',
           description: 'Поим и видови неравенства; Основни неравенства меѓу реалните броеви; Својства на апсолутна вредност на реален број; Неравенства со апсолутни вредности; Средини; Некои поважни неравенства.',
           assessmentStandards: [
@@ -536,6 +553,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c4-1',
+          priorKnowledgeIds: ['gym10-c2-2'],
           title: 'Својства, операции и равенки со полиноми',
           description: 'Полином: поим, пресметување вредност, операции, делење со биномот x-c, теоремата на Безу; Деливост на полином: НЗД на полиноми, еднаквост, нули; Основна теорема на алгебрата: врски меѓу нулите и коефициентите, полиноми со цели коефициенти; Дробнорационален израз; Биномна, триномна и биквадратна равенка; равенка од квадратен вид; симетрични равенки; Равенки од трет степен.',
           assessmentStandards: [
@@ -572,6 +590,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c5-1',
+          priorKnowledgeIds: ['gym-a12-c4-1', 'gym11n-c3-2'],
           title: 'Решавање системи и неравенки',
           description: 'Системи експоненцијални, логаритамски и тригонометриски равенки со две непознати; Комбинирани системи со две непознати; Систем неравенки и дробно-рационална неравенка со една непозната; Систем од експоненцијални, логаритамски и тригонометриски неравенки со една непозната.',
           assessmentStandards: [
@@ -602,6 +621,7 @@ export const algebraGrade12: Grade = {
       concepts: [
         {
           id: 'gym-a12-c6-1',
+          priorKnowledgeIds: ['gym11n-c1-5', 'gym12-c2-1'],
           title: 'Тригонометриска форма и примена на комплексни броеви',
           description: 'Форми на задавање на комплексен број; Операции со комплексни броеви (во тригонометриска форма); Неравенство на триаголник; Примена на комплексни броеви.',
           assessmentStandards: [
@@ -645,6 +665,7 @@ export const linearAlgebraAnalyticGeometryGrade12: Grade = {
       concepts: [
         {
           id: 'gym-laag12-c1-1',
+          priorKnowledgeIds: ['gym10-c3-4'],
           title: 'Детерминанти и системи линеарни равенки',
           description: 'Детерминанти од II ред — повторување; Детерминанти од III ред, поим, својства, вредност; Системи линеарни равенки со две непознати; Систем од три линеарни равенки со три непознати и методи за нивно решавање; Систем хомогени равенки со три непознати.',
           assessmentStandards: [
@@ -677,6 +698,7 @@ export const linearAlgebraAnalyticGeometryGrade12: Grade = {
       concepts: [
         {
           id: 'gym-laag12-c2-1',
+          priorKnowledgeIds: ['gym10-c4-1', 'gym-eag11-c2-1'],
           title: 'Операции со вектори и нивни производи',
           description: 'Вектори и операции со вектори — повторување; Линеарна комбинација на вектори; Одредување на вектори со помош на координати; Скаларен, векторски и мешан производ на вектори и нивна примена.',
           assessmentStandards: [
@@ -710,6 +732,7 @@ export const linearAlgebraAnalyticGeometryGrade12: Grade = {
       concepts: [
         {
           id: 'gym-laag12-c3-1',
+          priorKnowledgeIds: ['gym12-c4-2', 'gym11n-c5-2'],
           title: 'Растојанија, агли и равенки на права и рамнина',
           description: 'Растојание меѓу две точки; Делење на отсечка во даден однос; Видови равенки на рамнина; Растојание од точка до рамнина; Агол меѓу две рамнини; Видови равенки на права; Растојание од точка до права; Агол меѓу две прави; Агол меѓу права и рамнина; Заемен однос на две рамнини, две прави и права со рамнина.',
           assessmentStandards: [
@@ -743,6 +766,7 @@ export const linearAlgebraAnalyticGeometryGrade12: Grade = {
       concepts: [
         {
           id: 'gym-laag12-c4-1',
+          priorKnowledgeIds: ['gym-laag12-c1-1'],
           title: 'Операции со матрици и примена',
           description: 'Операции со матрици; Ранг на матрица и примена (теорема на Кронекер-Капели); Инверзна матрица и елементарни трансформации и примена (Гаусов метод).',
           assessmentStandards: [
@@ -790,6 +814,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c1-1',
+          priorKnowledgeIds: ['gym11n-c2-4'],
           title: 'Решавање на равенки од трет и четврти степен',
           description: 'Кубна равенка — специјален вид; Општ вид на кубна равенка со реални коефициенти и формули на Кардано; Разложување на полиноми на иредуцибилни фактори; Равенка од четврти степен; Граници на корени на полиноми.',
           assessmentStandards: [
@@ -822,6 +847,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c2-1',
+          priorKnowledgeIds: ['gym10-c2-3'],
           title: 'Разложување на дробно рационални функции',
           description: 'Правилни рационални дропки и нивно претставување во вид на елементарни собироци; Метод на неопределени коефициенти.',
           assessmentStandards: [
@@ -850,6 +876,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c3-1',
+          priorKnowledgeIds: ['gym10-c1-2'],
           title: 'Својства и комплетност на множеството реални броеви',
           description: 'Густина на Q; Дедекиндов пресек во операциите со реални броеви; Принцип на вложени сегменти; Мајоранти. Супремум; Архимедова аксиома. Подреденост. Комплетност; Постоење на ⁿ√a за a>0.',
           assessmentStandards: [
@@ -883,6 +910,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c4-1',
+          priorKnowledgeIds: ['gym13-c1-4'],
           title: 'Конвергенција на низи и бескрајни редови',
           description: 'Некои својства на конвергентни низи; Операции со конвергентни низи; Бескрајни редови; Бескраен геометриски ред; Децимално претставување на реалните броеви.',
           assessmentStandards: [
@@ -916,6 +944,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c5-1',
+          priorKnowledgeIds: ['gym13-c3-1', 'gym13-c2-3'],
           title: 'Специјални лимеси, сложени изводи и теореми за средна вредност',
           description: 'Операции со гранични вредности на функции; Гранична вредност на односот sin x/x; Бројот e; Специјални лимеси; Непрекинатост; Извод по дефиниција; Извод од сложена, инверзна, имплицитна и параметарски зададена функција; Теорема на Рол, Ферма, Коши, Лагранж.',
           assessmentStandards: [
@@ -947,6 +976,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c6-1',
+          priorKnowledgeIds: ['gym-ma13-c5-1'],
           title: 'Примитивна функција и методи на интеграција',
           description: 'Примитивна функција и неопределен интеграл; Метод на замена и метод на парцијална интеграција; Интегрирање на: рационални, тригонометриски и некои ирационални функции; Некои рекурзивни формули.',
           assessmentStandards: [
@@ -982,6 +1012,7 @@ export const mathematicalAnalysisGrade13: Grade = {
       concepts: [
         {
           id: 'gym-ma13-c7-1',
+          priorKnowledgeIds: ['gym-ma13-c6-1'],
           title: 'Пресметување и примена на определен интеграл',
           description: 'Дефиниција и својства на определен интеграл; Функции интеграбилни во Риманов смисол; Примена на определен интеграл.',
           assessmentStandards: [
