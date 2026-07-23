@@ -35,7 +35,6 @@ export const ExamPlayerView: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [timeRemaining] = useState(0);
   // Question keys (e.g. "q3") whose latest answer failed to sync to the server —
   // still safe locally (localStorage backup below), but the teacher's server-side
   // copy is stale until this clears. Surfaced as a small warning banner.
@@ -109,7 +108,14 @@ export const ExamPlayerView: React.FC = () => {
 
   const handleSolutionImage = useCallback((questionIndex: number, url: string) => {
     setSolutionImages(prev => ({ ...prev, [`q${questionIndex}`]: url }));
-  }, []);
+    // Sync the photo to the server as it's captured (also re-synced on submit). Previously
+    // photos lived only in local state and were lost on submit/refresh.
+    if (session && responseDocId) {
+      examService.saveExamPhoto(session.id, responseDocId, questionIndex, url).catch(() => {
+        /* stays in local state; retried via submitExamFinal */
+      });
+    }
+  }, [session, responseDocId]);
 
   const handleAnswer = useCallback(async (questionIndex: number, value: string) => {
     // Update local state (and its localStorage backup, via the effect above) immediately
@@ -136,7 +142,13 @@ export const ExamPlayerView: React.FC = () => {
     if (!session || !responseDocId || submitting) return;
     setSubmitting(true);
     try {
-      await examService.submitExamFinal(session.id, responseDocId, timeRemaining);
+      // Compute the real seconds left from the exam's endsAt. The old code passed a
+      // never-updated useState(0), so timeRemainingOnSubmit was always recorded as 0.
+      const endDate = session.endsAt
+        ? ((session.endsAt as unknown as { toDate: () => Date }).toDate?.() ?? new Date(session.endsAt as unknown as number))
+        : null;
+      const secondsLeft = endDate ? Math.max(0, Math.round((endDate.getTime() - Date.now()) / 1000)) : 0;
+      await examService.submitExamFinal(session.id, responseDocId, secondsLeft, solutionImages);
       localStorage.removeItem(LS_KEY(session.id, deviceId));
       setPhase('submitted');
     } catch {
@@ -144,7 +156,7 @@ export const ExamPlayerView: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [session, responseDocId, submitting, timeRemaining, deviceId, addNotification]);
+  }, [session, responseDocId, submitting, solutionImages, deviceId, addNotification]);
 
   const endsAt = session?.endsAt
     ? (session.endsAt as unknown as { toDate: () => Date }).toDate?.() ?? new Date(session.endsAt as unknown as number)

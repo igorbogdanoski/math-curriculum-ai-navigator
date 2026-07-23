@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { applyManualGradeOverride } from './examGrading';
+import { applyManualGradeOverride, gradeMultipleChoiceDeterministic } from './examGrading';
+import type { ExamQuestion } from '../services/firestoreService.types';
 
 describe('applyManualGradeOverride', () => {
   const feedback = [
@@ -33,5 +34,48 @@ describe('applyManualGradeOverride', () => {
     const second = applyManualGradeOverride(first.feedback, 'q1', 5, 'teacher-uid');
     expect(second.feedback.find(f => f.questionId === 'q1')!.points).toBe(5);
     expect(second.score).toBe(5 + 0 + 3);
+  });
+});
+
+describe('gradeMultipleChoiceDeterministic', () => {
+  const mc = (id: string, answer: string, points = 1, options?: string[]): ExamQuestion => ({
+    id, type: 'multiple_choice', question: 'Q', answer, points, options,
+  });
+  const openQ = (id: string, type: ExamQuestion['type'], points = 2): ExamQuestion => ({
+    id, type, question: 'Q', answer: 'A', points,
+  });
+
+  it('grades a correct MC answer with full points', () => {
+    const { mcFeedback, needsAi } = gradeMultipleChoiceDeterministic(
+      [mc('q1', 'x = 5', 2, ['x = 5', 'x = 3'])],
+      { q0: 'x = 5' },
+    );
+    expect(needsAi).toHaveLength(0);
+    expect(mcFeedback[0]).toMatchObject({ questionId: 'q1', correct: true, points: 2 });
+  });
+
+  it('grades a wrong MC answer with zero points and reveals the correct answer', () => {
+    const { mcFeedback } = gradeMultipleChoiceDeterministic([mc('q1', 'x = 5')], { q0: 'x = 3' });
+    expect(mcFeedback[0].correct).toBe(false);
+    expect(mcFeedback[0].points).toBe(0);
+    expect(mcFeedback[0].feedback).toContain('x = 5');
+  });
+
+  it('treats an empty MC answer as wrong', () => {
+    const { mcFeedback } = gradeMultipleChoiceDeterministic([mc('q1', 'x = 5')], {});
+    expect(mcFeedback[0].correct).toBe(false);
+    expect(mcFeedback[0].points).toBe(0);
+  });
+
+  it('normalizes case and whitespace when comparing', () => {
+    const { mcFeedback } = gradeMultipleChoiceDeterministic([mc('q1', 'X =  5')], { q0: ' x = 5 ' });
+    expect(mcFeedback[0].correct).toBe(true);
+  });
+
+  it('routes non-MC questions to the AI bucket untouched, in order', () => {
+    const questions = [mc('q1', 'a'), openQ('q2', 'essay'), openQ('q3', 'calculation')];
+    const { mcFeedback, needsAi } = gradeMultipleChoiceDeterministic(questions, { q0: 'a' });
+    expect(mcFeedback).toHaveLength(1);
+    expect(needsAi.map(q => q.id)).toEqual(['q2', 'q3']);
   });
 });

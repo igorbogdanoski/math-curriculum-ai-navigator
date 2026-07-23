@@ -1,6 +1,45 @@
-import type { ExamResponse } from '../services/firestoreService.types';
+import type { ExamResponse, ExamQuestion } from '../services/firestoreService.types';
 
 type AiFeedback = NonNullable<ExamResponse['aiFeedback']>;
+
+type FeedbackEntry = { questionId: string; correct: boolean; points: number; feedback: string };
+
+function normalizeMc(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Deterministically grade the multiple-choice questions of an exam response by exact
+ * (normalized) match against each question's correct answer, and return the non-MC
+ * questions that still need LLM grading. MC answers are stored as the full selected
+ * option text (ExamVariantPlayer stores `opt`) and `q.answer` is the correct option text,
+ * so an exact match is a reliable grade. Digital Exam previously sent EVERY question —
+ * even MC — to one LLM call, which occasionally misgraded MC; this removes that error
+ * class and reserves the LLM for short_answer / essay / calculation.
+ */
+export function gradeMultipleChoiceDeterministic(
+  questions: ExamQuestion[],
+  answers: Record<string, string>,
+): { mcFeedback: FeedbackEntry[]; needsAi: ExamQuestion[] } {
+  const mcFeedback: FeedbackEntry[] = [];
+  const needsAi: ExamQuestion[] = [];
+  questions.forEach((q, i) => {
+    if (q.type !== 'multiple_choice') {
+      needsAi.push(q);
+      return;
+    }
+    const student = normalizeMc(answers[`q${i}`] ?? '');
+    const correct = normalizeMc(q.answer ?? '');
+    const isCorrect = student !== '' && student === correct;
+    mcFeedback.push({
+      questionId: q.id,
+      correct: isCorrect,
+      points: isCorrect ? q.points : 0,
+      feedback: isCorrect ? 'Точен одговор.' : `Точниот одговор е: ${q.answer}.`,
+    });
+  });
+  return { mcFeedback, needsAi };
+}
 
 /**
  * Applies a teacher's manual point override to one question's AI-graded feedback entry

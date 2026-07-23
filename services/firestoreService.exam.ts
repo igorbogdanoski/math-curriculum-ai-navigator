@@ -148,15 +148,32 @@ export const examService = {
     });
   },
 
+  async saveExamPhoto(
+    sessionId: string,
+    responseDocId: string,
+    questionIndex: number,
+    photoDataUrl: string,
+  ): Promise<void> {
+    // Persist a handwritten-solution photo for a question. Previously photos were
+    // captured client-side but never written (photoUrls stayed {}), so they were lost
+    // on submit/refresh. Mirrors saveExamAnswer's per-question field pattern.
+    await updateDoc(doc(db, SESSIONS, sessionId, RESPONSES, responseDocId), {
+      [`photoUrls.q${questionIndex}`]: photoDataUrl,
+    });
+  },
+
   async submitExamFinal(
     sessionId: string,
     responseDocId: string,
     timeRemaining: number,
+    photoUrls?: Record<string, string>,
   ): Promise<void> {
     await updateDoc(doc(db, SESSIONS, sessionId, RESPONSES, responseDocId), {
       status: 'submitted',
       submittedAt: serverTimestamp(),
       timeRemainingOnSubmit: timeRemaining,
+      // Final sync of any solution photos (belt-and-suspenders alongside saveExamPhoto).
+      ...(photoUrls && Object.keys(photoUrls).length > 0 ? { photoUrls } : {}),
     });
   },
 

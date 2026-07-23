@@ -73,7 +73,8 @@ describe('ExamPlayerView', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /Предај/i })[0]);
 
     await waitFor(() => expect(screen.getByText(/Испитот е предаден/i)).toBeTruthy());
-    expect(submitExamFinal).toHaveBeenCalledWith('sess1', 'dev1', expect.any(Number));
+    // 4th arg is the solution-photos map (empty here — no photos captured in this test).
+    expect(submitExamFinal).toHaveBeenCalledWith('sess1', 'dev1', expect.any(Number), {});
   });
 
   it('shows a notification and stays in solving phase (does not lose the exam) when submit fails', async () => {

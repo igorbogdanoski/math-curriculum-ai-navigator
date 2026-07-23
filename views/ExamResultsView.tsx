@@ -7,7 +7,7 @@ import { examService } from '../services/firestoreService.exam';
 import { geminiService } from '../services/geminiService';
 import type { ExamSession, ExamResponse } from '../services/firestoreService.types';
 import { useRouter } from '../hooks/useRouter';
-import { applyManualGradeOverride } from '../utils/examGrading';
+import { applyManualGradeOverride, gradeMultipleChoiceDeterministic } from '../utils/examGrading';
 import {
   Loader2, Wand2, Download, CheckCircle, XCircle, BarChart2,
   ChevronDown, ChevronUp, ArrowLeft, UserCog,
@@ -74,14 +74,24 @@ export const ExamResultsView: React.FC<{ id?: string }> = ({ id }) => {
     if (!questions.length) return;
     setGradingId(response.id);
     try {
-      const gradingInput = questions.map(q => ({
-        id: q.id,
-        question: q.question,
-        answer: q.answer,
-        points: q.points,
-      }));
-      const feedback = await (geminiService as any).gradeExamResponses(gradingInput, response.answers ?? {});
-      const score = (feedback as { points: number }[]).reduce((s: number, f: { points: number }) => s + f.points, 0);
+      // Grade multiple-choice deterministically (exact match); only non-MC go to the LLM,
+      // which removes the LLM misgrade risk for MC and reserves it for open-ended answers.
+      const { mcFeedback, needsAi } = gradeMultipleChoiceDeterministic(questions, response.answers ?? {});
+      type FB = { questionId: string; correct: boolean; points: number; feedback: string };
+      let aiFeedback: FB[] = [];
+      if (needsAi.length) {
+        const gradingInput = needsAi.map(q => ({
+          id: q.id,
+          question: q.question,
+          answer: q.answer,
+          points: q.points,
+        }));
+        aiFeedback = await (geminiService as any).gradeExamResponses(gradingInput, response.answers ?? {});
+      }
+      // Merge MC + AI feedback in original question order.
+      const byId = new Map<string, FB>([...mcFeedback, ...aiFeedback].map(f => [f.questionId, f]));
+      const feedback = questions.map(q => byId.get(q.id) ?? { questionId: q.id, correct: false, points: 0, feedback: 'Не е оценето.' });
+      const score = feedback.reduce((s, f) => s + f.points, 0);
       const maxScore = questions.reduce((s, q) => s + q.points, 0);
       await examService.saveGradingResult(session.id, response.id, { score, maxScore, aiFeedback: feedback });
       setResponses(prev => prev.map(r =>
